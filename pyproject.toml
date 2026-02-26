@@ -29,12 +29,13 @@ dependencies = [
     "apscheduler>=3.10.0",
     # Azure SDKs
     "azure-identity>=1.15.0",
-    "azure-mgmt-resource>=23.0.0",
+    "azure-mgmt-resource>=23.0.0,<24.0.0",
     "azure-mgmt-costmanagement>=4.0.0",
     "azure-mgmt-policyinsights>=1.0.0",
     "azure-mgmt-security>=5.0.0",
     "azure-mgmt-authorization>=4.0.0",
     "azure-keyvault-secrets>=4.7.0",
+    "six>=1.17.0",
 ]
 
 [project.optional-dependencies]

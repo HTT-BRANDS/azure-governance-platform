@@ -5,6 +5,7 @@ from app.api.services.compliance_service import ComplianceService
 from app.api.services.cost_service import CostService
 from app.api.services.graph_client import GraphClient
 from app.api.services.identity_service import IdentityService
+from app.api.services.monitoring_service import MonitoringService
 from app.api.services.resource_service import ResourceService
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "ComplianceService",
     "ResourceService",
     "IdentityService",
+    "MonitoringService",
 ]

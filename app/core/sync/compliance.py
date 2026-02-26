@@ -6,6 +6,7 @@ from datetime import datetime
 from azure.core.exceptions import HttpResponseError
 
 from app.api.services.azure_client import azure_client_manager
+from app.api.services.monitoring_service import MonitoringService
 from app.core.database import get_db_context
 from app.models.compliance import ComplianceSnapshot, PolicyState
 from app.models.tenant import Tenant
@@ -27,9 +28,14 @@ async def sync_compliance():
     total_snapshots = 0
     total_policy_states = 0
     total_errors = 0
+    log_id = None
 
     try:
         with get_db_context() as db:
+            # Start monitoring
+            monitoring = MonitoringService(db)
+            log_entry = monitoring.start_sync_job(job_type="compliance")
+            log_id = log_entry.id
             # Get all active tenants
             tenants = db.query(Tenant).filter(Tenant.is_active).all()
             logger.info(f"Found {len(tenants)} active tenants to sync for compliance")
@@ -260,6 +266,19 @@ async def sync_compliance():
                         exc_info=True,
                     )
 
+        # Update monitoring with final status
+        if log_id:
+            monitoring.complete_sync_job(
+                log_id=log_id,
+                status="completed" if total_errors == 0 else "failed",
+                final_records={
+                    "records_processed": total_snapshots + total_policy_states,
+                    "records_created": total_snapshots + total_policy_states,
+                    "records_updated": 0,
+                    "errors_count": total_errors,
+                },
+            )
+
         logger.info(
             f"Compliance sync completed: {total_snapshots} snapshots, "
             f"{total_policy_states} policy states synced, "
@@ -268,4 +287,19 @@ async def sync_compliance():
 
     except Exception as e:
         logger.error(f"Fatal error during compliance sync: {e}", exc_info=True)
+        # Update monitoring with failure status
+        if log_id:
+            with get_db_context() as db:
+                monitoring = MonitoringService(db)
+                monitoring.complete_sync_job(
+                    log_id=log_id,
+                    status="failed",
+                    error_message=str(e)[:1000],
+                    final_records={
+                        "records_processed": total_snapshots + total_policy_states,
+                        "records_created": total_snapshots + total_policy_states,
+                        "records_updated": 0,
+                        "errors_count": total_errors + 1,
+                    },
+                )
         raise

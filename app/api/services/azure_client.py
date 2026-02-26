@@ -41,6 +41,8 @@ from app.core.database import SessionLocal
 
 if TYPE_CHECKING:
     from app.models.tenant import Tenant
+else:
+    from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

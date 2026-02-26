@@ -74,6 +74,7 @@ source = { editable = "." }
 dependencies = [
     { name = "apscheduler" },
     { name = "azure-identity" },
+    { name = "azure-keyvault-secrets" },
     { name = "azure-mgmt-authorization" },
     { name = "azure-mgmt-costmanagement" },
     { name = "azure-mgmt-policyinsights" },
@@ -85,6 +86,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-multipart" },
+    { name = "six" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -104,10 +106,11 @@ dev = [
 requires-dist = [
     { name = "apscheduler", specifier = ">=3.10.0" },
     { name = "azure-identity", specifier = ">=1.15.0" },
+    { name = "azure-keyvault-secrets", specifier = ">=4.7.0" },
     { name = "azure-mgmt-authorization", specifier = ">=4.0.0" },
     { name = "azure-mgmt-costmanagement", specifier = ">=4.0.0" },
     { name = "azure-mgmt-policyinsights", specifier = ">=1.0.0" },
-    { name = "azure-mgmt-resource", specifier = ">=23.0.0" },
+    { name = "azure-mgmt-resource", specifier = ">=23.0.0,<24.0.0" },
     { name = "azure-mgmt-security", specifier = ">=5.0.0" },
     { name = "fastapi", specifier = ">=0.109.0" },
     { name = "httpx", specifier = ">=0.26.0" },
@@ -122,6 +125,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
     { name = "python-multipart", specifier = ">=0.0.6" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
+    { name = "six", specifier = ">=1.17.0" },
     { name = "sqlalchemy", specifier = ">=2.0.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.27.0" },
 ]
@@ -141,6 +145,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c2/3a/439a32a5e23e45f6a91f0405949dc66cfe6834aba15a430aebfc063a81e7/azure_identity-1.25.2.tar.gz", hash = "sha256:030dbaa720266c796221c6cdbd1999b408c079032c919fef725fcc348a540fe9", size = 284709, upload-time = "2026-02-11T01:55:42.323Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9b/77/f658c76f9e9a52c784bd836aaca6fd5b9aae176f1f53273e758a2bcda695/azure_identity-1.25.2-py3-none-any.whl", hash = "sha256:1b40060553d01a72ba0d708b9a46d0f61f56312e215d8896d836653ffdc6753d", size = 191423, upload-time = "2026-02-11T01:55:44.245Z" },
+]
+
+[[package]]
+name = "azure-keyvault-secrets"
+version = "4.10.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-core" },
+    { name = "isodate" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/97/e5/3074e581b6e8923c4a1f2e42192ea6f390bb52de3600c68baaaed529ef05/azure_keyvault_secrets-4.10.0.tar.gz", hash = "sha256:666fa42892f9cee749563e551a90f060435ab878977c95265173a8246d546a36", size = 129695, upload-time = "2025-06-16T22:52:20.986Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/26/94/7c902e966b28e7cb5080a8e0dd6bffc22ba44bc907f09c4c633d2b7c4f6a/azure_keyvault_secrets-4.10.0-py3-none-any.whl", hash = "sha256:9dbde256077a4ee1a847646671580692e3f9bea36bcfc189c3cf2b9a94eb38b9", size = 125237, upload-time = "2025-06-16T22:52:22.489Z" },
 ]
 
 [[package]]
@@ -199,16 +217,17 @@ wheels = [
 
 [[package]]
 name = "azure-mgmt-resource"
-version = "25.0.0"
+version = "23.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "azure-common" },
     { name = "azure-mgmt-core" },
     { name = "isodate" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d7/7e/b3f9d544a94782be9c5ab8123d2fa7fb20cbdf3f5a16b883f308865e1406/azure_mgmt_resource-25.0.0.tar.gz", hash = "sha256:dc123a9f6509c37299d7716c9090cff0a9d73309b228cc094ea950ce3cca3603", size = 92837, upload-time = "2026-02-06T06:00:39.699Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/2e/731c99e3d5d0caba951ea59d3ee9bfb3606eea9f9e59fddc1fe8c1d11dd5/azure_mgmt_resource-23.4.0.tar.gz", hash = "sha256:7cc0909184bd01439e245f5f2e20945a3668d45a6774e1f008227bb33a733d16", size = 3351028, upload-time = "2025-05-21T02:49:22.41Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/41/ce12546aa2a20c4f37d061bfa7df3bf8fa72ff01e7557ec330929c72ec7d/azure_mgmt_resource-25.0.0-py3-none-any.whl", hash = "sha256:f6f17b2305abe9bf6ec6c92a9410af21a2b0d805cc98e94d80c07220924a045b", size = 83670, upload-time = "2026-02-06T06:00:41.317Z" },
+    { url = "https://files.pythonhosted.org/packages/24/c1/fc046a21d6957902bcdc8468021bdd8e5c07cf0b4a9bae5ae8d35759e8b8/azure_mgmt_resource-23.4.0-py3-none-any.whl", hash = "sha256:17282d20dc643fb68a286c2c350a191dc3bf386827f65a7daeeb714367a19316", size = 4028749, upload-time = "2025-05-21T02:49:24.937Z" },
 ]
 
 [[package]]
@@ -1417,6 +1436,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/42/b1/77dcd05940388d9ba3de03ac4b8b598826d57935728071e1be9f2ef5b714/ruff-0.15.3-py3-none-win32.whl", hash = "sha256:1f1eb95ff614351e3a89a862b6d94e6c42c170e61916e1f20facd6c38477f5f3", size = 10509423, upload-time = "2026-02-26T15:40:05.217Z" },
     { url = "https://files.pythonhosted.org/packages/29/d5/76aab0fabbd54e8c77d02fcff2494906ba85b539d22aa9b7124f7100f008/ruff-0.15.3-py3-none-win_amd64.whl", hash = "sha256:2b22dffe5f5e1e537097aa5208684f069e495f980379c4491b1cfb198a444d0c", size = 11637739, upload-time = "2026-02-26T15:39:53.951Z" },
     { url = "https://files.pythonhosted.org/packages/f2/61/9b4e3682dfd26054321e1b2fdb67a51361dd6ec2fb63f2b50d711f8832ae/ruff-0.15.3-py3-none-win_arm64.whl", hash = "sha256:82443c14d694d4cbd9e598ede27ef5d6f08389ccad91c933be775ea2f4e66f76", size = 10957794, upload-time = "2026-02-26T15:40:08.045Z" },
+]
+
+[[package]]
+name = "six"
+version = "1.17.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
 ]
 
 [[package]]

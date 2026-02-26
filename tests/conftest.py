@@ -1,13 +1,11 @@
 """Test configuration and fixtures."""
 
 import pytest
-from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
-from app.main import app
 
 # Test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -35,6 +33,9 @@ def db_session():
 @pytest.fixture(scope="function")
 def client(db_session):
     """Create test client with overridden database."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    
     def override_get_db():
         try:
             yield db_session

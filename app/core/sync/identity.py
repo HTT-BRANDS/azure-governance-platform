@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta
 
 from app.api.services.graph_client import GraphClient
+from app.api.services.monitoring_service import MonitoringService
 from app.core.database import get_db_context
 from app.models.identity import IdentitySnapshot, PrivilegedUser
 from app.models.tenant import Tenant
@@ -121,9 +122,14 @@ async def sync_identity():
     total_snapshots = 0
     total_privileged_users = 0
     total_errors = 0
+    log_id = None
 
     try:
         with get_db_context() as db:
+            # Start monitoring
+            monitoring = MonitoringService(db)
+            log_entry = monitoring.start_sync_job(job_type="identity")
+            log_id = log_entry.id
             # Get all active tenants
             tenants = db.query(Tenant).filter(Tenant.is_active).all()
             logger.info(f"Found {len(tenants)} active tenants to sync for identity")
@@ -326,6 +332,19 @@ async def sync_identity():
                     )
                     continue
 
+        # Update monitoring with final status
+        if log_id:
+            monitoring.complete_sync_job(
+                log_id=log_id,
+                status="completed" if total_errors == 0 else "failed",
+                final_records={
+                    "records_processed": total_snapshots + total_privileged_users,
+                    "records_created": total_snapshots + total_privileged_users,
+                    "records_updated": 0,
+                    "errors_count": total_errors,
+                },
+            )
+
         logger.info(
             f"Identity sync completed: {total_snapshots} snapshots, "
             f"{total_privileged_users} privileged user records synced, "
@@ -334,4 +353,19 @@ async def sync_identity():
 
     except Exception as e:
         logger.error(f"Fatal error during identity sync: {e}", exc_info=True)
+        # Update monitoring with failure status
+        if log_id:
+            with get_db_context() as db:
+                monitoring = MonitoringService(db)
+                monitoring.complete_sync_job(
+                    log_id=log_id,
+                    status="failed",
+                    error_message=str(e)[:1000],
+                    final_records={
+                        "records_processed": total_snapshots + total_privileged_users,
+                        "records_created": total_snapshots + total_privileged_users,
+                        "records_updated": 0,
+                        "errors_count": total_errors + 1,
+                    },
+                )
         raise
