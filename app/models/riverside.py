@@ -81,9 +81,11 @@ class RiversideCompliance(Base):
     )
 
     def __repr__(self) -> str:
+        maturity = f"{self.overall_maturity_score:.1f}" if self.overall_maturity_score is not None else "N/A"
+        target = f"{self.target_maturity_score:.1f}" if self.target_maturity_score is not None else "N/A"
         return (
-            f"<RiversideCompliance maturity={self.overall_maturity_score:.1f} "
-            f"target={self.target_maturity_score:.1f}>"
+            f"<RiversideCompliance maturity={maturity} "
+            f"target={target}>"
         )
 
 
@@ -119,9 +121,11 @@ class RiversideMFA(Base):
     )
 
     def __repr__(self) -> str:
+        coverage = f"{self.mfa_coverage_percentage:.1f}%" if self.mfa_coverage_percentage is not None else "N/A"
+        admin_mfa = f"{self.admin_mfa_percentage:.1f}%" if self.admin_mfa_percentage is not None else "N/A"
         return (
-            f"<RiversideMFA coverage={self.mfa_coverage_percentage:.1f}% "
-            f"admin_mfa={self.admin_mfa_percentage:.1f}%>"
+            f"<RiversideMFA coverage={coverage} "
+            f"admin_mfa={admin_mfa}>"
         )
 
 
