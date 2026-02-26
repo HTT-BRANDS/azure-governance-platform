@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block nav_dashboard %}bg-wm-blue-130{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-wm-gray-160">Governance Dashboard</h1>
+            <p class="text-wm-gray-100">Cross-tenant visibility into costs, compliance, resources, and identity</p>
+        </div>
+        <button 
+            hx-post="/api/v1/sync/costs" 
+            hx-swap="none"
+            class="bg-wm-blue-100 hover:bg-wm-blue-110 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+            <span class="htmx-indicator">Syncing...</span>
+            <span>Refresh Data</span>
+        </button>
+    </div>
+
+    <!-- Summary Cards Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Cost Summary Card -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-wm-blue-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-wm-gray-100">Total Cost (30d)</p>
+                    <p class="text-3xl font-bold text-wm-gray-160">
+                        ${{ "{:,.2f}".format(cost_summary.total_cost) }}
+                    </p>
+                </div>
+                <div class="p-3 bg-wm-blue-10 rounded-full">
+                    <svg class="w-6 h-6 text-wm-blue-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            {% if cost_summary.cost_change_percent is not none %}
+            <div class="mt-2 flex items-center text-sm">
+                {% if cost_summary.cost_change_percent > 0 %}
+                <span class="text-wm-red-100">↑ {{ "{:.1f}".format(cost_summary.cost_change_percent) }}%</span>
+                {% else %}
+                <span class="text-wm-green-100">↓ {{ "{:.1f}".format(cost_summary.cost_change_percent|abs) }}%</span>
+                {% endif %}
+                <span class="text-wm-gray-100 ml-2">vs previous period</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Compliance Score Card -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-wm-green-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-wm-gray-100">Avg Compliance</p>
+                    <p class="text-3xl font-bold text-wm-gray-160">
+                        {{ "{:.1f}".format(compliance_summary.average_compliance_percent) }}%
+                    </p>
+                </div>
+                <div class="p-3 bg-wm-green-10 rounded-full">
+                    <svg class="w-6 h-6 text-wm-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-wm-gray-100">
+                {{ compliance_summary.total_non_compliant_resources }} non-compliant resources
+            </div>
+        </div>
+
+        <!-- Resources Card -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-wm-spark-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-wm-gray-100">Total Resources</p>
+                    <p class="text-3xl font-bold text-wm-gray-160">
+                        {{ "{:,}".format(resource_inventory.total_resources) }}
+                    </p>
+                </div>
+                <div class="p-3 bg-wm-spark-10 rounded-full">
+                    <svg class="w-6 h-6 text-wm-spark-140" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-2 text-sm">
+                <span class="text-wm-red-100">{{ resource_inventory.orphaned_resources }} orphaned</span>
+                <span class="text-wm-gray-100"> (~${{ "{:,.0f}".format(resource_inventory.orphaned_estimated_cost) }}/mo)</span>
+            </div>
+        </div>
+
+        <!-- Identity Card -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-wm-blue-130">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-wm-gray-100">Total Users</p>
+                    <p class="text-3xl font-bold text-wm-gray-160">
+                        {{ "{:,}".format(identity_summary.total_users) }}
+                    </p>
+                </div>
+                <div class="p-3 bg-wm-blue-10 rounded-full">
+                    <svg class="w-6 h-6 text-wm-blue-130" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m9 5.197v1H9"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-wm-gray-100">
+                {{ "{:.1f}".format(identity_summary.mfa_enabled_percent) }}% MFA enabled • {{ identity_summary.privileged_users }} privileged
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Cost Trend Chart -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-wm-gray-160 mb-4">Cost Trend (30 Days)</h3>
+            <div style="height: 300px;">
+                <canvas id="costTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Compliance by Tenant -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-wm-gray-160 mb-4">Compliance by Tenant</h3>
+            <div style="height: 300px;">
+                <canvas id="complianceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Top Cost Services -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-wm-gray-50">
+                <h3 class="text-lg font-semibold text-wm-gray-160">Top Services by Cost</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-wm-gray-50">
+                    <thead class="bg-wm-gray-10">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-wm-gray-100 uppercase">Service</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-wm-gray-100 uppercase">Cost</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-wm-gray-100 uppercase">% of Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-wm-gray-50">
+                        {% for service in cost_summary.top_services[:5] %}
+                        <tr class="hover:bg-wm-gray-5">
+                            <td class="px-6 py-4 text-sm text-wm-gray-160">{{ service.service_name }}</td>
+                            <td class="px-6 py-4 text-sm text-wm-gray-160 text-right">${{ "{:,.2f}".format(service.cost) }}</td>
+                            <td class="px-6 py-4 text-sm text-wm-gray-100 text-right">{{ "{:.1f}".format(service.percentage_of_total) }}%</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-4 text-sm text-wm-gray-100 text-center">No cost data available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top Policy Violations -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-wm-gray-50">
+                <h3 class="text-lg font-semibold text-wm-gray-160">Top Policy Violations</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-wm-gray-50">
+                    <thead class="bg-wm-gray-10">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-wm-gray-100 uppercase">Policy</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-wm-gray-100 uppercase">Violations</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-wm-gray-100 uppercase">Tenants</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-wm-gray-50">
+                        {% for violation in compliance_summary.top_violations[:5] %}
+                        <tr class="hover:bg-wm-gray-5">
+                            <td class="px-6 py-4 text-sm text-wm-gray-160">{{ violation.policy_name }}</td>
+                            <td class="px-6 py-4 text-sm text-wm-red-100 text-right">{{ violation.violation_count }}</td>
+                            <td class="px-6 py-4 text-sm text-wm-gray-100 text-right">{{ violation.affected_tenants }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-4 text-sm text-wm-gray-100 text-center">No policy violations</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Cost Trend Chart
+    const costCtx = document.getElementById('costTrendChart').getContext('2d');
+    new Chart(costCtx, {
+        type: 'line',
+        data: {
+            labels: ['Day 1', 'Day 7', 'Day 14', 'Day 21', 'Day 28', 'Day 30'],
+            datasets: [{
+                label: 'Daily Cost ($)',
+                data: [1200, 1350, 1100, 1450, 1300, 1400],
+                borderColor: '#0053e2',
+                backgroundColor: 'rgba(0, 83, 226, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Compliance Chart
+    const complianceCtx = document.getElementById('complianceChart').getContext('2d');
+    new Chart(complianceCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Tenant A', 'Tenant B', 'Tenant C', 'Tenant D'],
+            datasets: [{
+                label: 'Compliance %',
+                data: [92, 87, 78, 95],
+                backgroundColor: [
+                    '#2a8703',
+                    '#2a8703',
+                    '#ea1100',
+                    '#2a8703'
+                ],
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

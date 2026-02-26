@@ -1,0 +1,94 @@
+[project]
+name = "azure-governance-platform"
+version = "0.1.0"
+description = "Multi-tenant Azure governance platform for cost optimization, compliance monitoring, resource management, and identity governance"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    {name = "Cloud Governance Team"}
+]
+license = {text = "MIT"}
+keywords = ["azure", "governance", "multi-tenant", "cost-management", "compliance"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "sqlalchemy>=2.0.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.6",
+    "httpx>=0.26.0",
+    "apscheduler>=3.10.0",
+    # Azure SDKs
+    "azure-identity>=1.15.0",
+    "azure-mgmt-resource>=23.0.0",
+    "azure-mgmt-costmanagement>=4.0.0",
+    "azure-mgmt-policyinsights>=1.0.0",
+    "azure-mgmt-security>=5.0.0",
+    # "azure-keyvault-secrets>=4.7.0",  # Uncomment for production
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "httpx>=0.26.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.6.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/your-org/azure-governance-platform"
+"Bug Tracker" = "https://github.com/your-org/azure-governance-platform/issues"
+
+[project.scripts]
+govern = "app.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v --tb=short"
