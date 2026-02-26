@@ -1,8 +1,7 @@
 """Identity governance service."""
 
 import logging
-from datetime import date, datetime, timedelta
-from typing import List, Optional
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -96,8 +95,8 @@ class IdentityService:
         )
 
     def get_privileged_accounts(
-        self, tenant_id: Optional[str] = None
-    ) -> List[PrivilegedAccount]:
+        self, tenant_id: str | None = None
+    ) -> list[PrivilegedAccount]:
         """Get privileged account details."""
         query = self.db.query(PrivilegedUser)
 
@@ -157,16 +156,16 @@ class IdentityService:
         return "Low"
 
     def get_guest_accounts(
-        self, tenant_id: Optional[str] = None, stale_only: bool = False
-    ) -> List[GuestAccount]:
+        self, tenant_id: str | None = None, stale_only: bool = False
+    ) -> list[GuestAccount]:
         """Get guest account details."""
         # For MVP, we'd query from a cached table of guest users
         # This is a placeholder that would be populated by the sync job
         return []
 
     def get_stale_accounts(
-        self, days_inactive: int = 30, tenant_id: Optional[str] = None
-    ) -> List[StaleAccount]:
+        self, days_inactive: int = 30, tenant_id: str | None = None
+    ) -> list[StaleAccount]:
         """Get stale account details."""
         # For MVP, this would be populated by the sync job
         # comparing last sign-in dates

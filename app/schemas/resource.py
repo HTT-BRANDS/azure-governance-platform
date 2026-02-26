@@ -1,7 +1,6 @@
 """Resource-related Pydantic schemas."""
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -18,11 +17,11 @@ class ResourceItem(BaseModel):
     resource_type: str
     name: str
     location: str
-    provisioning_state: Optional[str] = None
-    sku: Optional[str] = None
-    tags: Dict[str, str] = Field(default_factory=dict)
+    provisioning_state: str | None = None
+    sku: str | None = None
+    tags: dict[str, str] = Field(default_factory=dict)
     is_orphaned: bool = False
-    estimated_monthly_cost: Optional[float] = None
+    estimated_monthly_cost: float | None = None
     last_synced: datetime
 
 
@@ -30,12 +29,12 @@ class ResourceInventory(BaseModel):
     """Resource inventory summary."""
 
     total_resources: int
-    resources_by_type: Dict[str, int] = Field(default_factory=dict)
-    resources_by_location: Dict[str, int] = Field(default_factory=dict)
-    resources_by_tenant: Dict[str, int] = Field(default_factory=dict)
+    resources_by_type: dict[str, int] = Field(default_factory=dict)
+    resources_by_location: dict[str, int] = Field(default_factory=dict)
+    resources_by_tenant: dict[str, int] = Field(default_factory=dict)
     orphaned_resources: int
     orphaned_estimated_cost: float
-    resources: List[ResourceItem] = Field(default_factory=list)
+    resources: list[ResourceItem] = Field(default_factory=list)
 
 
 class TaggingCompliance(BaseModel):
@@ -46,8 +45,8 @@ class TaggingCompliance(BaseModel):
     partially_tagged: int
     untagged: int
     compliance_percent: float
-    required_tags: List[str] = Field(default_factory=list)
-    missing_tags_by_resource: List["MissingTags"] = Field(default_factory=list)
+    required_tags: list[str] = Field(default_factory=list)
+    missing_tags_by_resource: list["MissingTags"] = Field(default_factory=list)
 
 
 class MissingTags(BaseModel):
@@ -56,7 +55,7 @@ class MissingTags(BaseModel):
     resource_id: str
     resource_name: str
     resource_type: str
-    missing_tags: List[str]
+    missing_tags: list[str]
 
 
 class OrphanedResource(BaseModel):
@@ -67,7 +66,7 @@ class OrphanedResource(BaseModel):
     resource_type: str
     tenant_name: str
     subscription_name: str
-    estimated_monthly_cost: Optional[float]
+    estimated_monthly_cost: float | None
     days_inactive: int
     reason: str  # no_activity, no_dependencies, etc.
 

@@ -1,13 +1,12 @@
 """Tenant management API routes."""
 
 import uuid
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.tenant import Subscription, Tenant
+from app.models.tenant import Tenant
 from app.schemas.tenant import (
     SubscriptionResponse,
     TenantCreate,
@@ -18,7 +17,7 @@ from app.schemas.tenant import (
 router = APIRouter(prefix="/api/v1/tenants", tags=["tenants"])
 
 
-@router.get("", response_model=List[TenantResponse])
+@router.get("", response_model=list[TenantResponse])
 async def list_tenants(db: Session = Depends(get_db)):
     """List all configured tenants."""
     tenants = db.query(Tenant).all()
@@ -144,7 +143,7 @@ async def delete_tenant(id: str, db: Session = Depends(get_db)):
     db.commit()
 
 
-@router.get("/{id}/subscriptions", response_model=List[SubscriptionResponse])
+@router.get("/{id}/subscriptions", response_model=list[SubscriptionResponse])
 async def get_tenant_subscriptions(id: str, db: Session = Depends(get_db)):
     """Get subscriptions for a tenant."""
     tenant = db.query(Tenant).filter(Tenant.id == id).first()

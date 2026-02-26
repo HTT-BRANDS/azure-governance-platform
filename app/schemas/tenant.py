@@ -1,7 +1,6 @@
 """Tenant-related Pydantic schemas."""
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,21 +10,21 @@ class TenantCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=255)
     tenant_id: str = Field(..., min_length=36, max_length=36)
-    client_id: Optional[str] = Field(None, min_length=36, max_length=36)
-    client_secret_ref: Optional[str] = Field(None, max_length=500)
-    description: Optional[str] = None
+    client_id: str | None = Field(None, min_length=36, max_length=36)
+    client_secret_ref: str | None = Field(None, max_length=500)
+    description: str | None = None
     use_lighthouse: bool = False
 
 
 class TenantUpdate(BaseModel):
     """Schema for updating a tenant."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    client_id: Optional[str] = Field(None, min_length=36, max_length=36)
-    client_secret_ref: Optional[str] = Field(None, max_length=500)
-    description: Optional[str] = None
-    is_active: Optional[bool] = None
-    use_lighthouse: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=255)
+    client_id: str | None = Field(None, min_length=36, max_length=36)
+    client_secret_ref: str | None = Field(None, max_length=500)
+    description: str | None = None
+    is_active: bool | None = None
+    use_lighthouse: bool | None = None
 
 
 class TenantResponse(BaseModel):
@@ -34,7 +33,7 @@ class TenantResponse(BaseModel):
     id: str
     name: str
     tenant_id: str
-    description: Optional[str] = None
+    description: str | None = None
     is_active: bool
     use_lighthouse: bool
     subscription_count: int = 0
@@ -52,7 +51,7 @@ class SubscriptionResponse(BaseModel):
     display_name: str
     state: str
     tenant_id: str
-    synced_at: Optional[datetime] = None
+    synced_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -60,4 +59,4 @@ class SubscriptionResponse(BaseModel):
 class TenantWithSubscriptions(TenantResponse):
     """Tenant response with subscriptions included."""
 
-    subscriptions: List[SubscriptionResponse] = Field(default_factory=list)
+    subscriptions: list[SubscriptionResponse] = Field(default_factory=list)

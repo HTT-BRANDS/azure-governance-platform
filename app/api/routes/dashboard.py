@@ -5,11 +5,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
-from app.api.services.cost_service import CostService
 from app.api.services.compliance_service import ComplianceService
-from app.api.services.resource_service import ResourceService
+from app.api.services.cost_service import CostService
 from app.api.services.identity_service import IdentityService
+from app.api.services.resource_service import ResourceService
+from app.core.database import get_db
 
 router = APIRouter(tags=["dashboard"])
 templates = Jinja2Templates(directory="app/templates")

@@ -2,12 +2,11 @@
 
 import logging
 from datetime import date, timedelta
-from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
 from app.models.cost import CostAnomaly, CostSnapshot
-from app.models.tenant import Subscription, Tenant
+from app.models.tenant import Tenant
 from app.schemas.cost import CostByTenant, CostSummary, CostTrend, ServiceCost
 
 logger = logging.getLogger(__name__)
@@ -86,7 +85,7 @@ class CostService:
             top_services=top_services,
         )
 
-    def get_costs_by_tenant(self, period_days: int = 30) -> List[CostByTenant]:
+    def get_costs_by_tenant(self, period_days: int = 30) -> list[CostByTenant]:
         """Get cost breakdown by tenant."""
         end_date = date.today()
         start_date = end_date - timedelta(days=period_days)
@@ -116,7 +115,7 @@ class CostService:
 
         return sorted(result, key=lambda x: x.total_cost, reverse=True)
 
-    def get_cost_trends(self, days: int = 30) -> List[CostTrend]:
+    def get_cost_trends(self, days: int = 30) -> list[CostTrend]:
         """Get daily cost trends."""
         end_date = date.today()
         start_date = end_date - timedelta(days=days)
@@ -139,8 +138,8 @@ class CostService:
         ]
 
     def get_anomalies(
-        self, acknowledged: Optional[bool] = None
-    ) -> List[CostAnomaly]:
+        self, acknowledged: bool | None = None
+    ) -> list[CostAnomaly]:
         """Get cost anomalies."""
         query = self.db.query(CostAnomaly)
 

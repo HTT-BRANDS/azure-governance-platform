@@ -1,9 +1,8 @@
 """Identity governance database models."""
 
 from datetime import date, datetime
-from typing import Optional
 
-from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped
 
 from app.core.database import Base
@@ -46,7 +45,7 @@ class PrivilegedUser(Base):
     role_scope: Mapped[str] = Column(String(500))  # subscription, resource group, etc.
     is_permanent: Mapped[int] = Column(Integer, default=1)  # vs PIM eligible
     mfa_enabled: Mapped[int] = Column(Integer, default=0)
-    last_sign_in: Mapped[Optional[datetime]] = Column(DateTime)
+    last_sign_in: Mapped[datetime | None] = Column(DateTime)
     synced_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
     def __repr__(self) -> str:

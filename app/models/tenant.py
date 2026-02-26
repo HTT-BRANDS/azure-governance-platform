@@ -1,7 +1,6 @@
 """Tenant and subscription models."""
 
 from datetime import datetime
-from typing import List, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, relationship
@@ -17,9 +16,9 @@ class Tenant(Base):
     id: Mapped[str] = Column(String(36), primary_key=True)
     name: Mapped[str] = Column(String(255), nullable=False)
     tenant_id: Mapped[str] = Column(String(36), unique=True, nullable=False)
-    client_id: Mapped[Optional[str]] = Column(String(36))
-    client_secret_ref: Mapped[Optional[str]] = Column(String(500))  # Key Vault URI
-    description: Mapped[Optional[str]] = Column(Text)
+    client_id: Mapped[str | None] = Column(String(36))
+    client_secret_ref: Mapped[str | None] = Column(String(500))  # Key Vault URI
+    description: Mapped[str | None] = Column(Text)
     is_active: Mapped[bool] = Column(Boolean, default=True)
     use_lighthouse: Mapped[bool] = Column(Boolean, default=False)
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
@@ -28,7 +27,7 @@ class Tenant(Base):
     )
 
     # Relationships
-    subscriptions: Mapped[List["Subscription"]] = relationship(
+    subscriptions: Mapped[list["Subscription"]] = relationship(
         "Subscription", back_populates="tenant", cascade="all, delete-orphan"
     )
 
@@ -48,7 +47,7 @@ class Subscription(Base):
     subscription_id: Mapped[str] = Column(String(36), nullable=False)
     display_name: Mapped[str] = Column(String(255), nullable=False)
     state: Mapped[str] = Column(String(50), default="Enabled")
-    synced_at: Mapped[Optional[datetime]] = Column(DateTime)
+    synced_at: Mapped[datetime | None] = Column(DateTime)
 
     # Relationships
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="subscriptions")

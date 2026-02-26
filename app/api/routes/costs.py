@@ -1,13 +1,34 @@
 """Cost management API routes."""
 
-from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.api.services.cost_service import CostService
+from app.core.database import get_db
 from app.schemas.cost import CostByTenant, CostSummary, CostTrend
+
+
+def get_current_user(request: Request) -> str:
+    """Get the current user from request headers or query params.
+
+    Priority:
+    1. X-User-Id header (for API clients)
+    2. 'user' query parameter (for testing/HTMX)
+    3. 'system' fallback (for MVP/legacy compatibility)
+    """
+    # Check X-User-Id header first
+    user_id = request.headers.get("X-User-Id")
+    if user_id:
+        return user_id
+
+    # Fall back to query param
+    user_id = request.query_params.get("user")
+    if user_id:
+        return user_id
+
+    # Default fallback
+    return "system"
 
 router = APIRouter(prefix="/api/v1/costs", tags=["costs"])
 
@@ -44,7 +65,7 @@ async def get_cost_trends(
 
 @router.get("/anomalies")
 async def get_cost_anomalies(
-    acknowledged: Optional[bool] = None,
+    acknowledged: bool | None = None,
     db: Session = Depends(get_db),
 ):
     """Get cost anomalies."""
@@ -55,10 +76,10 @@ async def get_cost_anomalies(
 @router.post("/anomalies/{anomaly_id}/acknowledge")
 async def acknowledge_anomaly(
     anomaly_id: int,
+    user: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Acknowledge a cost anomaly."""
     service = CostService(db)
-    # TODO: Get user from auth context
-    success = service.acknowledge_anomaly(anomaly_id, user="system")
+    success = service.acknowledge_anomaly(anomaly_id, user=user)
     return {"success": success}

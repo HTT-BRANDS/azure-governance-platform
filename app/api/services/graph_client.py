@@ -1,7 +1,6 @@
 """Microsoft Graph API client for identity operations."""
 
 import logging
-from typing import Dict, List, Optional
 
 import httpx
 from azure.identity import ClientSecretCredential
@@ -20,8 +19,8 @@ class GraphClient:
 
     def __init__(self, tenant_id: str):
         self.tenant_id = tenant_id
-        self._token: Optional[str] = None
-        self._credential: Optional[ClientSecretCredential] = None
+        self._token: str | None = None
+        self._credential: ClientSecretCredential | None = None
 
     def _get_credential(self) -> ClientSecretCredential:
         """Get or create credential."""
@@ -43,8 +42,8 @@ class GraphClient:
         self,
         method: str,
         endpoint: str,
-        params: Optional[Dict] = None,
-    ) -> Dict:
+        params: dict | None = None,
+    ) -> dict:
         """Make authenticated request to Graph API."""
         token = self._get_token()
         headers = {
@@ -64,7 +63,7 @@ class GraphClient:
             response.raise_for_status()
             return response.json()
 
-    async def get_users(self, top: int = 999) -> List[Dict]:
+    async def get_users(self, top: int = 999) -> list[dict]:
         """Get all users in the tenant."""
         users = []
         endpoint = "/users"
@@ -88,7 +87,7 @@ class GraphClient:
 
         return users
 
-    async def get_guest_users(self) -> List[Dict]:
+    async def get_guest_users(self) -> list[dict]:
         """Get all guest users."""
         endpoint = "/users"
         params = {
@@ -99,34 +98,34 @@ class GraphClient:
         data = await self._request("GET", endpoint, params)
         return data.get("value", [])
 
-    async def get_directory_roles(self) -> List[Dict]:
+    async def get_directory_roles(self) -> list[dict]:
         """Get all directory roles with members."""
         endpoint = "/directoryRoles"
         params = {"$expand": "members"}
         data = await self._request("GET", endpoint, params)
         return data.get("value", [])
 
-    async def get_privileged_role_assignments(self) -> List[Dict]:
+    async def get_privileged_role_assignments(self) -> list[dict]:
         """Get privileged role assignments."""
         endpoint = "/roleManagement/directory/roleAssignments"
         params = {"$expand": "principal,roleDefinition"}
         data = await self._request("GET", endpoint, params)
         return data.get("value", [])
 
-    async def get_conditional_access_policies(self) -> List[Dict]:
+    async def get_conditional_access_policies(self) -> list[dict]:
         """Get conditional access policies."""
         endpoint = "/identity/conditionalAccess/policies"
         data = await self._request("GET", endpoint)
         return data.get("value", [])
 
-    async def get_mfa_status(self) -> Dict:
+    async def get_mfa_status(self) -> dict:
         """Get MFA registration status."""
         # This requires Reports.Read.All permission
         endpoint = "/reports/credentialUserRegistrationDetails"
         data = await self._request("GET", endpoint)
         return data
 
-    async def get_service_principals(self) -> List[Dict]:
+    async def get_service_principals(self) -> list[dict]:
         """Get service principals."""
         endpoint = "/servicePrincipals"
         params = {

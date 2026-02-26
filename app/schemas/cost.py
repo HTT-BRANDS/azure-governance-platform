@@ -1,7 +1,6 @@
 """Cost-related Pydantic schemas."""
 
 from datetime import date, datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,10 +14,10 @@ class CostSummary(BaseModel):
     period_end: date
     tenant_count: int
     subscription_count: int
-    cost_change_percent: Optional[float] = Field(
+    cost_change_percent: float | None = Field(
         None, description="Percentage change from previous period"
     )
-    top_services: List["ServiceCost"] = Field(default_factory=list)
+    top_services: list["ServiceCost"] = Field(default_factory=list)
 
 
 class ServiceCost(BaseModel):
@@ -36,7 +35,7 @@ class CostByTenant(BaseModel):
     tenant_name: str
     total_cost: float
     currency: str = "USD"
-    subscription_costs: List["SubscriptionCost"] = Field(default_factory=list)
+    subscription_costs: list["SubscriptionCost"] = Field(default_factory=list)
 
 
 class SubscriptionCost(BaseModel):
@@ -52,7 +51,7 @@ class CostTrend(BaseModel):
 
     date: date
     cost: float
-    forecast: Optional[float] = None
+    forecast: float | None = None
 
 
 class CostAnomaly(BaseModel):
@@ -68,7 +67,7 @@ class CostAnomaly(BaseModel):
     expected_cost: float
     actual_cost: float
     percentage_change: float
-    service_name: Optional[str] = None
+    service_name: str | None = None
     is_acknowledged: bool = False
 
 

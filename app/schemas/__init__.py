@@ -26,30 +26,30 @@ from app.schemas.riverside import (
     BulkUpdateItem,
     BulkUpdateRequest,
     BulkUpdateResponse,
+    # Pagination
+    PaginatedResponse,
+    # Enums
+    RequirementCategory,
+    RequirementPriority,
+    RequirementStatus,
     # Compliance
     RiversideComplianceBase,
     RiversideComplianceResponse,
     RiversideComplianceUpdate,
     # Dashboard/Summary
     RiversideDashboardSummary,
-    RiversideTenantSummary,
     # Device Compliance
     RiversideDeviceComplianceBase,
     RiversideDeviceComplianceResponse,
-    # Enums
-    RequirementCategory,
-    RequirementPriority,
-    RequirementStatus,
     # MFA
     RiversideMFABase,
     RiversideMFAResponse,
-    # Pagination
-    PaginatedResponse,
     # Requirements
     RiversideRequirementBase,
     RiversideRequirementFilter,
     RiversideRequirementResponse,
     RiversideRequirementUpdate,
+    RiversideTenantSummary,
     # Threat Data
     RiversideThreatDataBase,
     RiversideThreatDataResponse,

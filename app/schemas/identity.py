@@ -1,7 +1,6 @@
 """Identity-related Pydantic schemas."""
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +15,7 @@ class IdentitySummary(BaseModel):
     privileged_users: int
     stale_accounts: int
     service_principals: int
-    by_tenant: List["TenantIdentitySummary"] = Field(default_factory=list)
+    by_tenant: list["TenantIdentitySummary"] = Field(default_factory=list)
 
 
 class TenantIdentitySummary(BaseModel):
@@ -44,7 +43,7 @@ class PrivilegedAccount(BaseModel):
     role_scope: str
     is_permanent: bool
     mfa_enabled: bool
-    last_sign_in: Optional[datetime] = None
+    last_sign_in: datetime | None = None
     risk_level: str = "Medium"  # Low, Medium, High
 
 
@@ -55,9 +54,9 @@ class GuestAccount(BaseModel):
     tenant_name: str
     user_principal_name: str
     display_name: str
-    invited_by: Optional[str] = None
-    created_at: Optional[datetime] = None
-    last_sign_in: Optional[datetime] = None
+    invited_by: str | None = None
+    created_at: datetime | None = None
+    last_sign_in: datetime | None = None
     is_stale: bool = False
     days_inactive: int = 0
 
@@ -70,7 +69,7 @@ class StaleAccount(BaseModel):
     user_principal_name: str
     display_name: str
     user_type: str
-    last_sign_in: Optional[datetime] = None
+    last_sign_in: datetime | None = None
     days_inactive: int
     has_licenses: bool
     has_privileged_roles: bool

@@ -2,12 +2,12 @@
 
 import json
 import logging
-from typing import Dict, List, Optional
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app.models.resource import Resource, ResourceTag
-from app.models.tenant import Tenant
+from app.models.resource import Resource
+from app.models.tenant import Subscription, Tenant
 from app.schemas.resource import (
     MissingTags,
     OrphanedResource,
@@ -30,8 +30,8 @@ class ResourceService:
 
     def get_resource_inventory(
         self,
-        tenant_id: Optional[str] = None,
-        resource_type: Optional[str] = None,
+        tenant_id: str | None = None,
+        resource_type: str | None = None,
         limit: int = 500,
     ) -> ResourceInventory:
         """Get resource inventory with aggregations."""
@@ -47,10 +47,16 @@ class ResourceService:
         # Get tenant names for display
         tenants = {t.id: t.name for t in self.db.query(Tenant).all()}
 
+        # Get subscription display names for lookup
+        subscriptions = {
+            s.subscription_id: (s.display_name or s.subscription_id)
+            for s in self.db.query(Subscription).all()
+        }
+
         # Aggregate by type, location, tenant
-        by_type: Dict[str, int] = {}
-        by_location: Dict[str, int] = {}
-        by_tenant: Dict[str, int] = {}
+        by_type: dict[str, int] = {}
+        by_location: dict[str, int] = {}
+        by_tenant: dict[str, int] = {}
         orphaned_count = 0
         orphaned_cost = 0.0
 
@@ -85,7 +91,9 @@ class ResourceService:
                     tenant_id=r.tenant_id,
                     tenant_name=tenant_name,
                     subscription_id=r.subscription_id,
-                    subscription_name=r.subscription_id,  # TODO: lookup
+                    subscription_name=subscriptions.get(
+                        r.subscription_id, r.subscription_id
+                    ),
                     resource_group=r.resource_group,
                     resource_type=r.resource_type,
                     name=r.name,
@@ -109,7 +117,7 @@ class ResourceService:
             resources=items,
         )
 
-    def get_orphaned_resources(self) -> List[OrphanedResource]:
+    def get_orphaned_resources(self) -> list[OrphanedResource]:
         """Get list of orphaned resources."""
         resources = (
             self.db.query(Resource)
@@ -121,22 +129,47 @@ class ResourceService:
 
         tenants = {t.id: t.name for t in self.db.query(Tenant).all()}
 
+        # Get subscription display names for lookup
+        subscriptions = {
+            s.subscription_id: (s.display_name or s.subscription_id)
+            for s in self.db.query(Subscription).all()
+        }
+
+        now = datetime.now(UTC)
+
+        def _get_inactive_days(resource: Resource) -> int:
+            """Calculate days since resource was last synced."""
+            if resource.synced_at is None:
+                return 30  # Default fallback
+            delta = now - resource.synced_at
+            return max(0, delta.days)
+
+        def _get_orphan_reason(resource: Resource) -> str:
+            """Determine orphan reason based on resource state."""
+            if resource.provisioning_state == "Failed":
+                return "provisioning_failed"
+            if resource.synced_at is None:
+                return "orphaned_tag"
+            return "stale"
+
         return [
             OrphanedResource(
                 resource_id=r.id,
                 resource_name=r.name,
                 resource_type=r.resource_type,
                 tenant_name=tenants.get(r.tenant_id, "Unknown"),
-                subscription_name=r.subscription_id,
+                subscription_name=subscriptions.get(
+                    r.subscription_id, r.subscription_id
+                ),
                 estimated_monthly_cost=r.estimated_monthly_cost,
-                days_inactive=30,  # TODO: Calculate from activity data
-                reason="no_activity",
+                days_inactive=_get_inactive_days(r),
+                reason=_get_orphan_reason(r),
             )
             for r in resources
         ]
 
     def get_tagging_compliance(
-        self, required_tags: Optional[List[str]] = None
+        self, required_tags: list[str] | None = None
     ) -> TaggingCompliance:
         """Get tagging compliance summary."""
         if not required_tags:

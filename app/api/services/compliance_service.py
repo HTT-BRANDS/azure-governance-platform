@@ -1,8 +1,6 @@
 """Compliance management service."""
 
 import logging
-from datetime import datetime, timedelta
-from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -21,8 +19,59 @@ logger = logging.getLogger(__name__)
 class ComplianceService:
     """Service for compliance monitoring operations."""
 
+    # High severity keywords for policy classification
+    _HIGH_SEVERITY_KEYWORDS = [
+        "encryption", "private", "public", "tls", "ssl",
+        "password", "secret", "key", "auth", "mfa", "firewall",
+        "network", "access", "permission", "role", "identity"
+    ]
+
+    # Low severity keywords for policy classification
+    _LOW_SEVERITY_KEYWORDS = [
+        "tag", "naming", "diagnostic", "log", "monitor",
+        "label", "category", "cost", "billing", "audit"
+    ]
+
     def __init__(self, db: Session):
         self.db = db
+
+    def _map_severity(
+        self,
+        policy_name: str | None,
+        policy_category: str | None
+    ) -> str:
+        """
+        Map policy severity based on name and category keywords.
+
+        This is a pragmatic solution until we store full Azure Policy metadata.
+        Azure Policy severity can be: "High", "Medium", "Low", "Informational"
+        or numeric ("1", "2", "3", "4").
+
+        Args:
+            policy_name: The name of the policy
+            policy_category: The category of the policy
+
+        Returns:
+            Severity string: "High", "Medium", or "Low"
+        """
+        text_to_check = ""
+        if policy_name:
+            text_to_check += policy_name.lower() + " "
+        if policy_category:
+            text_to_check += policy_category.lower()
+
+        # Check for high severity keywords
+        for keyword in self._HIGH_SEVERITY_KEYWORDS:
+            if keyword in text_to_check:
+                return "High"
+
+        # Check for low severity keywords
+        for keyword in self._LOW_SEVERITY_KEYWORDS:
+            if keyword in text_to_check:
+                return "Low"
+
+        # Default to Medium if no keywords match
+        return "Medium"
 
     def get_compliance_summary(self) -> ComplianceSummary:
         """Get aggregated compliance summary across all tenants."""
@@ -78,7 +127,7 @@ class ComplianceService:
             top_violations=top_violations,
         )
 
-    def _get_top_violations(self, limit: int = 10) -> List[PolicyViolation]:
+    def _get_top_violations(self, limit: int = 10) -> list[PolicyViolation]:
         """Get top policy violations by count."""
         # Aggregate non-compliant policies
         policies = (
@@ -107,14 +156,14 @@ class ComplianceService:
                 policy_category=v["policy_category"],
                 violation_count=v["violation_count"],
                 affected_tenants=len(v["tenants"]),
-                severity="Medium",  # TODO: Map from policy metadata
+                severity=self._map_severity(v["policy_name"], v["policy_category"]),
             )
             for v in violation_map.values()
         ]
 
         return sorted(violations, key=lambda x: x.violation_count, reverse=True)[:limit]
 
-    def get_scores_by_tenant(self, tenant_id: Optional[str] = None) -> List[ComplianceScore]:
+    def get_scores_by_tenant(self, tenant_id: str | None = None) -> list[ComplianceScore]:
         """Get compliance scores, optionally filtered by tenant."""
         query = self.db.query(Tenant).filter(Tenant.is_active == True)
 
@@ -150,8 +199,8 @@ class ComplianceService:
         return scores
 
     def get_non_compliant_policies(
-        self, tenant_id: Optional[str] = None
-    ) -> List[PolicyStatus]:
+        self, tenant_id: str | None = None
+    ) -> list[PolicyStatus]:
         """Get non-compliant policy details."""
         query = self.db.query(PolicyState).filter(
             PolicyState.compliance_state == "NonCompliant"

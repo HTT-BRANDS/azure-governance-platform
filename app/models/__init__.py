@@ -1,11 +1,9 @@
 """Database models module."""
 
-from app.models.tenant import Tenant, Subscription
-from app.models.cost import CostSnapshot, CostAnomaly
 from app.models.compliance import ComplianceSnapshot, PolicyState
-from app.models.resource import Resource, ResourceTag
+from app.models.cost import CostAnomaly, CostSnapshot
 from app.models.identity import IdentitySnapshot, PrivilegedUser
-from app.models.sync import SyncJob
+from app.models.resource import Resource, ResourceTag
 from app.models.riverside import (
     RequirementCategory,
     RequirementPriority,
@@ -16,6 +14,8 @@ from app.models.riverside import (
     RiversideRequirement,
     RiversideThreatData,
 )
+from app.models.sync import SyncJob
+from app.models.tenant import Subscription, Tenant
 
 __all__ = [
     "Tenant",

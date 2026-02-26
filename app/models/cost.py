@@ -1,7 +1,6 @@
 """Cost-related database models."""
 
 from datetime import date, datetime
-from typing import Optional
 
 from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped
@@ -20,9 +19,9 @@ class CostSnapshot(Base):
     date: Mapped[date] = Column(Date, nullable=False)
     total_cost: Mapped[float] = Column(Float, nullable=False)
     currency: Mapped[str] = Column(String(10), default="USD")
-    resource_group: Mapped[Optional[str]] = Column(String(255))
-    service_name: Mapped[Optional[str]] = Column(String(255))
-    meter_category: Mapped[Optional[str]] = Column(String(255))
+    resource_group: Mapped[str | None] = Column(String(255))
+    service_name: Mapped[str | None] = Column(String(255))
+    meter_category: Mapped[str | None] = Column(String(255))
     synced_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
     def __repr__(self) -> str:
@@ -43,11 +42,11 @@ class CostAnomaly(Base):
     expected_cost: Mapped[float] = Column(Float)
     actual_cost: Mapped[float] = Column(Float)
     percentage_change: Mapped[float] = Column(Float)
-    resource_group: Mapped[Optional[str]] = Column(String(255))
-    service_name: Mapped[Optional[str]] = Column(String(255))
+    resource_group: Mapped[str | None] = Column(String(255))
+    service_name: Mapped[str | None] = Column(String(255))
     is_acknowledged: Mapped[bool] = Column(Integer, default=False)  # SQLite bool
-    acknowledged_by: Mapped[Optional[str]] = Column(String(255))
-    acknowledged_at: Mapped[Optional[datetime]] = Column(DateTime)
+    acknowledged_by: Mapped[str | None] = Column(String(255))
+    acknowledged_at: Mapped[datetime | None] = Column(DateTime)
 
     def __repr__(self) -> str:
         return f"<CostAnomaly {self.anomaly_type}: {self.percentage_change:.1f}%>"

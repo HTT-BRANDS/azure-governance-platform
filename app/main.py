@@ -7,14 +7,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
-from app.core.config import get_settings
-from app.core.database import init_db
-from app.core.scheduler import init_scheduler
 from app.api.routes import (
-    costs_router,
     compliance_router,
+    costs_router,
     dashboard_router,
     identity_router,
     preflight_router,
@@ -22,6 +18,9 @@ from app.api.routes import (
     sync_router,
     tenants_router,
 )
+from app.core.config import get_settings
+from app.core.database import init_db
+from app.core.scheduler import init_scheduler
 
 # Configure logging
 logging.basicConfig(

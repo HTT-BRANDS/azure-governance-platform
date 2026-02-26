@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block nav_preflight %}bg-wm-blue-130{% endblock %}
+
+{% block title %}Preflight Checks - Azure Governance Platform{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-wm-gray-160">Preflight Checks</h1>
+            <p class="text-wm-gray-100">Verify Azure tenant access, GitHub access, and system requirements</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button 
+                hx-post="/api/v1/preflight/run" 
+                hx-swap="none"
+                class="bg-wm-blue-100 hover:bg-wm-blue-110 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+                <span class="htmx-indicator">Running...</span>
+                <span>Run All Checks</span>
+            </button>
+            <button 
+                hx-post="/api/v1/preflight/clear-cache" 
+                hx-swap="none"
+                class="bg-wm-gray-10 hover:bg-wm-gray-50 text-wm-gray-160 px-4 py-2 rounded-lg transition-colors"
+            >
+                Clear Cache
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- Overall Status -->
+        <div id="overall-status" class="bg-white rounded-lg shadow p-4 border-l-4 {% if report and report.is_success %}border-wm-green-100{% else %}border-wm-red-100{% endif %}">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-wm-gray-100">Status</p>
+                    <p class="text-xl font-bold text-wm-gray-160">
+                        {% if report %}
+                            {% if report.is_success %}
+                                <span class="text-wm-green-100">✅ Passed</span>
+                            {% else %}
+                                <span class="text-wm-red-100">❌ Failed</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-wm-gray-100">Not Run</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passed -->
+        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-wm-green-100">
+            <p class="text-sm font-medium text-wm-gray-100">Passed</p>
+            <p class="text-2xl font-bold text-wm-green-100">{{ report.passed_count if report else 0 }}</p>
+        </div>
+
+        <!-- Warnings -->
+        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-wm-spark-100">
+            <p class="text-sm font-medium text-wm-gray-100">Warnings</p>
+            <p class="text-2xl font-bold text-wm-spark-140">{{ report.warning_count if report else 0 }}</p>
+        </div>
+
+        <!-- Failed -->
+        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-wm-red-100">
+            <p class="text-sm font-medium text-wm-gray-100">Failed</p>
+            <p class="text-2xl font-bold text-wm-red-100">{{ report.failed_count if report else 0 }}</p>
+        </div>
+
+        <!-- Duration -->
+        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-wm-blue-100">
+            <p class="text-sm font-medium text-wm-gray-100">Duration</p>
+            <p class="text-2xl font-bold text-wm-gray-160">
+                {% if report %}
+                    {{ "%.0f"|format(report.total_duration_ms) }}ms
+                {% else %}
+                    --
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Check Categories -->
+    {% if category_summaries %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for summary in category_summaries %}
+        <div class="bg-white rounded-lg shadow p-4 {% if summary.overall_status == 'pass' %}border-l-4 border-wm-green-100{% elif summary.overall_status == 'warning' %}border-l-4 border-wm-spark-100{% elif summary.overall_status == 'fail' %}border-l-4 border-wm-red-100{% else %}border-l-4 border-wm-gray-50{% endif %}">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-semibold text-wm-gray-160">{{ summary.display_name }}</h3>
+                <span class="text-sm text-wm-gray-100">{{ summary.checks_passed + summary.checks_failed + summary.checks_warning + summary.checks_skipped }} checks</span>
+            </div>
+            <div class="flex items-center space-x-4 text-sm">
+                <span class="text-wm-green-100">✅ {{ summary.checks_passed }}</span>
+                <span class="text-wm-spark-140">⚠️ {{ summary.checks_warning }}</span>
+                <span class="text-wm-red-100">❌ {{ summary.checks_failed }}</span>
+                <span class="text-wm-gray-100">⏭️ {{ summary.checks_skipped }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Detailed Results -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-wm-gray-50">
+            <h3 class="text-lg font-semibold text-wm-gray-160">Check Results</h3>
+        </div>
+        {% if results %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-wm-gray-50">
+                <thead class="bg-wm-gray-10">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-wm-gray-100 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-wm-gray-100 uppercase">Check</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-wm-gray-100 uppercase">Category</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-wm-gray-100 uppercase">Message</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-wm-gray-100 uppercase">Duration</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-wm-gray-100 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-wm-gray-50">
+                    {% for result in results %}
+                    <tr class="hover:bg-wm-gray-5" hx-vals='{{ {"check_id": result.check_id}|tojson }}'>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if result.status == 'pass' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-wm-green-10 text-wm-green-100">
+                                ✅ Pass
+                            </span>
+                            {% elif result.status == 'warning' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-wm-spark-10 text-wm-spark-140">
+                                ⚠️ Warning
+                            </span>
+                            {% elif result.status == 'fail' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-wm-red-10 text-wm-red-100">
+                                ❌ Failed
+                            </span>
+                            {% elif result.status == 'skipped' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-wm-gray-10 text-wm-gray-100">
+                                ⏭️ Skipped
+                            </span>
+                            {% elif result.status == 'running' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-wm-blue-10 text-wm-blue-100">
+                                🔄 Running
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-wm-gray-160">
+                            {{ result.name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-wm-gray-100">
+                            <span class="px-2 py-1 text-xs rounded bg-wm-gray-10">
+                                {{ result.category }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-wm-gray-160 max-w-md truncate">
+                            {{ result.message }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-wm-gray-100 text-right">
+                            {{ "%.2f"|format(result.duration_ms) }}ms
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            {% if result.recommendations and result.status == 'fail' %}
+                            <button 
+                                class="text-wm-blue-100 hover:text-wm-blue-130"
+                                onclick="toggleRecommendations('{{ result.check_id }}')"
+                            >
+                                View Fixes
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if result.recommendations and result.status == 'fail' %}
+                    <tr id="rec-{{ result.check_id }}" class="hidden">
+                        <td colspan="6" class="px-6 py-4 bg-wm-red-5">
+                            <div class="text-sm">
+                                <strong class="text-wm-red-100">Recommendations:</strong>
+                                <ul class="mt-2 ml-4 list-disc">
+                                    {% for rec in result.recommendations %}
+                                    <li class="text-wm-gray-160">{{ rec }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="px-6 py-8 text-center">
+            <div class="text-wm-gray-100 mb-4">
+                <svg class="w-12 h-12 mx-auto mb-4 text-wm-gray-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                </svg>
+                <p>No preflight checks have been run yet.</p>
+            </div>
+            <button 
+                hx-post="/api/v1/preflight/run" 
+                hx-swap="none"
+                class="bg-wm-blue-100 hover:bg-wm-blue-110 text-white px-6 py-2 rounded-lg transition-colors"
+            >
+                Run Preflight Checks
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tenant Summaries -->
+    {% if tenant_summaries %}
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-wm-gray-50">
+            <h3 class="text-lg font-semibold text-wm-gray-160">Tenant-Specific Results</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-wm-gray-50">
+                <thead class="bg-wm-gray-10">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-wm-gray-100 uppercase">Tenant</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-wm-gray-100 uppercase">Status</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-wm-gray-100 uppercase">Passed</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-wm-gray-100 uppercase">Warnings</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-wm-gray-100 uppercase">Failed</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-wm-gray-50">
+                    {% for summary in tenant_summaries %}
+                    <tr class="hover:bg-wm-gray-5">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-wm-gray-160">{{ summary.tenant_name }}</div>
+                            <div class="text-xs text-wm-gray-100">{{ summary.tenant_id }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if summary.overall_status == 'pass' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-wm-green-10 text-wm-green-100">
+                                ✅ Passed
+                            </span>
+                            {% elif summary.overall_status == 'warning' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-wm-spark-10 text-wm-spark-140">
+                                ⚠️ Warning
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-wm-red-10 text-wm-red-100">
+                                ❌ Failed
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center text-sm text-wm-gray-160">
+                            <span class="text-wm-green-100 font-medium">{{ summary.checks_passed }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center text-sm text-wm-gray-160">
+                            <span class="text-wm-spark-140 font-medium">{{ summary.checks_warning }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center text-sm text-wm-gray-160">
+                            <span class="text-wm-red-100 font-medium">{{ summary.checks_failed }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Azure Checks -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h4 class="font-semibold text-wm-gray-160 mb-4">Azure Checks</h4>
+            <div class="space-y-2">
+                <button 
+                    hx-post="/api/v1/preflight/run"
+                    hx-vals='{{ {"categories": ["azure_auth", "azure_subscriptions", "azure_cost_management", "azure_policy", "azure_resources", "azure_graph", "azure_security"]}|tojson }}'
+                    hx-swap="none"
+                    class="w-full bg-wm-blue-10 hover:bg-wm-blue-5 text-wm-blue-100 px-4 py-2 rounded-lg transition-colors text-left"
+                >
+                    Run Azure Checks
+                </button>
+            </div>
+        </div>
+
+        <!-- GitHub Checks -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h4 class="font-semibold text-wm-gray-160 mb-4">GitHub Checks</h4>
+            <button 
+                hx-get="/api/v1/preflight/github"
+                hx-swap="none"
+                class="w-full bg-wm-gray-10 hover:bg-wm-gray-5 text-wm-gray-160 px-4 py-2 rounded-lg transition-colors"
+            >
+                Run GitHub Checks
+            </button>
+        </div>
+
+        <!-- Report Formats -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h4 class="font-semibold text-wm-gray-160 mb-4">Export Reports</h4>
+            <div class="space-y-2">
+                <a 
+                    href="/api/v1/preflight/report/json"
+                    class="block w-full bg-wm-gray-10 hover:bg-wm-gray-5 text-wm-gray-160 px-4 py-2 rounded-lg transition-colors text-center"
+                >
+                    Download JSON
+                </a>
+                <a 
+                    href="/api/v1/preflight/report/markdown"
+                    class="block w-full bg-wm-gray-10 hover:bg-wm-gray-5 text-wm-gray-160 px-4 py-2 rounded-lg transition-colors text-center"
+                >
+                    Download Markdown
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleRecommendations(checkId) {
+    const row = document.getElementById('rec-' + checkId);
+    if (row) {
+        row.classList.toggle('hidden');
+    }
+}
+
+// Auto-refresh status every 30 seconds
+setInterval(function() {
+    htmx.trigger('#overall-status', 'refresh');
+}, 30000);
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Handle HTMX responses
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'overall-status') {
+            // Refresh status
+        }
+    });
+</script>
+{% endblock %}

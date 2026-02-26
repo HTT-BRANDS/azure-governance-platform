@@ -1,12 +1,11 @@
 """Compliance monitoring API routes."""
 
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.api.services.compliance_service import ComplianceService
+from app.core.database import get_db
 from app.schemas.compliance import ComplianceScore, ComplianceSummary, PolicyStatus
 
 router = APIRouter(prefix="/api/v1/compliance", tags=["compliance"])
@@ -21,7 +20,7 @@ async def get_compliance_summary(db: Session = Depends(get_db)):
 
 @router.get("/scores", response_model=list[ComplianceScore])
 async def get_compliance_scores(
-    tenant_id: Optional[str] = Query(default=None),
+    tenant_id: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     """Get compliance scores, optionally filtered by tenant."""
@@ -31,7 +30,7 @@ async def get_compliance_scores(
 
 @router.get("/non-compliant", response_model=list[PolicyStatus])
 async def get_non_compliant_policies(
-    tenant_id: Optional[str] = Query(default=None),
+    tenant_id: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     """Get non-compliant policy details."""

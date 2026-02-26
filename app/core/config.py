@@ -5,7 +5,6 @@ variable management with sensible defaults.
 """
 
 from functools import lru_cache
-from typing import List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,16 +34,16 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/governance.db"
 
     # Azure Authentication
-    azure_tenant_id: Optional[str] = None
-    azure_client_id: Optional[str] = None
-    azure_client_secret: Optional[str] = None
+    azure_tenant_id: str | None = None
+    azure_client_id: str | None = None
+    azure_client_secret: str | None = None
 
     # Key Vault (for multi-tenant credentials)
-    key_vault_url: Optional[str] = None
+    key_vault_url: str | None = None
 
     # Multi-tenant configuration
     # Comma-separated list of tenant IDs to manage
-    managed_tenant_ids: List[str] = Field(default_factory=list)
+    managed_tenant_ids: list[str] = Field(default_factory=list)
 
     # Sync Configuration
     cost_sync_interval_hours: int = 24
@@ -53,12 +52,12 @@ class Settings(BaseSettings):
     identity_sync_interval_hours: int = 24
 
     # Alerting
-    teams_webhook_url: Optional[str] = None
+    teams_webhook_url: str | None = None
     cost_anomaly_threshold_percent: float = 20.0
     compliance_alert_threshold_percent: float = 5.0
 
     # CORS (for development)
-    cors_origins: List[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
     @property
     def is_configured(self) -> bool:
@@ -70,7 +69,7 @@ class Settings(BaseSettings):
         ])
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
