@@ -398,9 +398,7 @@ def _calculate_device_percentage(config: dict[str, Any]) -> float:
     return round((compliant / total * 100), 2) if total > 0 else 0.0
 
 
-def _get_requirement_status(
-    tenant_name: str, req_index: int, total_reqs: int
-) -> RequirementStatus:
+def _get_requirement_status(tenant_name: str, req_index: int, total_reqs: int) -> RequirementStatus:
     """Determine requirement status based on tenant maturity and index."""
     maturity = TENANT_COMPLIANCE_CONFIG[tenant_name]["overall_maturity_score"]
     completed = TENANT_COMPLIANCE_CONFIG[tenant_name]["requirements_completed"]
@@ -674,15 +672,17 @@ def clear_riverside_test_data(db: Session) -> None:
         >>> # All Riverside data is now removed
     """
     # Delete in reverse order of dependencies
-    db.query(RiversideThreatData).delete()
-    db.query(RiversideDeviceCompliance).delete()
-    db.query(RiversideRequirement).delete()
-    db.query(RiversideMFA).delete()
-    db.query(RiversideCompliance).delete()
+    db.query(RiversideThreatData).delete(synchronize_session=False)
+    db.query(RiversideDeviceCompliance).delete(synchronize_session=False)
+    db.query(RiversideRequirement).delete(synchronize_session=False)
+    db.query(RiversideMFA).delete(synchronize_session=False)
+    db.query(RiversideCompliance).delete(synchronize_session=False)
 
     # Delete tenants last
     tenant_ids = [t["id"] for t in RIVERSIDE_TENANTS]
-    db.query(Tenant).filter(Tenant.id.in_(tenant_ids)).delete()
+    db.query(Tenant).filter(Tenant.id.in_(tenant_ids)).delete(
+        synchronize_session=False
+    )
 
     db.commit()
 
@@ -706,14 +706,26 @@ def get_fixture_statistics() -> dict[str, Any]:
         "requirements": {
             "count": len(RIVERSIDE_REQUIREMENTS),
             "by_category": {
-                "IAM": len([r for r in RIVERSIDE_REQUIREMENTS if r["category"] == RequirementCategory.IAM]),
-                "GS": len([r for r in RIVERSIDE_REQUIREMENTS if r["category"] == RequirementCategory.GS]),
-                "DS": len([r for r in RIVERSIDE_REQUIREMENTS if r["category"] == RequirementCategory.DS]),
+                "IAM": len(
+                    [r for r in RIVERSIDE_REQUIREMENTS if r["category"] == RequirementCategory.IAM]
+                ),
+                "GS": len(
+                    [r for r in RIVERSIDE_REQUIREMENTS if r["category"] == RequirementCategory.GS]
+                ),
+                "DS": len(
+                    [r for r in RIVERSIDE_REQUIREMENTS if r["category"] == RequirementCategory.DS]
+                ),
             },
             "by_priority": {
-                "P0": len([r for r in RIVERSIDE_REQUIREMENTS if r["priority"] == RequirementPriority.P0]),
-                "P1": len([r for r in RIVERSIDE_REQUIREMENTS if r["priority"] == RequirementPriority.P1]),
-                "P2": len([r for r in RIVERSIDE_REQUIREMENTS if r["priority"] == RequirementPriority.P2]),
+                "P0": len(
+                    [r for r in RIVERSIDE_REQUIREMENTS if r["priority"] == RequirementPriority.P0]
+                ),
+                "P1": len(
+                    [r for r in RIVERSIDE_REQUIREMENTS if r["priority"] == RequirementPriority.P1]
+                ),
+                "P2": len(
+                    [r for r in RIVERSIDE_REQUIREMENTS if r["priority"] == RequirementPriority.P2]
+                ),
             },
         },
         "total_records_per_tenant": {
