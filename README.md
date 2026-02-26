@@ -8,6 +8,7 @@ A lightweight, cost-effective platform for managing Azure/M365 governance across
 - **Compliance Monitoring**: Policy compliance tracking, secure score aggregation, drift detection
 - **Resource Management**: Cross-tenant inventory, tagging compliance, orphaned resource detection
 - **Identity Governance**: Privileged access reporting, guest user management, MFA compliance
+- **Riverside Compliance Tracking**: Specialized compliance tracking for Riverside Company deadline (July 8, 2026)
 
 ## Quick Start
 
@@ -68,13 +69,21 @@ azure-governance-platform/
 ├── app/
 │   ├── api/
 │   │   ├── routes/          # API endpoints
+│   │   │   ├── riverside.py # Riverside compliance endpoints
 │   │   └── services/        # Business logic
+│   │       └── riverside_svc.py
 │   ├── core/                # Config, DB, scheduler
 │   ├── models/              # SQLAlchemy models
+│   │   └── riverside.py     # Riverside models
 │   ├── schemas/             # Pydantic schemas
 │   ├── templates/           # Jinja2 templates
+│   │   └── pages/
+│   │       └── riverside.py # Riverside dashboard
 │   └── static/              # CSS, JS assets
 ├── docs/                    # Documentation
+│   ├── RIVERSIDE_INTEGRATION.md
+│   ├── RIVERSIDE_EXECUTIVE_SUMMARY.md
+│   └── RIVERSIDE_API_GUIDE.md
 ├── tests/                   # Test suite
 ├── scripts/                 # Utility scripts
 └── data/                    # SQLite database (gitignored)
@@ -90,6 +99,16 @@ azure-governance-platform/
 | `DATABASE_URL` | SQLite connection string | `sqlite:///./data/governance.db` |
 | `COST_SYNC_INTERVAL_HOURS` | Cost sync frequency | `24` |
 | `COMPLIANCE_SYNC_INTERVAL_HOURS` | Compliance sync frequency | `4` |
+
+### Riverside-Specific Configuration
+
+| Variable | Description | Default |
+|----------|-------------|--------|
+| `RIVERSIDE_COMPLIANCE_ENABLED` | Enable Riverside compliance features | `false` |
+| `RIVERSIDE_DEADLINE_DATE` | Compliance deadline | `2026-07-08` |
+| `RIVERSIDE_MFA_TARGET` | Target MFA coverage percentage | `100` |
+| `RIVERSIDE_MATURITY_TARGET` | Target maturity score | `3.0` |
+| `RIVERSIDE_SYNC_INTERVAL_HOURS` | Riverside data sync frequency | `4` |
 
 See `.env.example` for all configuration options.
 
@@ -138,14 +157,94 @@ docker run -p 8000:8000 --env-file .env governance-platform
 | Key Vault (optional) | ~$1 |
 | **Total MVP** | **~$15-20** |
 
+## Riverside Compliance Tracking
+
+### Executive Overview
+
+The Azure Governance Platform includes specialized compliance tracking for Riverside Company requirements.
+
+#### Current State (as of January 2026)
+
+| Metric | Current | Target | Deadline |
+|--------|---------|--------|----------|
+| **Overall Maturity** | 2.4/5.0 | 3.0/5.0 | July 8, 2026 |
+| **Compliance Deadline** | ~160 days | - | July 8, 2026 |
+| **Financial Risk** | $4M | $0 | July 8, 2026 |
+| **MFA Coverage** | 30% (634/1992) | 100% | 30 days |
+| **Threat Beta Score** | 1.04 | <1.0 | Ongoing |
+
+#### Tenants
+
+| Tenant | Code | Type | MFA Coverage |
+|--------|------|------|--------------|
+| HTT | HTT | Riverside | 30% |
+| BCC | BCC | Riverside | 30% |
+| FN | FN | Riverside | 30% |
+| TLL | TLL | Riverside | 30% |
+| DCE | DCE | Standalone | N/A |
+
+### Key Metrics Tracked
+
+- **MFA Enrollment**: Per-tenant MFA coverage tracking with admin account focus
+- **Domain Maturity Scores**: Identity & Access Management (IAM), Governance & Security (GS), Data Security (DS)
+- **Requirement Compliance Status**: 72+ requirements across 8 categories
+- **External Threat Monitoring**: Threat Beta score, vulnerability count
+- **Timeline to Deadline**: Countdown with milestone tracking
+
+### Quick Start for Compliance
+
+```bash
+# View compliance dashboard
+http://localhost:8000/riverside
+
+# Check MFA status
+http://localhost:8000/api/v1/riverside/mfa-status
+
+# View executive summary
+http://localhost:8000/api/v1/riverside/summary
+
+# View critical gaps
+http://localhost:8000/api/v1/riverside/gaps
+
+# View requirements
+http://localhost:8000/api/v1/riverside/requirements
+
+# View maturity scores
+http://localhost:8000/api/v1/riverside/maturity-scores
+```
+
+### Critical Gaps Dashboard
+
+| Requirement | Status | Current | Target | Deadline | Risk |
+|-------------|--------|---------|--------|----------|------|
+| IAM-12: Universal MFA | In Progress | 30% | 100% | Immediate | Critical ($4M) |
+| GS-10: Dedicated Security Team | Not Started | 0 | 1 | 30 days | Critical |
+| IAM-03: Privileged Access Management | Not Started | 0 | 100% | 60 days | High |
+| IAM-08: Conditional Access Policy | In Progress | 40% | 100% | 60 days | High |
+| DS-02: Data Classification | Not Started | 0 | Complete | 90 days | Medium |
+| GS-05: Security Awareness Training | In Progress | 25% | 100% | 90 days | Medium |
+| IAM-15: Service Account Management | Not Started | 0 | 100% | 120 days | Medium |
+| DS-05: Encryption at Rest | Not Started | 0 | 100% | 120 days | Medium |
+
+### Documentation
+
+For comprehensive Riverside compliance documentation, see:
+
+- [RIVERSIDE_INTEGRATION.md](./docs/RIVERSIDE_INTEGRATION.md) - Complete integration guide
+- [RIVERSIDE_EXECUTIVE_SUMMARY.md](./docs/RIVERSIDE_EXECUTIVE_SUMMARY.md) - One-page executive summary
+- [RIVERSIDE_API_GUIDE.md](./docs/RIVERSIDE_API_GUIDE.md) - API reference
+
 ## Roadmap
 
 - [x] MVP: Cost, Compliance, Resources, Identity dashboards
+- [x] Riverside Compliance Dashboard
 - [ ] Automated remediation suggestions
 - [ ] Custom compliance frameworks
 - [ ] Power BI embedding
 - [ ] Teams bot integration
 - [ ] Access review workflows
+- [ ] Riverside Phase 2: Automated Azure sync
+- [ ] Riverside Phase 3: External threat integration
 
 ## Contributing
 

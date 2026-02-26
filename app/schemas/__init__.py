@@ -22,35 +22,35 @@ from app.schemas.resource import (
     TaggingCompliance,
 )
 from app.schemas.riverside import (
-    # Enums
-    RequirementCategory,
-    RequirementPriority,
-    RequirementStatus,
-    # Riverside Compliance
+    # Bulk Operations
+    BulkUpdateItem,
+    BulkUpdateRequest,
+    BulkUpdateResponse,
+    # Compliance
     RiversideComplianceBase,
     RiversideComplianceResponse,
     RiversideComplianceUpdate,
     # Dashboard/Summary
     RiversideDashboardSummary,
     RiversideTenantSummary,
-    # Riverside Device Compliance
+    # Device Compliance
     RiversideDeviceComplianceBase,
     RiversideDeviceComplianceResponse,
-    # Riverside MFA
+    # Enums
+    RequirementCategory,
+    RequirementPriority,
+    RequirementStatus,
+    # MFA
     RiversideMFABase,
     RiversideMFAResponse,
-    # Pagination and Bulk Operations
+    # Pagination
     PaginatedResponse,
-    # Riverside Requirements
+    # Requirements
     RiversideRequirementBase,
     RiversideRequirementFilter,
     RiversideRequirementResponse,
     RiversideRequirementUpdate,
-    # Bulk Operations
-    BulkUpdateItem,
-    BulkUpdateRequest,
-    BulkUpdateResponse,
-    # Riverside Threat Data
+    # Threat Data
     RiversideThreatDataBase,
     RiversideThreatDataResponse,
 )

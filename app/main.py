@@ -17,6 +17,7 @@ from app.api.routes import (
     compliance_router,
     dashboard_router,
     identity_router,
+    preflight_router,
     resources_router,
     sync_router,
     tenants_router,
@@ -83,6 +84,7 @@ app.include_router(resources_router)
 app.include_router(identity_router)
 app.include_router(tenants_router)
 app.include_router(sync_router)
+app.include_router(preflight_router)
 
 
 @app.get("/health")

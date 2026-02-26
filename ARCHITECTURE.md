@@ -83,28 +83,33 @@ app/
 │   │   ├── costs.py        # Cost endpoints
 │   │   ├── compliance.py   # Compliance endpoints
 │   │   ├── resources.py    # Resource endpoints
-│   │   └── identity.py     # Identity endpoints
+│   │   ├── identity.py     # Identity endpoints
+│   │   └── riverside.py    # Riverside compliance endpoints
 │   └── services/
 │       ├── azure_client.py # Azure SDK wrapper
 │       ├── graph_client.py # MS Graph wrapper
 │       ├── cost_service.py # Cost logic
 │       ├── compliance_svc.py# Compliance logic
 │       ├── resource_svc.py # Resource logic
-│       └── identity_svc.py # Identity logic
+│       ├── identity_svc.py # Identity logic
+│       └── riverside_svc.py# Riverside compliance logic
 ├── models/
 │   ├── tenant.py           # Tenant model
 │   ├── cost.py             # Cost models
 │   ├── compliance.py       # Compliance models
 │   ├── resource.py         # Resource models
-│   └── identity.py         # Identity models
+│   ├── identity.py         # Identity models
+│   └── riverside.py        # Riverside compliance models
 ├── schemas/
 │   ├── cost.py             # Cost Pydantic schemas
 │   ├── compliance.py       # Compliance schemas
 │   ├── resource.py         # Resource schemas
-│   └── identity.py         # Identity schemas
+│   ├── identity.py         # Identity schemas
+│   └── riverside.py        # Riverside schemas
 └── templates/
     ├── base.html           # Base template
     ├── components/         # Reusable HTMX partials
+    │   └── riverside/      # Riverside-specific components
     └── pages/              # Full page templates
 ```
 
@@ -247,7 +252,7 @@ sync_jobs (
     ┌──────────────────────┼──────────────────────┐
     ▼                      ▼                      ▼
 ┌────────┐           ┌────────┐            ┌────────┐
-│Tenant B│           │Tenant C│            │Tenant D│
+│Tenant B│           │Tenant C│            │Tenant D|
 │(Reader)│           │(Reader)│            │(Reader)│
 └────────┘           └────────┘            └────────┘
 ```
@@ -434,3 +439,352 @@ GET /health          # Basic health check
 GET /health/detailed # DB + API connectivity
 GET /metrics         # Prometheus-compatible
 ```
+
+---
+
+## Riverside Compliance Architecture
+
+This section documents the integration of Riverside compliance tracking into the Azure Governance Platform. Riverside Company is a critical compliance initiative with a deadline of July 8, 2026, requiring achievement of 3.0/5.0 maturity score across all managed domains.
+
+### A. Riverside Data Model Extensions
+
+The following database tables extend the core schema to support Riverside compliance tracking:
+
+```sql
+-- Riverside compliance tracking
+riverside_compliance (
+    id INTEGER PRIMARY KEY,
+    tenant_id TEXT FK,
+    requirement_id TEXT,
+    requirement_name TEXT,
+    category TEXT,              -- IAM, GS, DS, etc.
+    status TEXT,                -- Not Started, In Progress, Compliant, Exempt
+    priority TEXT,              -- P0, P1, P2
+    owner TEXT,
+    due_date DATE,
+    completed_date DATE,
+    evidence_type TEXT,         -- Screenshot, Document, API Verification
+    evidence_link TEXT,
+    notes TEXT,
+    last_updated TIMESTAMP
+)
+
+-- MFA compliance per tenant
+mfa_compliance (
+    id INTEGER PRIMARY KEY,
+    tenant_id TEXT FK,
+    snapshot_date DATE,
+    total_users INTEGER,
+    mfa_enabled_users INTEGER,
+    mfa_disabled_users INTEGER,
+    admin_accounts_total INTEGER,
+    admin_accounts_mfa_enabled INTEGER,
+    synced_at TIMESTAMP
+)
+
+-- Device compliance (MDM/EDR)
+device_compliance (
+    id INTEGER PRIMARY KEY,
+    tenant_id TEXT FK,
+    snapshot_date DATE,
+    total_devices INTEGER,
+    compliant_devices INTEGER,
+    non_compliant_devices INTEGER,
+    pending_devices INTEGER,
+    mdm_enrolled INTEGER,
+    edr_installed INTEGER,
+    encrypted_devices INTEGER,
+    synced_at TIMESTAMP
+)
+
+-- Domain maturity scores
+maturity_scores (
+    id INTEGER PRIMARY KEY,
+    tenant_id TEXT FK,
+    domain TEXT,                -- IAM, GS, DS, etc.
+    score REAL,                 -- 0.0 to 5.0
+    assessment_date DATE,
+    assessor TEXT,
+    notes TEXT,
+    synced_at TIMESTAMP
+)
+
+-- External threat data (Cybeta)
+external_threats (
+    id INTEGER PRIMARY KEY,
+    tenant_id TEXT FK,
+    threat_date DATE,
+    threat_beta_score REAL,
+    vulnerability_count INTEGER,
+    malicious_domains INTEGER,
+    data_source TEXT,
+    synced_at TIMESTAMP
+)
+
+-- Riverside deadline tracking
+riverside_timeline (
+    id INTEGER PRIMARY KEY,
+    milestone TEXT,
+    target_date DATE,
+    status TEXT,
+    days_remaining INTEGER,
+    notes TEXT
+)
+```
+
+**Index Strategy for Performance:**
+
+```sql
+CREATE INDEX idx_mfa_compliance_tenant_date ON mfa_compliance(tenant_id, snapshot_date);
+CREATE INDEX idx_device_compliance_tenant_date ON device_compliance(tenant_id, snapshot_date);
+CREATE INDEX idx_maturity_scores_tenant_domain ON maturity_scores(tenant_id, domain);
+CREATE INDEX idx_riverside_compliance_status ON riverside_compliance(status);
+CREATE INDEX idx_riverside_compliance_priority ON riverside_compliance(priority);
+```
+
+**Data Retention Policies:**
+
+| Table | Retention | Archival |
+|-------|-----------|----------|
+| riverside_compliance | 5 years | Compressed |
+| mfa_compliance | 2 years | Monthly aggregates |
+| device_compliance | 2 years | Monthly aggregates |
+| maturity_scores | 5 years | Annual snapshots |
+| external_threats | 1 year | Not retained |
+
+---
+
+### B. Riverside API Extensions
+
+The following API endpoints extend the core API for Riverside compliance visibility:
+
+```
+GET  /api/v1/riverside/summary                    # Executive compliance summary
+GET  /api/v1/riverside/requirements               # All requirements with status
+GET  /api/v1/riverside/requirements/{id}          # Single requirement details
+GET  /api/v1/riverside/mfa-status                 # MFA enrollment status
+GET  /api/v1/riverside/mfa-status/{tenant_id}     # MFA status per tenant
+GET  /api/v1/riverside/device-compliance          # Device compliance overview
+GET  /api/v1/riverside/device-compliance/{tenant_id} # Device compliance per tenant
+GET  /api/v1/riverside/maturity-scores            # Domain maturity scores
+GET  /api/v1/riverside/maturity-scores/{tenant_id} # Maturity scores per tenant
+GET  /api/v1/riverside/timeline                   # Deadline timeline
+GET  /api/v1/riverside/gaps                       # Critical gaps analysis
+GET  /api/v1/riverside/threats                    # External threat data
+
+POST /api/v1/riverside/requirements               # Create new requirement
+PUT  /api/v1/riverside/requirements/{id}          # Update requirement
+POST /api/v1/riverside/requirements/{id}/evidence # Upload/link evidence
+PUT  /api/v1/riverside/maturity-scores            # Update maturity scores
+```
+
+**Request/Response Schemas:**
+
+```python
+# GET /api/v1/riverside/summary
+Response:
+{
+    "overall_maturity": 2.4,
+    "target_maturity": 3.0,
+    "days_remaining": 160,
+    "deadline": "2026-07-08",
+    "financial_risk": 4000000,
+    "mfa_coverage_percent": 30,
+    "mfa_unprotected_users": 1358,
+    "critical_gaps_count": 8,
+    "requirements_compliant": 45,
+    "requirements_total": 72,
+    "threat_beta_score": 1.04
+}
+
+# GET /api/v1/riverside/mfa-status
+Response:
+{
+    "summary": {
+        "total_users": 1992,
+        "mfa_enabled": 634,
+        "mfa_disabled": 1358,
+        "coverage_percent": 30
+    },
+    "by_tenant": [
+        {
+            "tenant_id": "htt",
+            "tenant_name": "HTT",
+            "total_users": 498,
+            "mfa_enabled": 149,
+            "coverage_percent": 30
+        },
+        ...
+    ]
+}
+
+# GET /api/v1/riverside/gaps
+Response:
+{
+    "critical_gaps": [
+        {
+            "requirement_id": "IAM-12",
+            "requirement_name": "Universal MFA Enforcement",
+            "status": "In Progress",
+            "current_progress": 30,
+            "target": 100,
+            "deadline": "Immediate",
+            "risk_level": "Critical",
+            "owner": "Security Team"
+        },
+        ...
+    ],
+    "warning_gaps": [...],
+    "total_financial_risk": 4000000
+}
+```
+
+---
+
+### C. Riverside Dashboard Architecture
+
+The Riverside compliance dashboard provides an executive-focused view with the following components:
+
+**Frontend Components:**
+
+```
+/riverside
+├── Executive Summary Card      # Key metrics at a glance
+├── MFA Compliance Gauge        # Visual progress indicator
+├── Domain Maturity Radar Chart # Multi-domain visualization
+├── Requirements Status Table   # Filterable, sortable list
+├── Timeline Widget             # Countdown to deadline
+└── Risk Summary Panel          # Financial risk quantification
+```
+
+**HTMX Integration Patterns:**
+
+```html
+<!-- Executive Summary Card -->
+<div id="riverside-summary" 
+     hx-get="/partials/riverside/summary" 
+     hx-trigger="load, every 5m">
+    <!-- Loading state -->
+</div>
+
+<!-- MFA Gauge -->
+<div id="mfa-gauge" 
+     hx-get="/partials/riverside/mfa-gauge" 
+     hx-trigger="load, every 5m">
+</div>
+
+<!-- Requirements Table with filters -->
+<div id="requirements-table"
+     hx-get="/partials/riverside/requirements?status={{status}}&category={{category}}"
+     hx-trigger="status-filter changed, category-filter changed">
+</div>
+```
+
+**Dashboard URL:** `http://localhost:8000/riverside`
+
+---
+
+### D. Riverside Data Flow
+
+The following diagram illustrates data flow for Riverside compliance tracking:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      RIVERSIDE COMPLIANCE DATA FLOW                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    EXTERNAL DATA SOURCES                            │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │    │
+│  │  │   Microsoft │  │   Intune    │  │   Azure AD  │  │   Cybeta    │ │    │
+│  │  │    Graph    │  │   (MDM)     │  │ (Admin API) │  │    API      │ │    │
+│  │  │  (MFA Data) │  │  (Devices)  │  │  (Roles)    │  │  (Threats)  │ │    │
+│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘ │    │
+│  │         │                │                │                │        │    │
+│  │         ▼                ▼                ▼                ▼        │    │
+│  │  ┌────────────────────────────────────────────────────────────────┐  │    │
+│  │  │                    SERVICE LAYER                               │  │    │
+│  │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │  │    │
+│  │  │  │ GraphClient  │  │ IntuneClient │  │  ThreatSvc   │        │  │    │
+│  │  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘        │  │    │
+│  │  └─────────┼─────────────────┼─────────────────┼────────────────┘  │    │
+│  └────────────┼─────────────────┼─────────────────┼───────────────────┘    │
+│               │                 │                 │                         │
+│               ▼                 ▼                 ▼                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                      DATABASE LAYER                                 │    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐   │    │
+│  │  │ mfa_compliance │ device_compliance │ maturity_scores │ external_threats │   │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                     │                                        │
+│                                     ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    API & DASHBOARD LAYER                            │    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐   │    │
+│  │  │ /riverside/ │ │ /api/v1/    │ │  HTMX       │ │  Chart.js   │   │    │
+│  │  │  summary    │ │  riverside  │ │  Partials   │ │  Visualize  │   │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Manual/Scheduled Data Entry:**
+
+```python
+# Scheduled sync configuration
+RIVERSIDE_SYNC_INTERVAL_HOURS = 4  # More frequent than core data
+MANUAL_SYNC_SUPPORTED = True  # Allow on-demand updates
+EVIDENCE_UPLOAD_ENABLED = True  # Support manual evidence
+```
+
+---
+
+### E. Riverside Scalability Path
+
+The Riverside compliance system follows a phased implementation approach:
+
+**Phase 1: Manual Tracking with Evidence Uploads (Current)**
+
+```
+✓ Manual data entry for compliance requirements
+✓ Evidence document upload/storage
+✓ Manual MFA status tracking
+✓ Basic deadline counting
+
+Timeline: January - February 2026
+Effort: Medium manual effort
+```
+
+**Phase 2: Automated Azure Data Sync**
+
+```
+→ Microsoft Graph API integration for MFA data
+→ Intune API integration for device compliance
+→ Azure AD API for admin role data
+→ Automated daily sync
+
+Timeline: February - April 2026
+Effort: Initial setup, then automated
+```
+
+**Phase 3: External Threat API Integration**
+
+```
+→ Cybeta API integration (if available)
+→ Automated threat scoring
+→ Vulnerability tracking
+→ Malicious domain monitoring
+
+Timeline: April - June 2026
+Effort: Configuration + monitoring
+```
+
+---
+
+## Related Documentation
+
+- [RIVERSIDE_INTEGRATION.md](./docs/RIVERSIDE_INTEGRATION.md) - Complete integration guide
+- [RIVERSIDE_EXECUTIVE_SUMMARY.md](./docs/RIVERSIDE_EXECUTIVE_SUMMARY.md) - Executive summary
+- [RIVERSIDE_API_GUIDE.md](./docs/RIVERSIDE_API_GUIDE.md) - API reference

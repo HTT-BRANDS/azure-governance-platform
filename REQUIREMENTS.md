@@ -160,6 +160,7 @@ Per Tenant Service Principal:
 | Resource inventory | 6 months |
 | Identity snapshots | 6 months |
 | Audit logs | 12 months |
+| Riverside compliance | 5 years |
 
 ### 4.2 Data Refresh Frequencies
 
@@ -171,6 +172,8 @@ Per Tenant Service Principal:
 | Resource inventory | 1 hour |
 | Identity data | Daily |
 | Recommendations | Daily |
+| Riverside MFA status | 4 hours |
+| Riverside device compliance | 4 hours |
 
 ---
 
@@ -244,7 +247,120 @@ Reports.Read.All
 
 ---
 
-## 8. MVP Scope (Phase 1)
+## 8. Riverside Compliance Requirements
+
+This section defines requirements specific to Riverside Company compliance tracking. These requirements support the July 8, 2026 compliance deadline with target maturity score of 3.0/5.0.
+
+### 8.1 Executive Tracking Requirements
+
+| ID | Requirement | Priority | Purpose |
+|----|-------------|----------|--------|
+| RC-001 | Executive compliance dashboard | P0 | Stakeholder visibility |
+| RC-002 | Days to deadline countdown | P0 | Timeline awareness |
+| RC-003 | Maturity score tracking | P0 | Progress measurement |
+| RC-004 | Financial risk quantification | P0 | Business justification |
+| RC-005 | Requirement completion percentage | P0 | Overall progress |
+| RC-006 | Trend analysis and forecasting | P1 | Predict completion |
+
+### 8.2 MFA Monitoring Requirements
+
+| ID | Requirement | Priority | Current Status |
+|----|-------------|----------|----------------|
+| RC-010 | Real-time MFA enrollment tracking | P0 | 30% (current) |
+| RC-011 | Per-tenant MFA breakdown | P0 | 4 tenants tracked |
+| RC-012 | Admin account MFA tracking | P0 | 39 admin accounts |
+| RC-013 | MFA trend reporting | P1 | Historical trending |
+| RC-014 | Non-MFA user alerting | P0 | Manual process |
+| RC-015 | MFA gap identification | P0 | 1,358 unprotected |
+
+### 8.3 Requirement Tracking Requirements
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| RC-020 | Requirement status tracking | P0 |
+| RC-021 | Evidence upload/link storage | P0 |
+| RC-022 | Requirement categorization | P0 |
+| RC-023 | Owner assignment | P0 |
+| RC-024 | Due date tracking | P0 |
+| RC-025 | Priority classification (P0/P1/P2) | P0 |
+| RC-026 | Completion date recording | P0 |
+| RC-027 | Notes and comments | P1 |
+
+### 8.4 Device Compliance Requirements
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| RC-030 | MDM enrollment tracking | P0 |
+| RC-031 | EDR coverage monitoring | P0 |
+| RC-032 | Device encryption status | P1 |
+| RC-033 | Asset inventory | P1 |
+| RC-034 | Device compliance scoring | P0 |
+| RC-035 | Non-compliant device alerting | P1 |
+
+### 8.5 Maturity Scoring Requirements
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| RC-040 | Domain maturity tracking | P0 |
+| RC-041 | Historical trending | P1 |
+| RC-042 | Score calculation | P0 |
+| RC-043 | Domain breakdown (IAM, GS, DS) | P0 |
+| RC-044 | Target gap analysis | P0 |
+| RC-045 | Improvement recommendations | P1 |
+
+### 8.6 External Threat Requirements
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| RC-050 | Threat Beta score display | P1 |
+| RC-051 | Vulnerability count | P1 |
+| RC-052 | Malicious domain alerts | P1 |
+| RC-053 | Peer comparison | P2 |
+| RC-054 | Threat trend reporting | P2 |
+
+### 8.7 Riverside Data Sources
+
+| Source | Integration | Frequency |
+|--------|-------------|-----------|
+| Microsoft Graph | MFA, user data | Daily |
+| Intune | MDM status | Daily |
+| Azure AD | Admin roles | Daily |
+| Azure Policy | Compliance state | 4 hours |
+| Azure Security Center | Secure score | Daily |
+| Cybeta API | Threat data | Weekly (if available) |
+| Manual entry | Evidence, requirements | On-demand |
+
+### 8.8 Success Metrics
+
+| Metric | Current | Target | Deadline | Financial Impact |
+|--------|---------|--------|----------|------------------|
+| Overall Maturity | 2.4 | 3.0+ | July 8, 2026 | $4M risk |
+| MFA Coverage | 30% (634/1992) | 100% | 30 days | $4M risk |
+| Critical Gaps | 8 | 0 | July 8, 2026 | Compliance failure |
+| Admin MFA | TBD | 100% | 30 days | $4M risk |
+| Device Compliance | TBD | 90%+ | 60 days | Audit failure |
+| Domain Maturity (IAM) | 2.2 | 3.0 | July 8, 2026 | - |
+| Domain Maturity (GS) | 2.5 | 3.0 | July 8, 2026 | - |
+| Domain Maturity (DS) | 2.6 | 3.0 | July 8, 2026 | - |
+
+### 8.9 Critical Gap Priorities
+
+The following gaps require immediate attention to meet the July 8, 2026 deadline:
+
+| Rank | Gap | Current | Target | Deadline | Risk |
+|------|-----|---------|--------|----------|------|
+| 1 | MFA Universal Enforcement | 30% | 100% | Immediate | $4M |
+| 2 | Dedicated Security Team | None | 1+ FTE | 30 days | Audit |
+| 3 | Privileged Access Management | 0% | 100% | 60 days | $4M |
+| 4 | Conditional Access Policies | 40% | 100% | 60 days | $2M |
+| 5 | Data Classification | 0% | Complete | 90 days | Compliance |
+| 6 | Security Awareness Training | 25% | 100% | 90 days | Human error |
+| 7 | Service Account Management | 0% | 100% | 120 days | Credential theft |
+| 8 | Encryption at Rest | 0% | 100% | 120 days | Data breach |
+
+---
+
+## 9. MVP Scope (Phase 1)
 
 ### In Scope
 
@@ -254,6 +370,7 @@ Reports.Read.All
 - [ ] Identity overview (users, guests, admins)
 - [ ] Single lightweight deployment
 - [ ] Manual data refresh triggers
+- [ ] Riverside compliance dashboard (MVP)
 
 ### Out of Scope (Phase 2+)
 
@@ -263,10 +380,12 @@ Reports.Read.All
 - [ ] Chargeback workflows
 - [ ] Access review automation
 - [ ] Power BI embedding
+- [ ] Riverside automated Azure sync
+- [ ] Riverside external threat integration
 
 ---
 
-## 9. Success Metrics
+## 10. Success Metrics
 
 | Metric | Target |
 |--------|--------|
@@ -275,10 +394,11 @@ Reports.Read.All
 | Compliance visibility | All 4 tenants |
 | Stale account cleanup | < 50 accounts |
 | Admin time saved | 5+ hrs/week |
+| Riverside compliance | 3.0+ maturity by July 8, 2026 |
 
 ---
 
-## 10. Risks & Mitigations
+## 11. Risks & Mitigations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
@@ -287,10 +407,12 @@ Reports.Read.All
 | Data staleness | Bad decisions | Clear refresh timestamps |
 | Scope creep | Delays | Strict MVP boundaries |
 | Cost overrun | Budget breach | SQLite, minimal infra |
+| Riverside deadline miss | $4M loss | Priority tracking, early start |
+| MFA adoption resistance | Compliance failure | Executive sponsorship, incentives |
 
 ---
 
-## 11. Acceptance Criteria
+## 12. Acceptance Criteria
 
 ### MVP Release Criteria
 
@@ -302,3 +424,15 @@ Reports.Read.All
 6. ✅ < $200/month infrastructure cost
 7. ✅ Documentation complete
 8. ✅ Basic alerting operational
+9. ✅ Riverside dashboard operational
+
+### Riverside Compliance Criteria
+
+1. ✅ Executive summary visible at /riverside
+2. ✅ MFA tracking shows 30% coverage
+3. ✅ Requirement tracking shows 72+ requirements
+4. ✅ Maturity scores display 2.4/5.0 overall
+5. ✅ Days to deadline countdown visible
+6. ✅ Financial risk ($4M) displayed
+7. ✅ Critical gaps identified
+8. ✅ Evidence upload capability
