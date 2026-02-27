@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     cost_anomaly_threshold_percent: float = 20.0
     compliance_alert_threshold_percent: float = 5.0
 
+    # Notifications
+    notification_enabled: bool = False
+    notification_min_severity: str = "warning"  # info, warning, error, critical
+    notification_cooldown_minutes: int = 30
+
     # CORS (for development)
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 

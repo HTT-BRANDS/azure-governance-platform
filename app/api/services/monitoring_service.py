@@ -8,7 +8,19 @@ from typing import Any
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
+from app.core.notifications import (
+    Notification,
+    NotificationChannel,
+    Severity,
+    create_dashboard_url,
+    create_retry_url,
+    record_notification_sent,
+    send_notification,
+    should_notify,
+)
 from app.models.monitoring import Alert, SyncJobLog, SyncJobMetrics
+from app.models.notifications import NotificationLog
 from app.models.sync import SyncJob
 from app.models.tenant import Tenant
 
@@ -454,6 +466,11 @@ class MonitoringService:
         self.db.commit()
         self.db.refresh(alert)
         logger.warning(f"Created alert: {alert_type} - {title}")
+
+        # Send notification for critical alerts
+        if severity in ("error", "critical"):
+            self.send_alert_notification(alert)
+
         return alert
 
     def resolve_alert(
@@ -602,4 +619,168 @@ class MonitoringService:
                 "error": len(error_alerts),
             },
             "last_updated": datetime.utcnow().isoformat(),
+        }
+
+    # ==========================================================================
+    # Notification Operations
+    # ==========================================================================
+
+    async def send_alert_notification(self, alert: Alert) -> NotificationLog | None:
+        """Send notification for an alert and log the attempt.
+
+        Checks deduplication rules, sends via configured channels,
+        and logs the result to NotificationLog.
+
+        Args:
+            alert: The alert to notify about
+
+        Returns:
+            NotificationLog entry or None if skipped
+        """
+        settings = get_settings()
+
+        # Check if notifications are enabled
+        if not settings.notification_enabled:
+            logger.debug(f"Notifications disabled, skipping alert {alert.id}")
+            return None
+
+        # Check deduplication cooldown
+        if not should_notify(alert.alert_type, alert.job_type):
+            logger.debug(
+                f"Notification for {alert.alert_type}/{alert.job_type} in cooldown"
+            )
+            return None
+
+        # Create notification log entry
+        log_entry = NotificationLog(
+            channel=NotificationChannel.TEAMS.value,
+            severity=alert.severity,
+            alert_id=alert.id,
+            job_type=alert.job_type,
+            tenant_id=alert.tenant_id,
+            title=alert.title,
+            message=alert.message,
+            status="pending",
+            sent_at=datetime.utcnow(),
+            metadata_json=json.dumps({
+                "alert_type": alert.alert_type,
+                "details": alert.details_json,
+            }),
+        )
+        self.db.add(log_entry)
+        self.db.commit()
+
+        # Build notification with actionable links
+        error_message = None
+        if alert.details_json:
+            try:
+                details = json.loads(alert.details_json)
+                error_message = details.get("error_message")
+            except json.JSONDecodeError:
+                pass
+
+        notification = Notification(
+            title=alert.title,
+            message=alert.message,
+            severity=Severity(alert.severity),
+            channel=NotificationChannel.TEAMS,
+            alert_id=alert.id,
+            job_type=alert.job_type,
+            tenant_id=alert.tenant_id,
+            error_message=error_message,
+            dashboard_url=create_dashboard_url(alert.job_type),
+            retry_url=create_retry_url(alert.job_type or "resources", alert.tenant_id),
+            metadata={
+                "alert_type": alert.alert_type,
+                "created_at": alert.created_at.isoformat() if alert.created_at else None,
+            },
+        )
+
+        # Send the notification
+        result = await send_notification(notification)
+
+        # Update log entry with result
+        log_entry.status = "sent" if result.get("success") else "failed"
+        log_entry.response_status = str(result.get("status_code", ""))
+        log_entry.response_body = result.get("error") or json.dumps(result)
+
+        if result.get("success"):
+            log_entry.delivered_at = datetime.utcnow()
+            record_notification_sent(alert.alert_type, alert.job_type)
+            logger.info(f"Notification sent for alert {alert.id}: {alert.title}")
+        else:
+            logger.error(
+                f"Notification failed for alert {alert.id}: {result.get('error')}"
+            )
+
+        self.db.commit()
+        return log_entry
+
+    def get_notification_logs(
+        self,
+        alert_id: int | None = None,
+        status: str | None = None,
+        limit: int = 50,
+    ) -> list[NotificationLog]:
+        """Get notification history.
+
+        Args:
+            alert_id: Optional filter by specific alert
+            status: Optional filter by status (pending, sent, failed, retrying)
+            limit: Maximum number of logs to return
+
+        Returns:
+            List of NotificationLog entries
+        """
+        query = self.db.query(NotificationLog)
+
+        if alert_id:
+            query = query.filter(NotificationLog.alert_id == alert_id)
+        if status:
+            query = query.filter(NotificationLog.status == status)
+
+        return query.order_by(NotificationLog.sent_at.desc()).limit(limit).all()
+
+    def get_notification_stats(self) -> dict[str, Any]:
+        """Get notification delivery statistics.
+
+        Returns:
+            Dict with notification statistics
+        """
+        total = self.db.query(NotificationLog).count()
+        sent = self.db.query(NotificationLog).filter(
+            NotificationLog.status == "sent"
+        ).count()
+        failed = self.db.query(NotificationLog).filter(
+            NotificationLog.status == "failed"
+        ).count()
+        pending = self.db.query(NotificationLog).filter(
+            NotificationLog.status == "pending"
+        ).count()
+
+        # By channel
+        channel_counts = (
+            self.db.query(NotificationLog.channel, func.count(NotificationLog.id))
+            .group_by(NotificationLog.channel)
+            .all()
+        )
+
+        # Recent failures (last 24h)
+        recent_failures = (
+            self.db.query(NotificationLog)
+            .filter(
+                NotificationLog.status == "failed",
+                NotificationLog.sent_at >= datetime.utcnow() - timedelta(hours=24),
+            )
+            .count()
+        )
+
+        return {
+            "total": total,
+            "sent": sent,
+            "failed": failed,
+            "pending": pending,
+            "success_rate": sent / total if total > 0 else 0.0,
+            "by_channel": {c: n for c, n in channel_counts},
+            "recent_failures_24h": recent_failures,
         }
