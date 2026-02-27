@@ -327,3 +327,13 @@ GRAPH_API_BREAKER = CircuitBreaker(
         expected_exception=(HttpResponseError, ConnectionError, TimeoutError),
     ),
 )
+
+RIVERSIDE_SYNC_BREAKER = CircuitBreaker(
+    name="riverside_sync",
+    config=CircuitBreakerConfig(
+        failure_threshold=5,
+        recovery_timeout=300.0,
+        success_threshold=2,
+        expected_exception=(HttpResponseError, ConnectionError, TimeoutError),
+    ),
+)

@@ -6,6 +6,7 @@ from app.api.routes.dashboard import router as dashboard_router
 from app.api.routes.identity import router as identity_router
 from app.api.routes.preflight import router as preflight_router
 from app.api.routes.resources import router as resources_router
+from app.api.routes.riverside import router as riverside_router
 from app.api.routes.sync import router as sync_router
 from app.api.routes.tenants import router as tenants_router
 
@@ -18,4 +19,5 @@ __all__ = [
     "tenants_router",
     "sync_router",
     "preflight_router",
+    "riverside_router",
 ]

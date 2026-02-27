@@ -10,6 +10,7 @@ from app.core.sync.compliance import sync_compliance
 from app.core.sync.costs import sync_costs
 from app.core.sync.identity import sync_identity
 from app.core.sync.resources import sync_resources
+from app.core.sync.riverside import sync_riverside
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -60,6 +61,15 @@ def init_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
     )
 
+    # Riverside compliance sync job (every 4 hours)
+    scheduler.add_job(
+        sync_riverside,
+        trigger=IntervalTrigger(hours=4),
+        id="sync_riverside",
+        name="Sync Riverside Compliance Data",
+        replace_existing=True,
+    )
+
     logger.info("Scheduler initialized with sync jobs")
     return scheduler
 
@@ -76,6 +86,7 @@ async def trigger_manual_sync(sync_type: str) -> bool:
         "compliance": sync_compliance,
         "resources": sync_resources,
         "identity": sync_identity,
+        "riverside": sync_riverside,
     }
 
     if sync_type not in sync_functions:

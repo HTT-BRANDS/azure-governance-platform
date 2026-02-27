@@ -15,6 +15,7 @@ from app.api.routes import (
     identity_router,
     preflight_router,
     resources_router,
+    riverside_router,
     sync_router,
     tenants_router,
 )
@@ -84,6 +85,7 @@ app.include_router(identity_router)
 app.include_router(tenants_router)
 app.include_router(sync_router)
 app.include_router(preflight_router)
+app.include_router(riverside_router)
 
 
 @app.get("/health")
