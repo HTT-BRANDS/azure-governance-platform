@@ -25,9 +25,6 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import httpx
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
-from azure.identity import ClientSecretCredential
-from azure.mgmt.authorization import AuthorizationManagementClient
 
 from app.api.services.azure_client import azure_client_manager
 from app.core.config import get_settings
@@ -174,7 +171,7 @@ def _parse_aad_error(error_message: str) -> tuple[str, list[str]]:
     return error_code, recommendations
 
 
-def _get_credential(tenant_id: str) -> ClientSecretCredential:
+def _get_credential(tenant_id: str) -> Any:
     """Get Azure credential for a tenant.
 
     Args:
@@ -621,6 +618,9 @@ async def check_azure_authentication(tenant_id: str) -> CheckResult:
         >>> result = await check_azure_authentication("12345678-1234-1234-1234-123456789012")
         >>> print(result.status)  # CheckStatus.PASS if successful
     """
+    # Lazy import to avoid namespace package issues in tests
+    from azure.core.exceptions import ClientAuthenticationError
+
     start_time = datetime.utcnow()
     check_id = "azure_authentication"
     name = "Azure AD Authentication"
@@ -742,6 +742,9 @@ async def check_azure_subscriptions(tenant_id: str) -> CheckResult:
     Returns:
         CheckResult with subscription count and details
     """
+    # Lazy import to avoid namespace package issues in tests
+    from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
+
     start_time = datetime.utcnow()
     check_id = "azure_subscriptions"
     name = "Azure Subscriptions Access"
@@ -898,8 +901,10 @@ async def check_cost_management_access(
     Returns:
         CheckResult with cost API access status
     """
+    # Lazy import to avoid namespace package issues in tests
+    from azure.core.exceptions import HttpResponseError
+
     start_time = datetime.utcnow()
-    check_id = "cost_management_access"
     name = "Cost Management API Access"
     category = CheckCategory.AZURE_COST_MANAGEMENT
 
@@ -1565,6 +1570,9 @@ async def check_rbac_permissions(tenant_id: str, subscription_id: str) -> CheckR
     Returns:
         CheckResult with RBAC assignment details
     """
+    # Lazy import to avoid namespace package issues in tests
+    from azure.mgmt.authorization import AuthorizationManagementClient
+
     start_time = datetime.utcnow()
     check_id = "rbac_permissions"
     name = "Azure RBAC Permissions"
