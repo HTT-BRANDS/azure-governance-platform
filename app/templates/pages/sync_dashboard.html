@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Sync Status Dashboard - Azure Governance Platform{% endblock %}
+
+{% block nav_sync_dashboard %}bg-wm-blue-130{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-wm-gray-160">Sync Status Dashboard</h1>
+            <p class="text-wm-gray-100 mt-1">Real-time monitoring for DevOps/SRE teams</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <!-- Global Sync All Button -->
+            <button 
+                hx-post="/api/v1/sync/all" 
+                hx-swap="none"
+                hx-confirm="Trigger sync for all data types?"
+                class="inline-flex items-center px-4 py-2 bg-wm-blue-100 text-white rounded-lg hover:bg-wm-blue-110 transition-colors font-medium">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Sync All
+            </button>
+            <!-- Manual Refresh -->
+            <button 
+                onclick="window.location.reload()"
+                class="p-2 text-wm-gray-100 hover:text-wm-blue-100 hover:bg-wm-blue-5 rounded-lg transition-colors"
+                title="Full page refresh">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Status Card (Auto-refreshing) -->
+    <div hx-get="/partials/sync-status-card" hx-trigger="load" hx-swap="outerHTML">
+        <!-- Loading state shown initially, replaced by HTMX -->
+        <div class="bg-white rounded-lg shadow-lg p-8 flex items-center justify-center">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-wm-blue-100 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-wm-gray-130">Loading sync status...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout: Alerts & History -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <!-- Active Alerts Panel (Auto-refreshing) -->
+        <div hx-get="/partials/active-alerts" hx-trigger="load" hx-swap="outerHTML">
+            <div class="bg-white rounded-lg shadow-lg p-8 flex items-center justify-center h-64">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-wm-blue-100 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-wm-gray-130">Loading alerts...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sync History Table (Auto-refreshing) -->
+        <div hx-get="/partials/sync-history-table" hx-trigger="load" hx-swap="outerHTML">
+            <div class="bg-white rounded-lg shadow-lg p-8 flex items-center justify-center h-64">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-wm-blue-100 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-wm-gray-130">Loading history...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Per-Tenant Sync Status (Auto-refreshing) -->
+    <div hx-get="/partials/tenant-sync-status" hx-trigger="load" hx-swap="outerHTML">
+        <div class="bg-white rounded-lg shadow-lg p-8 flex items-center justify-center">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-wm-blue-100 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-wm-gray-130">Loading tenant status...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics Summary (Optional - static for now) -->
+    {% if metrics %}
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-bold text-wm-gray-160 mb-4">Sync Performance Metrics</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% for metric in metrics %}
+            <div class="p-4 rounded-lg bg-wm-gray-5 border border-wm-gray-50">
+                <div class="text-xs text-wm-gray-100 uppercase tracking-wide mb-1">{{ metric.job_type.title() }}</div>
+                <div class="text-2xl font-bold text-wm-gray-160">
+                    {{ "{:.0%}".format(metric.success_rate or 0) }}
+                </div>
+                <div class="text-xs text-wm-gray-100 mt-1">
+                    {{ metric.total_runs }} runs
+                    {% if metric.avg_duration_ms %}
+                    • {{ "{:.1f}".format(metric.avg_duration_ms / 1000) }}s avg
+                    {% endif %}
+                </div>
+                {% if metric.last_run_at %}
+                <div class="text-xs text-wm-gray-100 mt-1">
+                    Last: {{ metric.last_run_at.strftime('%m/%d %H:%M') }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Reference Card -->
+    <div class="bg-wm-blue-5 rounded-lg p-6 border border-wm-blue-10">
+        <h3 class="text-lg font-bold text-wm-gray-160 mb-3">Quick Reference</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+                <h4 class="font-medium text-wm-gray-160 mb-2">Expected Sync Intervals</h4>
+                <ul class="space-y-1 text-wm-gray-130">
+                    <li class="flex justify-between"><span>Costs:</span> <span class="font-medium">24 hours</span></li>
+                    <li class="flex justify-between"><span>Compliance:</span> <span class="font-medium">24 hours</span></li>
+                    <li class="flex justify-between"><span>Resources:</span> <span class="font-medium">24 hours</span></li>
+                    <li class="flex justify-between"><span>Identity:</span> <span class="font-medium">24 hours</span></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-medium text-wm-gray-160 mb-2">Status Indicators</h4>
+                <ul class="space-y-1 text-wm-gray-130">
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-wm-green-100"></span> Healthy (&lt;36h)</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-wm-spark-100"></span> Warning (36-48h)</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-wm-red-100"></span> Stale (&gt;48h)</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-medium text-wm-gray-160 mb-2">API Endpoints</h4>
+                <ul class="space-y-1 text-wm-gray-130">
+                    <li><code class="bg-white px-1.5 py-0.5 rounded text-xs">GET /api/v1/sync/status</code></li>
+                    <li><code class="bg-white px-1.5 py-0.5 rounded text-xs">GET /api/v1/sync/history</code></li>
+                    <li><code class="bg-white px-1.5 py-0.5 rounded text-xs">GET /api/v1/sync/alerts</code></li>
+                    <li><code class="bg-white px-1.5 py-0.5 rounded text-xs">POST /api/v1/sync/{type}</code></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // HTMX event handlers for user feedback
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        // Show success toast on sync trigger
+        if (evt.detail.requestConfig.verb === 'post' && evt.detail.requestConfig.path.includes('/api/v1/sync/')) {
+            if (evt.detail.successful) {
+                // Could add a toast notification here
+                console.log('Sync triggered successfully');
+            }
+        }
+    });
+
+    // Add loading indicators for HTMX requests
+    document.body.addEventListener('htmx:beforeRequest', function(evt) {
+        const trigger = evt.detail.elt;
+        if (trigger && trigger.tagName === 'BUTTON') {
+            trigger.classList.add('opacity-75', 'cursor-wait');
+        }
+    });
+
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        const trigger = evt.detail.elt;
+        if (trigger && trigger.tagName === 'BUTTON') {
+            trigger.classList.remove('opacity-75', 'cursor-wait');
+        }
+    });
+</script>
+{% endblock %}

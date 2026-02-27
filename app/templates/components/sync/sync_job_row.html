@@ -1,0 +1,110 @@
+{# Sync job table row component
+   Parameters:
+   - log: The sync job log object
+#}
+<tr class="hover:bg-wm-gray-5 transition-colors {% if log.status == 'running' %}bg-wm-blue-5{% endif %}">
+    {# Job Type #}
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center
+                {% if log.job_type == 'costs' %}bg-wm-blue-10 text-wm-blue-100
+                {% elif log.job_type == 'compliance' %}bg-wm-green-10 text-wm-green-100
+                {% elif log.job_type == 'resources' %}bg-wm-spark-10 text-wm-spark-140
+                {% else %}bg-wm-gray-10 text-wm-gray-130{% endif %}">
+                {% if log.job_type == 'costs' %}
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {% elif log.job_type == 'compliance' %}
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {% elif log.job_type == 'resources' %}
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                {% else %}
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m9 5.197v1H9"/>
+                </svg>
+                {% endif %}
+            </div>
+            <div class="ml-3">
+                <div class="text-sm font-medium text-wm-gray-160 capitalize">{{ log.job_type }}</div>
+                <div class="text-xs text-wm-gray-100">{{ log.tenant.name if log.tenant else 'All Tenants' }}</div>
+            </div>
+        </div>
+    </td>
+    {# Status #}
+    <td class="px-6 py-4 whitespace-nowrap">
+        {% include "components/sync/status_badge.html" with context %}
+    </td>
+    {# Records #}
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm text-wm-gray-160">
+            {{ "{:,}".format(log.records_processed) if log.records_processed else '-' }}
+        </div>
+        {% if log.records_created or log.records_updated %}
+        <div class="text-xs text-wm-gray-100">
+            +{{ log.records_created or 0 }} / ~{{ log.records_updated or 0 }}
+        </div>
+        {% endif %}
+    </td>
+    {# Errors #}
+    <td class="px-6 py-4 whitespace-nowrap">
+        {% if log.errors_count and log.errors_count > 0 %}
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-wm-red-10 text-wm-red-100">
+            {{ log.errors_count }} error{{ 's' if log.errors_count != 1 }}
+        </span>
+        {% else %}
+        <span class="text-sm text-wm-gray-100">-</span>
+        {% endif %}
+    </td>
+    {# Duration #}
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm text-wm-gray-160">
+            {% if log.duration_seconds %}
+                {% if log.duration_seconds < 60 %}
+                    {{ "{:.1f}".format(log.duration_seconds) }}s
+                {% else %}
+                    {{ "{:.1f}".format(log.duration_seconds / 60) }}m
+                {% endif %}
+            {% elif log.status == 'running' %}
+                <span class="text-wm-blue-100">In progress...</span>
+            {% else %}
+                -
+            {% endif %}
+        </div>
+    </td>
+    {# Started At #}
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm text-wm-gray-160" title="{{ log.started_at.isoformat() if log.started_at else '' }}">
+            {% if log.started_at %}
+                {% set delta = (now or last_refresh or current_time) - log.started_at %}
+                {% if delta.days > 0 %}
+                    {{ delta.days }}d ago
+                {% elif delta.seconds // 3600 > 0 %}
+                    {{ delta.seconds // 3600 }}h ago
+                {% elif delta.seconds // 60 > 0 %}
+                    {{ delta.seconds // 60 }}m ago
+                {% else %}
+                    Just now
+                {% endif %}
+            {% else %}
+                -
+            {% endif %}
+        </div>
+        <div class="text-xs text-wm-gray-100">{{ log.started_at.strftime('%H:%M') if log.started_at else '' }}</div>
+    </td>
+    {# Error Message (if failed) #}
+    {% if log.status == 'failed' and log.error_message %}
+    <td colspan="6" class="px-6 py-3 bg-wm-red-5 border-t border-wm-red-10">
+        <div class="flex items-start">
+            <svg class="w-4 h-4 text-wm-red-100 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-sm text-wm-red-130">{{ log.error_message[:200] }}{{ '...' if log.error_message|length > 200 else '' }}</span>
+        </div>
+    </td>
+    {% endif %}
+</tr>
