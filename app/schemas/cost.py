@@ -69,6 +69,72 @@ class CostAnomaly(BaseModel):
     percentage_change: float
     service_name: str | None = None
     is_acknowledged: bool = False
+    acknowledged_by: str | None = None
+    acknowledged_at: datetime | None = None
+
+
+class AnomalyTrend(BaseModel):
+    """Anomaly trend data point over time."""
+
+    period: str  # e.g., "2024-01"
+    anomaly_count: int
+    total_impact: float  # total unexpected cost
+    acknowledged_count: int
+    unacknowledged_count: int
+
+
+class AnomaliesByService(BaseModel):
+    """Anomalies grouped by service."""
+
+    service_name: str
+    anomaly_count: int
+    total_impact: float
+    avg_percentage_change: float
+    latest_anomaly_at: datetime
+
+
+class TopAnomaly(BaseModel):
+    """Top anomaly by impact."""
+
+    anomaly: CostAnomaly
+    impact_score: float  # calculated based on cost impact and percentage change
+
+
+class BulkAcknowledgeRequest(BaseModel):
+    """Request to acknowledge multiple anomalies."""
+
+    anomaly_ids: list[int]
+
+
+class BulkAcknowledgeResponse(BaseModel):
+    """Response after bulk acknowledging anomalies."""
+
+    success: bool
+    acknowledged_count: int
+    failed_ids: list[int]
+    acknowledged_at: datetime
+
+
+class CostForecast(BaseModel):
+    """Cost forecast data point."""
+
+    date: date
+    forecasted_cost: float
+    confidence_lower: float | None = None
+    confidence_upper: float | None = None
+
+
+class CostFilterParams(BaseModel):
+    """Query parameters for filtering costs."""
+
+    tenant_ids: list[str] | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    service_names: list[str] | None = None
+    limit: int = Field(default=100, ge=1, le=1000)
+    offset: int = Field(default=0, ge=0)
+    sort_by: str = Field(default="date")
+    sort_order: str = Field(default="desc", pattern="^(asc|desc)$")
 
 
 # Update forward references

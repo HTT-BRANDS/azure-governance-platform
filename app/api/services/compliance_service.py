@@ -1,9 +1,12 @@
-"""Compliance management service."""
+"""Compliance management service with caching support."""
 
 import logging
+from datetime import date, datetime, timedelta
+from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.cache import cached, invalidate_on_sync_completion
 from app.models.compliance import ComplianceSnapshot, PolicyState
 from app.models.tenant import Tenant
 from app.schemas.compliance import (
@@ -73,7 +76,8 @@ class ComplianceService:
         # Default to Medium if no keywords match
         return "Medium"
 
-    def get_compliance_summary(self) -> ComplianceSummary:
+    @cached("compliance_summary")
+    async def get_compliance_summary(self) -> ComplianceSummary:
         """Get aggregated compliance summary across all tenants."""
         # Get latest snapshots per tenant
         tenants = self.db.query(Tenant).filter(Tenant.is_active == True).all()
@@ -116,7 +120,7 @@ class ComplianceService:
             avg_compliance = sum(s.overall_compliance_percent for s in scores) / len(scores)
 
         # Get top violations
-        top_violations = self._get_top_violations()
+        top_violations = await self._get_top_violations()
 
         return ComplianceSummary(
             average_compliance_percent=avg_compliance,
@@ -127,7 +131,7 @@ class ComplianceService:
             top_violations=top_violations,
         )
 
-    def _get_top_violations(self, limit: int = 10) -> list[PolicyViolation]:
+    async def _get_top_violations(self, limit: int = 10) -> list[PolicyViolation]:
         """Get top policy violations by count."""
         # Aggregate non-compliant policies
         policies = (
@@ -163,7 +167,8 @@ class ComplianceService:
 
         return sorted(violations, key=lambda x: x.violation_count, reverse=True)[:limit]
 
-    def get_scores_by_tenant(self, tenant_id: str | None = None) -> list[ComplianceScore]:
+    @cached("compliance_summary")
+    async def get_scores_by_tenant(self, tenant_id: str | None = None) -> list[ComplianceScore]:
         """Get compliance scores, optionally filtered by tenant."""
         query = self.db.query(Tenant).filter(Tenant.is_active == True)
 
@@ -201,7 +206,7 @@ class ComplianceService:
     def get_non_compliant_policies(
         self, tenant_id: str | None = None
     ) -> list[PolicyStatus]:
-        """Get non-compliant policy details."""
+        """Get non-compliant policy details (not cached - real-time)."""
         query = self.db.query(PolicyState).filter(
             PolicyState.compliance_state == "NonCompliant"
         )
@@ -224,3 +229,76 @@ class ComplianceService:
             )
             for p in policies
         ]
+
+    @cached("compliance_summary")
+    async def get_compliance_trends(
+        self, tenant_ids: list[str] | None = None, days: int = 30
+    ) -> list[dict]:
+        """Get compliance score trends over time.
+
+        Args:
+            tenant_ids: Filter by specific tenants
+            days: Number of days of history to analyze
+
+        Returns:
+            List of trend data points with date and compliance metrics
+        """
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
+
+        # Query compliance snapshots within the date range
+        query = self.db.query(ComplianceSnapshot).filter(
+            ComplianceSnapshot.snapshot_date >= start_date.date(),
+            ComplianceSnapshot.snapshot_date <= end_date.date(),
+        )
+
+        if tenant_ids:
+            query = query.filter(ComplianceSnapshot.tenant_id.in_(tenant_ids))
+
+        snapshots = query.order_by(ComplianceSnapshot.snapshot_date).all()
+
+        # Group by date and calculate averages
+        by_date: dict[date, dict[str, Any]] = {}
+        for snapshot in snapshots:
+            date_key = snapshot.snapshot_date
+            if date_key not in by_date:
+                by_date[date_key] = {
+                    "scores": [],
+                    "compliant": 0,
+                    "non_compliant": 0,
+                    "exempt": 0,
+                }
+
+            by_date[date_key]["scores"].append(snapshot.overall_compliance_percent)
+            by_date[date_key]["compliant"] += snapshot.compliant_resources
+            by_date[date_key]["non_compliant"] += snapshot.non_compliant_resources
+            by_date[date_key]["exempt"] += snapshot.exempt_resources
+
+        # Build trend data
+        trends = []
+        for date_key, data in sorted(by_date.items()):
+            avg_score = (
+                sum(data["scores"]) / len(data["scores"])
+                if data["scores"]
+                else 0.0
+            )
+            total = data["compliant"] + data["non_compliant"] + data["exempt"]
+            compliance_rate = (
+                (data["compliant"] / total * 100) if total > 0 else 0.0
+            )
+
+            trends.append({
+                "date": date_key.isoformat(),
+                "average_compliance_score": round(avg_score, 2),
+                "compliance_rate": round(compliance_rate, 2),
+                "compliant_resources": data["compliant"],
+                "non_compliant_resources": data["non_compliant"],
+                "exempt_resources": data["exempt"],
+                "total_resources": total,
+            })
+
+        return trends
+
+    async def invalidate_cache(self, tenant_id: str | None = None) -> None:
+        """Invalidate compliance cache after updates."""
+        await invalidate_on_sync_completion(tenant_id)

@@ -1,10 +1,12 @@
-"""Identity governance service."""
+"""Identity governance service with caching support."""
 
 import logging
-from datetime import datetime
+from datetime import date, datetime, timedelta
+from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.cache import cached, invalidate_on_sync_completion
 from app.models.identity import IdentitySnapshot, PrivilegedUser
 from app.models.tenant import Tenant
 from app.schemas.identity import (
@@ -24,7 +26,8 @@ class IdentityService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_identity_summary(self) -> IdentitySummary:
+    @cached("identity_summary")
+    async def get_identity_summary(self) -> IdentitySummary:
         """Get aggregated identity summary across all tenants."""
         tenants = self.db.query(Tenant).filter(Tenant.is_active == True).all()
 
@@ -94,7 +97,8 @@ class IdentityService:
             by_tenant=tenant_summaries,
         )
 
-    def get_privileged_accounts(
+    @cached("identity_summary")
+    async def get_privileged_accounts(
         self, tenant_id: str | None = None
     ) -> list[PrivilegedAccount]:
         """Get privileged account details."""
@@ -158,7 +162,7 @@ class IdentityService:
     def get_guest_accounts(
         self, tenant_id: str | None = None, stale_only: bool = False
     ) -> list[GuestAccount]:
-        """Get guest account details."""
+        """Get guest account details (not cached - real-time)."""
         # For MVP, we'd query from a cached table of guest users
         # This is a placeholder that would be populated by the sync job
         return []
@@ -166,7 +170,93 @@ class IdentityService:
     def get_stale_accounts(
         self, days_inactive: int = 30, tenant_id: str | None = None
     ) -> list[StaleAccount]:
-        """Get stale account details."""
+        """Get stale account details (not cached - real-time)."""
         # For MVP, this would be populated by the sync job
         # comparing last sign-in dates
         return []
+
+    @cached("identity_summary")
+    async def get_identity_trends(
+        self, tenant_ids: list[str] | None = None, days: int = 30
+    ) -> list[dict[str, Any]]:
+        """Get identity metrics trends over time.
+
+        Args:
+            tenant_ids: Filter by specific tenants
+            days: Number of days of history to analyze
+
+        Returns trends for:
+        - MFA adoption rate
+        - Guest account count
+        - Privileged account count
+        - Stale account count
+        """
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
+
+        # Query identity snapshots within the date range
+        query = self.db.query(IdentitySnapshot).filter(
+            IdentitySnapshot.snapshot_date >= start_date.date(),
+            IdentitySnapshot.snapshot_date <= end_date.date(),
+        )
+
+        if tenant_ids:
+            query = query.filter(IdentitySnapshot.tenant_id.in_(tenant_ids))
+
+        snapshots = query.order_by(IdentitySnapshot.snapshot_date).all()
+
+        # Group by date and calculate metrics
+        by_date: dict[date, dict[str, Any]] = {}
+        for snapshot in snapshots:
+            date_key = snapshot.snapshot_date
+            if date_key not in by_date:
+                by_date[date_key] = {
+                    "total_users": 0,
+                    "mfa_enabled": 0,
+                    "mfa_disabled": 0,
+                    "guest_users": 0,
+                    "privileged_users": 0,
+                    "stale_accounts_30d": 0,
+                    "stale_accounts_90d": 0,
+                    "service_principals": 0,
+                    "tenant_count": 0,
+                }
+
+            by_date[date_key]["total_users"] += snapshot.total_users
+            by_date[date_key]["mfa_enabled"] += snapshot.mfa_enabled_users
+            by_date[date_key]["mfa_disabled"] += snapshot.mfa_disabled_users
+            by_date[date_key]["guest_users"] += snapshot.guest_users
+            by_date[date_key]["privileged_users"] += snapshot.privileged_users
+            by_date[date_key]["stale_accounts_30d"] += snapshot.stale_accounts_30d
+            by_date[date_key]["stale_accounts_90d"] += snapshot.stale_accounts_90d
+            by_date[date_key]["service_principals"] += snapshot.service_principals
+            by_date[date_key]["tenant_count"] += 1
+
+        # Build trend data with calculated metrics
+        trends = []
+        for date_key, data in sorted(by_date.items()):
+            mfa_adoption_rate = (
+                (data["mfa_enabled"] / data["total_users"] * 100)
+                if data["total_users"] > 0
+                else 0.0
+            )
+
+            trends.append({
+                "date": date_key.isoformat(),
+                "total_users": data["total_users"],
+                "mfa_adoption_rate": round(mfa_adoption_rate, 2),
+                "mfa_enabled": data["mfa_enabled"],
+                "mfa_disabled": data["mfa_disabled"],
+                "guest_users": data["guest_users"],
+                "privileged_users": data["privileged_users"],
+                "stale_accounts_30d": data["stale_accounts_30d"],
+                "stale_accounts_90d": data["stale_accounts_90d"],
+                "service_principals": data["service_principals"],
+                "tenant_count": data["tenant_count"],
+            })
+
+        return trends
+
+    async def invalidate_cache(self, tenant_id: str | None = None) -> None:
+        """Invalidate identity cache after updates."""
+        await invalidate_on_sync_completion(tenant_id)

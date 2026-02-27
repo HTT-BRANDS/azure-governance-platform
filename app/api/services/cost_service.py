@@ -1,13 +1,26 @@
-"""Cost management service."""
+"""Cost management service with caching support."""
 
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.cache import cached, invalidate_on_sync_completion
 from app.models.cost import CostAnomaly, CostSnapshot
 from app.models.tenant import Tenant
-from app.schemas.cost import CostByTenant, CostSummary, CostTrend, ServiceCost
+from app.schemas.cost import (
+    AnomaliesByService,
+    AnomalyTrend,
+    BulkAcknowledgeResponse,
+    CostByTenant,
+    CostForecast,
+    CostSummary,
+    CostTrend,
+    ServiceCost,
+    TopAnomaly,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +31,8 @@ class CostService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_cost_summary(
+    @cached("cost_summary")
+    async def get_cost_summary(
         self,
         period_days: int = 30,
     ) -> CostSummary:
@@ -85,7 +99,8 @@ class CostService:
             top_services=top_services,
         )
 
-    def get_costs_by_tenant(self, period_days: int = 30) -> list[CostByTenant]:
+    @cached("cost_summary")
+    async def get_costs_by_tenant(self, period_days: int = 30) -> list[CostByTenant]:
         """Get cost breakdown by tenant."""
         end_date = date.today()
         start_date = end_date - timedelta(days=period_days)
@@ -115,7 +130,8 @@ class CostService:
 
         return sorted(result, key=lambda x: x.total_cost, reverse=True)
 
-    def get_cost_trends(self, days: int = 30) -> list[CostTrend]:
+    @cached("cost_summary")
+    async def get_cost_trends(self, days: int = 30) -> list[CostTrend]:
         """Get daily cost trends."""
         end_date = date.today()
         start_date = end_date - timedelta(days=days)
@@ -140,7 +156,7 @@ class CostService:
     def get_anomalies(
         self, acknowledged: bool | None = None
     ) -> list[CostAnomaly]:
-        """Get cost anomalies."""
+        """Get cost anomalies (not cached - real-time data)."""
         query = self.db.query(CostAnomaly)
 
         if acknowledged is not None:
@@ -148,7 +164,7 @@ class CostService:
 
         return query.order_by(CostAnomaly.detected_at.desc()).limit(50).all()
 
-    def acknowledge_anomaly(self, anomaly_id: int, user: str) -> bool:
+    async def acknowledge_anomaly(self, anomaly_id: int, user: str) -> bool:
         """Acknowledge a cost anomaly."""
         from datetime import datetime
 
@@ -160,4 +176,244 @@ class CostService:
         anomaly.acknowledged_by = user
         anomaly.acknowledged_at = datetime.utcnow()
         self.db.commit()
+
+        # Invalidate cache after state change
+        await invalidate_on_sync_completion(anomaly.tenant_id)
         return True
+
+    async def bulk_acknowledge_anomalies(
+        self, anomaly_ids: list[int], user: str
+    ) -> BulkAcknowledgeResponse:
+        """Acknowledge multiple cost anomalies."""
+        acknowledged_count = 0
+        failed_ids = []
+
+        for anomaly_id in anomaly_ids:
+            success = await self.acknowledge_anomaly(anomaly_id, user)
+            if success:
+                acknowledged_count += 1
+            else:
+                failed_ids.append(anomaly_id)
+
+        return BulkAcknowledgeResponse(
+            success=len(failed_ids) == 0,
+            acknowledged_count=acknowledged_count,
+            failed_ids=failed_ids,
+            acknowledged_at=datetime.utcnow(),
+        )
+
+    @cached("cost_summary")
+    async def get_anomaly_trends(self, months: int = 6) -> list[AnomalyTrend]:
+        """Get anomaly trends over time grouped by month."""
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=30 * months)
+
+        anomalies = (
+            self.db.query(CostAnomaly)
+            .filter(CostAnomaly.detected_at >= start_date)
+            .filter(CostAnomaly.detected_at <= end_date)
+            .all()
+        )
+
+        # Group by month
+        by_month: dict[str, dict[str, Any]] = {}
+        for anomaly in anomalies:
+            month_key = anomaly.detected_at.strftime("%Y-%m")
+            if month_key not in by_month:
+                by_month[month_key] = {
+                    "count": 0,
+                    "impact": 0.0,
+                    "acknowledged": 0,
+                    "unacknowledged": 0,
+                }
+
+            by_month[month_key]["count"] += 1
+            impact = abs((anomaly.actual_cost or 0) - (anomaly.expected_cost or 0))
+            by_month[month_key]["impact"] += impact
+
+            if anomaly.is_acknowledged:
+                by_month[month_key]["acknowledged"] += 1
+            else:
+                by_month[month_key]["unacknowledged"] += 1
+
+        return [
+            AnomalyTrend(
+                period=month,
+                anomaly_count=data["count"],
+                total_impact=data["impact"],
+                acknowledged_count=data["acknowledged"],
+                unacknowledged_count=data["unacknowledged"],
+            )
+            for month, data in sorted(by_month.items())
+        ]
+
+    @cached("cost_summary")
+    async def get_anomalies_by_service(
+        self, limit: int = 20
+    ) -> list[AnomaliesByService]:
+        """Get anomalies grouped by service."""
+        anomalies = self.db.query(CostAnomaly).all()
+
+        # Group by service
+        by_service: dict[str, dict[str, Any]] = {}
+        for anomaly in anomalies:
+            service_name = anomaly.service_name or "Unknown"
+            if service_name not in by_service:
+                by_service[service_name] = {
+                    "count": 0,
+                    "total_impact": 0.0,
+                    "percentage_changes": [],
+                    "latest_at": anomaly.detected_at,
+                }
+
+            by_service[service_name]["count"] += 1
+            impact = abs((anomaly.actual_cost or 0) - (anomaly.expected_cost or 0))
+            by_service[service_name]["total_impact"] += impact
+            by_service[service_name]["percentage_changes"].append(
+                anomaly.percentage_change or 0
+            )
+
+            if anomaly.detected_at > by_service[service_name]["latest_at"]:
+                by_service[service_name]["latest_at"] = anomaly.detected_at
+
+        # Calculate averages and create result
+        result = []
+        for service_name, data in by_service.items():
+            avg_change = (
+                sum(data["percentage_changes"]) / len(data["percentage_changes"])
+                if data["percentage_changes"]
+                else 0
+            )
+            result.append(
+                AnomaliesByService(
+                    service_name=service_name,
+                    anomaly_count=data["count"],
+                    total_impact=data["total_impact"],
+                    avg_percentage_change=avg_change,
+                    latest_anomaly_at=data["latest_at"],
+                )
+            )
+
+        # Sort by total impact and limit
+        return sorted(result, key=lambda x: x.total_impact, reverse=True)[:limit]
+
+    def get_top_anomalies(
+        self, n: int = 10, acknowledged: bool | None = None
+    ) -> list[TopAnomaly]:
+        """Get top N anomalies by impact (not cached - real-time)."""
+        query = self.db.query(CostAnomaly)
+
+        if acknowledged is not None:
+            query = query.filter(CostAnomaly.is_acknowledged == acknowledged)
+
+        anomalies = query.order_by(CostAnomaly.detected_at.desc()).limit(100).all()
+
+        # Get tenant names for display
+        tenant_names = {t.id: t.name for t in self.db.query(Tenant).all()}
+
+        # Calculate impact score and sort
+        scored_anomalies = []
+        for anomaly in anomalies:
+            impact = abs((anomaly.actual_cost or 0) - (anomaly.expected_cost or 0))
+            percentage_factor = abs(anomaly.percentage_change or 0) / 100
+            impact_score = impact * (1 + percentage_factor)
+
+            scored_anomalies.append(
+                (
+                    anomaly,
+                    impact_score,
+                )
+            )
+
+        # Sort by impact score and take top N
+        scored_anomalies.sort(key=lambda x: x[1], reverse=True)
+        top_n = scored_anomalies[:n]
+
+        return [
+            TopAnomaly(
+                anomaly=self._to_anomaly_schema(anomaly, tenant_names),
+                impact_score=score,
+            )
+            for anomaly, score in top_n
+        ]
+
+    def _to_anomaly_schema(
+        self, anomaly: CostAnomaly, tenant_names: dict[str, str]
+    ) -> "schemas.cost.CostAnomaly":
+        """Convert database anomaly to schema."""
+        from app.schemas import cost as schemas
+
+        return schemas.CostAnomaly(
+            id=anomaly.id,
+            tenant_id=anomaly.tenant_id,
+            tenant_name=tenant_names.get(anomaly.tenant_id, "Unknown"),
+            subscription_id=anomaly.subscription_id,
+            detected_at=anomaly.detected_at,
+            anomaly_type=anomaly.anomaly_type,
+            description=anomaly.description,
+            expected_cost=anomaly.expected_cost or 0,
+            actual_cost=anomaly.actual_cost or 0,
+            percentage_change=anomaly.percentage_change or 0,
+            service_name=anomaly.service_name,
+            is_acknowledged=bool(anomaly.is_acknowledged),
+            acknowledged_by=anomaly.acknowledged_by,
+            acknowledged_at=anomaly.acknowledged_at,
+        )
+
+    @cached("cost_summary")
+    async def get_cost_forecast(self, days: int = 30) -> list[CostForecast]:
+        """Generate cost forecast using simple linear projection."""
+        # Get last 90 days of historical data for trend calculation
+        end_date = date.today()
+        start_date = end_date - timedelta(days=90)
+
+        historical_costs = (
+            self.db.query(CostSnapshot.date, func.sum(CostSnapshot.total_cost).label("daily_cost"))
+            .filter(CostSnapshot.date >= start_date)
+            .filter(CostSnapshot.date <= end_date)
+            .group_by(CostSnapshot.date)
+            .order_by(CostSnapshot.date)
+            .all()
+        )
+
+        if len(historical_costs) < 7:
+            # Not enough data, return empty
+            return []
+
+        # Calculate simple linear trend
+        costs = [c.daily_cost for c in historical_costs]
+        n = len(costs)
+        x_mean = (n - 1) / 2
+        y_mean = sum(costs) / n
+
+        # Calculate slope (m) using least squares
+        numerator = sum((i - x_mean) * (costs[i] - y_mean) for i in range(n))
+        denominator = sum((i - x_mean) ** 2 for i in range(n))
+        slope = numerator / denominator if denominator != 0 else 0
+
+        # Calculate standard deviation for confidence intervals
+        variance = sum((c - y_mean) ** 2 for c in costs) / n
+        std_dev = variance ** 0.5
+
+        # Generate forecast
+        last_value = costs[-1]
+        forecasts = []
+
+        for i in range(1, days + 1):
+            forecast_date = end_date + timedelta(days=i)
+            forecasted_cost = last_value + (slope * i)
+
+            # Simple confidence interval (±1 standard deviation)
+            confidence_lower = max(0, forecasted_cost - std_dev)
+            confidence_upper = forecasted_cost + std_dev
+
+            forecasts.append(
+                CostForecast(
+                    date=forecast_date,
+                    forecasted_cost=round(forecasted_cost, 2),
+                    confidence_lower=round(confidence_lower, 2),
+                    confidence_upper=round(confidence_upper, 2),
+                )
+            )
+
+        return forecasts

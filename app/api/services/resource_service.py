@@ -1,4 +1,4 @@
-"""Resource management service."""
+"""Resource management service with caching support."""
 
 import json
 import logging
@@ -6,13 +6,17 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app.models.resource import Resource
+from app.core.cache import cached, invalidate_on_sync_completion
+from app.models.resource import IdleResource, Resource
 from app.models.tenant import Subscription, Tenant
 from app.schemas.resource import (
+    IdleResource as IdleResourceSchema,
+    IdleResourceSummary,
     MissingTags,
     OrphanedResource,
     ResourceInventory,
     ResourceItem,
+    TagResourceResponse,
     TaggingCompliance,
 )
 
@@ -28,7 +32,8 @@ class ResourceService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_resource_inventory(
+    @cached("resource_inventory")
+    async def get_resource_inventory(
         self,
         tenant_id: str | None = None,
         resource_type: str | None = None,
@@ -117,7 +122,8 @@ class ResourceService:
             resources=items,
         )
 
-    def get_orphaned_resources(self) -> list[OrphanedResource]:
+    @cached("resource_inventory")
+    async def get_orphaned_resources(self) -> list[OrphanedResource]:
         """Get list of orphaned resources."""
         resources = (
             self.db.query(Resource)
@@ -168,7 +174,8 @@ class ResourceService:
             for r in resources
         ]
 
-    def get_tagging_compliance(
+    @cached("resource_inventory")
+    async def get_tagging_compliance(
         self, required_tags: list[str] | None = None
     ) -> TaggingCompliance:
         """Get tagging compliance summary."""
@@ -229,3 +236,127 @@ class ResourceService:
             required_tags=required_tags,
             missing_tags_by_resource=missing_tags_list[:100],  # Limit output
         )
+
+    def get_idle_resources(
+        self,
+        tenant_ids: list[str] | None = None,
+        idle_type: str | None = None,
+        is_reviewed: bool | None = None,
+        limit: int = 100,
+        offset: int = 0,
+        sort_by: str = "estimated_monthly_savings",
+        sort_order: str = "desc",
+    ) -> list[IdleResourceSchema]:
+        """Get idle resources with filtering and pagination (not cached - real-time)."""
+        query = self.db.query(IdleResource)
+
+        # Apply filters
+        if tenant_ids:
+            query = query.filter(IdleResource.tenant_id.in_(tenant_ids))
+        if idle_type:
+            query = query.filter(IdleResource.idle_type == idle_type)
+        if is_reviewed is not None:
+            query = query.filter(IdleResource.is_reviewed == (1 if is_reviewed else 0))
+
+        # Apply sorting
+        sort_column = getattr(IdleResource, sort_by, IdleResource.estimated_monthly_savings)
+        if sort_order.lower() == "desc":
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
+
+        # Apply pagination
+        idle_resources = query.offset(offset).limit(limit).all()
+
+        # Get tenant names for display
+        tenant_names = {t.id: t.name for t in self.db.query(Tenant).all()}
+
+        return [
+            IdleResourceSchema(
+                id=r.id,
+                resource_id=r.resource_id,
+                tenant_id=r.tenant_id,
+                tenant_name=tenant_names.get(r.tenant_id, "Unknown"),
+                subscription_id=r.subscription_id,
+                detected_at=r.detected_at,
+                idle_type=r.idle_type,
+                description=r.description,
+                estimated_monthly_savings=r.estimated_monthly_savings,
+                idle_days=r.idle_days,
+                is_reviewed=bool(r.is_reviewed),
+                reviewed_by=r.reviewed_by,
+                reviewed_at=r.reviewed_at,
+                review_notes=r.review_notes,
+            )
+            for r in idle_resources
+        ]
+
+    @cached("resource_inventory")
+    async def get_idle_resources_summary(self) -> IdleResourceSummary:
+        """Get summary of idle resources."""
+        idle_resources = self.db.query(IdleResource).filter(
+            IdleResource.is_reviewed == 0
+        ).all()
+
+        total_count = len(idle_resources)
+        total_monthly_savings = sum(
+            (r.estimated_monthly_savings or 0) for r in idle_resources
+        )
+        total_annual_savings = total_monthly_savings * 12
+
+        # By type
+        by_type: dict[str, int] = {}
+        for r in idle_resources:
+            by_type[r.idle_type] = by_type.get(r.idle_type, 0) + 1
+
+        # By tenant
+        by_tenant: dict[str, int] = {}
+        tenant_names = {t.id: t.name for t in self.db.query(Tenant).all()}
+        for r in idle_resources:
+            tenant_name = tenant_names.get(r.tenant_id, "Unknown")
+            by_tenant[tenant_name] = by_tenant.get(tenant_name, 0) + 1
+
+        return IdleResourceSummary(
+            total_count=total_count,
+            total_potential_savings_monthly=total_monthly_savings,
+            total_potential_savings_annual=total_annual_savings,
+            by_type=by_type,
+            by_tenant=by_tenant,
+        )
+
+    async def tag_idle_resource_as_reviewed(
+        self, idle_resource_id: int, user: str, notes: str | None = None
+    ) -> TagResourceResponse:
+        """Tag an idle resource as reviewed."""
+        idle_resource = (
+            self.db.query(IdleResource)
+            .filter(IdleResource.id == idle_resource_id)
+            .first()
+        )
+
+        if not idle_resource:
+            return TagResourceResponse(
+                success=False,
+                resource_id=str(idle_resource_id),
+                tagged_at=datetime.now(UTC),
+            )
+
+        idle_resource.is_reviewed = True
+        idle_resource.reviewed_by = user
+        idle_resource.reviewed_at = datetime.now(UTC)
+        idle_resource.review_notes = notes
+
+        self.db.commit()
+
+        # Invalidate cache after state change
+        await invalidate_on_sync_completion(idle_resource.tenant_id)
+
+        return TagResourceResponse(
+            success=True,
+            resource_id=idle_resource.resource_id,
+            tagged_at=datetime.now(UTC),
+        )
+
+    async def invalidate_cache(self, tenant_id: str | None = None) -> None:
+        """Invalidate resource cache after updates."""
+        await invalidate_on_sync_completion(tenant_id)

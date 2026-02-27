@@ -1,7 +1,37 @@
 """Core module initialization."""
 
+from app.core.cache import (
+    cache_manager,
+    cached,
+    delete_cached,
+    get_cached,
+    get_cache_ttl,
+    invalidate_on_sync_completion,
+    set_cached,
+)
 from app.core.config import Settings, get_settings
-from app.core.database import Base, get_db, get_db_context, init_db
+from app.core.database import (
+    Base,
+    batch_query,
+    bulk_insert_chunks,
+    eager_load_options,
+    get_db,
+    get_db_bulk_context,
+    get_db_context,
+    get_db_stats,
+    init_db,
+    query_with_timing,
+)
+from app.core.monitoring import (
+    PerformanceMonitor,
+    SyncJobMetrics,
+    get_cache_stats,
+    get_performance_dashboard,
+    performance_monitor,
+    reset_metrics,
+    track_query,
+    track_sync_job,
+)
 from app.core.notifications import (
     Notification,
     NotificationChannel,
@@ -18,12 +48,38 @@ from app.core.notifications import (
 from app.core.scheduler import get_scheduler, init_scheduler, trigger_manual_sync
 
 __all__ = [
+    # Config
     "Settings",
     "get_settings",
+    # Database
     "Base",
     "get_db",
     "get_db_context",
+    "get_db_bulk_context",
     "init_db",
+    "eager_load_options",
+    "query_with_timing",
+    "batch_query",
+    "bulk_insert_chunks",
+    "get_db_stats",
+    # Cache
+    "cache_manager",
+    "cached",
+    "get_cached",
+    "set_cached",
+    "delete_cached",
+    "get_cache_ttl",
+    "invalidate_on_sync_completion",
+    # Monitoring
+    "PerformanceMonitor",
+    "SyncJobMetrics",
+    "performance_monitor",
+    "track_query",
+    "track_sync_job",
+    "get_performance_dashboard",
+    "get_cache_stats",
+    "reset_metrics",
+    # Scheduler
     "get_scheduler",
     "init_scheduler",
     "trigger_manual_sync",

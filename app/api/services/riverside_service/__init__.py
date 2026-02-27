@@ -1,4 +1,4 @@
-"""Riverside Service - Main service class and exports.
+"""Riverside Service - Main service class and exports with caching support.
 
 This module provides the main RiversideService class that coordinates
 sync operations and queries for Riverside compliance tracking.
@@ -44,6 +44,7 @@ from app.api.services.riverside_service.sync import (
     sync_riverside_mfa,
     sync_riverside_requirements,
 )
+from app.core.cache import cached, invalidate_on_sync_completion
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -103,7 +104,10 @@ class RiversideService:
         Returns:
             Dict with sync results by tenant.
         """
-        return await sync_riverside_mfa(self.db)
+        result = await sync_riverside_mfa(self.db)
+        # Invalidate cache after sync
+        await invalidate_on_sync_completion()
+        return result
 
     async def sync_riverside_device_compliance(self) -> dict:
         """Sync device compliance data from Intune/Graph API for all tenants.
@@ -111,7 +115,9 @@ class RiversideService:
         Returns:
             Dict with sync results by tenant.
         """
-        return await sync_riverside_device_compliance(self.db)
+        result = await sync_riverside_device_compliance(self.db)
+        await invalidate_on_sync_completion()
+        return result
 
     async def sync_riverside_requirements(self) -> dict:
         """Sync requirement status from database and Graph API indicators.
@@ -119,7 +125,9 @@ class RiversideService:
         Returns:
             Dict with sync results.
         """
-        return await sync_riverside_requirements(self.db)
+        result = await sync_riverside_requirements(self.db)
+        await invalidate_on_sync_completion()
+        return result
 
     async def sync_riverside_maturity_scores(self) -> dict:
         """Calculate and sync maturity scores based on current compliance data.
@@ -127,7 +135,9 @@ class RiversideService:
         Returns:
             Dict with maturity scores by tenant.
         """
-        return await sync_riverside_maturity_scores(self.db)
+        result = await sync_riverside_maturity_scores(self.db)
+        await invalidate_on_sync_completion()
+        return result
 
     async def sync_all(self) -> dict:
         """Run all Riverside sync operations.
@@ -144,10 +154,11 @@ class RiversideService:
         return results
 
     # ========================================================================
-    # QUERY METHODS
+    # QUERY METHODS (with caching)
     # ========================================================================
 
-    def get_riverside_summary(self) -> dict:
+    @cached("riverside_summary")
+    async def get_riverside_summary(self) -> dict:
         """Get executive summary for Riverside compliance dashboard.
 
         Returns:
@@ -161,7 +172,8 @@ class RiversideService:
         """
         return get_riverside_summary(self.db)
 
-    def get_mfa_status(self) -> dict:
+    @cached("riverside_summary")
+    async def get_mfa_status(self) -> dict:
         """Get detailed MFA status for all tenants.
 
         Returns:
@@ -169,7 +181,8 @@ class RiversideService:
         """
         return get_mfa_status(self.db)
 
-    def get_maturity_scores(self) -> dict:
+    @cached("riverside_summary")
+    async def get_maturity_scores(self) -> dict:
         """Get maturity scores for all domains and tenants.
 
         Returns:
@@ -183,7 +196,7 @@ class RiversideService:
         priority: str | None = None,
         status: str | None = None
     ) -> dict:
-        """Get requirements list with optional filtering.
+        """Get requirements list with optional filtering (not cached - real-time).
 
         Args:
             category: Filter by category (IAM, GS, DS)
@@ -195,10 +208,15 @@ class RiversideService:
         """
         return get_requirements(self.db, category, priority, status)
 
-    def get_gaps(self) -> dict:
+    @cached("riverside_summary")
+    async def get_gaps(self) -> dict:
         """Get critical gaps analysis.
 
         Returns:
             Dict with critical gaps categorized by priority.
         """
         return get_gaps(self.db)
+
+    async def invalidate_cache(self, tenant_id: str | None = None) -> None:
+        """Invalidate Riverside cache after updates."""
+        await invalidate_on_sync_completion(tenant_id)

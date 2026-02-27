@@ -4,11 +4,16 @@ A lightweight, cost-effective platform for managing Azure/M365 governance across
 
 ## Features
 
-- **Cost Optimization**: Aggregate cost visibility, anomaly detection, idle resource identification
-- **Compliance Monitoring**: Policy compliance tracking, secure score aggregation, drift detection
-- **Resource Management**: Cross-tenant inventory, tagging compliance, orphaned resource detection
-- **Identity Governance**: Privileged access reporting, guest user management, MFA compliance
-- **Riverside Compliance Tracking**: Specialized compliance tracking for Riverside Company deadline (July 8, 2026)
+- **Cost Management**: Cross-tenant cost aggregation, anomaly detection, trends, forecasts, idle resource identification
+- **Compliance Monitoring**: Policy compliance tracking, secure score aggregation, drift detection, non-compliant policy reporting
+- **Resource Management**: Cross-tenant inventory, tagging compliance, orphaned resource detection, idle resources
+- **Identity Governance**: Privileged access reporting, guest user management, MFA compliance, stale account detection
+- **Sync Management**: Automated background sync with monitoring, alerting, and manual sync capabilities
+- **Preflight Checks**: Validate Azure connectivity and permissions before operations
+- **Riverside Compliance**: Specialized compliance tracking for Riverside Company deadline (July 8, 2026)
+- **Bulk Operations**: Apply tags, acknowledge anomalies, review resources in bulk
+- **Data Exports**: CSV exports for costs, resources, and compliance data
+- **Performance Monitoring**: Cache metrics, query performance, sync job analytics
 
 ## Quick Start
 
@@ -26,18 +31,34 @@ git clone https://github.com/your-org/azure-governance-platform.git
 cd azure-governance-platform
 
 # Create virtual environment
-uv venv --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple --allow-insecure-host pypi.ci.artifacts.walmart.com
-source .venv/bin/activate  # or `.venv\Scripts\activate` on Windows
+uv venv
+source .venv/bin/activate  # or `.venv\\Scripts\\activate` on Windows
 
 # Install dependencies
-uv pip install -e . --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple --allow-insecure-host pypi.ci.artifacts.walmart.com
+uv pip install -e ".[dev]"
 
 # Copy and configure environment
 cp .env.example .env
 # Edit .env with your Azure credentials
 
+# Initialize database
+python -c "from app.core.database import init_db; init_db()"
+
 # Run the application
 uvicorn app.main:app --reload
+```
+
+### Quick Verification
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# View dashboard
+open http://localhost:8000
+
+# API documentation
+open http://localhost:8000/docs
 ```
 
 ### Azure Setup
@@ -55,12 +76,23 @@ uvicorn app.main:app --reload
 3. Store credentials in Azure Key Vault
 4. Configure `KEY_VAULT_URL` in `.env`
 
-## API Documentation
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [API Reference](./docs/API.md) | Complete REST API documentation |
+| [Deployment Guide](./docs/DEPLOYMENT.md) | Deployment options and procedures |
+| [Operations Runbook](./docs/RUNBOOK.md) | Daily operations and troubleshooting |
+| [Developer Guide](./docs/DEVELOPMENT.md) | Setup and contribution guidelines |
+| [Implementation Guide](./docs/IMPLEMENTATION_GUIDE.md) | Detailed setup instructions |
+| [Common Pitfalls](./docs/COMMON_PITFALLS.md) | Troubleshooting guide |
+
+### Interactive API Documentation
 
 Once running, access the interactive API docs:
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
 ## Project Structure
 
@@ -236,15 +268,32 @@ For comprehensive Riverside compliance documentation, see:
 
 ## Roadmap
 
-- [x] MVP: Cost, Compliance, Resources, Identity dashboards
-- [x] Riverside Compliance Dashboard
+### Completed
+
+- [x] Multi-tenant cost aggregation and anomaly detection
+- [x] Compliance monitoring with secure score tracking
+- [x] Resource inventory and tagging compliance
+- [x] Identity governance (privileged accounts, guests, MFA)
+- [x] Automated sync jobs with monitoring
+- [x] Preflight checks for Azure connectivity
+- [x] Riverside compliance dashboard
+- [x] Bulk operations (tags, anomalies, recommendations)
+- [x] CSV export functionality
+- [x] Performance monitoring and caching
+
+### In Progress
+
 - [ ] Automated remediation suggestions
+- [ ] Azure Policy compliance reporting enhancements
+
+### Planned
+
 - [ ] Custom compliance frameworks
 - [ ] Power BI embedding
 - [ ] Teams bot integration
 - [ ] Access review workflows
-- [ ] Riverside Phase 2: Automated Azure sync
-- [ ] Riverside Phase 3: External threat integration
+- [ ] Advanced cost forecasting with ML
+- [ ] Multi-factor authentication for platform access
 
 ## Contributing
 

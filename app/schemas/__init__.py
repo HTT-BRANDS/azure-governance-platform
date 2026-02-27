@@ -16,7 +16,18 @@ from app.schemas.identity import (
     IdentitySummary,
     PrivilegedAccount,
 )
+from app.schemas.recommendation import (
+    DismissRecommendationRequest,
+    DismissRecommendationResponse,
+    Recommendation,
+    RecommendationCategory,
+    RecommendationsByCategory,
+    RecommendationSummary,
+    SavingsPotential,
+)
 from app.schemas.resource import (
+    IdleResource,
+    IdleResourceSummary,
     ResourceInventory,
     ResourceItem,
     TaggingCompliance,
@@ -75,10 +86,20 @@ __all__ = [
     "ResourceItem",
     "ResourceInventory",
     "TaggingCompliance",
+    "IdleResource",
+    "IdleResourceSummary",
     # Identity
     "IdentitySummary",
     "PrivilegedAccount",
     "GuestAccount",
+    # Recommendations
+    "Recommendation",
+    "RecommendationCategory",
+    "RecommendationsByCategory",
+    "RecommendationSummary",
+    "SavingsPotential",
+    "DismissRecommendationRequest",
+    "DismissRecommendationResponse",
     # Tenant
     "TenantCreate",
     "TenantUpdate",

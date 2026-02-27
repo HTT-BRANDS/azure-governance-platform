@@ -322,6 +322,102 @@ Before going live, verify:
 
 ---
 
+### 14. Scheduler Not Starting
+
+**The Problem:**
+Background sync jobs aren't running automatically.
+
+**Symptoms:**
+- Manual sync works fine
+- Scheduled syncs never happen
+- No errors in logs
+
+**The Fix:**
+```bash
+# Check scheduler status
+curl http://localhost:8000/health/detailed | jq '.components.scheduler'
+
+# Should return: "running"
+# If "not_running", restart the application
+```
+
+**Prevention:**
+Ensure the scheduler is initialized in `app/main.py` lifespan handler.
+
+### 15. Cache Not Working
+
+**The Problem:**
+Repeated API calls are slow, cache not being used.
+
+**Symptoms:**
+- Same queries take same amount of time
+- No cache hit metrics
+
+**The Fix:**
+```bash
+# Check cache backend
+curl http://localhost:8000/monitoring/cache
+
+# If using Redis, verify connection
+# If using memory cache, it works by default
+```
+
+### 16. Preflight Checks Failing
+
+**The Problem:**
+Can't validate Azure connectivity.
+
+**Symptoms:**
+- Preflight checks return failures
+- Specific Azure API access errors
+
+**The Fix:**
+```bash
+# Run preflight checks
+curl -X POST http://localhost:8000/api/v1/preflight/run
+
+# Check specific tenant
+curl http://localhost:8000/api/v1/preflight/tenants/{tenant_id}
+```
+
+---
+
+## 📚 Quick Reference: Error Messages
+
+| Error | Meaning | Fix |
+|-------|---------|-----|
+| `AADSTS65001` | No admin consent | Grant admin consent |
+| `AADSTS7000215` | Bad client secret | Create new secret |
+| `AADSTS700016` | App not found | Check client ID |
+| `AADSTS90002` | Tenant not found | Check tenant ID |
+| `AuthorizationFailed` | No RBAC role | Assign Reader role |
+| `ModuleNotFoundError` | Venv not active | Activate venv |
+| `database is locked` | Concurrent access | Restart app |
+| `Connection refused` | Service not running | Start the app |
+| `Address already in use` | Port conflict | Kill other process |
+| `scheduler_not_initialized` | Scheduler failed to start | Check logs, restart app |
+| `sync_already_running` | Concurrent sync attempt | Wait for current sync to complete |
+
+---
+
+## 🎯 Prevention Checklist
+
+Before going live, verify:
+
+- [ ] All tenants have App Registrations
+- [ ] All permissions show green checkmarks (admin consent)
+- [ ] All subscriptions have RBAC roles assigned
+- [ ] Client secrets are stored securely
+- [ ] Calendar reminders set for secret expiration
+- [ ] Tested with sample data first
+- [ ] Triggered manual sync successfully
+- [ ] Scheduled sync jobs are running
+- [ ] Preflight checks pass for all tenants
+- [ ] Reviewed logs for errors
+- [ ] Documented credentials securely
+
+---
+
 ## 🆘 Still Stuck?
 
 1. **Enable debug logging:**
@@ -334,16 +430,26 @@ Before going live, verify:
 2. **Check the logs:**
    Look at the terminal where the app is running for detailed errors.
 
-3. **Test Azure credentials directly:**
+3. **Check system status:**
    ```bash
-   az login --service-principal \
-     --username <client-id> \
-     --password <client-secret> \
-     --tenant <tenant-id>
+   curl http://localhost:8000/api/v1/status | jq
    ```
 
-4. **Start fresh:**
+4. **Run preflight checks:**
+   ```bash
+   curl -X POST http://localhost:8000/api/v1/preflight/run
+   ```
+
+5. **Test Azure credentials directly:**
+   ```bash
+   az login --service-principal \n     --username <client-id> \n     --password <client-secret> \n     --tenant <tenant-id>
+   ```
+
+6. **Start fresh:**
    If all else fails, delete `data/governance.db` and start over with sample data.
+
+7. **Ask for help:**
+   Share the exact error message, what you've tried, and your environment details.
 
 5. **Ask for help:**
    Share the exact error message, what you've tried, and your environment details.

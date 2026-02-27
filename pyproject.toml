@@ -36,6 +36,7 @@ dependencies = [
     "azure-mgmt-authorization>=4.0.0",
     "azure-keyvault-secrets>=4.7.0",
     "six>=1.17.0",
+    "msgraph-sdk>=1.55.0",
 ]
 
 [project.optional-dependencies]

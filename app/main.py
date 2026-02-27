@@ -9,16 +9,21 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import (
+    bulk_router,
     compliance_router,
     costs_router,
     dashboard_router,
+    exports_router,
     identity_router,
+    monitoring_router,
     preflight_router,
+    recommendations_router,
     resources_router,
     riverside_router,
     sync_router,
     tenants_router,
 )
+from app.core.cache import cache_manager
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.scheduler import init_scheduler
@@ -42,6 +47,10 @@ async def lifespan(app: FastAPI):
     # Initialize database
     init_db()
     logger.info("Database initialized")
+
+    # Initialize cache
+    await cache_manager.initialize()
+    logger.info("Cache initialized")
 
     # Initialize and start scheduler
     scheduler = init_scheduler()
@@ -86,6 +95,10 @@ app.include_router(tenants_router)
 app.include_router(sync_router)
 app.include_router(preflight_router)
 app.include_router(riverside_router)
+app.include_router(recommendations_router)
+app.include_router(exports_router)
+app.include_router(bulk_router)
+app.include_router(monitoring_router)
 
 
 @app.get("/health")
@@ -102,6 +115,7 @@ async def detailed_health_check():
     components = {
         "database": "unknown",
         "scheduler": "unknown",
+        "cache": "unknown",
         "azure_configured": settings.is_configured,
     }
 
@@ -122,28 +136,123 @@ async def detailed_health_check():
     else:
         components["scheduler"] = "not_running"
 
+    # Check cache
+    cache_metrics = cache_manager.get_metrics()
+    components["cache"] = cache_metrics.get("backend", "unknown")
+
     return {
         "status": "healthy" if all(
-            v in ["healthy", "running", True] for v in components.values()
+            v in ["healthy", "running", True] or v not in ["unhealthy", "not_running"]
+            for v in components.values()
         ) else "degraded",
         "version": settings.app_version,
         "components": components,
+        "cache_metrics": cache_metrics,
     }
+
+
+@app.get("/api/v1/status")
+async def get_system_status():
+    """Get detailed system status and health metrics.
+
+    Returns comprehensive status including:
+    - Database health
+    - Scheduler status
+    - Cache metrics
+    - Sync job summaries
+    - Active alerts count
+    """
+    from datetime import datetime, UTC
+    from app.core.database import SessionLocal, get_db_stats
+    from app.api.services.monitoring_service import MonitoringService
+    from app.core.monitoring import get_performance_dashboard
+
+    status = {
+        "status": "healthy",
+        "version": settings.app_version,
+        "timestamp": datetime.now(UTC).isoformat(),
+        "components": {},
+        "sync_jobs": {},
+        "alerts": {},
+        "performance": {},
+        "cache": {},
+    }
+
+    # Check database
+    try:
+        db = SessionLocal()
+        db_stats = get_db_stats(db)
+        db.execute("SELECT 1")
+        db.close()
+        status["components"]["database"] = "healthy"
+        status["database_stats"] = db_stats
+    except Exception as e:
+        status["components"]["database"] = f"unhealthy: {str(e)}"
+        status["status"] = "degraded"
+
+    # Check scheduler
+    try:
+        from app.core.scheduler import get_scheduler
+        scheduler = get_scheduler()
+        if scheduler and scheduler.running:
+            status["components"]["scheduler"] = "running"
+            status["sync_jobs"]["active_jobs"] = len(scheduler.get_jobs())
+        else:
+            status["components"]["scheduler"] = "not_running"
+    except Exception as e:
+        status["components"]["scheduler"] = f"error: {str(e)}"
+
+    # Check cache
+    try:
+        cache_metrics = cache_manager.get_metrics()
+        status["cache"] = cache_metrics
+        status["components"]["cache"] = cache_metrics.get("backend", "unknown")
+    except Exception as e:
+        status["components"]["cache"] = f"error: {str(e)}"
+
+    # Get performance metrics
+    try:
+        status["performance"] = get_performance_dashboard()
+    except Exception as e:
+        status["performance"] = {"error": str(e)}
+
+    # Get alerts summary
+    try:
+        db = SessionLocal()
+        monitoring = MonitoringService(db)
+        status["alerts"] = {
+            "active_count": len(monitoring.get_active_alerts()),
+            "recent_count": len(monitoring.get_recent_alerts(hours=24)),
+        }
+        db.close()
+    except Exception as e:
+        status["alerts"] = {"error": str(e)}
+
+    return status
+
+
+@app.get("/")
+async def root():
+    """Root endpoint - redirect to dashboard."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/dashboard")
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler."""
+    """Global exception handler for unhandled exceptions."""
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "An internal error occurred. Please try again later."},
+        content={
+            "error": "Internal server error",
+            "detail": str(exc) if settings.debug else "An unexpected error occurred",
+        },
     )
 
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(
         "app.main:app",
         host=settings.host,

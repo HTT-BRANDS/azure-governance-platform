@@ -46,3 +46,26 @@ class ResourceTag(Base):
 
     def __repr__(self) -> str:
         return f"<ResourceTag {self.tag_name}={self.tag_value}>"
+
+
+class IdleResource(Base):
+    """Detected idle resources for optimization."""
+
+    __tablename__ = "idle_resources"
+
+    id: Mapped[int] = Column(Integer, primary_key=True, autoincrement=True)
+    resource_id: Mapped[str] = Column(String(500), ForeignKey("resources.id"), nullable=False)
+    tenant_id: Mapped[str] = Column(String(36), ForeignKey("tenants.id"), nullable=False)
+    subscription_id: Mapped[str] = Column(String(36), nullable=False)
+    detected_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    idle_type: Mapped[str] = Column(String(50), nullable=False)  # low_cpu, no_connections, etc.
+    description: Mapped[str] = Column(Text, nullable=False)
+    estimated_monthly_savings: Mapped[float | None] = Column(Float)
+    idle_days: Mapped[int] = Column(Integer, default=0)
+    is_reviewed: Mapped[int] = Column(Integer, default=0)  # SQLite bool
+    reviewed_by: Mapped[str | None] = Column(String(255))
+    reviewed_at: Mapped[datetime | None] = Column(DateTime)
+    review_notes: Mapped[str | None] = Column(Text)
+
+    def __repr__(self) -> str:
+        return f"<IdleResource {self.idle_type}: ${self.estimated_monthly_savings:.2f}/mo>"

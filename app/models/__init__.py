@@ -5,7 +5,8 @@ from app.models.cost import CostAnomaly, CostSnapshot
 from app.models.identity import IdentitySnapshot, PrivilegedUser
 from app.models.monitoring import Alert, SyncJobLog, SyncJobMetrics
 from app.models.notifications import NotificationLog
-from app.models.resource import Resource, ResourceTag
+from app.models.resource import IdleResource, Resource, ResourceTag
+from app.models.recommendation import Recommendation
 from app.models.riverside import (
     RequirementCategory,
     RequirementPriority,
@@ -28,6 +29,7 @@ __all__ = [
     "PolicyState",
     "Resource",
     "ResourceTag",
+    "IdleResource",
     "IdentitySnapshot",
     "PrivilegedUser",
     "SyncJob",
@@ -36,6 +38,8 @@ __all__ = [
     "SyncJobMetrics",
     "Alert",
     "NotificationLog",
+    # Recommendation models
+    "Recommendation",
     # Riverside models
     "RequirementCategory",
     "RequirementPriority",
