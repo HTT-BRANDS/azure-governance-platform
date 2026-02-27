@@ -5,7 +5,9 @@ from datetime import datetime, timedelta
 
 from app.api.services.graph_client import GraphClient
 from app.api.services.monitoring_service import MonitoringService
+from app.core.circuit_breaker import IDENTITY_SYNC_BREAKER, circuit_breaker
 from app.core.database import get_db_context
+from app.core.retry import IDENTITY_SYNC_POLICY, retry_with_backoff
 from app.models.identity import IdentitySnapshot, PrivilegedUser
 from app.models.tenant import Tenant
 
@@ -108,6 +110,8 @@ def _process_user_activity(
     return is_active, is_stale_30d, is_stale_90d
 
 
+@circuit_breaker(IDENTITY_SYNC_BREAKER)
+@retry_with_backoff(IDENTITY_SYNC_POLICY)
 async def sync_identity():
     """Sync identity data from all tenants.
 

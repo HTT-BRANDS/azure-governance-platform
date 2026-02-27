@@ -8,13 +8,17 @@ from azure.core.exceptions import HttpResponseError
 
 from app.api.services.azure_client import azure_client_manager
 from app.api.services.monitoring_service import MonitoringService
+from app.core.circuit_breaker import RESOURCE_SYNC_BREAKER, circuit_breaker
 from app.core.database import get_db_context
+from app.core.retry import RESOURCE_SYNC_POLICY, retry_with_backoff
 from app.models.resource import Resource
 from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
 
+@circuit_breaker(RESOURCE_SYNC_BREAKER)
+@retry_with_backoff(RESOURCE_SYNC_POLICY)
 async def sync_resources():
     """Sync resource inventory from all tenants.
 

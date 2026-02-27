@@ -14,13 +14,17 @@ from azure.mgmt.costmanagement.models import (
 
 from app.api.services.azure_client import azure_client_manager
 from app.api.services.monitoring_service import MonitoringService
+from app.core.circuit_breaker import COST_SYNC_BREAKER, circuit_breaker
 from app.core.database import get_db_context
+from app.core.retry import COST_SYNC_POLICY, retry_with_backoff
 from app.models.cost import CostSnapshot
 from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
 
+@circuit_breaker(COST_SYNC_BREAKER)
+@retry_with_backoff(COST_SYNC_POLICY)
 async def sync_costs():
     """Sync cost data from all tenants.
 

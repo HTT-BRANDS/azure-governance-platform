@@ -5,7 +5,9 @@ import logging
 import httpx
 from azure.identity import ClientSecretCredential
 
+from app.core.circuit_breaker import GRAPH_API_BREAKER, circuit_breaker
 from app.core.config import get_settings
+from app.core.retry import GRAPH_API_POLICY, retry_with_backoff
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -63,6 +65,8 @@ class GraphClient:
             response.raise_for_status()
             return response.json()
 
+    @circuit_breaker(GRAPH_API_BREAKER)
+    @retry_with_backoff(GRAPH_API_POLICY)
     async def get_users(self, top: int = 999) -> list[dict]:
         """Get all users in the tenant."""
         users = []
@@ -87,6 +91,8 @@ class GraphClient:
 
         return users
 
+    @circuit_breaker(GRAPH_API_BREAKER)
+    @retry_with_backoff(GRAPH_API_POLICY)
     async def get_guest_users(self) -> list[dict]:
         """Get all guest users."""
         endpoint = "/users"
@@ -98,6 +104,8 @@ class GraphClient:
         data = await self._request("GET", endpoint, params)
         return data.get("value", [])
 
+    @circuit_breaker(GRAPH_API_BREAKER)
+    @retry_with_backoff(GRAPH_API_POLICY)
     async def get_directory_roles(self) -> list[dict]:
         """Get all directory roles with members."""
         endpoint = "/directoryRoles"
@@ -105,6 +113,8 @@ class GraphClient:
         data = await self._request("GET", endpoint, params)
         return data.get("value", [])
 
+    @circuit_breaker(GRAPH_API_BREAKER)
+    @retry_with_backoff(GRAPH_API_POLICY)
     async def get_privileged_role_assignments(self) -> list[dict]:
         """Get privileged role assignments."""
         endpoint = "/roleManagement/directory/roleAssignments"
@@ -112,12 +122,16 @@ class GraphClient:
         data = await self._request("GET", endpoint, params)
         return data.get("value", [])
 
+    @circuit_breaker(GRAPH_API_BREAKER)
+    @retry_with_backoff(GRAPH_API_POLICY)
     async def get_conditional_access_policies(self) -> list[dict]:
         """Get conditional access policies."""
         endpoint = "/identity/conditionalAccess/policies"
         data = await self._request("GET", endpoint)
         return data.get("value", [])
 
+    @circuit_breaker(GRAPH_API_BREAKER)
+    @retry_with_backoff(GRAPH_API_POLICY)
     async def get_mfa_status(self) -> dict:
         """Get MFA registration status."""
         # This requires Reports.Read.All permission
@@ -125,6 +139,8 @@ class GraphClient:
         data = await self._request("GET", endpoint)
         return data
 
+    @circuit_breaker(GRAPH_API_BREAKER)
+    @retry_with_backoff(GRAPH_API_POLICY)
     async def get_service_principals(self) -> list[dict]:
         """Get service principals."""
         endpoint = "/servicePrincipals"
