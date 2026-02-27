@@ -1,33 +1,30 @@
 # =============================================================================
-# Azure Governance Platform - CI/CD Pipeline (Legacy Credential-Based)
+# Azure Governance Platform - CI/CD Pipeline with OIDC Federation
 # =============================================================================
-# ⚠️  DEPRECATED: This workflow uses the legacy credential-based authentication.
-#     Consider migrating to deploy-oidc.yml for enhanced security.
+# This workflow uses OpenID Connect (OIDC) federation for secure Azure
+# authentication WITHOUT storing long-lived credentials in GitHub secrets.
 #
-# This workflow handles:
-#   1. Linting and testing on PR
-#   2. Security scanning with Trivy
-#   3. Building Docker image
-#   4. Pushing to Azure Container Registry
-#   5. Deploying to Azure App Service
-#   6. Running smoke tests
-#   7. Rollback on failure
+# How OIDC Works:
+#   1. GitHub Actions generates a short-lived OIDC token
+#   2. Azure AD trusts GitHub's OIDC provider
+#   3. Token is exchanged for Azure access token
+#   4. NO client secrets stored in GitHub!
 #
-# Required Secrets:
-#   - AZURE_CREDENTIALS: Service principal JSON (legacy, contains client secret)
-#   - AZURE_SUBSCRIPTION_ID
-#   - AZURE_RESOURCE_GROUP
-#   - AZURE_APP_SERVICE_NAME
+# Required Secrets (NOT credentials - just identifiers):
+#   - AZURE_CLIENT_ID: App Registration ID
+#   - AZURE_TENANT_ID: Azure AD Tenant ID
+#   - AZURE_SUBSCRIPTION_ID: Azure Subscription ID
+#   - AZURE_RESOURCE_GROUP: Resource group name
+#   - AZURE_APP_SERVICE_NAME: App Service name
 #
-# 🔐 RECOMMENDED: Use deploy-oidc.yml instead (OIDC federation - no secrets stored!)
-#    See docs/OIDC_SETUP.md for migration instructions.
+# Setup Instructions: See docs/OIDC_SETUP.md
 # =============================================================================
 
-name: CI/CD Pipeline (Legacy)
+name: Deploy to Azure (OIDC)
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, dev, staging]
     tags: ['v*']
   pull_request:
     branches: [main, master]
@@ -36,7 +33,7 @@ on:
       environment:
         description: 'Deployment environment'
         required: true
-        default: 'staging'
+        default: 'development'
         type: choice
         options:
           - development
@@ -47,6 +44,15 @@ on:
         required: false
         default: false
         type: boolean
+
+# =============================================================================
+# PERMISSIONS - REQUIRED FOR OIDC
+# =============================================================================
+permissions:
+  id-token: write  # Required for OIDC token exchange
+  contents: read   # Required to checkout code
+  packages: write  # Required to push to GHCR
+  security-events: write  # Required for security scanning
 
 env:
   PYTHON_VERSION: '3.11'
@@ -103,9 +109,10 @@ jobs:
         if: ${{ !inputs.skip_tests && github.event_name != 'pull_request' }}
         run: pytest tests/ -v --tb=short --cov=app --cov-report=xml --cov-report=term
         env:
+          # OIDC auth - no secrets needed for tests!
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          # Tests use mocking, no actual Azure calls
         continue-on-error: true
       
       - name: Upload coverage
@@ -241,12 +248,78 @@ jobs:
           path: sbom.spdx.json
 
   # ===========================================================================
-  # Job 4: Deploy to Azure (Staging)
+  # Job 4: Deploy to Development
+  # ===========================================================================
+  deploy-development:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: build-image
+    # Deploy on dev branch pushes
+    if: github.ref == 'refs/heads/dev'
+    environment:
+      name: development
+      url: ${{ steps.deploy.outputs.webapp-url }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # OIDC Login - NO SECRETS STORED!
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy to Azure Web App (Development)
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}-dev
+          slot-name: 'production'
+          images: '${{ env.REGISTRY }}/${{ github.repository }}:sha-${{ github.sha }}'
+      
+      - name: Configure environment variables
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}-dev
+          app-settings-json: |
+            [
+              { "name": "ENVIRONMENT", "value": "development", "slotSetting": false },
+              { "name": "DEBUG", "value": "true", "slotSetting": false },
+              { "name": "LOG_LEVEL", "value": "DEBUG", "slotSetting": false }
+            ]
+      
+      - name: Run smoke tests
+        run: |
+          echo "Waiting for deployment to stabilize..."
+          sleep 30
+          
+          # Get dev URL
+          DEV_URL=$(az webapp show --name ${{ secrets.AZURE_APP_SERVICE_NAME }}-dev --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --query defaultHostName -o tsv)
+          
+          # Health check
+          curl -sf https://${DEV_URL}/health || (echo "Health check failed!" && exit 1)
+          
+          # API test
+          curl -sf https://${DEV_URL}/api/v1/status || (echo "Status endpoint failed!" && exit 1)
+          
+          echo "Smoke tests passed!"
+      
+      - name: Update deployment info
+        run: |
+          echo "Deployment to development completed successfully"
+          echo "webapp-url=https://${{ steps.deploy.outputs.webapp-url }}" >> $GITHUB_OUTPUT
+
+  # ===========================================================================
+  # Job 5: Deploy to Staging
   # ===========================================================================
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: build-image
+    # Deploy on main/master branch pushes
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment:
       name: staging
@@ -256,26 +329,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      # ⚠️ LEGACY: Using credential-based auth (client secret in AZURE_CREDENTIALS)
-      #    Consider migrating to OIDC (deploy-oidc.yml) for better security
-      - name: Azure Login (Legacy Credentials)
+      # OIDC Login - NO SECRETS STORED!
+      - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       - name: Deploy to Azure Web App (Staging)
         id: deploy
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}-staging
-          slot-name: 'staging'
+          slot-name: 'production'
           images: '${{ env.REGISTRY }}/${{ github.repository }}:sha-${{ github.sha }}'
       
       - name: Configure environment variables
         uses: azure/appservice-settings@v1
         with:
           app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}-staging
-          slot-name: 'staging'
           app-settings-json: |
             [
               { "name": "ENVIRONMENT", "value": "staging", "slotSetting": false },
@@ -305,12 +378,13 @@ jobs:
           echo "webapp-url=https://${{ steps.deploy.outputs.webapp-url }}" >> $GITHUB_OUTPUT
 
   # ===========================================================================
-  # Job 5: Deploy to Production
+  # Job 6: Deploy to Production (with approval)
   # ===========================================================================
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: deploy-staging
+    # Deploy on version tags only
     if: startsWith(github.ref, 'refs/tags/v')
     environment:
       name: production
@@ -320,10 +394,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Azure Login
+      # OIDC Login - NO SECRETS STORED!
+      - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       - name: Get previous deployment info (for rollback)
         id: get-previous
@@ -395,7 +472,7 @@ jobs:
           echo "URL: https://${{ steps.deploy.outputs.webapp-url }}"
 
   # ===========================================================================
-  # Job 6: Rollback (on failure)
+  # Job 7: Rollback (on failure)
   # ===========================================================================
   rollback:
     name: Rollback Production
@@ -404,10 +481,13 @@ jobs:
     if: failure() && startsWith(github.ref, 'refs/tags/v')
     
     steps:
-      - name: Azure Login
+      # OIDC Login - NO SECRETS STORED!
+      - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       - name: Rollback deployment
         run: |

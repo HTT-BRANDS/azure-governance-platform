@@ -6,8 +6,10 @@ This directory contains Infrastructure as Code (IaC) templates for deploying the
 
 ```
 infrastructure/
-├── main.bicep                    # Main deployment template
+├── main.bicep                      # Main deployment template
 ├── deploy.sh                       # Deployment script
+├── setup-oidc.sh                   # OIDC federation setup script 🔐
+├── github-oidc.bicep              # OIDC federation Bicep template
 ├── parameters.json                 # Production parameters
 ├── parameters.dev.json             # Development parameters
 ├── parameters.staging.json        # Staging parameters
@@ -22,6 +24,26 @@ infrastructure/
     ├── storage.bicep              # Storage Account
     └── vnet.bicep                 # Virtual Network
 ```
+
+## 🔐 OIDC Federation (Recommended)
+
+For secure, secret-free deployments from GitHub Actions, set up OIDC federation:
+
+```bash
+# Run the OIDC setup script (one-time setup)
+./setup-oidc.sh -e dev -g rg-governance-dev
+
+# Or use Bicep for IaC-based setup
+az deployment sub create \
+  --name github-oidc-setup \
+  --location eastus \
+  --template-file github-oidc.bicep \
+  --parameters environment=dev githubRepo=yourorg/azure-governance-platform resourceGroupName=rg-governance-dev
+```
+
+This enables **passwordless authentication** between GitHub Actions and Azure AD.
+
+📖 **Full documentation:** [docs/OIDC_SETUP.md](../docs/OIDC_SETUP.md)
 
 ## 🚀 Quick Start
 
@@ -88,12 +110,22 @@ Edit the parameters file before deployment:
 
 ## 🔐 Security
 
+### 🔑 OIDC Federation (GitHub Actions)
+
+**Recommended:** Use OIDC federation for secure deployments without storing secrets:
+- No Azure credentials in GitHub
+- Short-lived tokens (auto-expire)
+- Branch-based access control
+- Environment-based approvals
+
+See [OIDC_SETUP.md](../docs/OIDC_SETUP.md) for setup instructions.
+
 ### Key Vault Integration
 
 Secrets are automatically stored in Key Vault:
 - Database passwords
 - JWT signing keys
-- Azure client secrets
+- Azure client secrets (legacy only - prefer OIDC!)
 
 ### Managed Identity
 
