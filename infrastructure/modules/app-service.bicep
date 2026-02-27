@@ -40,6 +40,9 @@ param tags object = {}
 @description('Python version')
 param pythonVersion string = '3.11'
 
+@description('Log Analytics workspace ID for diagnostics')
+param logAnalyticsWorkspaceId string = ''
+
 // Reference to storage account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
   name: storageAccountName
@@ -163,7 +166,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'KEY_VAULT_URL'
-          value: empty(keyVaultName) ? '' : 'https://${keyVaultName}${environment().suffixes.keyvaultDns}'
+          value: empty(keyVaultName) ? '' : 'https://${keyVaultName}.vault.azure.net'
         }
         {
           name: 'PYTHON_VERSION'
@@ -206,68 +209,41 @@ resource azureStorageConfig 'Microsoft.Web/sites/config@2023-12-01' = {
 }
 
 // Diagnostic settings
-resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(logAnalyticsWorkspaceId)) {
   name: 'AppServiceDiagnostics'
   scope: appService
   properties: {
+    workspaceId: logAnalyticsWorkspaceId
     logs: [
       {
         category: 'AppServiceHTTPLogs'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'AppServiceConsoleLogs'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'AppServiceAppLogs'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'AppServiceAuditLogs'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'AppServiceIPSecAuditLogs'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'AppServicePlatformLogs'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
   }

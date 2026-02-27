@@ -3,13 +3,16 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "environment": {
-      "value": "development"
+      "value": "dev"
     },
     "location": {
-      "value": "eastus"
+      "value": "westus2"
     },
     "secondaryLocation": {
-      "value": "westus2"
+      "value": "eastus"
+    },
+    "resourceSuffix": {
+      "value": "001"
     },
     "appServiceSku": {
       "value": "B1"
@@ -30,12 +33,15 @@
       "value": false
     },
     "logRetentionDays": {
-      "value": 7
+      "value": 30
+    },
+    "containerImage": {
+      "value": "latest"
     },
     "tags": {
       "value": {
         "Application": "Azure Governance Platform",
-        "Environment": "development",
+        "Environment": "dev",
         "ManagedBy": "Bicep",
         "CostCenter": "IT-Dev",
         "Owner": "Dev-Team"

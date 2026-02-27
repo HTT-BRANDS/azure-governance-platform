@@ -68,7 +68,7 @@ def validate_tenant_id(tenant_id: str | None) -> str | None:
 # Type alias for validated tenant_id query parameter
 ValidatedTenantId = Annotated[
     str | None,
-    Query(None, description="Tenant UUID", pattern=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+    Query(description="Tenant UUID", pattern=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
 ]
 
 

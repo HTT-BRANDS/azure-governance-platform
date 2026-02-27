@@ -51,12 +51,12 @@ async def get_identity_summary(
 async def get_privileged_accounts(
     tenant_id: str | None = Query(default=None),
     tenant_ids: list[str] | None = Query(default=None),
-    risk_level: str | None = Query(default=None, regex="^(High|Medium|Low)$"),
+    risk_level: str | None = Query(default=None, pattern="^(High|Medium|Low)$"),
     mfa_enabled: bool | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     sort_by: str = Query(default="display_name"),
-    sort_order: str = Query(default="asc", regex="^(asc|desc)$"),
+    sort_order: str = Query(default="asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):

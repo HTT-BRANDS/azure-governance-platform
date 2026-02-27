@@ -4,6 +4,7 @@ Contains all the concrete check implementations for Azure, GitHub, and system ch
 """
 
 import logging
+from typing import List
 
 from app.core.config import get_settings
 from app.core.database import SessionLocal

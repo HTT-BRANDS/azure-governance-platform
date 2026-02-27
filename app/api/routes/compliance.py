@@ -84,11 +84,11 @@ async def get_compliance_scores(
 async def get_non_compliant_policies(
     tenant_id: str | None = Query(default=None),
     tenant_ids: list[str] | None = Query(default=None),
-    severity: str | None = Query(default=None, regex="^(High|Medium|Low)$"),
+    severity: str | None = Query(default=None, pattern="^(High|Medium|Low)$"),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     sort_by: str = Query(default="non_compliant_count"),
-    sort_order: str = Query(default="desc", regex="^(asc|desc)$"),
+    sort_order: str = Query(default="desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):

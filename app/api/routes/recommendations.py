@@ -31,12 +31,12 @@ router = APIRouter(
 async def get_recommendations(
     category: RecommendationCategory | None = Query(default=None),
     tenant_ids: list[str] | None = Query(default=None),
-    impact: str | None = Query(default=None, regex="^(Low|Medium|High|Critical)$"),
+    impact: str | None = Query(default=None, pattern="^(Low|Medium|High|Critical)$"),
     dismissed: bool | None = Query(default=False),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     sort_by: str = Query(default="created_at"),
-    sort_order: str = Query(default="desc", regex="^(asc|desc)$"),
+    sort_order: str = Query(default="desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):

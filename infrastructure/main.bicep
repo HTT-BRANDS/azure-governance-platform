@@ -18,7 +18,7 @@ param location string = deployment().location
 param secondaryLocation string = 'westus2'
 
 @description('Unique suffix for resource naming')
-param resourceSuffix string = uniqueString(subscription().id, resourceGroup().name)
+param resourceSuffix string = uniqueString(subscription().id, deployment().name)
 
 @description('App Service Plan SKU')
 @allowed([
@@ -229,10 +229,10 @@ module appService 'modules/app-service.bicep' = {
     acrName: acrName
     environment: environment
     tags: tags
+    logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
   }
   dependsOn: [
     storage
-    appInsights
     keyVault
     sqlServer
   ]
