@@ -4,10 +4,12 @@ import logging
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 
 from app.core.config import get_settings
 from app.core.sync.compliance import sync_compliance
 from app.core.sync.costs import sync_costs
+from app.core.sync.dmarc import sync_dmarc_dkim
 from app.core.sync.identity import sync_identity
 from app.core.sync.resources import sync_resources
 from app.core.sync.riverside import sync_riverside
@@ -70,6 +72,15 @@ def init_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
     )
 
+    # DMARC/DKIM sync job (daily at 2 AM)
+    scheduler.add_job(
+        sync_dmarc_dkim,
+        trigger=CronTrigger(hour=2, minute=0),
+        id="sync_dmarc",
+        name="Sync DMARC/DKIM Data",
+        replace_existing=True,
+    )
+
     logger.info("Scheduler initialized with sync jobs")
     return scheduler
 
@@ -87,6 +98,7 @@ async def trigger_manual_sync(sync_type: str) -> bool:
         "resources": sync_resources,
         "identity": sync_identity,
         "riverside": sync_riverside,
+        "dmarc": sync_dmarc_dkim,
     }
 
     if sync_type not in sync_functions:

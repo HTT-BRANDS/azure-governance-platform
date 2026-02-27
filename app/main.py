@@ -14,6 +14,7 @@ from app.api.routes import (
     compliance_router,
     costs_router,
     dashboard_router,
+    dmarc_router,
     exports_router,
     identity_router,
     monitoring_router,
@@ -146,6 +147,7 @@ app.include_router(recommendations_router)
 app.include_router(exports_router)
 app.include_router(bulk_router)
 app.include_router(monitoring_router)
+app.include_router(dmarc_router)
 
 
 @app.get("/health")

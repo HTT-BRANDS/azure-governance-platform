@@ -318,3 +318,21 @@ async def tenant_sync_status_partial(request: Request, db: Session = Depends(get
             "last_refresh": datetime.utcnow(),
         },
     )
+
+
+# ============================================================================
+# DMARC Dashboard Routes
+# ============================================================================
+
+
+@router.get("/dmarc", response_class=HTMLResponse)
+async def dmarc_dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """DMARC/DKIM security dashboard page."""
+    return templates.TemplateResponse(
+        "pages/dmarc_dashboard.html",
+        {"request": request},
+    )

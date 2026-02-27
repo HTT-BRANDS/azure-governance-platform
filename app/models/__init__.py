@@ -17,6 +17,12 @@ from app.models.riverside import (
     RiversideRequirement,
     RiversideThreatData,
 )
+from app.models.dmarc import (
+    DMARCRecord,
+    DKIMRecord,
+    DMARCReport,
+    DMARCAlert,
+)
 from app.models.sync import SyncJob
 from app.models.tenant import Subscription, Tenant, UserTenant
 
@@ -50,4 +56,9 @@ __all__ = [
     "RiversideMFA",
     "RiversideRequirement",
     "RiversideThreatData",
+    # DMARC/DKIM models
+    "DMARCRecord",
+    "DKIMRecord",
+    "DMARCReport",
+    "DMARCAlert",
 ]

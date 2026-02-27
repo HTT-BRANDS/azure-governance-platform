@@ -5,6 +5,7 @@ from app.api.routes.bulk import router as bulk_router
 from app.api.routes.compliance import router as compliance_router
 from app.api.routes.costs import router as costs_router
 from app.api.routes.dashboard import router as dashboard_router
+from app.api.routes.dmarc import router as dmarc_router
 from app.api.routes.exports import router as exports_router
 from app.api.routes.identity import router as identity_router
 from app.api.routes.monitoring import router as monitoring_router
@@ -30,4 +31,5 @@ __all__ = [
     "exports_router",
     "bulk_router",
     "monitoring_router",
+    "dmarc_router",
 ]

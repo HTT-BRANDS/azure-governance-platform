@@ -337,3 +337,13 @@ RIVERSIDE_SYNC_BREAKER = CircuitBreaker(
         expected_exception=(HttpResponseError, ConnectionError, TimeoutError),
     ),
 )
+
+DMARC_SYNC_BREAKER = CircuitBreaker(
+    name="dmarc_sync",
+    config=CircuitBreakerConfig(
+        failure_threshold=3,
+        recovery_timeout=300.0,
+        success_threshold=2,
+        expected_exception=(HttpResponseError, ConnectionError, TimeoutError),
+    ),
+)
