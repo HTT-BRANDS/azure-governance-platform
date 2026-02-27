@@ -97,8 +97,9 @@ class TestIdentitySync:
         # Execute
         await sync_identity()
         
-        # Verify - no GraphClient calls
-        mock_db_session.add.assert_not_called()
+        # Verify - no GraphClient calls, but SyncJobLog is still added for monitoring
+        # The sync starts before checking for tenants, so add is called once for SyncJobLog
+        mock_db_session.add.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_sync_identity_graph_error(
@@ -168,8 +169,9 @@ class TestIdentitySync:
             
             mock_db_session.commit.side_effect = SQLAlchemyError("Database error")
             
-            # Execute - should not raise
-            await sync_identity()
+            # Execute - should raise after retries are exhausted
+            with pytest.raises(SQLAlchemyError):
+                await sync_identity()
 
     @pytest.mark.asyncio
     async def test_sync_identity_stale_accounts(

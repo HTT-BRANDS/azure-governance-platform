@@ -232,8 +232,9 @@ class TestComplianceSync:
         
         mock_db_session.commit.side_effect = SQLAlchemyError("Database error")
         
-        # Execute - should not raise
-        await sync_compliance()
+        # Execute - should raise after retries are exhausted
+        with pytest.raises(SQLAlchemyError):
+            await sync_compliance()
 
     @pytest.mark.asyncio
     async def test_sync_compliance_multiple_policies(

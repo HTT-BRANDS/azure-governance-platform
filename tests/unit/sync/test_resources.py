@@ -62,7 +62,8 @@ class TestResourceSync:
         await sync_resources()
         
         # Verify - should complete without errors
-        mock_db_session.commit.assert_called_once()
+        # commit is called twice: once for SyncJobLog and once at end of sync
+        assert mock_db_session.commit.call_count == 2
 
     @pytest.mark.asyncio
     async def test_sync_resources_no_subscriptions(
@@ -166,8 +167,9 @@ class TestResourceSync:
         
         mock_db_session.commit.side_effect = SQLAlchemyError("Database error")
         
-        # Execute - should not raise
-        await sync_resources()
+        # Execute - should raise after retries are exhausted
+        with pytest.raises(SQLAlchemyError):
+            await sync_resources()
 
     @pytest.mark.asyncio
     async def test_sync_resources_orphaned_detection(
@@ -208,9 +210,9 @@ class TestResourceSync:
         # Execute
         await sync_resources()
         
-        # Verify - should mark both as orphaned
+        # Verify - should mark both as orphaned + 1 SyncJobLog entry
         add_calls = mock_db_session.add.call_args_list
-        assert len(add_calls) == 2
+        assert len(add_calls) == 3  # 2 resources + 1 SyncJobLog
 
     @pytest.mark.asyncio
     async def test_sync_resources_update_existing(
@@ -283,8 +285,8 @@ class TestResourceSync:
         # Execute
         await sync_resources()
         
-        # Verify - should process both resources
-        assert mock_db_session.add.call_count == 2
+        # Verify - should process both resources + 1 SyncJobLog entry
+        assert mock_db_session.add.call_count == 3
 
     @pytest.mark.asyncio
     async def test_sync_resources_malformed_id(
@@ -358,8 +360,8 @@ class TestResourceSync:
         # Execute
         await sync_resources()
         
-        # Verify - should have processed the resource
-        mock_db_session.add.assert_called_once()
+        # Verify - should have processed the resource + SyncJobLog
+        assert mock_db_session.add.call_count == 2
 
     @pytest.mark.asyncio
     async def test_sync_resources_multiple_tenants(

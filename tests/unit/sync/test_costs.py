@@ -192,8 +192,9 @@ class TestCostSync:
         # Make db.commit raise an error
         mock_db_session.commit.side_effect = SQLAlchemyError("Database error")
         
-        # Execute - should not raise
-        await sync_costs()
+        # Execute - should raise after retries are exhausted
+        with pytest.raises(SQLAlchemyError):
+            await sync_costs()
 
     @pytest.mark.asyncio
     async def test_sync_costs_zero_cost_skipped(
@@ -224,8 +225,8 @@ class TestCostSync:
         # Execute
         await sync_costs()
         
-        # Verify - only 1 record added (zero costs skipped)
-        assert mock_db_session.add.call_count == 1
+        # Verify - 2 records added: 1 for SyncJobLog + 1 cost record (zero costs skipped)
+        assert mock_db_session.add.call_count == 2
 
     @pytest.mark.asyncio
     async def test_sync_costs_malformed_row(
