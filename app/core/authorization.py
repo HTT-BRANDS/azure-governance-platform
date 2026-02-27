@@ -224,7 +224,9 @@ def filter_query_by_tenants(
         return query.filter(False)  # noqa: F821
 
     # Apply tenant filter
-    return query.filter(getattr(query.column_descriptions[0]["entity"], tenant_column).in_(accessible_tenant_ids))
+    entity_cls = query.column_descriptions[0]["entity"]
+    tenant_attr = getattr(entity_cls, tenant_column)
+    return query.filter(tenant_attr.in_(accessible_tenant_ids))
 
 
 def require_tenant_access(tenant_id_param: str = "tenant_id") -> Callable[[F], F]:

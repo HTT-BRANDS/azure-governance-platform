@@ -5,13 +5,13 @@ Supports both internal JWT tokens and Azure AD OAuth2 integration.
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.auth import (
@@ -20,7 +20,6 @@ from app.core.auth import (
     azure_ad_validator,
     get_current_user,
     jwt_manager,
-    oauth2_scheme,
 )
 from app.core.config import get_settings
 from app.core.database import get_db
@@ -578,7 +577,7 @@ async def logout(
     # Get token from header for potential blacklisting
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header[7:]
+        _token = auth_header[7:]
         # TODO: Add token to blacklist (Redis/database)
         logger.info(f"Token revoked for logout: {current_user.id}")
 

@@ -158,14 +158,16 @@ class AzureADTokenValidator:
             if isinstance(groups, str):
                 groups = [groups]
 
+            exp = payload.get("exp")
+            iat = payload.get("iat")
             return TokenData(
                 sub=user_id,
                 email=email,
                 name=name,
                 roles=self._map_groups_to_roles(groups),
                 tenant_ids=self._extract_tenant_ids_from_groups(groups),
-                exp=datetime.fromtimestamp(payload.get("exp", 0), tz=timezone.utc) if payload.get("exp") else None,
-                iat=datetime.fromtimestamp(payload.get("iat", 0), tz=timezone.utc) if payload.get("iat") else None,
+                exp=datetime.fromtimestamp(exp, tz=timezone.utc) if exp else None,
+                iat=datetime.fromtimestamp(iat, tz=timezone.utc) if iat else None,
                 iss=payload.get("iss"),
                 aud=payload.get("aud"),
             )
