@@ -1,24 +1,46 @@
-"""Sync job management API routes."""
+"""Sync job management API routes.
+
+SECURITY FEATURES:
+- Rate limiting on sync triggers (prevents abuse)
+- Strict input validation
+"""
 
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.api.services.monitoring_service import MonitoringService
+from app.core.auth import User, get_current_user
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+    validate_tenants_access,
+)
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit
 from app.core.scheduler import get_scheduler, trigger_manual_sync
 
-router = APIRouter(prefix="/api/v1/sync", tags=["sync"])
+router = APIRouter(
+    prefix="/api/v1/sync",
+    tags=["sync"],
+    dependencies=[Depends(get_current_user)],
+)
 templates = Jinja2Templates(directory="app/templates")
 
 SyncType = Literal["costs", "compliance", "resources", "identity"]
 
 
-@router.post("/{sync_type}")
-async def trigger_sync(sync_type: SyncType):
+@router.post(
+    "/{sync_type}",
+    dependencies=[Depends(rate_limit("sync"))],  # Strict rate limit for sync triggers
+)
+async def trigger_sync(
+    sync_type: SyncType,
+    current_user: User = Depends(get_current_user),
+):
     """Trigger a manual sync job."""
     success = await trigger_manual_sync(sync_type)
     if not success:
@@ -29,8 +51,13 @@ async def trigger_sync(sync_type: SyncType):
     return {"status": "triggered", "sync_type": sync_type}
 
 
-@router.get("/status")
-async def get_sync_status():
+@router.get(
+    "/status",
+    dependencies=[Depends(rate_limit("default"))],
+)
+async def get_sync_status(
+    current_user: User = Depends(get_current_user),
+):
     """Get status of sync jobs."""
     scheduler = get_scheduler()
     if not scheduler:
@@ -47,24 +74,39 @@ async def get_sync_status():
     return {"status": "running", "jobs": jobs}
 
 
-@router.get("/status")
-async def get_sync_health(db: Session = Depends(get_db)):
+@router.get(
+    "/status/health",
+    dependencies=[Depends(rate_limit("default"))],
+)
+async def get_sync_health(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """Get overall sync health status with metrics."""
     monitoring = MonitoringService(db)
     return monitoring.get_overall_status()
 
 
-@router.get("/history")
+@router.get(
+    "/history",
+    dependencies=[Depends(rate_limit("default"))],
+)
 async def get_sync_history(
-    job_type: str | None = None,
-    limit: int = 50,
+    job_type: str | None = Query(None, max_length=50),
+    limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get recent sync job execution history."""
+    authz.ensure_at_least_one_tenant()
     monitoring = MonitoringService(db)
     logs = monitoring.get_recent_logs(
         job_type=job_type, limit=limit, include_running=False
     )
+
+    # Filter logs by tenant access
+    accessible_tenants = authz.accessible_tenant_ids
+    logs = [log for log in logs if not log.tenant_id or log.tenant_id in accessible_tenants]
 
     return {
         "logs": [
@@ -85,14 +127,23 @@ async def get_sync_history(
     }
 
 
-@router.get("/metrics")
+@router.get(
+    "/metrics",
+    dependencies=[Depends(rate_limit("default"))],
+)
 async def get_sync_metrics(
-    job_type: str | None = None,
+    job_type: str | None = Query(None, max_length=50),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get aggregate sync job metrics."""
+    authz.ensure_at_least_one_tenant()
     monitoring = MonitoringService(db)
     metrics = monitoring.get_metrics(job_type=job_type)
+
+    # Filter metrics by tenant access
+    accessible_tenants = authz.accessible_tenant_ids
+    metrics = [m for m in metrics if not m.tenant_id or m.tenant_id in accessible_tenants]
 
     return {
         "metrics": [
@@ -119,14 +170,19 @@ async def get_sync_metrics(
     }
 
 
-@router.get("/alerts")
+@router.get(
+    "/alerts",
+    dependencies=[Depends(rate_limit("default"))],
+)
 async def get_sync_alerts(
-    job_type: str | None = None,
-    severity: str | None = None,
-    include_resolved: bool = False,
+    job_type: str | None = Query(None, max_length=50),
+    severity: str | None = Query(None, pattern="^(info|warning|error|critical)$"),
+    include_resolved: bool = Query(False),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get sync job alerts."""
+    authz.ensure_at_least_one_tenant()
     monitoring = MonitoringService(db)
 
     if include_resolved:
@@ -141,6 +197,10 @@ async def get_sync_alerts(
         alerts = query.order_by(Alert.created_at.desc()).limit(100).all()
     else:
         alerts = monitoring.get_active_alerts(job_type=job_type, severity=severity)
+
+    # Filter alerts by tenant access
+    accessible_tenants = authz.accessible_tenant_ids
+    alerts = [a for a in alerts if not a.tenant_id or a.tenant_id in accessible_tenants]
 
     return {
         "alerts": [
@@ -163,11 +223,15 @@ async def get_sync_alerts(
     }
 
 
-@router.post("/alerts/{alert_id}/resolve")
+@router.post(
+    "/alerts/{alert_id}/resolve",
+    dependencies=[Depends(rate_limit("auth"))],
+)
 async def resolve_alert(
-    alert_id: int,
-    resolved_by: str = "system",
+    alert_id: int = Path(..., ge=1, description="Alert ID"),
+    resolved_by: str = Query("system", max_length=100),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Resolve a sync job alert."""
     monitoring = MonitoringService(db)
@@ -190,7 +254,11 @@ async def resolve_alert(
 
 
 @router.get("/partials/sync-status", response_class=HTMLResponse)
-async def sync_status_partial(request: Request, db: Session = Depends(get_db)):
+async def sync_status_partial(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """HTMX partial: Sync status card."""
     monitoring = MonitoringService(db)
     status = monitoring.get_overall_status()
@@ -207,7 +275,11 @@ async def sync_status_partial(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/partials/sync-alerts", response_class=HTMLResponse)
-async def sync_alerts_partial(request: Request, db: Session = Depends(get_db)):
+async def sync_alerts_partial(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """HTMX partial: Recent alerts panel."""
     monitoring = MonitoringService(db)
     alerts = monitoring.get_active_alerts()[:10]  # Limit to 10 most recent

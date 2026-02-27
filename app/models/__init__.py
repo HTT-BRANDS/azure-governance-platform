@@ -18,11 +18,12 @@ from app.models.riverside import (
     RiversideThreatData,
 )
 from app.models.sync import SyncJob
-from app.models.tenant import Subscription, Tenant
+from app.models.tenant import Subscription, Tenant, UserTenant
 
 __all__ = [
     "Tenant",
     "Subscription",
+    "UserTenant",
     "CostSnapshot",
     "CostAnomaly",
     "ComplianceSnapshot",

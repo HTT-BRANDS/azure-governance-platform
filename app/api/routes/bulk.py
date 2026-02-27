@@ -1,12 +1,24 @@
-"""Bulk operation API routes."""
+"""Bulk operation API routes.
+
+SECURITY FEATURES:
+- Strict rate limiting on bulk operations (prevents abuse)
+- Role-based access control
+"""
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.services.bulk_service import BulkService
+from app.core.auth import User, get_current_user, require_roles
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+    validate_tenants_access,
+)
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit
 from app.schemas.resource import (
     BulkAnomalyAcknowledgeRequest,
     BulkAnomalyAcknowledgeResponse,
@@ -18,72 +30,124 @@ from app.schemas.resource import (
     BulkTagResponse,
 )
 
-router = APIRouter(prefix="/bulk", tags=["bulk"])
+router = APIRouter(
+    prefix="/bulk",
+    tags=["bulk"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
-@router.post("/tags/apply", response_model=BulkTagResponse)
+@router.post(
+    "/tags/apply",
+    response_model=BulkTagResponse,
+    dependencies=[Depends(rate_limit("bulk"))],
+)
 async def bulk_apply_tags(
     operation: BulkTagOperation,
-    user: str = "api_user",  # TODO: Get from auth
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ) -> BulkTagResponse:
     """Apply tags to multiple resources.
 
     Supports both specific resource IDs and filter-based selection.
+    Requires operator or admin role.
     """
+    # Check user has appropriate role
+    if not any(role in current_user.roles for role in ["admin", "operator"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bulk tag operations require operator or admin role",
+        )
+
+    authz.ensure_at_least_one_tenant()
     service = BulkService(db)
-    return await service.bulk_tag_resources(operation, user)
+    return await service.bulk_tag_resources(operation, current_user.id)
 
 
-@router.post("/tags/remove", response_model=BulkTagResponse)
+@router.post(
+    "/tags/remove",
+    response_model=BulkTagResponse,
+    dependencies=[Depends(rate_limit("bulk"))],
+)
 async def bulk_remove_tags(
     resource_ids: list[str],
     tag_names: list[str],
-    user: str = "api_user",  # TODO: Get from auth
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ) -> BulkTagResponse:
-    """Remove tags from multiple resources."""
+    """Remove tags from multiple resources.
+
+    Requires operator or admin role.
+    """
+    # Check user has appropriate role
+    if not any(role in current_user.roles for role in ["admin", "operator"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bulk tag operations require operator or admin role",
+        )
+
+    authz.ensure_at_least_one_tenant()
     service = BulkService(db)
-    return await service.bulk_remove_tags(resource_ids, tag_names, user)
+    return await service.bulk_remove_tags(resource_ids, tag_names, current_user.id)
 
 
-@router.post("/anomalies/acknowledge")
+@router.post(
+    "/anomalies/acknowledge",
+    dependencies=[Depends(rate_limit("bulk"))],
+)
 async def bulk_acknowledge_anomalies(
     request: BulkAnomalyAcknowledgeRequest,
-    user: str = "api_user",  # TODO: Get from auth
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ) -> dict[str, Any]:
     """Acknowledge multiple cost anomalies at once."""
+    authz.ensure_at_least_one_tenant()
+    # TODO: Validate user has access to all anomaly tenants
     service = BulkService(db)
     result = await service.bulk_acknowledge_anomalies(
-        request.anomaly_ids, user, request.notes
+        request.anomaly_ids, current_user.id, request.notes
     )
     return result
 
 
-@router.post("/recommendations/dismiss")
+@router.post(
+    "/recommendations/dismiss",
+    dependencies=[Depends(rate_limit("bulk"))],
+)
 async def bulk_dismiss_recommendations(
     request: BulkRecommendationDismissRequest,
-    user: str = "api_user",  # TODO: Get from auth
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ) -> dict[str, Any]:
     """Dismiss multiple recommendations at once."""
+    authz.ensure_at_least_one_tenant()
+    # TODO: Validate user has access to all recommendation tenants
     service = BulkService(db)
     result = await service.bulk_dismiss_recommendations(
-        request.recommendation_ids, user, request.reason
+        request.recommendation_ids, current_user.id, request.reason
     )
     return result
 
 
-@router.post("/idle-resources/review")
+@router.post(
+    "/idle-resources/review",
+    dependencies=[Depends(rate_limit("bulk"))],
+)
 async def bulk_review_idle_resources(
     request: BulkIdleResourceReviewRequest,
-    user: str = "api_user",  # TODO: Get from auth
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ) -> dict[str, Any]:
     """Mark multiple idle resources as reviewed."""
+    authz.ensure_at_least_one_tenant()
+    # TODO: Validate user has access to all resource tenants
     service = BulkService(db)
     result = await service.bulk_review_idle_resources(
-        request.idle_resource_ids, user, request.notes
+        request.idle_resource_ids, current_user.id, request.notes
     )
     return result

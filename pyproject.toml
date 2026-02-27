@@ -27,6 +27,11 @@ dependencies = [
     "python-multipart>=0.0.6",
     "httpx>=0.26.0",
     "apscheduler>=3.10.0",
+    # Authentication & Security
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-multipart>=0.0.6",
+    "cryptography>=42.0.0",
     # Azure SDKs
     "azure-identity>=1.15.0",
     "azure-mgmt-resource>=23.0.0,<24.0.0",

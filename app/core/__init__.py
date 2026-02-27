@@ -45,6 +45,12 @@ from app.core.notifications import (
     severity_meets_threshold,
     should_notify,
 )
+from app.core.rate_limit import (
+    RateLimitConfig,
+    RateLimitStrategy,
+    rate_limit,
+    rate_limiter,
+)
 from app.core.scheduler import get_scheduler, init_scheduler, trigger_manual_sync
 
 __all__ = [
@@ -79,6 +85,11 @@ __all__ = [
     "get_performance_dashboard",
     "get_cache_stats",
     "reset_metrics",
+    # Rate Limiting
+    "RateLimitConfig",
+    "RateLimitStrategy",
+    "rate_limit",
+    "rate_limiter",
     # Scheduler
     "get_scheduler",
     "init_scheduler",

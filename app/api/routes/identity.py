@@ -1,9 +1,16 @@
 """Identity governance API routes."""
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.services.identity_service import IdentityService
+from app.core.auth import User, get_current_user
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+    validate_tenant_access,
+    validate_tenants_access,
+)
 from app.core.database import get_db
 from app.schemas.identity import (
     GuestAccount,
@@ -12,20 +19,31 @@ from app.schemas.identity import (
     StaleAccount,
 )
 
-router = APIRouter(prefix="/api/v1/identity", tags=["identity"])
+router = APIRouter(
+    prefix="/api/v1/identity",
+    tags=["identity"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/summary", response_model=IdentitySummary)
 async def get_identity_summary(
     tenant_ids: list[str] | None = Query(default=None),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get aggregated identity summary across all tenants.
 
     Args:
         tenant_ids: Filter by specific tenants
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Filter tenant_ids to only accessible ones
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = IdentityService(db)
+    # TODO: Filter summary by accessible tenants
     return service.get_identity_summary()
 
 
@@ -40,6 +58,7 @@ async def get_privileged_accounts(
     sort_by: str = Query(default="display_name"),
     sort_order: str = Query(default="asc", regex="^(asc|desc)$"),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get privileged account details.
 
@@ -53,11 +72,23 @@ async def get_privileged_accounts(
         sort_by: Field to sort by
         sort_order: Sort direction (asc or desc)
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Validate and filter tenant access
+    if tenant_id:
+        authz.validate_access(tenant_id)
+
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = IdentityService(db)
     accounts = service.get_privileged_accounts(tenant_id=tenant_id)
 
-    if tenant_ids:
-        accounts = [a for a in accounts if a.tenant_id in tenant_ids]
+    # Apply tenant isolation
+    accessible_tenants = authz.accessible_tenant_ids
+    accounts = [
+        a for a in accounts
+        if a.tenant_id in accessible_tenants and (not filtered_tenant_ids or a.tenant_id in filtered_tenant_ids)
+    ]
     if risk_level:
         accounts = [a for a in accounts if a.risk_level == risk_level]
     if mfa_enabled is not None:
@@ -74,6 +105,7 @@ async def get_guest_accounts(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get guest account details.
 
@@ -84,11 +116,16 @@ async def get_guest_accounts(
         limit: Maximum results to return
         offset: Pagination offset
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Validate and filter tenant access
+    if tenant_id:
+        authz.validate_access(tenant_id)
+
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = IdentityService(db)
     guests = service.get_guest_accounts(tenant_id=tenant_id, stale_only=stale_only)
-
-    if tenant_ids:
-        guests = [g for g in guests if g.tenant_id in tenant_ids]
 
     return guests[offset : offset + limit]
 
@@ -101,6 +138,7 @@ async def get_stale_accounts(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get stale account details.
 
@@ -111,13 +149,25 @@ async def get_stale_accounts(
         limit: Maximum results to return
         offset: Pagination offset
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Validate and filter tenant access
+    if tenant_id:
+        authz.validate_access(tenant_id)
+
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = IdentityService(db)
     stale = service.get_stale_accounts(
         days_inactive=days_inactive, tenant_id=tenant_id
     )
 
-    if tenant_ids:
-        stale = [s for s in stale if s.tenant_id in tenant_ids]
+    # Apply tenant isolation
+    accessible_tenants = authz.accessible_tenant_ids
+    stale = [
+        s for s in stale
+        if s.tenant_id in accessible_tenants and (not filtered_tenant_ids or s.tenant_id in filtered_tenant_ids)
+    ]
 
     return stale[offset : offset + limit]
 
@@ -127,6 +177,7 @@ async def get_identity_trends(
     tenant_ids: list[str] | None = Query(default=None),
     days: int = Query(default=30, ge=7, le=365),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get identity metrics trends over time.
 
@@ -140,5 +191,10 @@ async def get_identity_trends(
     - Privileged account count
     - Stale account count
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Filter tenant_ids to only accessible ones
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = IdentityService(db)
-    return service.get_identity_trends(tenant_ids=tenant_ids, days=days)
+    return service.get_identity_trends(tenant_ids=filtered_tenant_ids, days=days)

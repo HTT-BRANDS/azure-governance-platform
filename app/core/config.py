@@ -4,20 +4,42 @@ Centralized configuration using Pydantic Settings for environment
 variable management with sensible defaults.
 """
 
+import logging
+import os
+import re
+import secrets
 from functools import lru_cache
+from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
+    """Application settings loaded from environment variables.
+
+    Security features:
+    - Debug mode validation (cannot be True in production)
+    - CORS origin validation (no wildcards in production)
+    - Safe defaults for all settings
+    """
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+    )
+
+    # =========================================================================
+    # Environment Detection
+    # =========================================================================
+
+    environment: Literal["development", "staging", "production"] = Field(
+        default="development",
+        alias="ENVIRONMENT",
     )
 
     # Application
@@ -33,12 +55,53 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite:///./data/governance.db"
 
-    # Azure Authentication
+    # =========================================================================
+    # Authentication & Authorization
+    # =========================================================================
+
+    # JWT Configuration
+    jwt_secret_key: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = Field(default=30, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
+    jwt_refresh_token_expire_days: int = Field(default=7, alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS")
+
+    # Azure AD / Entra ID OAuth2 Configuration
+    azure_ad_tenant_id: str | None = Field(default=None, alias="AZURE_AD_TENANT_ID")
+    azure_ad_client_id: str | None = Field(default=None, alias="AZURE_AD_CLIENT_ID")
+    azure_ad_client_secret: str | None = Field(default=None, alias="AZURE_AD_CLIENT_SECRET")
+    azure_ad_authority: str = Field(
+        default="https://login.microsoftonline.com/common",
+        alias="AZURE_AD_AUTHORITY"
+    )
+    azure_ad_token_endpoint: str = Field(
+        default="https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        alias="AZURE_AD_TOKEN_ENDPOINT"
+    )
+    azure_ad_authorization_endpoint: str = Field(
+        default="https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        alias="AZURE_AD_AUTHORIZATION_ENDPOINT"
+    )
+    azure_ad_jwks_uri: str = Field(
+        default="https://login.microsoftonline.com/common/discovery/v2.0/keys",
+        alias="AZURE_AD_JWKS_URI"
+    )
+    azure_ad_issuer: str = Field(
+        default="https://login.microsoftonline.com/common/v2.0",
+        alias="AZURE_AD_ISSUER"
+    )
+
+    # OAuth2 Scopes
+    oauth2_scopes: list[str] = Field(
+        default_factory=lambda: ["openid", "profile", "email", "User.Read"],
+        alias="OAUTH2_SCOPES"
+    )
+
+    # Legacy Azure Authentication (for backend service calls)
     azure_tenant_id: str | None = None
     azure_client_id: str | None = None
     azure_client_secret: str | None = None
 
-    # Key Vault (for multi-tenant credentials)
+    # Key Vault (for multi-tenant credentials and secrets)
     key_vault_url: str | None = None
 
     # Multi-tenant configuration
@@ -61,8 +124,11 @@ class Settings(BaseSettings):
     notification_min_severity: str = "warning"  # info, warning, error, critical
     notification_cooldown_minutes: int = 30
 
-    # CORS (for development)
+    # CORS (RESTRICTED in production - no wildcards allowed)
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_allow_methods: list[str] = Field(default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "PATCH"])
+    cors_allow_headers: list[str] = Field(default_factory=lambda: ["*"])
+    cors_allow_credentials: bool = True
 
     # Caching Configuration
     cache_enabled: bool = Field(default=True, alias="CACHE_ENABLED")
@@ -85,6 +151,120 @@ class Settings(BaseSettings):
     sync_chunk_size: int = Field(default=1000, alias="SYNC_CHUNK_SIZE")
     enable_parallel_sync: bool = Field(default=True, alias="ENABLE_PARALLEL_SYNC")
     max_parallel_tenants: int = Field(default=5, alias="MAX_PARALLEL_TENANTS")
+
+    # =========================================================================
+    # Security Validators
+    # =========================================================================
+
+    @field_validator("environment", mode="before")
+    @classmethod
+    def detect_environment(cls, v: str | None) -> str:
+        """Auto-detect environment from common environment variables."""
+        if v:
+            return v.lower()
+
+        # Check common environment indicators
+        if os.getenv("PRODUCTION") or os.getenv("PROD"):
+            return "production"
+        if os.getenv("STAGING"):
+            return "staging"
+
+        # Check for production-like hostnames or settings
+        hostname = os.getenv("HOSTNAME", "").lower()
+        if any(x in hostname for x in ["prod", "production", "prd"]):
+            return "production"
+
+        return "development"
+
+    @model_validator(mode="after")
+    def validate_debug_mode(self):
+        """CRITICAL: Prevent debug mode in production."""
+        if self.environment == "production" and self.debug:
+            logger.error(
+                "CRITICAL SECURITY ERROR: DEBUG mode cannot be enabled in production! "
+                "Set DEBUG=false or ENVIRONMENT=development"
+            )
+            raise ValueError("DEBUG cannot be True in production environment")
+
+        if self.debug and self.environment != "development":
+            logger.warning(
+                f"WARNING: DEBUG mode enabled in {self.environment} environment. "
+                "This is not recommended for security reasons."
+            )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_cors_origins(self):
+        """CRITICAL: Prevent wildcard CORS in production."""
+        if self.environment == "production":
+            # Check for wildcards in origins
+            for origin in self.cors_origins:
+                if origin == "*" or origin.strip() == "*":
+                    logger.error(
+                        "CRITICAL SECURITY ERROR: Wildcard (*) CORS origin not allowed in production! "
+                        "Set explicit origins in CORS_ORIGINS"
+                    )
+                    raise ValueError("Wildcard CORS origin (*) not allowed in production")
+
+            # Check for localhost in production
+            for origin in self.cors_origins:
+                if "localhost" in origin.lower() or "127.0.0.1" in origin:
+                    logger.warning(
+                        f"WARNING: localhost found in CORS origins for production: {origin}. "
+                        "This may be a security risk."
+                    )
+
+            # Ensure we have explicit origins configured
+            if not self.cors_origins or self.cors_origins == ["http://localhost:3000"]:
+                logger.error(
+                    "CRITICAL SECURITY ERROR: Default CORS origins used in production! "
+                    "Configure CORS_ORIGINS with your production domains"
+                )
+                raise ValueError("CORS origins must be explicitly configured in production")
+
+        return self
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
+        """Parse CORS origins from string or list."""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def validate_jwt_secret(cls, v: str) -> str:
+        """Validate JWT secret key is not default/weak."""
+        if len(v) < 32:
+            logger.warning(
+                "JWT secret key is too short (< 32 characters). "
+                "Generate a strong key with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+            )
+        return v
+
+    @field_validator("cors_allow_methods", mode="before")
+    @classmethod
+    def parse_cors_methods(cls, v: str | list[str]) -> list[str]:
+        """Parse CORS methods from string or list."""
+        if isinstance(v, str):
+            return [method.strip().upper() for method in v.split(",") if method.strip()]
+        return [method.upper() for method in v]
+
+    # =========================================================================
+    # Properties
+    # =========================================================================
+
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production environment."""
+        return self.environment == "production"
+
+    @property
+    def is_development(self) -> bool:
+        """Check if running in development environment."""
+        return self.environment == "development"
 
     @property
     def is_configured(self) -> bool:

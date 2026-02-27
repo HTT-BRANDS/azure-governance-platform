@@ -5,16 +5,25 @@ import io
 from datetime import date, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.services.compliance_service import ComplianceService
 from app.api.services.cost_service import CostService
 from app.api.services.resource_service import ResourceService
+from app.core.auth import User, get_current_user
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+)
 from app.core.database import get_db
 
-router = APIRouter(prefix="/api/v1/exports", tags=["exports"])
+router = APIRouter(
+    prefix="/api/v1/exports",
+    tags=["exports"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def _generate_csv(data: list[dict[str, Any]], filename: str) -> StreamingResponse:
@@ -39,6 +48,7 @@ async def export_costs(
     end_date: date | None = Query(default=None),
     tenant_ids: list[str] | None = Query(default=None),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Export costs to CSV.
 
@@ -47,6 +57,11 @@ async def export_costs(
         end_date: End date for cost data (defaults to today)
         tenant_ids: Filter by specific tenants
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Filter tenant_ids to only accessible ones
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     if not end_date:
         end_date = date.today()
     if not start_date:
@@ -56,7 +71,7 @@ async def export_costs(
     service = CostService(db)
     trends = service.get_cost_trends(days=(end_date - start_date).days)
 
-    # Get cost by tenant
+    # Get cost by tenant (filtered by access)
     costs_by_tenant = service.get_costs_by_tenant(period_days=(end_date - start_date).days)
 
     # Build export data
@@ -73,9 +88,12 @@ async def export_costs(
             "currency": "USD",
         })
 
-    # Add tenant costs
+    # Add tenant costs (filtered by tenant access)
+    accessible_tenants = authz.accessible_tenant_ids
     for tenant_cost in costs_by_tenant:
-        if tenant_ids and tenant_cost.tenant_id not in tenant_ids:
+        if tenant_cost.tenant_id not in accessible_tenants:
+            continue
+        if filtered_tenant_ids and tenant_cost.tenant_id not in filtered_tenant_ids:
             continue
         export_data.append({
             "type": "tenant_summary",
@@ -104,17 +122,27 @@ async def export_resources(
         resource_type: Filter by resource type
         include_orphaned: Include orphaned resources flag
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Filter tenant_ids to only accessible ones
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = ResourceService(db)
     inventory = service.get_resource_inventory(
-        tenant_id=tenant_ids[0] if tenant_ids and len(tenant_ids) == 1 else None,
+        tenant_id=filtered_tenant_ids[0] if filtered_tenant_ids and len(filtered_tenant_ids) == 1 else None,
         resource_type=resource_type,
         limit=1000,
     )
 
     # Build export data
     export_data = []
+
+    # Apply tenant isolation
+    accessible_tenants = authz.accessible_tenant_ids
     for resource in inventory.resources:
-        if tenant_ids and resource.tenant_id not in tenant_ids:
+        if resource.tenant_id not in accessible_tenants:
+            continue
+        if filtered_tenant_ids and resource.tenant_id not in filtered_tenant_ids:
             continue
         if not include_orphaned and resource.is_orphaned:
             continue
@@ -146,6 +174,7 @@ async def export_compliance(
     tenant_ids: list[str] | None = Query(default=None),
     include_non_compliant: bool = Query(default=True),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Export compliance report to CSV.
 
@@ -153,6 +182,11 @@ async def export_compliance(
         tenant_ids: Filter by specific tenants
         include_non_compliant: Include non-compliant policies
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Filter tenant_ids to only accessible ones
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = ComplianceService(db)
 
     # Get compliance summary
@@ -166,9 +200,12 @@ async def export_compliance(
     # Build export data
     export_data = []
 
-    # Add compliance scores by tenant
+    # Add compliance scores by tenant (filtered by access)
+    accessible_tenants = authz.accessible_tenant_ids
     for score in summary.scores_by_tenant:
-        if tenant_ids and score.tenant_id not in tenant_ids:
+        if score.tenant_id not in accessible_tenants:
+            continue
+        if filtered_tenant_ids and score.tenant_id not in filtered_tenant_ids:
             continue
         export_data.append({
             "type": "tenant_score",

@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import (
+    auth_router,
     bulk_router,
     compliance_router,
     costs_router,
@@ -26,6 +27,7 @@ from app.api.routes import (
 from app.core.cache import cache_manager
 from app.core.config import get_settings
 from app.core.database import init_db
+from app.core.rate_limit import rate_limiter, apply_rate_limit_headers
 from app.core.scheduler import init_scheduler
 
 # Configure logging
@@ -73,19 +75,64 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS
+# Configure CORS with security restrictions in production
+# SECURITY: No wildcards allowed in production - explicit origins only
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=settings.cors_allow_methods,
+    allow_headers=settings.cors_allow_headers,
 )
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Apply rate limiting to all requests.
+
+    SECURITY: Provides DDoS protection and abuse prevention.
+    """
+    # Skip rate limiting for health checks
+    if request.url.path in ["/health", "/health/detailed"]:
+        response = await call_next(request)
+        return response
+
+    # Determine rate limit based on endpoint
+    limit_config = rate_limiter.get_limit_config(request.url.path)
+
+    try:
+        allowed, headers = await rate_limiter.is_allowed(request, limit_config)
+
+        response = await call_next(request)
+
+        # Apply rate limit headers
+        for key, value in headers.items():
+            response.headers[key] = str(value)
+
+        if not allowed:
+            return JSONResponse(
+                status_code=429,
+                content={"error": "Rate limit exceeded. Please try again later."},
+                headers={
+                    **headers,
+                    "Retry-After": str(limit_config.window_seconds),
+                },
+            )
+
+        return response
+
+    except Exception as e:
+        # Log error but don't block request if rate limiting fails
+        logger.error(f"Rate limiting error: {e}")
+        return await call_next(request)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-# Include routers
+# Include routers - Auth router first (no auth required for login)
+app.include_router(auth_router)
+
+# Protected routers (will be secured via dependencies in route files)
 app.include_router(dashboard_router)
 app.include_router(costs_router)
 app.include_router(compliance_router)

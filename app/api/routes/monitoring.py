@@ -2,8 +2,16 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
+from app.core.auth import User, get_current_user, require_roles
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+    validate_tenant_access,
+)
+from app.core.database import get_db
 from app.core.monitoring import (
     get_cache_stats,
     get_performance_dashboard,
@@ -11,7 +19,11 @@ from app.core.monitoring import (
     reset_metrics,
 )
 
-router = APIRouter(prefix="/monitoring", tags=["monitoring"])
+router = APIRouter(
+    prefix="/monitoring",
+    tags=["monitoring"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/performance")
@@ -34,6 +46,8 @@ async def get_sync_job_metrics(
     job_type: str | None = None,
     tenant_id: str | None = None,
     limit: int = 100,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> list[dict[str, Any]]:
     """Get sync job performance metrics.
 

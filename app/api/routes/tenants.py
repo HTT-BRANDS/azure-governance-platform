@@ -1,12 +1,27 @@
-"""Tenant management API routes."""
+"""Tenant management API routes.
 
+SECURITY FEATURES:
+- UUID validation on all ID parameters
+- Strict input validation via Pydantic schemas
+- Rate limiting on sensitive endpoints
+"""
+
+import re
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import User, get_current_user, require_roles
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+    get_user_tenants,
+    validate_tenant_access,
+)
 from app.core.database import get_db
-from app.models.tenant import Tenant
+from app.core.rate_limit import rate_limit
+from app.models.tenant import Tenant, UserTenant
 from app.schemas.tenant import (
     SubscriptionResponse,
     TenantCreate,
@@ -14,13 +29,56 @@ from app.schemas.tenant import (
     TenantUpdate,
 )
 
-router = APIRouter(prefix="/api/v1/tenants", tags=["tenants"])
+
+def validate_uuid_param(tenant_id: str, param_name: str = "tenant_id") -> str:
+    """Validate UUID format for path parameters.
+
+    Args:
+        tenant_id: The ID to validate
+        param_name: Name for error messages
+
+    Returns:
+        The validated UUID (lowercased)
+
+    Raises:
+        HTTPException: 400 if invalid format
+    """
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{param_name} is required",
+        )
+
+    uuid_pattern = r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+    if not re.match(uuid_pattern, tenant_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{param_name} must be a valid UUID format (e.g., '12345678-1234-1234-1234-123456789abc')",
+        )
+
+    return tenant_id.lower()
+
+router = APIRouter(
+    prefix="/api/v1/tenants",
+    tags=["tenants"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
-@router.get("", response_model=list[TenantResponse])
-async def list_tenants(db: Session = Depends(get_db)):
-    """List all configured tenants."""
-    tenants = db.query(Tenant).all()
+@router.get(
+    "",
+    response_model=list[TenantResponse],
+    dependencies=[Depends(rate_limit("default"))],
+)
+async def list_tenants(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
+    """List all tenants the current user has access to."""
+    # Get accessible tenants based on user permissions
+    accessible_tenants = get_user_tenants(current_user, db, include_inactive=False)
+
     return [
         TenantResponse(
             id=t.id,
@@ -33,13 +91,32 @@ async def list_tenants(db: Session = Depends(get_db)):
             created_at=t.created_at,
             updated_at=t.updated_at,
         )
-        for t in tenants
+        for t in accessible_tenants
     ]
 
 
-@router.post("", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
-async def create_tenant(tenant: TenantCreate, db: Session = Depends(get_db)):
-    """Create a new tenant configuration."""
+@router.post(
+    "",
+    response_model=TenantResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("auth"))],  # Stricter rate limit for tenant creation
+)
+async def create_tenant(
+    tenant: TenantCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new tenant configuration.
+
+    Requires admin role.
+    """
+    # Only admins can create tenants
+    if "admin" not in current_user.roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required to create tenants",
+        )
+
     # Check for duplicate tenant_id
     existing = db.query(Tenant).filter(Tenant.tenant_id == tenant.tenant_id).first()
     if existing:
@@ -74,15 +151,30 @@ async def create_tenant(tenant: TenantCreate, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/{id}", response_model=TenantResponse)
-async def get_tenant(id: str, db: Session = Depends(get_db)):
-    """Get a specific tenant."""
+@router.get(
+    "/{id}",
+    response_model=TenantResponse,
+    dependencies=[Depends(rate_limit("default"))],
+)
+async def get_tenant(
+    id: str = Path(..., description="Tenant UUID", pattern=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
+    """Get a specific tenant.
+
+    User must have access to the tenant.
+    """
     tenant = db.query(Tenant).filter(Tenant.id == id).first()
     if not tenant:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Tenant {id} not found",
         )
+
+    # Validate tenant access
+    validate_tenant_access(current_user, tenant.tenant_id, db)
 
     return TenantResponse(
         id=tenant.id,
@@ -97,11 +189,28 @@ async def get_tenant(id: str, db: Session = Depends(get_db)):
     )
 
 
-@router.patch("/{id}", response_model=TenantResponse)
+@router.patch(
+    "/{id}",
+    response_model=TenantResponse,
+    dependencies=[Depends(rate_limit("auth"))],
+)
 async def update_tenant(
-    id: str, tenant_update: TenantUpdate, db: Session = Depends(get_db)
+    tenant_update: TenantUpdate,
+    id: str = Path(..., description="Tenant UUID", pattern=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Update a tenant configuration."""
+    """Update a tenant configuration.
+
+    Requires admin role.
+    """
+    # Only admins can update tenants
+    if "admin" not in current_user.roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required to update tenants",
+        )
+
     tenant = db.query(Tenant).filter(Tenant.id == id).first()
     if not tenant:
         raise HTTPException(
@@ -129,9 +238,27 @@ async def update_tenant(
     )
 
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_tenant(id: str, db: Session = Depends(get_db)):
-    """Delete a tenant configuration."""
+@router.delete(
+    "/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(rate_limit("auth"))],
+)
+async def delete_tenant(
+    id: str = Path(..., description="Tenant UUID", pattern=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a tenant configuration.
+
+    Requires admin role.
+    """
+    # Only admins can delete tenants
+    if "admin" not in current_user.roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required to delete tenants",
+        )
+
     tenant = db.query(Tenant).filter(Tenant.id == id).first()
     if not tenant:
         raise HTTPException(
@@ -143,15 +270,30 @@ async def delete_tenant(id: str, db: Session = Depends(get_db)):
     db.commit()
 
 
-@router.get("/{id}/subscriptions", response_model=list[SubscriptionResponse])
-async def get_tenant_subscriptions(id: str, db: Session = Depends(get_db)):
-    """Get subscriptions for a tenant."""
+@router.get(
+    "/{id}/subscriptions",
+    response_model=list[SubscriptionResponse],
+    dependencies=[Depends(rate_limit("default"))],
+)
+async def get_tenant_subscriptions(
+    id: str = Path(..., description="Tenant UUID", pattern=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
+    """Get subscriptions for a tenant.
+
+    User must have access to the tenant.
+    """
     tenant = db.query(Tenant).filter(Tenant.id == id).first()
     if not tenant:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Tenant {id} not found",
         )
+
+    # Validate tenant access
+    validate_tenant_access(current_user, tenant.tenant_id, db)
 
     return [
         SubscriptionResponse(

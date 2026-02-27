@@ -12,27 +12,50 @@ from app.api.services.cost_service import CostService
 from app.api.services.identity_service import IdentityService
 from app.api.services.monitoring_service import MonitoringService
 from app.api.services.resource_service import ResourceService
+from app.core.auth import User, get_current_user
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+    get_user_tenants,
+)
 from app.core.database import get_db
 from app.models.monitoring import Alert, SyncJobLog
 from app.models.tenant import Tenant
 
-router = APIRouter(tags=["dashboard"])
+router = APIRouter(
+    tags=["dashboard"],
+    dependencies=[Depends(get_current_user)],
+)
 templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request, db: Session = Depends(get_db)):
+async def dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
     """Main dashboard page."""
-    # Get summary data from all services
+    authz.ensure_at_least_one_tenant()
+
+    # Get summary data from all services (filtered by tenant access)
     cost_svc = CostService(db)
     compliance_svc = ComplianceService(db)
     resource_svc = ResourceService(db)
     identity_svc = IdentityService(db)
 
+    # TODO: Filter summaries by accessible tenants
     cost_summary = cost_svc.get_cost_summary()
     compliance_summary = compliance_svc.get_compliance_summary()
     resource_inventory = resource_svc.get_resource_inventory(limit=10)
     identity_summary = identity_svc.get_identity_summary()
+
+    # Apply tenant isolation to resources
+    accessible_tenants = authz.accessible_tenant_ids
+    resource_inventory.resources = [
+        r for r in resource_inventory.resources if r.tenant_id in accessible_tenants
+    ]
+    resource_inventory.total_resources = len(resource_inventory.resources)
 
     return templates.TemplateResponse(
         "pages/dashboard.html",
@@ -100,8 +123,13 @@ async def identity_stats(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/sync-dashboard", response_class=HTMLResponse)
-async def sync_dashboard(request: Request, db: Session = Depends(get_db)):
+async def sync_dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
     """Main sync dashboard page for DevOps/SRE monitoring."""
+    authz.ensure_at_least_one_tenant()
     monitoring = MonitoringService(db)
 
     # Get overall sync status
@@ -114,8 +142,8 @@ async def sync_dashboard(request: Request, db: Session = Depends(get_db)):
     active_alerts = monitoring.get_active_alerts()[:10]
     alert_stats = monitoring.get_alert_stats()
 
-    # Get tenant sync status
-    tenant_status = await _get_tenant_sync_status(db, monitoring)
+    # Get tenant sync status (filtered by access)
+    tenant_status = await _get_tenant_sync_status(db, monitoring, authz)
 
     # Get metrics for all job types
     metrics = monitoring.get_metrics()
@@ -136,10 +164,14 @@ async def sync_dashboard(request: Request, db: Session = Depends(get_db)):
 
 
 async def _get_tenant_sync_status(
-    db: Session, monitoring: MonitoringService
+    db: Session, monitoring: MonitoringService, authz: TenantAuthorization
 ) -> list[dict]:
     """Get per-tenant sync status for all sync types."""
-    tenants = db.query(Tenant).filter(Tenant.is_active).all()
+    # Only get tenants the user has access to
+    if "admin" in authz.user.roles:
+        tenants = db.query(Tenant).filter(Tenant.is_active).all()
+    else:
+        tenants = get_user_tenants(authz.user, db, include_inactive=False)
     sync_types = ["costs", "compliance", "resources", "identity"]
 
     tenant_status = []

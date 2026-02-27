@@ -13,9 +13,16 @@ The Tenant model determines credential mode per tenant:
 - use_lighthouse=True: Use managing tenant credentials (settings.azure_*)
 - use_lighthouse=False: Fetch per-tenant credentials from Key Vault
 - client_id + client_secret_ref: Custom app registration for the tenant
+
+SECURITY FEATURES:
+- TTL-based credential caching (1 hour default)
+- Auto-refresh before expiry
+- Manual cache clearing capability
 """
 
 import logging
+import time
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from azure.identity import ClientSecretCredential, DefaultAzureCredential
@@ -54,6 +61,30 @@ class KeyVaultError(Exception):
     pass
 
 
+@dataclass
+class CachedCredential:
+    """Cached credential with expiration tracking."""
+
+    credential: ClientSecretCredential
+    created_at: float
+    expires_at: float
+
+    def is_expired(self) -> bool:
+        """Check if credential has expired."""
+        return time.time() > self.expires_at
+
+    def should_refresh(self, refresh_buffer_seconds: int = 300) -> bool:
+        """Check if credential should be refreshed before expiry.
+
+        Args:
+            refresh_buffer_seconds: Refresh this many seconds before expiry
+
+        Returns:
+            True if credential should be refreshed
+        """
+        return time.time() > (self.expires_at - refresh_buffer_seconds)
+
+
 class AzureClientManager:
     """Manages Azure SDK clients for multiple tenants with Key Vault integration.
 
@@ -64,15 +95,23 @@ class AzureClientManager:
        b) If tenant has client_id + client_secret_ref, use those
        c) Otherwise, fetch {tenant-id}-client-id and {tenant-id}-client-secret
 
-    Credentials are cached to avoid repeated Key Vault calls and credential creation.
+    SECURITY FEATURES:
+    - Credentials cached with TTL (default 1 hour)
+    - Auto-refresh before expiry
+    - Manual cache clearing for security rotations
     """
 
-    def __init__(self) -> None:
-        self._credentials: dict[str, ClientSecretCredential] = {}
+    # Default credential TTL: 1 hour (3600 seconds)
+    DEFAULT_CREDENTIAL_TTL_SECONDS: int = 3600
+
+    def __init__(self, credential_ttl_seconds: int | None = None) -> None:
+        self._credentials: dict[str, CachedCredential] = {}
         self._default_credential: DefaultAzureCredential | None = None
         self._key_vault_client: SecretClient | None = None
-        self._key_vault_cache: dict[str, str] = {}  # Cache for KV secrets
-
+        self._key_vault_cache: dict[str, tuple[str, float]] = {}  # (value, expires_at)
+        self._settings = get_settings()
+        self._credential_ttl = credential_ttl_seconds or self.DEFAULT_CREDENTIAL_TTL_SECONDS
+        logger.debug(f"AzureClientManager initialized with credential TTL: {self._credential_ttl}s")
     def _get_key_vault_client(self) -> SecretClient | None:
         """Get or create Key Vault client using DefaultAzureCredential.
 
@@ -123,7 +162,9 @@ class AzureClientManager:
     def _fetch_key_vault_secret(
         self, secret_name: str, tenant_id: str
     ) -> str | None:
-        """Fetch a secret from Key Vault with caching.
+        """Fetch a secret from Key Vault with TTL-based caching.
+
+        SECURITY: Secrets are cached for 5 minutes to balance performance and security.
 
         Args:
             secret_name: Name of the secret in Key Vault
@@ -133,10 +174,17 @@ class AzureClientManager:
             Secret value or None if not found/error
         """
         cache_key = f"{tenant_id}:{secret_name}"
+        now = time.time()
 
-        # Check cache first
+        # Check cache first with TTL validation
         if cache_key in self._key_vault_cache:
-            return self._key_vault_cache[cache_key]
+            value, expires_at = self._key_vault_cache[cache_key]
+            if now < expires_at:
+                logger.debug(f"Using cached secret '{secret_name}' for tenant {tenant_id}")
+                return value
+            else:
+                logger.debug(f"Secret '{secret_name}' cache expired, refreshing")
+                del self._key_vault_cache[cache_key]
 
         kv_client = self._get_key_vault_client()
         if not kv_client:
@@ -145,7 +193,9 @@ class AzureClientManager:
         try:
             secret = kv_client.get_secret(secret_name)
             value = secret.value
-            self._key_vault_cache[cache_key] = value
+            # Cache secrets for 5 minutes (300 seconds)
+            secret_ttl = 300
+            self._key_vault_cache[cache_key] = (str(value), now + secret_ttl)
             logger.debug(f"Fetched secret '{secret_name}' from Key Vault for tenant {tenant_id}")
             return str(value)
         except Exception as e:
@@ -249,11 +299,14 @@ class AzureClientManager:
             f"Tried Key Vault secrets and settings fallback."
         )
 
-    def get_credential(self, tenant_id: str) -> ClientSecretCredential:
-        """Get or create credential for a tenant.
+    def get_credential(self, tenant_id: str, force_refresh: bool = False) -> ClientSecretCredential:
+        """Get or create credential for a tenant with TTL-based caching.
+
+        SECURITY: Credentials are cached with TTL and auto-refreshed before expiry.
 
         Args:
             tenant_id: The Azure tenant ID
+            force_refresh: If True, ignore cache and create new credential
 
         Returns:
             ClientSecretCredential for the tenant
@@ -261,14 +314,40 @@ class AzureClientManager:
         Raises:
             ValueError: If credentials cannot be resolved
         """
-        if tenant_id not in self._credentials:
-            client_id, client_secret, _ = self._resolve_credentials(tenant_id)
-            self._credentials[tenant_id] = ClientSecretCredential(
-                tenant_id=tenant_id,
-                client_id=client_id,
-                client_secret=client_secret,
-            )
-        return self._credentials[tenant_id]
+        now = time.time()
+        cached = self._credentials.get(tenant_id)
+
+        # Check if we can use cached credential
+        if not force_refresh and cached:
+            if not cached.is_expired():
+                if not cached.should_refresh():
+                    # Credential is valid and doesn't need refresh yet
+                    return cached.credential
+                else:
+                    # Credential is valid but approaching expiry - refresh in background
+                    logger.debug(f"Credential for tenant {tenant_id} approaching expiry, refreshing")
+            else:
+                logger.debug(f"Credential for tenant {tenant_id} expired, refreshing")
+        elif force_refresh:
+            logger.debug(f"Force refreshing credential for tenant {tenant_id}")
+
+        # Create new credential
+        client_id, client_secret, _ = self._resolve_credentials(tenant_id)
+        new_credential = ClientSecretCredential(
+            tenant_id=tenant_id,
+            client_id=client_id,
+            client_secret=client_secret,
+        )
+
+        # Cache with expiration
+        self._credentials[tenant_id] = CachedCredential(
+            credential=new_credential,
+            created_at=now,
+            expires_at=now + self._credential_ttl,
+        )
+
+        logger.debug(f"Created new credential for tenant {tenant_id}, expires in {self._credential_ttl}s")
+        return new_credential
 
     def get_default_credential(self) -> DefaultAzureCredential:
         """Get default credential for Lighthouse scenarios."""
@@ -325,26 +404,86 @@ class AzureClientManager:
             logger.error(f"Failed to list subscriptions for tenant {tenant_id}: {e}")
             raise
 
-    def clear_cache(self, tenant_id: str | None = None) -> None:
+    def clear_cache(self, tenant_id: str | None = None) -> dict[str, int]:
         """Clear credential cache.
+
+        SECURITY: Use this method to force credential refresh after security rotations
+        or when secrets are updated.
 
         Args:
             tenant_id: If provided, clear only that tenant's cache.
                       If None, clear all caches.
+
+        Returns:
+            Dict with cache clear statistics
         """
+        stats = {"credentials_cleared": 0, "secrets_cleared": 0}
+
         if tenant_id:
-            self._credentials.pop(tenant_id, None)
+            # Clear specific tenant
+            if tenant_id in self._credentials:
+                del self._credentials[tenant_id]
+                stats["credentials_cleared"] = 1
+
             # Clear Key Vault cache entries for this tenant
             keys_to_remove = [
                 k for k in self._key_vault_cache if k.startswith(f"{tenant_id}:")
             ]
             for key in keys_to_remove:
                 del self._key_vault_cache[key]
-            logger.debug(f"Cleared cache for tenant {tenant_id}")
+                stats["secrets_cleared"] += 1
+
+            logger.info(f"Cleared cache for tenant {tenant_id}: {stats}")
         else:
+            # Clear all caches
+            stats["credentials_cleared"] = len(self._credentials)
+            stats["secrets_cleared"] = len(self._key_vault_cache)
             self._credentials.clear()
             self._key_vault_cache.clear()
-            logger.debug("Cleared all credential caches")
+            logger.info(f"Cleared all credential caches: {stats}")
+
+        return stats
+
+    def get_cache_stats(self) -> dict[str, any]:
+        """Get cache statistics for monitoring.
+
+        Returns:
+            Dict with cache statistics
+        """
+        now = time.time()
+        return {
+            "credential_cache_size": len(self._credentials),
+            "secret_cache_size": len(self._key_vault_cache),
+            "credential_ttl_seconds": self._credential_ttl,
+            "expired_credentials": sum(
+                1 for c in self._credentials.values() if c.is_expired()
+            ),
+            "expiring_soon": sum(
+                1 for c in self._credentials.values() if c.should_refresh() and not c.is_expired()
+            ),
+        }
+
+    def refresh_all_credentials(self) -> dict[str, int]:
+        """Force refresh all cached credentials.
+
+        SECURITY: Use this for emergency credential rotation or security incidents.
+
+        Returns:
+            Dict with refresh statistics
+        """
+        stats = {"refreshed": 0, "failed": 0}
+        tenant_ids = list(self._credentials.keys())
+
+        for tenant_id in tenant_ids:
+            try:
+                self.get_credential(tenant_id, force_refresh=True)
+                stats["refreshed"] += 1
+            except Exception as e:
+                logger.error(f"Failed to refresh credential for tenant {tenant_id}: {e}")
+                stats["failed"] += 1
+
+        logger.info(f"Bulk credential refresh completed: {stats}")
+        return stats
 
 
 # Global client manager instance

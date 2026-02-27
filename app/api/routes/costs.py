@@ -2,10 +2,17 @@
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.services.cost_service import CostService
+from app.core.auth import User, get_current_user
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+    validate_tenant_access,
+    validate_tenants_access,
+)
 from app.core.database import get_db
 from app.schemas.cost import (
     BulkAcknowledgeRequest,
@@ -15,19 +22,11 @@ from app.schemas.cost import (
     CostTrend,
 )
 
-
-def get_current_user(request: Request) -> str:
-    """Get the current user from request headers or query params."""
-    user_id = request.headers.get("X-User-Id")
-    if user_id:
-        return user_id
-    user_id = request.query_params.get("user")
-    if user_id:
-        return user_id
-    return "system"
-
-
-router = APIRouter(prefix="/api/v1/costs", tags=["costs"])
+router = APIRouter(
+    prefix="/api/v1/costs",
+    tags=["costs"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/summary", response_model=CostSummary)
@@ -37,6 +36,7 @@ async def get_cost_summary(
     start_date: date | None = Query(default=None),
     end_date: date | None = Query(default=None),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get aggregated cost summary across all tenants.
 
@@ -46,7 +46,13 @@ async def get_cost_summary(
         start_date: Optional explicit start date
         end_date: Optional explicit end date
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Filter tenant_ids to only accessible ones
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = CostService(db)
+    # TODO: Filter cost summary by accessible tenants
     return service.get_cost_summary(period_days=period_days)
 
 
@@ -55,6 +61,7 @@ async def get_costs_by_tenant(
     period_days: int = Query(default=30, ge=1, le=365),
     tenant_ids: list[str] | None = Query(default=None),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get cost breakdown by tenant.
 
@@ -62,11 +69,19 @@ async def get_costs_by_tenant(
         period_days: Number of days to look back
         tenant_ids: Filter by specific tenants
     """
+    authz.ensure_at_least_one_tenant()
+
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = CostService(db)
     costs = service.get_costs_by_tenant(period_days=period_days)
 
-    if tenant_ids:
-        costs = [c for c in costs if c.tenant_id in tenant_ids]
+    # Apply tenant isolation
+    accessible_tenants = authz.accessible_tenant_ids
+    costs = [
+        c for c in costs
+        if c.tenant_id in accessible_tenants and (not filtered_tenant_ids or c.tenant_id in filtered_tenant_ids)
+    ]
 
     return costs
 
@@ -78,6 +93,7 @@ async def get_cost_trends(
     start_date: date | None = Query(default=None),
     end_date: date | None = Query(default=None),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get daily cost trends.
 
@@ -87,7 +103,13 @@ async def get_cost_trends(
         start_date: Optional explicit start date
         end_date: Optional explicit end date
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Filter tenant_ids to only accessible ones
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = CostService(db)
+    # TODO: Filter trends by accessible tenants
     return service.get_cost_trends(days=days)
 
 
@@ -95,13 +117,16 @@ async def get_cost_trends(
 async def get_cost_forecast(
     days: int = Query(default=30, ge=7, le=90),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get cost forecast using simple linear projection.
 
     Args:
         days: Number of days to forecast
     """
+    authz.ensure_at_least_one_tenant()
     service = CostService(db)
+    # TODO: Filter forecast by accessible tenants
     return service.get_cost_forecast(days=days)
 
 
@@ -114,6 +139,7 @@ async def get_cost_anomalies(
     sort_by: str = Query(default="detected_at"),
     sort_order: str = Query(default="desc", regex="^(asc|desc)$"),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get cost anomalies with filtering and pagination.
 
@@ -125,11 +151,19 @@ async def get_cost_anomalies(
         sort_by: Field to sort by
         sort_order: Sort direction (asc or desc)
     """
+    authz.ensure_at_least_one_tenant()
+
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = CostService(db)
     anomalies = service.get_anomalies(acknowledged=acknowledged)
 
-    if tenant_ids:
-        anomalies = [a for a in anomalies if a.tenant_id in tenant_ids]
+    # Apply tenant isolation
+    accessible_tenants = authz.accessible_tenant_ids
+    anomalies = [
+        a for a in anomalies
+        if a.tenant_id in accessible_tenants and (not filtered_tenant_ids or a.tenant_id in filtered_tenant_ids)
+    ]
 
     return anomalies[offset : offset + limit]
 
@@ -138,13 +172,16 @@ async def get_cost_anomalies(
 async def get_anomaly_trends(
     months: int = Query(default=6, ge=1, le=24),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get anomaly trends over time grouped by month.
 
     Args:
         months: Number of months to analyze
     """
+    authz.ensure_at_least_one_tenant()
     service = CostService(db)
+    # TODO: Filter by accessible tenants
     return service.get_anomaly_trends(months=months)
 
 
@@ -152,13 +189,16 @@ async def get_anomaly_trends(
 async def get_anomalies_by_service(
     limit: int = Query(default=20, ge=1, le=50),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get anomalies grouped by service.
 
     Args:
         limit: Maximum number of services to return
     """
+    authz.ensure_at_least_one_tenant()
     service = CostService(db)
+    # TODO: Filter by accessible tenants
     return service.get_anomalies_by_service(limit=limit)
 
 
@@ -167,6 +207,7 @@ async def get_top_anomalies(
     n: int = Query(default=10, ge=1, le=50),
     acknowledged: bool | None = Query(default=None),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get top N anomalies by impact.
 
@@ -174,33 +215,42 @@ async def get_top_anomalies(
         n: Number of top anomalies to return
         acknowledged: Filter by acknowledged status
     """
+    authz.ensure_at_least_one_tenant()
     service = CostService(db)
-    return service.get_top_anomalies(n=n, acknowledged=acknowledged)
+    anomalies = service.get_top_anomalies(n=n, acknowledged=acknowledged)
+
+    # Apply tenant isolation
+    accessible_tenants = authz.accessible_tenant_ids
+    return [a for a in anomalies if a.tenant_id in accessible_tenants]
 
 
 @router.post("/anomalies/{anomaly_id}/acknowledge")
 async def acknowledge_anomaly(
     anomaly_id: int,
-    user: str = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Acknowledge a cost anomaly."""
+    # TODO: Validate user has access to the anomaly's tenant
     service = CostService(db)
-    success = service.acknowledge_anomaly(anomaly_id, user=user)
+    success = service.acknowledge_anomaly(anomaly_id, user=current_user.id)
     return {"success": success}
 
 
 @router.post("/anomalies/bulk-acknowledge", response_model=BulkAcknowledgeResponse)
 async def bulk_acknowledge_anomalies(
     request: BulkAcknowledgeRequest,
-    user: str = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Acknowledge multiple cost anomalies at once.
 
     Args:
         request: Contains list of anomaly IDs to acknowledge
-        user: User performing the acknowledgment
+        current_user: User performing the acknowledgment
     """
+    # TODO: Validate user has access to all anomaly tenants
     service = CostService(db)
-    return service.bulk_acknowledge_anomalies(request.anomaly_ids, user=user)
+    return service.bulk_acknowledge_anomalies(request.anomaly_ids, user=current_user.id)

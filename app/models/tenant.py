@@ -1,8 +1,12 @@
-"""Tenant and subscription models."""
+"""Tenant and subscription models.
 
+Includes tenant configuration, subscriptions, and user-tenant access mappings.
+"""
+
+import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
@@ -30,6 +34,9 @@ class Tenant(Base):
     subscriptions: Mapped[list["Subscription"]] = relationship(
         "Subscription", back_populates="tenant", cascade="all, delete-orphan"
     )
+    user_mappings: Mapped[list["UserTenant"]] = relationship(
+        "UserTenant", back_populates="tenant", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Tenant {self.name} ({self.tenant_id})>"
@@ -54,3 +61,50 @@ class Subscription(Base):
 
     def __repr__(self) -> str:
         return f"<Subscription {self.display_name} ({self.subscription_id})>"
+
+
+class UserTenant(Base):
+    """User-to-tenant access mapping.
+
+    Tracks which users have access to which tenants and their permission level.
+    """
+
+    __tablename__ = "user_tenants"
+    __table_args__ = (
+        UniqueConstraint("user_id", "tenant_id", name="uq_user_tenant"),
+        Index("idx_user_tenants_user_id", "user_id"),
+        Index("idx_user_tenants_tenant_id", "tenant_id"),
+    )
+
+    id: Mapped[str] = Column(String(36), primary_key=True)
+    user_id: Mapped[str] = Column(String(255), nullable=False, index=True)
+    tenant_id: Mapped[str] = Column(
+        String(36), ForeignKey("tenants.id"), nullable=False
+    )
+
+    # Permission level within this tenant
+    role: Mapped[str] = Column(String(50), default="viewer")  # viewer, operator, admin
+
+    # Access control
+    is_active: Mapped[bool] = Column(Boolean, default=True)
+    can_manage_resources: Mapped[bool] = Column(Boolean, default=False)
+    can_view_costs: Mapped[bool] = Column(Boolean, default=True)
+    can_manage_compliance: Mapped[bool] = Column(Boolean, default=False)
+
+    # Metadata
+    granted_by: Mapped[str | None] = Column(String(255))  # User who granted access
+    granted_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    expires_at: Mapped[datetime | None] = Column(DateTime)  # Optional expiration
+    last_accessed_at: Mapped[datetime | None] = Column(DateTime)
+
+    # Relationships
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="user_mappings")
+
+    def __repr__(self) -> str:
+        return f"<UserTenant user={self.user_id} tenant={self.tenant_id} role={self.role}>"
+
+    def is_expired(self) -> bool:
+        """Check if the access has expired."""
+        if self.expires_at is None:
+            return False
+        return datetime.utcnow() > self.expires_at

@@ -1,9 +1,14 @@
 """Recommendations API routes."""
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.services.recommendation_service import RecommendationService
+from app.core.auth import User, get_current_user
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+)
 from app.core.database import get_db
 from app.schemas.recommendation import (
     DismissRecommendationRequest,
@@ -15,19 +20,11 @@ from app.schemas.recommendation import (
     SavingsPotential,
 )
 
-
-def get_current_user(request: Request) -> str:
-    """Get the current user from request headers or query params."""
-    user_id = request.headers.get("X-User-Id")
-    if user_id:
-        return user_id
-    user_id = request.query_params.get("user")
-    if user_id:
-        return user_id
-    return "system"
-
-
-router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
+router = APIRouter(
+    prefix="/api/v1/recommendations",
+    tags=["recommendations"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("", response_model=list[Recommendation])
@@ -41,6 +38,7 @@ async def get_recommendations(
     sort_by: str = Query(default="created_at"),
     sort_order: str = Query(default="desc", regex="^(asc|desc)$"),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Get all recommendations with optional filtering.
 
@@ -54,10 +52,15 @@ async def get_recommendations(
         sort_by: Field to sort by
         sort_order: Sort direction (asc or desc)
     """
+    authz.ensure_at_least_one_tenant()
+
+    # Filter tenant_ids to only accessible ones
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
     service = RecommendationService(db)
-    return service.get_recommendations(
+    recommendations = service.get_recommendations(
         category=category,
-        tenant_ids=tenant_ids,
+        tenant_ids=filtered_tenant_ids,
         impact=impact,
         dismissed=dismissed,
         limit=limit,
@@ -66,32 +69,58 @@ async def get_recommendations(
         sort_order=sort_order,
     )
 
+    # Apply tenant isolation
+    accessible_tenants = authz.accessible_tenant_ids
+    recommendations = [r for r in recommendations if r.tenant_id in accessible_tenants]
+
+    return recommendations
+
 
 @router.get("/by-category", response_model=list[RecommendationsByCategory])
-async def get_recommendations_by_category(db: Session = Depends(get_db)):
+async def get_recommendations_by_category(
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
     """Get recommendations grouped by category (cost, security, performance, reliability)."""
+    authz.ensure_at_least_one_tenant()
     service = RecommendationService(db)
+    # TODO: Filter by accessible tenants
     return service.get_recommendations_by_category()
 
 
 @router.get("/by-tenant")
-async def get_recommendations_by_tenant(db: Session = Depends(get_db)):
+async def get_recommendations_by_tenant(
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
     """Get recommendations grouped by tenant."""
+    authz.ensure_at_least_one_tenant()
     service = RecommendationService(db)
+    # TODO: Filter by accessible tenants
     return service.get_recommendations_by_tenant()
 
 
 @router.get("/savings-potential", response_model=SavingsPotential)
-async def get_savings_potential(db: Session = Depends(get_db)):
+async def get_savings_potential(
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
     """Get total potential savings across all recommendations."""
+    authz.ensure_at_least_one_tenant()
     service = RecommendationService(db)
+    # TODO: Filter by accessible tenants
     return service.get_savings_potential()
 
 
 @router.get("/summary", response_model=list[RecommendationSummary])
-async def get_recommendation_summary(db: Session = Depends(get_db)):
+async def get_recommendation_summary(
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
     """Get summary statistics by category."""
+    authz.ensure_at_least_one_tenant()
     service = RecommendationService(db)
+    # TODO: Filter by accessible tenants
     return service.get_recommendation_summary()
 
 
@@ -99,19 +128,22 @@ async def get_recommendation_summary(db: Session = Depends(get_db)):
 async def dismiss_recommendation(
     recommendation_id: int,
     request_data: DismissRecommendationRequest | None = None,
-    user: str = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Dismiss a recommendation.
 
     Args:
         recommendation_id: ID of the recommendation to dismiss
         request_data: Optional dismissal reason
-        user: User performing the dismissal
+        current_user: User performing the dismissal
     """
+    authz.ensure_at_least_one_tenant()
+    # TODO: Validate user has access to recommendation's tenant
     service = RecommendationService(db)
     return service.dismiss_recommendation(
         recommendation_id=recommendation_id,
-        user=user,
+        user=current_user.id,
         reason=request_data.reason if request_data else None,
     )

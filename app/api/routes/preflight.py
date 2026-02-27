@@ -3,10 +3,18 @@
 import json
 import logging
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
+from app.core.auth import User, get_current_user, require_roles
+from app.core.authorization import (
+    TenantAuthorization,
+    get_tenant_authorization,
+    get_user_tenants,
+)
+from app.core.database import get_db
 from app.preflight.models import (
     CategorySummary,
     CheckCategory,
@@ -25,12 +33,19 @@ from app.preflight.runner import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/preflight", tags=["preflight"])
+router = APIRouter(
+    prefix="/api/v1/preflight",
+    tags=["preflight"],
+    dependencies=[Depends(get_current_user)],
+)
 templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)
-async def preflight_page(request: Request):
+async def preflight_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
     """Preflight checks dashboard page."""
     latest = get_latest_report()
     runner = get_runner()
@@ -131,10 +146,16 @@ async def run_preflight_checks(
 
 
 @router.get("/tenants/{tenant_id}", response_model=PreflightReport)
-async def check_tenant_preflight(tenant_id: str) -> PreflightReport:
+async def check_tenant_preflight(
+    tenant_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+) -> PreflightReport:
     """Run preflight checks for a specific tenant.
 
     Verifies access and configuration for a single Azure tenant.
+    User must have access to the tenant.
 
     Args:
         tenant_id: The tenant ID to check
@@ -142,6 +163,9 @@ async def check_tenant_preflight(tenant_id: str) -> PreflightReport:
     Returns:
         PreflightReport with tenant-specific check results
     """
+    # Validate tenant access
+    authz.validate_access(tenant_id)
+
     runner = get_runner()
 
     if runner.is_running:

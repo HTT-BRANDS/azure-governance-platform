@@ -3,9 +3,12 @@
 Provides multi-channel notification support including Teams webhooks,
 email, and generic webhooks with adaptive card formatting and
 deduplication logic.
+
+SECURITY: All webhook URLs are sanitized from logs to prevent credential leakage.
 """
 
 import logging
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -16,6 +19,20 @@ import httpx
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+# Regex patterns for sensitive data redaction
+WEBHOOK_URL_PATTERN = re.compile(
+    r"https?://[^\s\"]+webhook[^\s\"]*|https?://[^\s\"]*office\.com/webhook[^\s\"]*",
+    re.IGNORECASE,
+)
+SENSITIVE_PATTERNS = {
+    "api_key": re.compile(r"(['\"]?(?:api[_-]?key|apikey)['\"]?\s*[:=]\s*)['\"][^'\"]+['\"]", re.IGNORECASE),
+    "password": re.compile(r"(['\"]?(?:password|passwd|pwd)['\"]?\s*[:=]\s*)['\"][^'\"]+['\"]", re.IGNORECASE),
+    "secret": re.compile(r"(['\"]?(?:client_secret|secret)['\"]?\s*[:=]\s*)['\"][^'\"]+['\"]", re.IGNORECASE),
+    "token": re.compile(r"(['\"]?(?:token|access_token|refresh_token)['\"]?\s*[:=]\s*)['\"][^'\"]+['\"]", re.IGNORECASE),
+    "bearer": re.compile(r"(bearer\s+)\S+", re.IGNORECASE),
+    "connection_string": re.compile(r"([a-z]+://[^:]+:)[^@]+(@)", re.IGNORECASE),
+}
 
 
 class NotificationChannel(str, Enum):
@@ -291,8 +308,62 @@ def format_sync_alert(notification: Notification) -> dict[str, Any]:
     return card
 
 
+def sanitize_log_message(message: str) -> str:
+    """Sanitize log message to remove sensitive data.
+
+    SECURITY CRITICAL: This function prevents credential leakage in logs
+    by redacting webhook URLs, API keys, passwords, tokens, etc.
+
+    Args:
+        message: The message to sanitize
+
+    Returns:
+        Sanitized message with sensitive data replaced
+    """
+    if not message:
+        return message
+
+    sanitized = message
+
+    # Redact webhook URLs
+    sanitized = WEBHOOK_URL_PATTERN.sub("[WEBHOOK_URL_REDACTED]", sanitized)
+
+    # Redact sensitive patterns
+    for pattern_name, pattern in SENSITIVE_PATTERNS.items():
+        def replace_sensitive(match: re.Match) -> str:
+            """Replace sensitive value with [REDACTED]."""
+            # If there are capture groups, preserve the key/prefix part
+            if match.lastindex and match.lastindex >= 1:
+                prefix = match.group(1)
+                suffix = match.group(2) if match.lastindex >= 2 else ""
+                return f"{prefix}[REDACTED]{suffix}"
+            return "[REDACTED]"
+        sanitized = pattern.sub(replace_sensitive, sanitized)
+
+    return sanitized
+
+
+def safe_log(level: str, message: str, *args, **kwargs) -> None:
+    """Log a message with automatic sanitization of sensitive data.
+
+    Use this instead of logger directly for all messages that might
+    contain webhook URLs or other sensitive data.
+
+    Args:
+        level: Log level (debug, info, warning, error, critical)
+        message: The message to log
+        *args: Format arguments
+        **kwargs: Extra log kwargs
+    """
+    sanitized = sanitize_log_message(message)
+    log_func = getattr(logger, level.lower(), logger.info)
+    log_func(sanitized, *args, **kwargs)
+
+
 async def send_teams_notification(notification: Notification) -> dict[str, Any]:
     """Send notification to Microsoft Teams via webhook.
+
+    SECURITY: Webhook URLs are never logged - sanitized automatically.
 
     Args:
         notification: The notification to send
@@ -303,12 +374,15 @@ async def send_teams_notification(notification: Notification) -> dict[str, Any]:
     settings = get_settings()
 
     if not settings.teams_webhook_url:
-        logger.warning("Teams webhook URL not configured")
+        safe_log("warning", "Teams webhook URL not configured")
         return {
             "success": False,
             "error": "Teams webhook URL not configured",
             "channel": NotificationChannel.TEAMS,
         }
+
+    # NEVER log the actual webhook URL
+    safe_log("debug", "Sending Teams notification to configured webhook")
 
     payload = format_sync_alert(notification)
 
@@ -321,7 +395,7 @@ async def send_teams_notification(notification: Notification) -> dict[str, Any]:
             )
             response.raise_for_status()
 
-        logger.info(f"Teams notification sent: {notification.title}")
+        safe_log("info", f"Teams notification sent: {notification.title}")
         return {
             "success": True,
             "status_code": response.status_code,
@@ -329,17 +403,20 @@ async def send_teams_notification(notification: Notification) -> dict[str, Any]:
         }
 
     except httpx.HTTPStatusError as e:
-        logger.error(f"Teams webhook returned error: {e.response.status_code} - {e.response.text}")
+        # Sanitize error response that might contain URLs
+        error_msg = sanitize_log_message(f"HTTP {e.response.status_code}: {e.response.text}")
+        safe_log("error", f"Teams webhook returned error: {error_msg}")
         return {
             "success": False,
-            "error": f"HTTP {e.response.status_code}: {e.response.text}",
+            "error": "Teams webhook request failed",
             "channel": NotificationChannel.TEAMS,
         }
     except Exception as e:
-        logger.error(f"Failed to send Teams notification: {e}")
+        error_msg = sanitize_log_message(str(e))
+        safe_log("error", f"Failed to send Teams notification: {error_msg}")
         return {
             "success": False,
-            "error": str(e),
+            "error": "Failed to send notification",
             "channel": NotificationChannel.TEAMS,
         }
 
@@ -350,13 +427,18 @@ async def send_webhook_notification(
 ) -> dict[str, Any]:
     """Send notification to a generic webhook endpoint.
 
+    SECURITY: Webhook URLs are never logged - sanitized automatically.
+
     Args:
         notification: The notification to send
-        webhook_url: The webhook URL
+        webhook_url: The webhook URL (will not be logged)
 
     Returns:
         Dict with success status and response details
     """
+    # NEVER log the actual webhook URL
+    safe_log("debug", "Sending webhook notification to configured endpoint")
+
     payload = {
         "title": notification.title,
         "message": notification.message,
@@ -377,7 +459,7 @@ async def send_webhook_notification(
             )
             response.raise_for_status()
 
-        logger.info(f"Webhook notification sent: {notification.title}")
+        safe_log("info", f"Webhook notification sent: {notification.title}")
         return {
             "success": True,
             "status_code": response.status_code,
@@ -385,10 +467,11 @@ async def send_webhook_notification(
         }
 
     except Exception as e:
-        logger.error(f"Failed to send webhook notification: {e}")
+        error_msg = sanitize_log_message(str(e))
+        safe_log("error", f"Failed to send webhook notification: {error_msg}")
         return {
             "success": False,
-            "error": str(e),
+            "error": "Failed to send webhook notification",
             "channel": NotificationChannel.WEBHOOK,
         }
 
