@@ -1,0 +1,189 @@
+# =============================================================================
+# Azure Governance Platform - Production Docker Compose
+# =============================================================================
+# This file is optimized for production deployment.
+# It uses the production Docker image with minimal privileges.
+#
+# Usage:
+#   docker-compose -f docker-compose.prod.yml up -d
+#   docker-compose -f docker-compose.prod.yml pull
+#   docker-compose -f docker-compose.prod.yml up -d
+#
+# Environment Variables Required:
+#   - AZURE_TENANT_ID
+#   - AZURE_CLIENT_ID
+#   - AZURE_CLIENT_SECRET
+#   - (Optional) DATABASE_URL for Azure SQL
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # Production Application Service
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      # Use build args if needed
+      args:
+        - PYTHON_VERSION=3.11
+    
+    # Alternative: Use pre-built image from ACR
+    # image: ${ACR_LOGIN_SERVER}/azure-governance-platform:${IMAGE_TAG:-latest}
+    
+    container_name: governance-platform-prod
+    restart: always
+    
+    ports:
+      - "8000:8000"
+    
+    environment:
+      # Environment
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - PORT=8000
+      
+      # Database (Azure SQL or SQLite)
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///home/data/governance.db}
+      
+      # Azure Credentials (REQUIRED - must be set)
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:?AZURE_TENANT_ID is required}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:?AZURE_CLIENT_ID is required}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:?AZURE_CLIENT_SECRET is required}
+      
+      # Azure AD OAuth (optional)
+      - AZURE_AD_TENANT_ID=${AZURE_AD_TENANT_ID:-}
+      - AZURE_AD_CLIENT_ID=${AZURE_AD_CLIENT_ID:-}
+      - AZURE_AD_CLIENT_SECRET=${AZURE_AD_CLIENT_SECRET:-}
+      
+      # Key Vault (optional)
+      - KEY_VAULT_URL=${KEY_VAULT_URL:-}
+      
+      # Sync Configuration
+      - COST_SYNC_INTERVAL_HOURS=${COST_SYNC_INTERVAL_HOURS:-24}
+      - COMPLIANCE_SYNC_INTERVAL_HOURS=${COMPLIANCE_SYNC_INTERVAL_HOURS:-4}
+      - RESOURCE_SYNC_INTERVAL_HOURS=${RESOURCE_SYNC_INTERVAL_HOURS:-1}
+      - IDENTITY_SYNC_INTERVAL_HOURS=${IDENTITY_SYNC_INTERVAL_HOURS:-24}
+      
+      # Caching
+      - CACHE_ENABLED=${CACHE_ENABLED:-true}
+      - REDIS_URL=${REDIS_URL:-}
+      
+      # Performance
+      - BULK_BATCH_SIZE=${BULK_BATCH_SIZE:-1000}
+      - SYNC_CHUNK_SIZE=${SYNC_CHUNK_SIZE:-1000}
+      - ENABLE_PARALLEL_SYNC=${ENABLE_PARALLEL_SYNC:-true}
+      - MAX_PARALLEL_TENANTS=${MAX_PARALLEL_TENANTS:-5}
+      
+      # Notifications
+      - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
+      - COST_ANOMALY_THRESHOLD_PERCENT=${COST_ANOMALY_THRESHOLD_PERCENT:-20.0}
+      - COMPLIANCE_ALERT_THRESHOLD_PERCENT=${COMPLIANCE_ALERT_THRESHOLD_PERCENT:-5.0}
+      - NOTIFICATION_ENABLED=${NOTIFICATION_ENABLED:-true}
+      - NOTIFICATION_MIN_SEVERITY=${NOTIFICATION_MIN_SEVERITY:-warning}
+      
+      # Security
+      - CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS is required}
+      
+      # Riverside Compliance
+      - RIVERSIDE_COMPLIANCE_ENABLED=${RIVERSIDE_COMPLIANCE_ENABLED:-false}
+      - RIVERSIDE_DEADLINE_DATE=${RIVERSIDE_DEADLINE_DATE:-2026-07-08}
+      - RIVERSIDE_MFA_TARGET=${RIVERSIDE_MFA_TARGET:-100}
+      - RIVERSIDE_MATURITY_TARGET=${RIVERSIDE_MATURITY_TARGET:-3.0}
+      
+      # Application Insights (if enabled)
+      - APPLICATIONINSIGHTS_CONNECTION_STRING=${APPLICATIONINSIGHTS_CONNECTION_STRING:-}
+    
+    volumes:
+      # Persistent storage for SQLite and logs
+      - app-data:/home/data
+      - app-logs:/home/logs
+      
+      # Optional: Mount certificates if needed
+      # - /path/to/certs:/app/certs:ro
+    
+    # Security: Limit container capabilities
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    networks:
+      - governance-prod
+
+  # ---------------------------------------------------------------------------
+  # Optional: Nginx Reverse Proxy (for SSL termination)
+  # Uncomment if deploying without Azure Front Door or Application Gateway
+  # ---------------------------------------------------------------------------
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: governance-nginx
+  #   restart: always
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - app
+  #   networks:
+  #     - governance-prod
+
+  # ---------------------------------------------------------------------------
+  # Optional: Redis Cache
+  # ---------------------------------------------------------------------------
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: governance-redis
+  #   restart: always
+  #   command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - governance-prod
+
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
+networks:
+  governance-prod:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ---------------------------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------------------------
+volumes:
+  app-data:
+    driver: local
+  app-logs:
+    driver: local
+  redis-data:
+    driver: local

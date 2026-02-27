@@ -1,0 +1,140 @@
+# =============================================================================
+# Azure Governance Platform - Local Development Docker Compose
+# =============================================================================
+# This file is used for local development with Docker.
+# It mounts the source code for live reload and includes all services.
+#
+# Usage:
+#   docker-compose up -d          # Start all services
+#   docker-compose up -d --build  # Rebuild and start
+#   docker-compose logs -f        # Follow logs
+#   docker-compose down           # Stop all services
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # Main Application Service
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: governance-platform
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Environment
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - PORT=8000
+      
+      # Database (SQLite for local development)
+      - DATABASE_URL=sqlite:///app/data/governance.db
+      
+      # Azure Credentials (from .env file)
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      
+      # Optional Azure AD OAuth
+      - AZURE_AD_TENANT_ID=${AZURE_AD_TENANT_ID:-}
+      - AZURE_AD_CLIENT_ID=${AZURE_AD_CLIENT_ID:-}
+      - AZURE_AD_CLIENT_SECRET=${AZURE_AD_CLIENT_SECRET:-}
+      
+      # Sync Configuration
+      - COST_SYNC_INTERVAL_HOURS=${COST_SYNC_INTERVAL_HOURS:-24}
+      - COMPLIANCE_SYNC_INTERVAL_HOURS=${COMPLIANCE_SYNC_INTERVAL_HOURS:-4}
+      - RESOURCE_SYNC_INTERVAL_HOURS=${RESOURCE_SYNC_INTERVAL_HOURS:-1}
+      - IDENTITY_SYNC_INTERVAL_HOURS=${IDENTITY_SYNC_INTERVAL_HOURS:-24}
+      
+      # Caching
+      - CACHE_ENABLED=${CACHE_ENABLED:-false}
+      - REDIS_URL=${REDIS_URL:-}
+      
+      # Notifications
+      - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
+      - COST_ANOMALY_THRESHOLD_PERCENT=${COST_ANOMALY_THRESHOLD_PERCENT:-20.0}
+      
+      # Security
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000,http://localhost:5173
+      
+      # Riverside Compliance (optional)
+      - RIVERSIDE_COMPLIANCE_ENABLED=${RIVERSIDE_COMPLIANCE_ENABLED:-false}
+      - RIVERSIDE_DEADLINE_DATE=${RIVERSIDE_DEADLINE_DATE:-2026-07-08}
+      - RIVERSIDE_MFA_TARGET=${RIVERSIDE_MFA_TARGET:-100}
+      - RIVERSIDE_MATURITY_TARGET=${RIVERSIDE_MATURITY_TARGET:-3.0}
+    
+    volumes:
+      # Mount source code for development (live reload)
+      - ./app:/app/app:ro
+      - ./scripts:/app/scripts:ro
+      - ./data:/app/data
+      - ./logs:/app/logs
+      # Mount uv cache for faster rebuilds
+      - uv-cache:/root/.cache/uv
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    networks:
+      - governance-network
+
+  # ---------------------------------------------------------------------------
+  # Optional: Redis Cache (for production-like caching)
+  # Uncomment if you want to test caching locally
+  # ---------------------------------------------------------------------------
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: governance-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - governance-network
+
+  # ---------------------------------------------------------------------------
+  # Optional: SQL Server (for testing Azure SQL locally)
+  # Uncomment if you want to test with SQL Server
+  # ---------------------------------------------------------------------------
+  # sqlserver:
+  #   image: mcr.microsoft.com/mssql/server:2022-latest
+  #   container_name: governance-sqlserver
+  #   restart: unless-stopped
+  #   environment:
+  #     - ACCEPT_EULA=Y
+  #     - MSSQL_SA_PASSWORD=${SQL_SA_PASSWORD:-YourStrong@Passw0rd}
+  #     - MSSQL_PID=Developer
+  #   ports:
+  #     - "1433:1433"
+  #   volumes:
+  #     - sqlserver-data:/var/opt/mssql
+  #   networks:
+  #     - governance-network
+
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
+networks:
+  governance-network:
+    driver: bridge
+
+# ---------------------------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------------------------
+volumes:
+  uv-cache:
+  redis-data:
+    driver: local
+  sqlserver-data:
+    driver: local

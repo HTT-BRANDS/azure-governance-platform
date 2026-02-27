@@ -42,6 +42,11 @@ class Settings(BaseSettings):
         alias="ENVIRONMENT",
     )
 
+    # Azure-specific settings
+    azure_region: str | None = Field(default=None, alias="AZURE_REGION")
+    azure_subscription_id: str | None = Field(default=None, alias="AZURE_SUBSCRIPTION_ID")
+    azure_resource_group: str | None = Field(default=None, alias="AZURE_RESOURCE_GROUP")
+
     # Application
     app_name: str = "Azure Governance Platform"
     app_version: str = "0.1.0"
@@ -274,6 +279,23 @@ class Settings(BaseSettings):
             self.azure_client_id,
             self.azure_client_secret,
         ])
+
+    @property
+    def is_containerized(self) -> bool:
+        """Check if running in a container environment."""
+        return os.getenv("KUBERNETES_SERVICE_HOST") is not None or \
+               os.getenv("CONTAINER") is not None or \
+               os.path.exists("/.dockerenv")
+
+    @property
+    def is_azure_app_service(self) -> bool:
+        """Check if running in Azure App Service."""
+        return os.getenv("WEBSITE_SITE_NAME") is not None
+
+    @property
+    def app_insights_enabled(self) -> bool:
+        """Check if Application Insights is configured."""
+        return bool(os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING"))
 
     def get_cache_ttl(self, data_type: str) -> int:
         """Get TTL for a specific data type."""

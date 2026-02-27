@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "development"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "secondaryLocation": {
+      "value": "westus2"
+    },
+    "appServiceSku": {
+      "value": "B1"
+    },
+    "sqlDatabaseSku": {
+      "value": "Basic"
+    },
+    "enableAzureSql": {
+      "value": false
+    },
+    "enableAppInsights": {
+      "value": true
+    },
+    "enableKeyVault": {
+      "value": true
+    },
+    "enableVNetIntegration": {
+      "value": false
+    },
+    "logRetentionDays": {
+      "value": 7
+    },
+    "tags": {
+      "value": {
+        "Application": "Azure Governance Platform",
+        "Environment": "development",
+        "ManagedBy": "Bicep",
+        "CostCenter": "IT-Dev",
+        "Owner": "Dev-Team"
+      }
+    }
+  }
+}
