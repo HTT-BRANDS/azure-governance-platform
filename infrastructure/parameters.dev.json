@@ -36,7 +36,10 @@
       "value": 30
     },
     "containerImage": {
-      "value": "latest"
+      "value": "ghcr.io/tygranlund/azure-governance-platform:dev"
+    },
+    "useContainerDeployment": {
+      "value": true
     },
     "tags": {
       "value": {

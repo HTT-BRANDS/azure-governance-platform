@@ -32,6 +32,12 @@
     "logRetentionDays": {
       "value": 14
     },
+    "containerImage": {
+      "value": "ghcr.io/tygranlund/azure-governance-platform:staging"
+    },
+    "useContainerDeployment": {
+      "value": true
+    },
     "tags": {
       "value": {
         "Application": "Azure Governance Platform",

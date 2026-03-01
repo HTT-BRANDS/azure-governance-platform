@@ -15,7 +15,7 @@ This document tracks the current status of the **Azure Governance Platform dev d
 |--------|--------|-------|
 | Infrastructure | ✅ Ready | Bicep templates configured |
 | CI/CD Pipeline | ✅ Ready | OIDC-based deployment |
-| App Service | ⏳ Pending | Requires deployment |
+| App Service | ✅ Fixed | Runtime config corrected (Python → Container) |
 | Health Checks | ✅ Defined | `/health`, `/health/detailed`, `/api/v1/status` |
 | Monitoring | ✅ Configured | Application Insights ready |
 
@@ -247,7 +247,11 @@ curl https://app-governance-dev-001.azurewebsites.net/api/v1/status
 
 ### Current Issues
 
-_None - deployment pending_
+✅ **FIXED: Runtime Configuration Mismatch**
+- **Problem**: App Service configured for `PYTHON|3.11` but deploying containers
+- **Impact**: 503 errors, app wouldn't start
+- **Solution**: Updated Bicep to use `kind: 'app,linux,container'` and `linuxFxVersion: 'DOCKER|...'`
+- **Scripts Created**: `scripts/fix-dev-runtime.sh`, `scripts/redeploy-dev.sh`
 
 ### Common Deployment Issues
 

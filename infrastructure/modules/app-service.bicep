@@ -37,8 +37,11 @@ param environment string
 @description('Tags to apply')
 param tags object = {}
 
-@description('Python version')
+@description('Python version (used when not deploying as container)')
 param pythonVersion string = '3.11'
+
+@description('Use container deployment instead of code deployment')
+param useContainerDeployment bool = true
 
 @description('Log Analytics workspace ID for diagnostics')
 param logAnalyticsWorkspaceId string = ''
@@ -53,12 +56,18 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = if (!empty(k
   name: keyVaultName
 }
 
+// Determine kind based on deployment type
+var appKind = useContainerDeployment ? 'app,linux,container' : 'app,linux'
+
+// Determine linuxFxVersion based on deployment type
+var linuxFxVersion = useContainerDeployment ? 'DOCKER|${containerImage}' : 'PYTHON|${pythonVersion}'
+
 // App Service
 resource appService 'Microsoft.Web/sites@2023-12-01' = {
   name: name
   location: location
   tags: tags
-  kind: 'app,linux'
+  kind: appKind
   identity: {
     type: 'SystemAssigned'
   }
@@ -72,13 +81,13 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
     hostNameSslStates: []
     siteConfig: {
       numberOfWorkers: 1
-      linuxFxVersion: 'PYTHON|${pythonVersion}'
+      linuxFxVersion: linuxFxVersion
       alwaysOn: true
       httpLoggingEnabled: true
       minTlsVersion: '1.2'
       scmMinTlsVersion: '1.2'
       ftpsState: 'Disabled'
-      appCommandLine: 'python -m uvicorn app.main:app --host 0.0.0.0 --port 8000'
+      appCommandLine: useContainerDeployment ? '' : 'python -m uvicorn app.main:app --host 0.0.0.0 --port 8000'
       healthCheckPath: '/health'
       use32BitWorkerProcess: false
       webSocketsEnabled: false
@@ -144,7 +153,15 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
-          value: 'true'
+          value: useContainerDeployment ? 'false' : 'true'
+        }
+        {
+          name: 'DOCKER_REGISTRY_SERVER_URL'
+          value: useContainerDeployment ? 'https://ghcr.io' : ''
+        }
+        {
+          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+          value: useContainerDeployment ? 'false' : 'true'
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -175,10 +192,6 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'WEBSITE_HEALTHCHECK_MAXPINGFAILURES'
           value: '3'
-        }
-        {
-          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-          value: 'true'
         }
       ]
       connectionStrings: []

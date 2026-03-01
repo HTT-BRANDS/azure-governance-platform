@@ -67,6 +67,9 @@ param sqlAdminPassword string = newGuid()
 @description('Docker image tag to deploy')
 param containerImage string = 'latest'
 
+@description('Use container deployment instead of code deployment')
+param useContainerDeployment bool = true
+
 @description('Azure Container Registry name (optional)')
 param acrName string = ''
 
@@ -230,6 +233,7 @@ module appService 'modules/app-service.bicep' = {
     environment: environment
     tags: tags
     logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
+    useContainerDeployment: useContainerDeployment
   }
   dependsOn: [
     storage
