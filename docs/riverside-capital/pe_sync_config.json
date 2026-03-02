@@ -1,0 +1,53 @@
+{
+  "sync_configuration": {
+    "name": "riverside-pe-governance-sync",
+    "version": "1.0",
+    "tenants": [
+      {
+        "name": "HTT",
+        "tenant_id": "0c0e35dc-188a-4eb3-b8ba-61752154b407",
+        "primary": true,
+        "app_id": "1e3e8417-49f1-4d08-b7be-47045d8a12e9"
+      },
+      {
+        "name": "BCC",
+        "tenant_id": "b5380912-79ec-452d-a6ca-6d897b19b294",
+        "app_id": "1e3e8417-49f1-4d08-b7be-47045d8a12e9"
+      },
+      {
+        "name": "FN",
+        "tenant_id": "98723287-044b-4bbb-9294-19857d4128a0",
+        "app_id": "1e3e8417-49f1-4d08-b7be-47045d8a12e9"
+      },
+      {
+        "name": "TLL",
+        "tenant_id": "3c7d2bf3-b597-4766-b5cb-2b489c2904d6",
+        "app_id": "1e3e8417-49f1-4d08-b7be-47045d8a12e9"
+      }
+    ],
+    "sync_schedule": {
+      "daily_syncs": [
+        {"time": "06:00", "timezone": "America/Chicago", "description": "Morning sync"},
+        {"time": "23:00", "timezone": "America/Chicago", "description": "Evening sync"}
+      ],
+      "historical_backfill": {
+        "months": 12,
+        "description": "Last 12 months of cost data"
+      }
+    },
+    "data_types": [
+      "cost_management",
+      "subscriptions",
+      "resources",
+      "identity_risk",
+      "mfa_status",
+      "compliance"
+    ],
+    "billing_sources": [
+      "direct",
+      "reseller_suigeneris",
+      "reseller_pax8",
+      "reseller_appriver"
+    ]
+  }
+}

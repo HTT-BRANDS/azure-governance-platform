@@ -1,0 +1,47 @@
+name: Multi-Tenant Cost and Governance Sync
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 6:00 AM CT
+    - cron: '0 23 * * *'  # 11:00 PM CT
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Sync HTT Data
+        run: |
+          echo "Syncing HTT tenant..."
+          # Add sync commands here
+      
+      - name: Sync BCC Data
+        run: |
+          echo "Syncing BCC tenant..."
+          az login --tenant b5380912-79ec-452d-a6ca-6d897b19b294 --allow-no-subscriptions
+          # Add sync commands here
+      
+      - name: Sync FN Data
+        run: |
+          echo "Syncing FN tenant..."
+          az login --tenant 98723287-044b-4bbb-9294-19857d4128a0 --allow-no-subscriptions
+          # Add sync commands here
+      
+      - name: Sync TLL Data
+        run: |
+          echo "Syncing TLL tenant..."
+          az login --tenant 3c7d2bf3-b597-4766-b5cb-2b489c2904d6 --allow-no-subscriptions
+          # Add sync commands here
