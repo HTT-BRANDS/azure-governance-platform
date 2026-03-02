@@ -85,8 +85,6 @@
     
     <!-- HTMX Navigation Styles -->
     <style>
-        [x-cloak] { display: none !important; }
-        
         /* HTMX Indicator States */
         .htmx-indicator { display: none; }
         .htmx-request .htmx-indicator { display: inline-block; }
@@ -250,8 +248,12 @@
 
     {% block extra_scripts %}{% endblock %}
     
-    <!-- HTMX Navigation Enhancement -->
-    <script src="/static/js/navigation.js"></script>
+    <!-- HTMX Navigation Enhancement - Modular -->
+    <script src="/static/js/navigation/progressBar.js"></script>
+    <script src="/static/js/navigation/toast.js"></script>
+    <script src="/static/js/navigation/navHighlight.js"></script>
+    <script src="/static/js/navigation/confirmDialog.js"></script>
+    <script src="/static/js/navigation/index.js"></script>
     
     <!-- Include Loading Component Templates -->
     {% include 'components/loading.html' %}
