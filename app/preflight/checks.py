@@ -721,6 +721,67 @@ def get_all_checks() -> dict[str, BasePreflightCheck]:
         GitHubActionsCheck(),
     ]
 
+    # Import and add Riverside checks
+    try:
+        from app.preflight.riverside_checks import (
+            RiversideAPIEndpointCheck,
+            RiversideAzureADPermissionsCheck,
+            RiversideDatabaseCheck,
+            RiversideMFADataSourceCheck,
+            RiversideSchedulerCheck,
+        )
+        checks.extend([
+            RiversideDatabaseCheck(),
+            RiversideAPIEndpointCheck(),
+            RiversideSchedulerCheck(),
+            RiversideAzureADPermissionsCheck(),
+            RiversideMFADataSourceCheck(),
+        ])
+    except ImportError:
+        # Riverside checks not available
+        pass
+
+
+    # Import and add MFA compliance checks
+    try:
+        from app.preflight.mfa_checks import (
+            MFATenantDataCheck,
+            MFAAdminEnrollmentCheck,
+            MFAUserEnrollmentCheck,
+            MFAGapReportCheck,
+        )
+        checks.extend([
+            MFATenantDataCheck(),
+            MFAAdminEnrollmentCheck(),
+            MFAUserEnrollmentCheck(),
+            MFAGapReportCheck(),
+        ])
+    except ImportError:
+        # MFA checks not available
+        pass
+
+    # Import and add admin risk checks
+    try:
+        from app.preflight.admin_risk_checks import (
+            AdminComplianceGapCheck,
+            AdminMfaCheck,
+            InactiveAdminCheck,
+            OverprivilegedAccountCheck,
+            SharedAdminCheck,
+        )
+        checks.extend([
+            AdminMfaCheck(),
+            OverprivilegedAccountCheck(),
+            InactiveAdminCheck(),
+            SharedAdminCheck(),
+            AdminComplianceGapCheck(),
+        ])
+    except ImportError:
+        # Admin risk checks not available
+        pass
+
+        pass
+
     return {check.check_id: check for check in checks}
 
 

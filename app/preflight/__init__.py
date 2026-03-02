@@ -17,6 +17,10 @@ Two API styles are available:
 Multi-tenant orchestration:
    >>> from app.preflight import check_all_tenants
    >>> all_results = await check_all_tenants()
+
+Riverside checks:
+   >>> from app.preflight import RiversideDatabaseCheck, run_all_riverside_checks
+   >>> results = await run_all_riverside_checks()
 """
 
 # Base and models
@@ -49,6 +53,36 @@ from app.preflight.models import (
     PreflightReport,
 )
 
+# Riverside checks
+from app.preflight.riverside_checks import (
+    RiversideAPIEndpointCheck,
+    RiversideAzureADPermissionsCheck,
+    RiversideDatabaseCheck,
+    RiversideMFADataSourceCheck,
+    RiversideSchedulerCheck,
+    check_riverside_api_endpoints,
+    check_riverside_azure_ad_permissions,
+    check_riverside_database,
+    check_riverside_mfa_data_source,
+    check_riverside_scheduler,
+    get_riverside_checks,
+    run_all_riverside_checks,
+)
+
+# MFA compliance checks
+from app.preflight.mfa_checks import (
+    MFATenantDataCheck,
+    MFAAdminEnrollmentCheck,
+    MFAUserEnrollmentCheck,
+    MFAGapReportCheck,
+    check_mfa_tenant_data,
+    check_mfa_admin_enrollment,
+    check_mfa_user_enrollment,
+    check_mfa_gap_report,
+    get_mfa_checks,
+    run_all_mfa_checks,
+)
+
 # Tenant orchestration
 from app.preflight.tenant_checks import (
     check_all_tenants,
@@ -66,7 +100,7 @@ __all__ = [
     "CheckResult",
     "CheckStatus",
     "PreflightReport",
-    # Class-based checks
+    # Class-based Azure checks
     "AzureAuthCheck",
     "AzureSubscriptionsCheck",
     "AzureCostManagementCheck",
@@ -75,7 +109,18 @@ __all__ = [
     "AzureResourcesCheck",
     "AzureSecurityCheck",
     "AzureRBACCheck",
-    # Function-based checks
+    # Class-based Riverside checks
+    "RiversideDatabaseCheck",
+    "RiversideAPIEndpointCheck",
+    "RiversideSchedulerCheck",
+    "RiversideAzureADPermissionsCheck",
+    "RiversideMFADataSourceCheck",
+    # Class-based MFA compliance checks
+    "MFATenantDataCheck",
+    "MFAAdminEnrollmentCheck",
+    "MFAUserEnrollmentCheck",
+    "MFAGapReportCheck",
+    # Function-based Azure checks
     "check_azure_authentication",
     "check_azure_subscriptions",
     "check_cost_management_access",
@@ -85,6 +130,21 @@ __all__ = [
     "check_rbac_permissions",
     "check_security_center_access",
     "run_all_azure_checks",
+    # Function-based Riverside checks
+    "check_riverside_database",
+    "check_riverside_api_endpoints",
+    "check_riverside_scheduler",
+    "check_riverside_azure_ad_permissions",
+    "check_riverside_mfa_data_source",
+    "run_all_riverside_checks",
+    "get_riverside_checks",
+    # Function-based MFA compliance checks
+    "check_mfa_tenant_data",
+    "check_mfa_admin_enrollment",
+    "check_mfa_user_enrollment",
+    "check_mfa_gap_report",
+    "run_all_mfa_checks",
+    "get_mfa_checks",
     # Tenant orchestration
     "check_all_tenants",
     "check_single_tenant",
