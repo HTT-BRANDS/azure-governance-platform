@@ -43,6 +43,7 @@ class AlertLevel(StrEnum):
     - HIGH: Near deadline (30 days)
     - CRITICAL: Imminent/overdue (14, 7, 1 days, overdue)
     """
+
     INFO = "info"
     WARNING = "warning"
     HIGH = "high"
@@ -85,6 +86,7 @@ class DeadlineAlert:
         alert_stage: Which threshold triggered this alert (90, 60, 30, 14, 7, 1)
         status: Current requirement status
     """
+
     requirement_id: str
     tenant_id: str
     title: str
@@ -108,6 +110,7 @@ class DeadlineTrackingResult:
         overdue_count: Number of overdue items
         checked_at: Timestamp when check was performed
     """
+
     alerts: list[DeadlineAlert] = field(default_factory=list)
     info_count: int = 0
     warning_count: int = 0
@@ -177,10 +180,12 @@ class DeadlineTracker:
             requirements = (
                 db.query(RiversideRequirement)
                 .filter(
-                    RiversideRequirement.status.in_([
-                        RequirementStatus.NOT_STARTED,
-                        RequirementStatus.IN_PROGRESS,
-                    ]),
+                    RiversideRequirement.status.in_(
+                        [
+                            RequirementStatus.NOT_STARTED,
+                            RequirementStatus.IN_PROGRESS,
+                        ]
+                    ),
                     RiversideRequirement.due_date.isnot(None),
                 )
                 .all()
@@ -302,16 +307,18 @@ class DeadlineTracker:
 
             days_until = (req.due_date - today).days
             if days_until == 60:  # WARNING threshold
-                warnings.append(DeadlineAlert(
-                    requirement_id=req.requirement_id,
-                    tenant_id=req.tenant_id,
-                    title=req.title,
-                    days_until_deadline=days_until,
-                    alert_level=AlertLevel.WARNING,
-                    is_overdue=False,
-                    alert_stage=60,
-                    status=req.status,
-                ))
+                warnings.append(
+                    DeadlineAlert(
+                        requirement_id=req.requirement_id,
+                        tenant_id=req.tenant_id,
+                        title=req.title,
+                        days_until_deadline=days_until,
+                        alert_level=AlertLevel.WARNING,
+                        is_overdue=False,
+                        alert_stage=60,
+                        status=req.status,
+                    )
+                )
 
         return warnings
 
@@ -341,28 +348,32 @@ class DeadlineTracker:
 
             # Check for overdue
             if days_until < 0:
-                critical.append(DeadlineAlert(
-                    requirement_id=req.requirement_id,
-                    tenant_id=req.tenant_id,
-                    title=req.title,
-                    days_until_deadline=days_until,
-                    alert_level=AlertLevel.CRITICAL,
-                    is_overdue=True,
-                    alert_stage=None,
-                    status=req.status,
-                ))
+                critical.append(
+                    DeadlineAlert(
+                        requirement_id=req.requirement_id,
+                        tenant_id=req.tenant_id,
+                        title=req.title,
+                        days_until_deadline=days_until,
+                        alert_level=AlertLevel.CRITICAL,
+                        is_overdue=True,
+                        alert_stage=None,
+                        status=req.status,
+                    )
+                )
             # Check critical thresholds
             elif days_until in critical_days:
-                critical.append(DeadlineAlert(
-                    requirement_id=req.requirement_id,
-                    tenant_id=req.tenant_id,
-                    title=req.title,
-                    days_until_deadline=days_until,
-                    alert_level=AlertLevel.CRITICAL,
-                    is_overdue=False,
-                    alert_stage=days_until,
-                    status=req.status,
-                ))
+                critical.append(
+                    DeadlineAlert(
+                        requirement_id=req.requirement_id,
+                        tenant_id=req.tenant_id,
+                        title=req.title,
+                        days_until_deadline=days_until,
+                        alert_level=AlertLevel.CRITICAL,
+                        is_overdue=False,
+                        alert_stage=days_until,
+                        status=req.status,
+                    )
+                )
 
         return critical
 
@@ -437,8 +448,7 @@ class DeadlineTracker:
 
         except Exception as e:
             self._logger.error(
-                f"Exception sending deadline alert for {alert.requirement_id}: {e}",
-                exc_info=True
+                f"Exception sending deadline alert for {alert.requirement_id}: {e}", exc_info=True
             )
             return {
                 "success": False,
