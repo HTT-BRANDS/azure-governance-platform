@@ -13,11 +13,11 @@ SECURITY: This module handles sensitive compliance data. All alert
 details are sanitized before logging to prevent information leakage.
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-import logging
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 

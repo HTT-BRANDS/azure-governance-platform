@@ -5,11 +5,11 @@ MFA compliance across Riverside tenants.
 """
 
 from app.alerts.mfa_alerts import (
-    MFAGapDetector,
     MFAComplianceStatus,
-    detect_mfa_gaps,
+    MFAGapDetector,
     check_admin_mfa_compliance,
     check_user_mfa_compliance,
+    detect_mfa_gaps,
     trigger_mfa_alert,
 )
 
