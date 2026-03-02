@@ -70,13 +70,14 @@ jobs:
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: b5380912-79ec-452d-a6ca-6d897b19b294
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           allow-no-subscriptions: true
       
       - name: Sync BCC Data
         run: |
           echo "::group::BCC Tenant Sync"
           echo "Tenant: BCC Holding Co."
+          # Set BCC subscription after cross-tenant login
+          az account set --subscription "7b1f0166-7108-4ae1-b6fa-33cb44806baf"
           # BCC-specific sync logic
           echo "::endgroup::"
 
@@ -92,13 +93,14 @@ jobs:
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: 98723287-044b-4bbb-9294-19857d4128a0
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           allow-no-subscriptions: true
       
       - name: Sync FN Data
         run: |
           echo "::group::FN Tenant Sync"
           echo "Tenant: Frenchies Nails"
+          # Set FN subscription after cross-tenant login
+          az account set --subscription "158d934b-8d2d-496a-b7bd-193e0c91ec00"
           # FN-specific sync logic
           echo "::endgroup::"
 
@@ -114,13 +116,14 @@ jobs:
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: 3c7d2bf3-b597-4766-b5cb-2b489c2904d6
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           allow-no-subscriptions: true
       
       - name: Sync TLL Data
         run: |
           echo "::group::TLL Tenant Sync"
           echo "Tenant: The Lash Lounge"
+          # Set TLL subscription after cross-tenant login
+          az account set --subscription "07439c41-458d-4c8e-bb11-4e277b25b21a"
           # TLL-specific sync logic
           echo "::endgroup::"
 
