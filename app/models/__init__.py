@@ -1,5 +1,6 @@
 """Database models module."""
 
+from app.models.brand_config import BrandConfig
 from app.models.compliance import ComplianceSnapshot, PolicyState
 from app.models.cost import CostAnomaly, CostSnapshot
 from app.models.identity import IdentitySnapshot, PrivilegedUser
@@ -27,6 +28,9 @@ from app.models.sync import SyncJob
 from app.models.tenant import Subscription, Tenant, UserTenant
 
 __all__ = [
+    # Brand config
+    "BrandConfig",
+    # Tenants
     "Tenant",
     "Subscription",
     "UserTenant",
