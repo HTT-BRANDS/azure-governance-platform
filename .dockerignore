@@ -11,10 +11,14 @@
 .gitattributes
 
 # Documentation
-*.md
+# Note: README.md is required for hatchling build - keep it!
+# Exclude other docs
 docs/
 CHANGELOG.md
-README.md
+LICENSE.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
 
 # CI/CD
 .github/
@@ -129,3 +133,7 @@ backups/
 # IDE specific
 *.sublime-*
 *.code-workspace
+
+# Issue tracking (beads)
+.beads/
+*.sock

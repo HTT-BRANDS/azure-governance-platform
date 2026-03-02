@@ -170,8 +170,9 @@ async def detailed_health_check():
 
     # Check database
     try:
+        from sqlalchemy import text
         db = SessionLocal()
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         components["database"] = "healthy"
     except Exception as e:
@@ -229,9 +230,10 @@ async def get_system_status():
 
     # Check database
     try:
+        from sqlalchemy import text
         db = SessionLocal()
         db_stats = get_db_stats(db)
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         status["components"]["database"] = "healthy"
         status["database_stats"] = db_stats

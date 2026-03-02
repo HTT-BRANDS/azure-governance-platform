@@ -39,7 +39,8 @@ class DatabaseCheck(BasePreflightCheck):
             db = SessionLocal()
             try:
                 # Simple query to verify connectivity
-                db.execute("SELECT 1")
+                from sqlalchemy import text
+                db.execute(text("SELECT 1"))
 
                 # Get some basic stats
                 tenant_count = db.query(Tenant).count()

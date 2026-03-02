@@ -33,6 +33,7 @@ WORKDIR /build
 
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
+COPY README.md ./
 
 # Install dependencies using uv
 # --system flag installs to system Python (needed for multi-stage)
@@ -71,8 +72,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Required for health checks
     curl \
     # Required for SQL connectivity (if using Azure SQL)
-    libodbc1 \
     libodbc2 \
+    libodbccr2 \
     # Security updates
     ca-certificates \
     # Clean up
@@ -94,6 +95,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --chown=${APP_USER}:${APP_GROUP} app/ ./app/
 COPY --chown=${APP_USER}:${APP_GROUP} scripts/ ./scripts/
+COPY --chown=${APP_USER}:${APP_GROUP} README.md ./
 
 # Create necessary directories
 RUN mkdir -p /home/data /home/logs /tmp && \
