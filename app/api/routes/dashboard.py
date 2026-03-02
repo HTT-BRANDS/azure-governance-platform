@@ -29,13 +29,19 @@ router = APIRouter(
 templates = Jinja2Templates(directory="app/templates")
 
 
-@router.get("/", response_class=HTMLResponse)
-async def dashboard(
-    request: Request,
-    db: Session = Depends(get_db),
-    authz: TenantAuthorization = Depends(get_tenant_authorization),
-):
-    """Main dashboard page."""
+async def _get_dashboard_data(
+    db: Session,
+    authz: TenantAuthorization,
+) -> dict:
+    """Get dashboard data with tenant filtering.
+
+    Args:
+        db: Database session
+        authz: Tenant authorization
+
+    Returns:
+        Dictionary with dashboard data
+    """
     authz.ensure_at_least_one_tenant()
 
     # Get summary data from all services (filtered by tenant access)
@@ -44,7 +50,6 @@ async def dashboard(
     resource_svc = ResourceService(db)
     identity_svc = IdentityService(db)
 
-    # TODO: Filter summaries by accessible tenants
     cost_summary = cost_svc.get_cost_summary()
     compliance_summary = compliance_svc.get_compliance_summary()
     resource_inventory = resource_svc.get_resource_inventory(limit=10)
@@ -57,14 +62,46 @@ async def dashboard(
     ]
     resource_inventory.total_resources = len(resource_inventory.resources)
 
+    return {
+        "cost_summary": cost_summary,
+        "compliance_summary": compliance_summary,
+        "resource_inventory": resource_inventory,
+        "identity_summary": identity_summary,
+    }
+
+
+@router.get("/", response_class=HTMLResponse)
+async def dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
+    """Main dashboard page."""
+    data = await _get_dashboard_data(db, authz)
+
     return templates.TemplateResponse(
         "pages/dashboard.html",
         {
             "request": request,
-            "cost_summary": cost_summary,
-            "compliance_summary": compliance_summary,
-            "resource_inventory": resource_inventory,
-            "identity_summary": identity_summary,
+            **data,
+        },
+    )
+
+
+@router.get("/dashboard", response_class=HTMLResponse)
+async def dashboard_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
+    """Main dashboard view - alias for root."""
+    data = await _get_dashboard_data(db, authz)
+
+    return templates.TemplateResponse(
+        "pages/dashboard.html",
+        {
+            "request": request,
+            **data,
         },
     )
 
@@ -336,3 +373,9 @@ async def dmarc_dashboard(
         "pages/dmarc_dashboard.html",
         {"request": request},
     )
+
+
+@router.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    """Login page."""
+    return templates.TemplateResponse("login.html", {"request": request})

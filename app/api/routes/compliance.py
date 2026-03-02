@@ -1,6 +1,10 @@
 """Compliance monitoring API routes."""
 
+import logging
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.services.compliance_service import ComplianceService
@@ -12,8 +16,10 @@ from app.core.authorization import (
     validate_tenants_access,
 )
 from app.core.database import get_db
+from app.models.compliance import PolicyState
 from app.schemas.compliance import ComplianceScore, ComplianceSummary, PolicyStatus
 
+logger = logging.getLogger(__name__)
 router = APIRouter(
     prefix="/api/v1/compliance",
     tags=["compliance"],
@@ -147,3 +153,66 @@ async def get_compliance_trends(
 
     service = ComplianceService(db)
     return service.get_compliance_trends(tenant_ids=filtered_tenant_ids, days=days)
+
+
+@router.get("/status")
+async def compliance_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+) -> dict:
+    """Get compliance synchronization status.
+
+    Returns:
+        Dictionary with compliance status metrics
+    """
+    try:
+        authz.ensure_at_least_one_tenant()
+        accessible_tenant_ids = authz.accessible_tenant_ids
+
+        # Get total policy states for accessible tenants
+        total_states = (
+            db.query(PolicyState)
+            .filter(PolicyState.tenant_id.in_(accessible_tenant_ids))
+            .count()
+        )
+
+        # Get non-compliant policy states
+        non_compliant_states = (
+            db.query(PolicyState)
+            .filter(
+                PolicyState.tenant_id.in_(accessible_tenant_ids),
+                PolicyState.compliance_state == "NonCompliant",
+            )
+            .count()
+        )
+
+        # Get last sync time across accessible tenants
+        last_sync_result = (
+            db.query(func.max(PolicyState.synced_at))
+            .filter(PolicyState.tenant_id.in_(accessible_tenant_ids))
+            .scalar()
+        )
+
+        # Calculate compliance score
+        compliance_score = 0.0
+        if total_states > 0:
+            compliant_states = total_states - non_compliant_states
+            compliance_score = round((compliant_states / total_states) * 100, 2)
+
+        status = "healthy"
+        if total_states == 0:
+            status = "initializing"
+        elif non_compliant_states > total_states * 0.1:  # >10% non-compliant
+            status = "warning"
+
+        return {
+            "status": status,
+            "total_findings": total_states,
+            "open_findings": non_compliant_states,
+            "last_sync": last_sync_result.isoformat() if last_sync_result else None,
+            "compliance_score": compliance_score,
+        }
+    except Exception as e:
+        logger.error(f"Error getting compliance status: {e}")
+        return {"status": "error", "message": str(e)}
