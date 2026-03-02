@@ -7,11 +7,13 @@ from app.api.services.graph_client import GraphClient
 from app.api.services.identity_service import IdentityService
 from app.api.services.resource_service import ResourceService
 from app.api.services.riverside_analytics import (
-    analyze_mfa_gaps,
-    calculate_compliance_summary,
     get_deadline_status,
     get_riverside_metrics,
     track_requirement_progress,
+)
+from app.api.services.riverside_compliance import (
+    analyze_mfa_gaps,
+    calculate_compliance_summary,
 )
 from app.api.services.riverside_service import RiversideService
 
