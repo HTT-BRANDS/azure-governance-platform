@@ -106,6 +106,8 @@ def mock_tenant_auth(monkeypatch):
 def auth_client(db_session, admin_user, mock_tenant_auth):
     """Create a test client with admin authentication."""
     from app.main import app
+    from app.core.authorization import TenantAuthorization, get_tenant_authorization
+    from unittest.mock import MagicMock
 
     def override_get_db():
         try:
@@ -113,8 +115,12 @@ def auth_client(db_session, admin_user, mock_tenant_auth):
         finally:
             pass
 
+    mock_authz = MagicMock(spec=TenantAuthorization)
+    mock_authz.ensure_at_least_one_tenant = MagicMock()
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = lambda: admin_user
+    app.dependency_overrides[get_tenant_authorization] = lambda: mock_authz
 
     with TestClient(app) as test_client:
         yield test_client
@@ -126,6 +132,8 @@ def auth_client(db_session, admin_user, mock_tenant_auth):
 def operator_client(db_session, operator_user, mock_tenant_auth):
     """Create a test client with operator authentication."""
     from app.main import app
+    from app.core.authorization import TenantAuthorization, get_tenant_authorization
+    from unittest.mock import MagicMock
 
     def override_get_db():
         try:
@@ -133,8 +141,12 @@ def operator_client(db_session, operator_user, mock_tenant_auth):
         finally:
             pass
 
+    mock_authz = MagicMock(spec=TenantAuthorization)
+    mock_authz.ensure_at_least_one_tenant = MagicMock()
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = lambda: operator_user
+    app.dependency_overrides[get_tenant_authorization] = lambda: mock_authz
 
     with TestClient(app) as test_client:
         yield test_client
@@ -146,6 +158,8 @@ def operator_client(db_session, operator_user, mock_tenant_auth):
 def viewer_client(db_session, regular_user, mock_tenant_auth):
     """Create a test client with regular user authentication."""
     from app.main import app
+    from app.core.authorization import TenantAuthorization, get_tenant_authorization
+    from unittest.mock import MagicMock
 
     def override_get_db():
         try:
@@ -153,8 +167,12 @@ def viewer_client(db_session, regular_user, mock_tenant_auth):
         finally:
             pass
 
+    mock_authz = MagicMock(spec=TenantAuthorization)
+    mock_authz.ensure_at_least_one_tenant = MagicMock()
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = lambda: regular_user
+    app.dependency_overrides[get_tenant_authorization] = lambda: mock_authz
 
     with TestClient(app) as test_client:
         yield test_client
@@ -166,6 +184,8 @@ def viewer_client(db_session, regular_user, mock_tenant_auth):
 def unauthenticated_client(db_session):
     """Create a test client without authentication."""
     from app.main import app
+    from app.core.authorization import TenantAuthorization, get_tenant_authorization
+    from unittest.mock import MagicMock
 
     def override_get_db():
         try:
@@ -173,9 +193,13 @@ def unauthenticated_client(db_session):
         finally:
             pass
 
+    mock_authz = MagicMock(spec=TenantAuthorization)
+    mock_authz.ensure_at_least_one_tenant = MagicMock()
+
     # Remove auth dependency to test unauthenticated access
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = lambda: None
+    app.dependency_overrides[get_tenant_authorization] = lambda: mock_authz
 
     with TestClient(app) as test_client:
         yield test_client

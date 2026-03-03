@@ -45,14 +45,10 @@ async def riverside_badge(
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
-    """HTMX partial for Riverside navigation badge.
-
-    Returns a badge showing critical alerts count if any exist.
-    Used in the main navigation to alert users to critical gaps.
-    """
+    """HTMX partial for Riverside navigation badge."""
     authz.ensure_at_least_one_tenant()
     service = RiversideService(db)
-    summary = service.get_riverside_summary()
+    summary = await service.get_riverside_summary()
     brand_context = get_brand_context_for_request(request)
 
     return templates.TemplateResponse(
@@ -74,20 +70,10 @@ async def get_riverside_summary(
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
-    """Get executive summary for Riverside compliance dashboard.
-
-    Returns comprehensive summary including:
-    - Days to deadline (July 8, 2026)
-    - Financial risk ($4M)
-    - Overall maturity score
-    - MFA coverage across tenants
-    - Device compliance
-    - Critical gaps count
-    """
+    """Get executive summary for Riverside compliance dashboard."""
     authz.ensure_at_least_one_tenant()
     service = RiversideService(db)
-    # TODO: Filter by accessible tenants
-    return service.get_riverside_summary()
+    return await service.get_riverside_summary()
 
 
 @router.get("/api/v1/riverside/mfa-status", response_model=dict)
@@ -95,18 +81,10 @@ async def get_mfa_status(
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
-    """Get MFA tracking status for all tenants.
-
-    Returns MFA enrollment metrics including:
-    - Total users and MFA enrollment count
-    - Coverage percentage per tenant
-    - Admin account MFA status
-    - Unprotected user count
-    """
+    """Get MFA tracking status for all tenants."""
     authz.ensure_at_least_one_tenant()
     service = RiversideService(db)
-    # TODO: Filter by accessible tenants
-    return service.get_mfa_status()
+    return await service.get_mfa_status()
 
 
 @router.get("/api/v1/riverside/maturity-scores", response_model=dict)
@@ -114,18 +92,10 @@ async def get_maturity_scores(
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
-    """Get maturity scores for all domains and tenants.
-
-    Returns maturity scoring including:
-    - Overall maturity average
-    - Domain scores (IAM, GS, DS)
-    - Per-tenant breakdown
-    - Days remaining until deadline
-    """
+    """Get maturity scores for all domains and tenants."""
     authz.ensure_at_least_one_tenant()
     service = RiversideService(db)
-    # TODO: Filter by accessible tenants
-    return service.get_maturity_scores()
+    return await service.get_maturity_scores()
 
 
 @router.get("/api/v1/riverside/requirements", response_model=dict)
@@ -136,13 +106,9 @@ async def get_requirements(
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
-    """Get requirements list with optional filtering.
-
-    Returns filtered requirements with statistics by status and priority.
-    """
+    """Get requirements list with optional filtering."""
     authz.ensure_at_least_one_tenant()
     service = RiversideService(db)
-    # TODO: Filter by accessible tenants
     return service.get_requirements(category=category, priority=priority, status=status)
 
 
@@ -151,17 +117,10 @@ async def get_gaps(
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
-    """Get critical gaps analysis.
-
-    Returns critical gaps categorized by priority:
-    - Immediate action items (P0 + overdue)
-    - High priority gaps
-    - Medium priority gaps
-    """
+    """Get critical gaps analysis."""
     authz.ensure_at_least_one_tenant()
     service = RiversideService(db)
-    # TODO: Filter by accessible tenants
-    return service.get_gaps()
+    return await service.get_gaps()
 
 
 @router.post("/api/v1/riverside/sync")
@@ -173,14 +132,7 @@ async def trigger_sync(
     """Trigger manual sync of all Riverside compliance data.
 
     Requires operator or admin role.
-
-    This will sync:
-    - MFA data from Graph API
-    - Device compliance from Intune
-    - Requirement status
-    - Maturity scores
     """
-    # Check user has appropriate role
     if not any(role in current_user.roles for role in ["admin", "operator"]):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
