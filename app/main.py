@@ -18,6 +18,7 @@ from app.api.routes import (
     dmarc_router,
     exports_router,
     identity_router,
+    onboarding_router,
     resources_router,
     riverside_router,
     sync_router,
@@ -143,11 +144,10 @@ app.include_router(compliance_router)
 app.include_router(resources_router)
 app.include_router(identity_router)
 app.include_router(tenants_router)
+app.include_router(onboarding_router)
 app.include_router(sync_router)
 app.include_router(riverside_router)
 app.include_router(bulk_router)
-app.include_router(dmarc_router)
-app.include_router(exports_router)
 
 
 @app.get("/health")
