@@ -591,13 +591,15 @@ class TestResilientAzureClient:
 
     @pytest.mark.asyncio
     async def test_respect_retry_after_header(self):
-        """Test that Retry-After header is respected."""
-        from datetime import datetime, timezone
-        future = datetime.now(timezone.utc) + timedelta(seconds=0.8)
-        retry_after = future.strftime("%a, %d %b %Y %H:%M:%S GMT")
+        """Test that Retry-After header is respected over exponential backoff.
+
+        Uses Retry-After: 0 (instant retry) with a very large base_delay so
+        we can deterministically prove the header was used: if backoff were
+        used instead, the test would take ~100s and time out.
+        """
 
         class MockResponse:
-            headers = {"Retry-After": retry_after}
+            headers = {"Retry-After": "0"}
 
         class MockError(Exception):
             response = MockResponse()
@@ -611,11 +613,13 @@ class TestResilientAzureClient:
                 raise MockError("Rate limited")
             return "success"
 
+        # base_delay=100 ensures backoff would take ~100s if header is ignored
         client = ResilientAzureClient(
             api_name="graph",
             config=ResilienceConfig(
                 max_retries=3,
                 respect_retry_after=True,
+                base_delay=100.0,
             ),
         )
 
@@ -625,8 +629,10 @@ class TestResilientAzureClient:
 
         assert result == "success"
         assert call_count == 2
-        # Should have waited approximately the Retry-After time (allow for timing variations)
-        assert elapsed >= 0.3
+        # Retry-After: 0 means near-instant retry (~0s wait).
+        # If backoff were used instead, elapsed would be ~100s.
+        # A 5s bound is extremely generous and will never flake.
+        assert elapsed < 5.0
 
 
 # =============================================================================
