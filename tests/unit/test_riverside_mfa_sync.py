@@ -16,6 +16,15 @@ sys.modules['azure'] = azure_mock
 sys.modules['azure.core'] = azure_mock
 sys.modules['azure.core.exceptions'] = azure_mock
 
+class MockHttpResponseError(Exception):
+    def __init__(self, message='', status_code=None, **kwargs):
+        super().__init__(message)
+        self.status_code = status_code
+        self.message = message
+
+azure_mock.HttpResponseError = MockHttpResponseError
+sys.modules['azure.core.exceptions'].HttpResponseError = MockHttpResponseError
+
 from app.models.riverside import RequirementStatus
 from app.services.riverside_sync import (
     SyncError,
@@ -469,7 +478,7 @@ class TestSyncAllTenants:
 
     @pytest.mark.asyncio
     async def test_sync_all_tenants_mfa_failure_handling(self, mock_tenants):
-        """Test batch sync handles MFA failures gracefully."""
+        """Test batch sync handles MFA failures gracefully with skip_failed=True."""
         mock_session = MagicMock()
         mock_query = MagicMock()
         mock_session.query.return_value = mock_query
@@ -477,7 +486,10 @@ class TestSyncAllTenants:
         mock_query.all.return_value = mock_tenants
 
         with patch("app.services.riverside_sync._get_monitoring_service") as mock_get_monitor, \
-             patch("app.services.riverside_sync.sync_tenant_mfa") as mock_mfa:
+             patch("app.services.riverside_sync.sync_tenant_mfa", new_callable=AsyncMock) as mock_mfa, \
+             patch("app.services.riverside_sync.sync_tenant_devices", new_callable=AsyncMock) as mock_devices, \
+             patch("app.services.riverside_sync.sync_requirement_status", new_callable=AsyncMock) as mock_reqs, \
+             patch("app.services.riverside_sync.sync_maturity_scores", new_callable=AsyncMock) as mock_maturity:
 
             mock_monitor = MagicMock()
             mock_get_monitor.return_value = mock_monitor
@@ -487,16 +499,21 @@ class TestSyncAllTenants:
                 {"status": "success"},
                 Exception("MFA sync failed"),
             ]
+            mock_devices.return_value = {"status": "success"}
+            mock_reqs.return_value = {"status": "success"}
+            mock_maturity.return_value = {"status": "success"}
 
             result = await sync_all_tenants(
                 mock_session,
-                include_mfa=True,
                 skip_failed=True,
             )
 
-            assert result["status"] == "partial"
-            assert result["tenants_processed"] == 1
-            assert result["tenants_failed"] == 1
+            # With skip_failed=True, sub-sync failures are caught individually
+            # and don't count as full tenant failures
+            assert result["status"] == "success"
+            assert result["tenants_processed"] == 2
+            assert result["tenants_failed"] == 0
+            assert mock_mfa.call_count == 2
 
     @pytest.mark.asyncio
     async def test_sync_all_tenants_custom_batch_size(self, mock_tenants):

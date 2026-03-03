@@ -175,7 +175,7 @@ async def sync_all_tenants(
         "maturity": {},
     }
 
-    def _do_sync(session: Session) -> dict:
+    async def _do_sync(session: Session) -> dict:
         # Start monitoring
         monitoring = _get_monitoring_service(session)
         log_entry = monitoring.start_sync_job(job_type="riverside_batch")
@@ -202,7 +202,7 @@ async def sync_all_tenants(
                     # Sync MFA data
                     if include_mfa:
                         try:
-                            mfa_result = sync_tenant_mfa(tenant.tenant_id, session)
+                            mfa_result = await sync_tenant_mfa(tenant.tenant_id, session)
                             tenant_results["mfa"] = mfa_result
                             results["mfa"][tenant.tenant_id] = mfa_result
                         except Exception as e:
@@ -215,7 +215,7 @@ async def sync_all_tenants(
                     # Sync device compliance
                     if include_devices:
                         try:
-                            device_result = sync_tenant_devices(tenant.tenant_id, session)
+                            device_result = await sync_tenant_devices(tenant.tenant_id, session)
                             tenant_results["devices"] = device_result
                             results["devices"][tenant.tenant_id] = device_result
                         except Exception as e:
@@ -228,7 +228,7 @@ async def sync_all_tenants(
                     # Sync requirement status
                     if include_requirements:
                         try:
-                            req_result = sync_requirement_status(tenant.tenant_id, session)
+                            req_result = await sync_requirement_status(tenant.tenant_id, session)
                             tenant_results["requirements"] = req_result
                             results["requirements"][tenant.tenant_id] = req_result
                         except Exception as e:
@@ -241,7 +241,7 @@ async def sync_all_tenants(
                     # Sync maturity scores
                     if include_maturity:
                         try:
-                            maturity_result = sync_maturity_scores(tenant.tenant_id, session)
+                            maturity_result = await sync_maturity_scores(tenant.tenant_id, session)
                             tenant_results["maturity"] = maturity_result
                             results["maturity"][tenant.tenant_id] = maturity_result
                         except Exception as e:
@@ -297,10 +297,10 @@ async def sync_all_tenants(
             raise
 
     if db:
-        return _do_sync(db)
+        return await _do_sync(db)
     else:
         with get_db_context() as session:
-            return _do_sync(session)
+            return await _do_sync(session)
 
 
 @circuit_breaker(RIVERSIDE_SYNC_BREAKER)
@@ -543,7 +543,7 @@ async def sync_tenant_devices(
 
     logger.info(f"Syncing device compliance for tenant: {tenant_id}")
 
-    def _do_sync(session: Session) -> dict:
+    async def _do_sync(session: Session) -> dict:
         # Get tenant
         tenant = session.query(Tenant).filter(Tenant.tenant_id == tenant_id).first()
         if not tenant:
@@ -553,7 +553,7 @@ async def sync_tenant_devices(
             graph_client = _get_graph_client(tenant_id)
 
             # Get managed devices from Intune via Graph API
-            devices_data = graph_client._request(
+            devices_data = await graph_client._request(
                 "GET",
                 "/deviceManagement/managedDevices",
                 params={"$top": 999},
@@ -659,10 +659,10 @@ async def sync_tenant_devices(
             raise SyncError(error_msg, tenant_id) from e
 
     if db:
-        return _do_sync(db)
+        return await _do_sync(db)
     else:
         with get_db_context() as session:
-            return _do_sync(session)
+            return await _do_sync(session)
 
 
 @circuit_breaker(RIVERSIDE_SYNC_BREAKER)
@@ -692,7 +692,7 @@ async def sync_requirement_status(
     """
     logger.info(f"Syncing requirement status for tenant: {tenant_id}")
 
-    def _do_sync(session: Session) -> dict:
+    async def _do_sync(session: Session) -> dict:
         # Get tenant
         tenant = session.query(Tenant).filter(Tenant.tenant_id == tenant_id).first()
         if not tenant:
@@ -713,7 +713,7 @@ async def sync_requirement_status(
             updates: list[dict] = []
 
             # Check Conditional Access policies for MFA enforcement
-            ca_policies = graph_client.get_conditional_access_policies()
+            ca_policies = await graph_client.get_conditional_access_policies()
 
             # Analyze policies for MFA enforcement
             has_mfa_policy = False
@@ -778,10 +778,10 @@ async def sync_requirement_status(
             raise SyncError(error_msg, tenant_id) from e
 
     if db:
-        return _do_sync(db)
+        return await _do_sync(db)
     else:
         with get_db_context() as session:
-            return _do_sync(session)
+            return await _do_sync(session)
 
 
 @circuit_breaker(RIVERSIDE_SYNC_BREAKER)
