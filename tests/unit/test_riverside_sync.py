@@ -165,9 +165,9 @@ class TestSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = mock_tenant
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(return_value=mock_mfa_registrations)
             mock_graph.get_users_paginated = AsyncMock(return_value=mock_users)
             mock_graph.get_directory_roles = AsyncMock(return_value=mock_directory_roles)
@@ -216,9 +216,9 @@ class TestSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, MagicMock()]  # tenant, then existing MFA record
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(return_value=mock_mfa_registrations)
             mock_graph.get_users_paginated = AsyncMock(return_value=mock_users)
             mock_graph.get_directory_roles = AsyncMock(return_value=mock_directory_roles)
@@ -261,9 +261,9 @@ class TestSyncTenantDevices:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, None]  # tenant, no existing record
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph._request = AsyncMock(return_value={"value": mock_devices})
 
             result = await sync_tenant_devices("test-tenant-id", mock_session)
@@ -284,9 +284,9 @@ class TestSyncTenantDevices:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, None]
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph._request = AsyncMock(return_value={"value": []})
 
             result = await sync_tenant_devices("test-tenant-id", mock_session)
@@ -350,9 +350,9 @@ class TestSyncRequirementStatus:
         mock_query.first.return_value = mock_tenant
         mock_query.all.return_value = mock_requirements
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_conditional_access_policies = AsyncMock(return_value=mock_ca_policies_with_mfa)
 
             result = await sync_requirement_status("test-tenant-id", mock_session)
@@ -372,9 +372,9 @@ class TestSyncRequirementStatus:
         mock_query.first.return_value = mock_tenant
         mock_query.all.return_value = mock_requirements
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_conditional_access_policies = AsyncMock(return_value=[])
 
             result = await sync_requirement_status("test-tenant-id", mock_session)
@@ -501,9 +501,9 @@ class TestSyncAllTenants:
         mock_query.filter.return_value = mock_query
         mock_query.all.return_value = mock_tenants
 
-        with patch("app.services.riverside_sync.MonitoringService") as MockMonitoring:
+        with patch("app.services.riverside_sync._get_monitoring_service") as mock_get_monitor:
             mock_monitor = MagicMock()
-            MockMonitoring.return_value = mock_monitor
+            mock_get_monitor.return_value = mock_monitor
             mock_monitor.start_sync_job.return_value = MagicMock(id=1)
 
             with patch("app.services.riverside_sync.sync_tenant_mfa") as mock_mfa, \
@@ -532,9 +532,9 @@ class TestSyncAllTenants:
         mock_query.filter.return_value = mock_query
         mock_query.all.return_value = mock_tenants
 
-        with patch("app.services.riverside_sync.MonitoringService") as MockMonitoring:
+        with patch("app.services.riverside_sync._get_monitoring_service") as mock_get_monitor:
             mock_monitor = MagicMock()
-            MockMonitoring.return_value = mock_monitor
+            mock_get_monitor.return_value = mock_monitor
             mock_monitor.start_sync_job.return_value = MagicMock(id=1)
 
             with patch("app.services.riverside_sync.sync_tenant_mfa") as mock_mfa:
@@ -559,9 +559,9 @@ class TestSyncAllTenants:
         mock_query.filter.return_value = mock_query
         mock_query.all.return_value = mock_tenants
 
-        with patch("app.services.riverside_sync.MonitoringService") as MockMonitoring:
+        with patch("app.services.riverside_sync._get_monitoring_service") as mock_get_monitor:
             mock_monitor = MagicMock()
-            MockMonitoring.return_value = mock_monitor
+            mock_get_monitor.return_value = mock_monitor
             mock_monitor.start_sync_job.return_value = MagicMock(id=1)
 
             with patch("app.services.riverside_sync.sync_tenant_mfa") as mock_mfa, \

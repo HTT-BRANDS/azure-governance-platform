@@ -107,9 +107,9 @@ class TestEnhancedSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, None]  # tenant, no existing record
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_users_paginated = AsyncMock(return_value=mock_users)
             mock_graph.get_directory_roles = AsyncMock(return_value=mock_directory_roles)
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(
@@ -149,9 +149,9 @@ class TestEnhancedSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, None]
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_users_paginated = AsyncMock(return_value=mock_users)
             mock_graph.get_directory_roles = AsyncMock(return_value=mock_directory_roles)
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(
@@ -186,9 +186,9 @@ class TestEnhancedSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, None]
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_users_paginated = AsyncMock(return_value=mock_users)
             mock_graph.get_directory_roles = AsyncMock(return_value=mock_directory_roles)
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(
@@ -227,9 +227,9 @@ class TestEnhancedSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, None]
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_users_paginated = AsyncMock(return_value=users)
             mock_graph.get_directory_roles = AsyncMock(return_value=mock_directory_roles)
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(
@@ -265,9 +265,9 @@ class TestEnhancedSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, None]
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_users_paginated = AsyncMock(return_value=users)
             mock_graph.get_directory_roles = AsyncMock(return_value=mock_directory_roles)
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(
@@ -296,9 +296,9 @@ class TestEnhancedSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, None]
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_users_paginated = AsyncMock(return_value=users)
             mock_graph.get_directory_roles = AsyncMock(return_value=directory_roles)
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(
@@ -331,9 +331,9 @@ class TestEnhancedSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, None]
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_users_paginated = AsyncMock(return_value=users)
             mock_graph.get_directory_roles = AsyncMock(return_value=mock_directory_roles)
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(
@@ -354,9 +354,9 @@ class TestEnhancedSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = mock_tenant
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_users_paginated = AsyncMock(side_effect=Exception("Graph API Error"))
 
             with pytest.raises(SyncError) as exc_info:
@@ -397,9 +397,9 @@ class TestEnhancedSyncTenantMFA:
         mock_query.filter.return_value = mock_query
         mock_query.first.side_effect = [mock_tenant, existing_record]
 
-        with patch("app.services.riverside_sync.GraphClient") as MockGraphClient:
+        with patch("app.services.riverside_sync._get_graph_client") as mock_get_graph:
             mock_graph = MagicMock()
-            MockGraphClient.return_value = mock_graph
+            mock_get_graph.return_value = mock_graph
             mock_graph.get_users_paginated = AsyncMock(return_value=mock_users)
             mock_graph.get_directory_roles = AsyncMock(return_value=mock_directory_roles)
             mock_graph.get_mfa_registration_details_paginated = AsyncMock(
@@ -447,11 +447,11 @@ class TestSyncAllTenants:
         mock_query.filter.return_value = mock_query
         mock_query.all.return_value = mock_tenants
 
-        with patch("app.services.riverside_sync.MonitoringService") as MockMonitoring, \
+        with patch("app.services.riverside_sync._get_monitoring_service") as mock_get_monitor, \
              patch("app.services.riverside_sync.sync_tenant_mfa") as mock_mfa:
 
             mock_monitor = MagicMock()
-            MockMonitoring.return_value = mock_monitor
+            mock_get_monitor.return_value = mock_monitor
             mock_monitor.start_sync_job.return_value = MagicMock(id=1)
             mock_mfa.return_value = {"status": "success"}
 
@@ -476,11 +476,11 @@ class TestSyncAllTenants:
         mock_query.filter.return_value = mock_query
         mock_query.all.return_value = mock_tenants
 
-        with patch("app.services.riverside_sync.MonitoringService") as MockMonitoring, \
+        with patch("app.services.riverside_sync._get_monitoring_service") as mock_get_monitor, \
              patch("app.services.riverside_sync.sync_tenant_mfa") as mock_mfa:
 
             mock_monitor = MagicMock()
-            MockMonitoring.return_value = mock_monitor
+            mock_get_monitor.return_value = mock_monitor
             mock_monitor.start_sync_job.return_value = MagicMock(id=1)
             # First tenant succeeds, second fails
             mock_mfa.side_effect = [
@@ -509,11 +509,11 @@ class TestSyncAllTenants:
 
         # Note: The current implementation doesn't pass batch_size to sync_tenant_mfa
         # This test verifies the current behavior
-        with patch("app.services.riverside_sync.MonitoringService") as MockMonitoring, \
+        with patch("app.services.riverside_sync._get_monitoring_service") as mock_get_monitor, \
              patch("app.services.riverside_sync.sync_tenant_mfa") as mock_mfa:
 
             mock_monitor = MagicMock()
-            MockMonitoring.return_value = mock_monitor
+            mock_get_monitor.return_value = mock_monitor
             mock_monitor.start_sync_job.return_value = MagicMock(id=1)
             mock_mfa.return_value = {"status": "success"}
 

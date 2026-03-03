@@ -96,8 +96,7 @@ def mock_tenant_auth(monkeypatch):
     # Also mock the app.api.routes.riverside imports
     import app.api.routes.riverside as riverside_module
 
-    monkeypatch.setattr(riverside_module, "get_user_tenants", mock_get_user_tenants)
-    monkeypatch.setattr(riverside_module, "validate_tenant_access", mock_validate_tenant_access)
+
 
     # Mock rate limiting to prevent 429 errors
     monkeypatch.setattr(RateLimiter, "check_rate_limit", mock_check_rate_limit)

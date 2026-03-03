@@ -503,10 +503,10 @@ async def sync_tenant_mfa(
             raise SyncError(error_msg, tenant_id) from e
 
     if db:
-        return _do_sync(db)
+        return await _do_sync(db)
     else:
         with get_db_context() as session:
-            return _do_sync(session)
+            return await _do_sync(session)
 
 
 @circuit_breaker(RIVERSIDE_SYNC_BREAKER)
@@ -550,7 +550,7 @@ async def sync_tenant_devices(
             raise SyncError(f"Tenant {tenant_id} not found", tenant_id)
 
         try:
-            graph_client = GraphClient(tenant_id)
+            graph_client = _get_graph_client(tenant_id)
 
             # Get managed devices from Intune via Graph API
             devices_data = graph_client._request(
@@ -699,7 +699,7 @@ async def sync_requirement_status(
             raise SyncError(f"Tenant {tenant_id} not found", tenant_id)
 
         try:
-            graph_client = GraphClient(tenant_id)
+            graph_client = _get_graph_client(tenant_id)
 
             # Get requirements for this tenant
             requirements = (
