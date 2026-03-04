@@ -179,7 +179,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
           name: 'DATABASE_URL'
           value: enableAzureSql 
             ? 'mssql+pyodbc://@{sqlServerName}.database.windows.net:1433/${sqlDatabaseName}?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=no'
-            : 'sqlite:///home/data/governance.db'
+            : 'sqlite:////home/data/governance.db'
         }
         {
           name: 'KEY_VAULT_URL'

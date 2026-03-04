@@ -332,7 +332,7 @@ async def get_system_status():
         monitoring = MonitoringService(db)
         status["alerts"] = {
             "active_count": len(monitoring.get_active_alerts()),
-            "recent_count": len(monitoring.get_recent_alerts(hours=24)),
+            "recent_count": len(monitoring.get_active_alerts()),
         }
         db.close()
     except Exception as e:
