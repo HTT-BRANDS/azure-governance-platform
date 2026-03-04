@@ -13,6 +13,9 @@ from app.api.routes.resources import router as resources_router
 from app.api.routes.riverside import router as riverside_router
 from app.api.routes.tenants import router as tenants_router
 from app.api.routes.sync import router as sync_router
+from app.api.routes.preflight import router as preflight_router
+from app.api.routes.monitoring import router as monitoring_router
+from app.api.routes.recommendations import router as recommendations_router
 
 __all__ = [
     "auth_router",
@@ -23,7 +26,10 @@ __all__ = [
     "dmarc_router",
     "exports_router",
     "identity_router",
+    "monitoring_router",
     "onboarding_router",
+    "preflight_router",
+    "recommendations_router",
     "resources_router",
     "riverside_router",
     "tenants_router",

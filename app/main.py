@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.routes import (
     auth_router,
@@ -18,7 +19,10 @@ from app.api.routes import (
     dmarc_router,
     exports_router,
     identity_router,
+    monitoring_router,
     onboarding_router,
+    preflight_router,
+    recommendations_router,
     resources_router,
     riverside_router,
     sync_router,
@@ -145,6 +149,13 @@ async def rate_limit_middleware(request: Request, call_next):
         logger.error(f"Rate limiting error: {e}")
         return await call_next(request)
 
+# Prometheus metrics
+Instrumentator(
+    should_group_status_codes=False,
+    should_ignore_untemplated=True,
+    excluded_handlers=["/health", "/health/detailed"],
+).instrument(app).expose(app, endpoint="/metrics", include_in_schema=True)
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -166,6 +177,9 @@ app.include_router(riverside_router)
 app.include_router(bulk_router)
 app.include_router(dmarc_router)
 app.include_router(exports_router)
+app.include_router(preflight_router)
+app.include_router(monitoring_router)
+app.include_router(recommendations_router)
 
 
 @app.get("/health")
