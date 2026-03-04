@@ -1,7 +1,7 @@
 # Azure Governance Platform - Deployment Guide
 
-> **Version:** 2.0  
-> **Last Updated:** February 2025  
+> **Version:** 2.1  
+> **Last Updated:** July 2025  
 > **Estimated Setup Time:** 30-60 minutes
 
 ---
@@ -27,13 +27,13 @@
 
 ### 🚀 One-Click Deploy to Azure
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fyour-org%2Fazure-governance-platform%2Fmain%2Finfrastructure%2Fmain.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ftygranlund%2Fazure-governance-platform%2Fmain%2Finfrastructure%2Fmain.json)
 
 Or deploy via CLI:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/azure-governance-platform.git
+git clone https://github.com/tygranlund/azure-governance-platform.git
 cd azure-governance-platform
 
 # Run the deployment script
@@ -373,6 +373,43 @@ az webapp log deployment show --name $APP_NAME --resource-group $RESOURCE_GROUP
 
 ---
 
+---
+
+## Known Deployment Issues & Workarounds
+
+These are real issues encountered during the dev deployment (July 2025):
+
+### DATABASE_URL must use 4 slashes for absolute SQLite paths
+```
+# ❌ Wrong (relative path — crashes in container)
+DATABASE_URL=sqlite:///data/governance.db
+
+# ✅ Correct (absolute path)
+DATABASE_URL=sqlite:////home/site/data/governance.db
+```
+
+### ENVIRONMENT must be a valid Pydantic value
+The `Settings` model validates the `ENVIRONMENT` field. Use one of: `development`, `staging`, `production` — NOT `dev` or `prod`.
+
+### Trivy scan may block CI/CD pipeline
+The container security scan can fail on upstream CVEs you can't fix. Use `continue-on-error: true` in the GitHub Actions step.
+
+### ACR credential warnings on container set
+If you see "couldn't auto-discover credentials" when configuring the App Service container, ensure the managed identity has the `AcrPull` role on the ACR:
+```bash
+ACR_ID=$(az acr show --name acrgovernancedev --query id -o tsv)
+IDENTITY=$(az webapp identity show --name app-governance-dev-001 -g rg-governance-dev --query principalId -o tsv)
+az role assignment create --assignee $IDENTITY --role AcrPull --scope $ACR_ID
+```
+
+### Bash 3.2 compatibility (macOS)
+Scripts must work with macOS default bash 3.2. Avoid:
+- `declare -A` (associative arrays)
+- `readarray` / `mapfile`
+- `${var,,}` (lowercase expansion)
+
+---
+
 ## 9. Troubleshooting
 
 ### 9.1 Common Issues
@@ -530,6 +567,7 @@ az monitor budgets create \
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1 | July 2025 | Real-world deployment fixes, known issues section, org URL updates |
 | 2.0 | February 2025 | Complete rewrite with Bicep IaC, CI/CD, Docker |
 | 1.0 | February 2025 | Initial deployment guide |
 
