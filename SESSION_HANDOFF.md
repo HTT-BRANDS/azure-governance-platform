@@ -1,120 +1,79 @@
-# SESSION_HANDOFF.md
+# Session Handoff — Azure Governance Platform
 
-**Session ID:** planning-agent-cd2234  
-**Date:** March 2026  
-**Project:** Azure Governance Platform - Riverside Multi-Tenant System  
-**Status:** Phase 1 COMPLETE — All 5 Tenants Live with Azure Graph API  
+**Last Updated:** Session ending now
+**Agent:** planning-agent-cd2234
 
----
+## What Was Accomplished This Session
 
-## 1. Session Summary
+### Phase 1: Quick Wins ✅ COMPLETE
+- Mounted `preflight_router`, `monitoring_router`, `recommendations_router` in `app/main.py`
+- Added Prometheus `/metrics` endpoint via `prometheus-fastapi-instrumentator`
+- Commit: `f3b57d8`
 
-### ✅ What Was Accomplished This Session
+### Phase 2: Key Vault Integration ✅ COMPLETE
+- Installed `azure-keyvault-secrets` package, uncommented in pyproject.toml
+- Created `scripts/migrate-secrets-to-keyvault.sh` (13 secrets, 365-day expiry)
+- Commit: `d1c0e17`
 
-1. **Audited all 5 Riverside tenants via az cli**
-   - HTT: Found existing app `Riverside-Capital-PE-Governance-Platform` (1e3e8417-...)
-   - BCC, FN, TLL, DCE: Clean slate — no app registrations existed
+### Phase 3: E2E Test Suite ✅ COMPLETE
+- Installed Playwright + pytest-playwright + Chromium browser
+- Created `tests/e2e/conftest.py` — server auto-start fixture (multiprocessing)
+- Created `tests/e2e/test_health_endpoints.py` — 28 tests (health, detailed, metrics, status)
+- Created `tests/e2e/test_navigation.py` — 3 tests (root redirect, login, static CSS)
+- Created `tests/e2e/test_api_smoke.py` — 10 tests (auth enforcement on protected endpoints)
+- 3 tests marked xfail for unimplemented routes (sync trigger, root redirect, login page)
+- **Final result: 44 passed, 3 xfailed, 0 failures**
+- Commits: `5544a9c`, `8f9a286`, plus xfail fix
 
-2. **Provisioned Azure Service Principals for all 5 tenants**
-   - HTT: Used existing app, added 2 missing permissions, created client secret
-   - BCC, FN, TLL, DCE: Created fresh app registrations + SPs from scratch
-   - All: 9 Microsoft Graph + 1 Azure Management permissions with admin consent
-   - All: Client secrets with 1-year expiry
-   - All: Redirect URIs configured for local dev
+### Quality Gates ✅ VERIFIED
+- **610 unit tests**: ALL PASS (0 failures, 0 errors)
+- **47 E2E tests**: 44 pass + 3 xfail (0 failures)
 
-3. **Updated all codebase configuration**
-   - `app/core/tenants_config.py` — All 5 app IDs + DCE fully activated
-   - `.env` — All credentials configured (primary + per-tenant)
-   - Scripts: `audit-and-provision-sps.sh`, `setup-riverside-apps.py`, etc.
-   - `.gitignore` — Explicit secret file protections added
+### Security Audit ✅ COMPLETE
+Full audit by security-auditor agent. Key findings filed as bd issues:
+- **C-1** (P0): Auth bypass on `/api/v1/auth/login` — accepts any credentials (`azure-governance-platform-ern`)
+- **C-2** (P0): `.env.production` committed to git with placeholder secrets (`azure-governance-platform-bfp`)
+- **H-1** (P1): Shell injection risk in migrate script (`azure-governance-platform-iu7`)
+- **H-2** (P1): Duplicate CORS middleware with wildcards (`azure-governance-platform-095`)
+- **H-3** (P1): Missing security response headers (`azure-governance-platform-2eo`)
 
-4. **Verified Azure connectivity — ALL 5 TENANTS LIVE**
-   - HTT: Head to Toe Brands ✅
-   - BCC: Bishops Cuts & Colors ✅
-   - FN: Frenchies Nails (Default Directory) ✅
-   - TLL: The Lash Lounge ✅
-   - DCE: Delta Crown Extensions ✅
+## What Remains
 
-5. **Tests all green**
-   - 610 unit tests passing
-   - 9 smoke tests passing, 2 skipped (not-yet-implemented routes), 7 skipped (need user auth)
+### Phase 4: Azure Dev Deployment (`azure-governance-platform-yfq`)
+Ready to execute — full command sequence:
+1. `docker build -t ghcr.io/tygranlund/azure-governance-platform:dev .`
+2. Test container locally on port 8000
+3. Deploy Bicep: `az deployment sub create --location westus2 --template-file infrastructure/main.bicep --parameters infrastructure/parameters.dev.json`
+4. Push to GHCR
+5. Configure App Service settings (Key Vault URL, tenant ID, client ID)
+6. Run `./scripts/migrate-secrets-to-keyvault.sh kv-gov-dev-001`
+7. Enable managed identity + grant Key Vault Secrets User role
+8. Verify: `curl https://app-governance-dev-001.azurewebsites.net/health`
 
-### 🔄 What Is Ready for Next Steps
+### Security Fixes (P0 — Do Before Production)
+- Fix auth bypass in `app/api/routes/auth.py:107-125`
+- Rename `.env.production` → `.env.production.template`, update `.gitignore`
+- Add `detect-secrets` or `gitleaks` pre-commit hook
 
-- Local dev server running on :8000
-- Azure Graph API connectivity verified for all 5 tenants
-- Ready for: smoke tests with user auth, E2E tests, staging deployment
+### Security Hardening (P1 — Do Before Staging)
+- Validate `.env` in migration script before sourcing
+- Remove duplicate CORS middleware, merge into single instance
+- Add security headers middleware (HSTS, CSP, X-Frame-Options, etc.)
 
----
-
-## 2. Current State
-
-| Component | Status |
-|-----------|--------|
-| **Azure Connectivity** | 🟢 ALL 5 TENANTS VERIFIED |
-| **Local Dev Server** | 🟢 Running on :8000 |
-| **Database** | 🟢 SQLite initialized |
-| **Unit Tests** | 🟢 610 PASSING |
-| **Smoke Tests** | 🟡 9 passed, 9 skipped |
-| **Git** | 🟢 Clean, pushed to origin/main |
-
----
-
-## 3. Tenant Credentials
-
-| Tenant | Brand | Tenant ID | App ID | Secret Ref |
-|--------|-------|-----------|--------|------------|
-| HTT | Head to Toe Brands | 0c0e35dc-... | 1e3e8417-... | .env + data/.sp-secrets.env |
-| BCC | Bishops Cuts/Color | b5380912-... | 4861906b-... | .env |
-| FN | Frenchies Nails | 98723287-... | 7648d04d-... | .env |
-| TLL | The Lash Lounge | 3c7d2bf3-... | 52531a02-... | .env |
-| DCE | Delta Crown Extensions | ce62e17d-... | 79c22a10-... | .env |
-
-**IMPORTANT:** Full credentials are in `.env` (gitignored). Secrets expire in ~365 days.
-
----
-
-## 4. Next Session Priorities
-
-### 🔴 Priority 1: Replace fetch_data() Placeholders
-Wire the backfill service to real Azure APIs (Cost Management, Graph, Policy Insights, ARM).
-
-### 🟠 Priority 2: Run E2E Tests
-```bash
-uv add playwright && playwright install
-uv run pytest tests/e2e/ -v
-```
-
-### 🟡 Priority 3: Fix Remaining Test Gaps
-- Mount preflight router in main.py
-- Add Prometheus /metrics endpoint
-- Fix 3 skipped Lighthouse auth tests
-
-### 🟢 Priority 4: Azure Dev Deployment
-- Debug previous 503 errors
-- Deploy to Azure App Service dev slot
-- Run post-deployment smoke tests
-
----
-
-## 5. Quick Commands
+## Quick Start for Next Session
 
 ```bash
-# Start server
-uv run uvicorn app.main:app --reload
-
-# Run tests
-uv run pytest tests/unit/ -v        # Unit tests
-uv run pytest tests/smoke/ -v       # Smoke tests
-
-# Test Azure connectivity (uses env vars from .env — never hardcode secrets!)
-uv run python scripts/test_azure_connectivity.py
-
-# Audit Azure SPs
-./scripts/audit-and-provision-sps.sh --all-tenants
+cd /Users/tygranlund/dev/azure-governance-platform
+git pull
+bd ready                    # See available issues
+uv run pytest tests/unit/ -q   # Verify 610 tests pass
+uv run pytest tests/e2e/ -q    # Verify 44+3xfail tests
 ```
 
----
+## Test Suite Summary
 
-**Last Updated By:** planning-agent-cd2234  
-**Git Status:** Clean, pushed to origin/main (commit e6bbbfd)
+| Suite | Count | Status |
+|-------|-------|--------|
+| Unit tests | 610 | ✅ All pass |
+| E2E tests | 47 | ✅ 44 pass + 3 xfail |
+| Smoke tests | TBD | Run with live Azure creds |
