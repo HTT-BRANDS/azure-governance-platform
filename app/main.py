@@ -39,6 +39,10 @@ from app.core.tenant_context import register_template_filters
 templates = Jinja2Templates(directory="app/templates")
 register_template_filters(templates.env)
 
+# Expose app version to all templates as a global
+from app import __version__ as _app_version  # noqa: E402
+templates.env.globals["app_version"] = _app_version
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

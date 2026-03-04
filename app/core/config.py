@@ -14,6 +14,8 @@ from typing import Literal
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app import __version__
+
 logger = logging.getLogger(__name__)
 
 
@@ -50,7 +52,7 @@ class Settings(BaseSettings):
 
     # Application
     app_name: str = "Azure Governance Platform"
-    app_version: str = "0.1.0"
+    app_version: str = __version__
     debug: bool = False
     log_level: str = "INFO"
 

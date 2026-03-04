@@ -23,6 +23,7 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)],
 )
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["app_version"] = __import__("app").__version__
 
 
 @router.get("/riverside", response_class=HTMLResponse)

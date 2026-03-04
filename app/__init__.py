@@ -5,5 +5,12 @@ across multiple tenants with focus on cost optimization, compliance,
 resource management, and identity governance.
 """
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("azure-governance-platform")
+except PackageNotFoundError:
+    # Package not installed (e.g., running from source without install)
+    __version__ = "0.2.0"
+
 __author__ = "Cloud Governance Team"
