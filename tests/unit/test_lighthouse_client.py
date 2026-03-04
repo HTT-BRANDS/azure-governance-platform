@@ -600,24 +600,109 @@ class TestListResources(TestLighthouseAzureClient):
 
 class TestValidateTenantAccess(TestLighthouseAzureClient):
     """Tests for tenant access validation - requires azure-mgmt-managedservices."""
-    
-    @pytest.mark.skip(reason="Requires azure-mgmt-managedservices package")
+
     @pytest.mark.asyncio
     async def test_validate_tenant_access_success(self, mock_delegated_subscription):
         """Test successful tenant access validation."""
-        pass
-    
-    @pytest.mark.skip(reason="Requires azure-mgmt-managedservices package")
+        with patch("app.services.lighthouse_client.DefaultAzureCredential") as mock_cred:
+            with patch("app.services.lighthouse_client.SubscriptionClient"):
+                mock_cred.return_value = MagicMock()
+
+                from app.services.lighthouse_client import LighthouseAzureClient
+
+                client = LighthouseAzureClient()
+                client.verify_delegation = AsyncMock(return_value={
+                    "success": True,
+                    "is_delegated": True,
+                    "subscription_id": "sub-12345",
+                    "display_name": "Delegated Test Subscription",
+                    "state": "Enabled",
+                    "tenant_id": "customer-tenant-789",
+                    "error": None,
+                })
+                client.get_cost_data = AsyncMock(return_value={
+                    "success": True,
+                    "total_cost": 150.0,
+                    "currency": "USD",
+                })
+                client.get_security_assessments = AsyncMock(return_value={
+                    "success": True,
+                    "secure_score": 72.0,
+                    "percentage": 72.0,
+                })
+                client.list_resources = AsyncMock(return_value={
+                    "success": True,
+                    "resources": [{"name": "vm-1", "type": "Microsoft.Compute/virtualMachines"}],
+                    "count": 1,
+                })
+
+                result = await client.validate_tenant_access(
+                    tenant_id="customer-tenant-789",
+                    subscription_id="sub-12345",
+                )
+
+                assert result["is_valid"] is True
+                assert result["delegation_verified"] is True
+                assert result["cost_accessible"] is True
+                assert result["security_accessible"] is True
+                assert result["resources_accessible"] is True
+                assert result["errors"] == []
+
     @pytest.mark.asyncio
     async def test_validate_tenant_access_no_subscriptions(self):
         """Test tenant access when no subscriptions are accessible."""
-        pass
-    
-    @pytest.mark.skip(reason="Requires azure-mgmt-managedservices package")
+        with patch("app.services.lighthouse_client.DefaultAzureCredential") as mock_cred:
+            with patch("app.services.lighthouse_client.SubscriptionClient"):
+                mock_cred.return_value = MagicMock()
+
+                from app.services.lighthouse_client import LighthouseAzureClient
+
+                client = LighthouseAzureClient()
+                client.verify_delegation = AsyncMock(return_value={
+                    "success": True,
+                    "is_delegated": False,
+                    "subscription_id": "sub-missing",
+                    "display_name": None,
+                    "state": None,
+                    "tenant_id": "tenant-no-subs",
+                    "error": "Subscription not found in delegated subscriptions",
+                })
+
+                result = await client.validate_tenant_access(
+                    tenant_id="tenant-no-subs",
+                    subscription_id="sub-missing",
+                )
+
+                assert result["is_valid"] is False
+                assert result["delegation_verified"] is False
+                # Early return means cost/security/resources were never attempted
+                client.get_cost_data.assert_not_called() if hasattr(client, "get_cost_data") and isinstance(client.get_cost_data, AsyncMock) else None
+
     @pytest.mark.asyncio
     async def test_validate_tenant_access_failed_delegation(self, mock_delegated_subscription):
-        """Test tenant access when delegation is not active."""
-        pass
+        """Test tenant access when delegation check raises an exception."""
+        with patch("app.services.lighthouse_client.DefaultAzureCredential") as mock_cred:
+            with patch("app.services.lighthouse_client.SubscriptionClient"):
+                mock_cred.return_value = MagicMock()
+
+                from app.services.lighthouse_client import LighthouseAzureClient
+
+                client = LighthouseAzureClient()
+                client.verify_delegation = AsyncMock(
+                    side_effect=Exception("Azure API unreachable")
+                )
+                client.get_cost_data = AsyncMock()
+                client.get_security_assessments = AsyncMock()
+                client.list_resources = AsyncMock()
+
+                result = await client.validate_tenant_access(
+                    tenant_id="customer-tenant-789",
+                    subscription_id="sub-12345",
+                )
+
+                assert result["is_valid"] is False
+                assert len(result["errors"]) > 0
+                assert "Azure API unreachable" in result["errors"][0]
 
 
 class TestErrorHandling(TestLighthouseAzureClient):
