@@ -198,3 +198,35 @@ curl http://localhost:8000/api/v1/auth/me \
 4. **Azure AD Validation**: Tokens validated against Azure AD JWKS with caching.
 5. **Tenant Isolation**: Strict filtering on all queries; admin role bypasses restrictions.
 6. **Role-Based Access**: Granular permissions per tenant with admin/operator/viewer roles.
+
+---
+
+## Security Audit — Latest Session (July 2025)
+
+### Audit Summary
+Full security audit conducted by security-auditor agent. All findings tracked in bd issue tracker.
+
+### Findings & Remediation
+
+| ID | Severity | Finding | Status | Fix |
+|----|----------|---------|--------|-----|
+| C-1 | **CRITICAL** | Auth bypass — login accepted any credentials | ✅ **FIXED** | Production rejects direct login (403), dev requires matching credentials |
+| C-2 | **CRITICAL** | `.env.production` not in `.gitignore` | ✅ **FIXED** | `.gitignore` now excludes all `.env.*` variants |
+| H-1 | **HIGH** | Shell injection in migrate-secrets-to-keyvault.sh | ✅ **FIXED** | Replaced `source .env` with safe grep-based parsing |
+| H-2 | **HIGH** | Duplicate CORS middleware with wildcards | ✅ **FIXED** | Merged to single middleware, explicit methods/headers |
+| H-3 | **HIGH** | Missing security response headers | ✅ **FIXED** | Added middleware: HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy |
+
+### Security Headers (Added)
+All responses now include:
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `X-XSS-Protection: 1; mode=block`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- `Content-Security-Policy: default-src 'self'; ...`
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains` (production only)
+
+### Remaining Recommendations
+- Add `detect-secrets` or `gitleaks` pre-commit hook for secret scanning
+- Implement token blacklist (Redis) for production
+- Add rate limit tuning for production traffic patterns
