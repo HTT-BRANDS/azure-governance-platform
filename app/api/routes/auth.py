@@ -90,6 +90,11 @@ class TenantAccessInfo(BaseModel):
 # Internal Authentication
 # ============================================================================
 
+# Dev-only credentials — never used outside ENVIRONMENT=development
+_DEV_USERNAME = "admin"
+_DEV_PASSWORD = "admin"  # noqa: S105
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -97,9 +102,9 @@ async def login(
 ) -> TokenResponse:
     """OAuth2 token endpoint for internal authentication.
 
-    In production, this should validate credentials against a user database
-    or external identity provider. For now, it creates a token for any
-    valid-looking request (to be replaced with proper auth).
+    In production/staging, direct login is disabled — all authentication
+    flows go through Azure AD OAuth2. In development mode only, a
+    restricted dev credential pair is accepted.
 
     Args:
         form_data: OAuth2 username/password form
@@ -109,14 +114,21 @@ async def login(
     """
     settings = get_settings()
 
-    # TODO: Implement proper credential validation
-    # This is a placeholder - in production, verify against:
-    # - Local user database with hashed passwords
-    # - LDAP/Active Directory
-    # - External identity provider
+    # ── Production / Staging: reject direct login entirely ──────────
+    if not settings.is_development:
+        logger.warning("Direct login attempt blocked in %s environment", settings.environment)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Direct login disabled. Use Azure AD OAuth2 authentication.",
+        )
 
-    # For development/demo: accept any non-empty credentials
-    if not form_data.username:
+    # ── Development-only: validate dev credentials ──────────────────
+    if (
+        not form_data.username
+        or not form_data.password
+        or form_data.username != _DEV_USERNAME
+        or form_data.password != _DEV_PASSWORD
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
