@@ -21,7 +21,7 @@ The platform is deployed and healthy on Azure App Service.
 | App Service | `app-governance-dev-001` | 🟢 Running |
 | App Service Plan | `asp-governance-dev-001` (B1) | 🟢 Active |
 | Container Registry | `acrgovernancedev` | 🟢 Available |
-| Key Vault | `kv-gov-dev-001` | 🟢 2 secrets stored |
+| Key Vault | `kv-gov-dev-001` | 🟢 14 secrets stored |
 | Storage Account | `stgovdev001` | 🟢 Azure Files mounted |
 | App Insights | `ai-governance-dev-001` | 🟢 Connected |
 | Log Analytics | `log-governance-dev-001` | 🟢 Connected |
@@ -35,7 +35,7 @@ The platform is deployed and healthy on Azure App Service.
 ### Quality Gates ✅
 | Suite | Count | Status |
 |-------|-------|--------|
-| Unit tests | 610 | ✅ All pass |
+| Unit tests | 723 | ✅ All pass |
 | E2E tests | 47 | ✅ 44 pass + 3 xfail |
 | Security findings | 5/5 | ✅ All fixed |
 | Live health check | 1 | ✅ Healthy |
@@ -69,27 +69,49 @@ The platform is deployed and healthy on Azure App Service.
 - Managed identity with AcrPull + Key Vault Secrets User roles
 - Bugs fixed: DATABASE_URL (4 slashes), ENVIRONMENT validation, get_recent_alerts → get_active_alerts, bash 3.2 compat
 
+## What Was Accomplished (This Session)
+
+### P0 — Version Fix ✅
+- [x] Fixed health endpoint version: `importlib.metadata` → `app.__version__` → `config.app_version`
+- [x] Single source of truth: `pyproject.toml` version = 0.2.0
+- [x] 6 version consistency tests added
+
+### P1 — Azure Tenant Credentials ✅
+- [x] Audited all 5 tenant service principals (HTT, BCC, FN, TLL, DCE)
+- [x] Applied 15 API permissions (14 Graph + 1 Azure Mgmt) to all 5 tenants
+- [x] Admin consent granted on all 5 tenants
+- [x] 14 secrets stored in Key Vault (`kv-gov-dev-001`): 5 client secrets + 5 tenant IDs + primary creds
+- [x] App Service configured: `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `MANAGED_TENANT_IDS`, `KEY_VAULT_URL`
+- [x] `azure_configured: true` confirmed on health endpoint
+- [x] 107 tenant config tests added
+
+### P1 — Smoke Tests ✅
+- [x] Smoke tests pass: 9 passed, 0 failed, 4 skipped (Graph-dependent)
+- [x] Auth endpoint working (dev login with admin/admin)
+- [x] All 4 sync jobs triggered successfully (identity, compliance, resources, costs)
+
+### Preflight Fixes ✅
+- [x] Fixed 7 broken preflight checks (wrong service constructors, missing methods)
+- [x] Fixed `sub.state.value` → `str(sub.state)` for Azure SDK compatibility
+- [x] Preflight scorecard: 14 pass, 7 fail (all failures from Graph API timeout)
+- [x] 53 Azure resources visible via Resource Manager
+- [x] 1 subscription found and accessible
+
 ## What Remains
 
-### P0 — Immediate
-- [ ] Fix health endpoint version (shows 0.1.0, should read from pyproject.toml → 0.2.0)
-- [ ] Graph API preflight check times out in container — 60s timeout (`azure-governance-platform-a83`)
-  - `GraphClient.get_users(top=1)` works locally (0.4s) but hangs in App Service
+### P1 — High Priority
+- [ ] Graph API preflight check times out in container — 60s (`azure-governance-platform-a83`)
+  - Works locally (0.4s) but hangs in App Service container
   - Likely: `ClientSecretCredential` trying managed identity before client_secret fallback
-  - Cascades into 6 MFA-related preflight failures (4 smoke tests skipped)
-
-### P1 — Next Sprint
-- [ ] Connect real Azure tenant credentials (HTT, BCC, FN, TLL, DCE) via Key Vault
-- [ ] Run smoke tests with live tenant data (`scripts/smoke_test.py`)
+  - Cascades into 6 MFA-related preflight failures
 - [ ] Set up CI/CD OIDC federation (`infrastructure/setup-oidc.sh`) — passwordless GitHub → Azure
-- [ ] Configure GHCR with `read:packages` scope for org package access
+- [ ] Fix Key Vault reference resolution (currently using direct secret, should use @Microsoft.KeyVault)
 
 ### P2 — Near-Term
 - [ ] Deploy staging environment (`rg-governance-staging`, `parameters.staging.json`)
 - [ ] Clean up orphan ACR `acrgov10188` in uksouth (if unused)
 - [ ] Add `detect-secrets` or `gitleaks` pre-commit hook
 - [ ] Replace backfill `fetch_data()` placeholders with real Azure API calls
-- [ ] Migrate remaining 11 tenant secrets to Key Vault
 
 ### P3 — Production Readiness
 - [ ] Token blacklist (Redis) for JWT revocation
@@ -110,10 +132,25 @@ The platform is deployed and healthy on Azure App Service.
 | AGENTS.md | Agent workflow instructions |
 
 ## Latest Session Summary
-- Filed `azure-governance-platform-a83`: Graph API preflight timeout in container (P2)
-- Closed `azure-governance-platform-9u4`: Smoke test suite complete
-- Final smoke test: **9 passed, 0 failed, 4 skipped** (skips are Graph-dependent Riverside tests)
-- All core endpoints healthy, auth working, scheduler running 6 jobs
+- ✅ Fixed version single-source-of-truth (P0 `y54` closed)
+- ✅ All 5 tenant SPs audited, 15 permissions applied, admin consent granted
+- ✅ 14 secrets stored in Key Vault (P1 `dxd` and `3x1` closed)
+- ✅ App Service `azure_configured: true`
+- ✅ 7 broken preflight checks fixed (14/24 now passing)
+- ✅ Smoke tests pass: 9/13 pass, 4 skipped (Graph timeout)
+- ✅ Filed `a83`: Graph API timeout in container (P2)
+- ✅ Closed `9u4`: Smoke test suite complete
+- ✅ 723 unit tests, all passing (was 610)
+- ✅ All syncs triggered: identity, compliance, resources, costs
+
+## Azure Tenant Status
+| Tenant | App Registration | Permissions | Secret Expiry | Key Vault |
+|--------|-----------------|-------------|---------------|----------|
+| HTT | `Riverside-Capital-PE-Governance-Platform` | 15 ✅ | 2027-03-04 | `htt-client-secret` ✅ |
+| BCC | `Riverside-Governance-BCC` | 15 ✅ | 2027-03-04 | `bcc-client-secret` ✅ |
+| FN | `Riverside-Governance-FN` | 15 ✅ | 2027-03-04 | `fn-client-secret` ✅ |
+| TLL | `Riverside-Governance-TLL` | 15 ✅ | 2027-03-04 | `tll-client-secret` ✅ |
+| DCE | `Riverside-Governance-DCE` | 15 ✅ | 2027-03-04 | `dce-client-secret` ✅ |
 
 ## Quick Start for Next Session
 ```bash
