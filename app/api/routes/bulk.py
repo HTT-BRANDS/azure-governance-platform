@@ -11,21 +11,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.services.bulk_service import BulkService
-from app.core.auth import User, get_current_user, require_roles
+from app.core.auth import User, get_current_user
 from app.core.authorization import (
     TenantAuthorization,
     get_tenant_authorization,
-    validate_tenants_access,
 )
 from app.core.database import get_db
 from app.core.rate_limit import rate_limit
 from app.schemas.resource import (
     BulkAnomalyAcknowledgeRequest,
-    BulkAnomalyAcknowledgeResponse,
     BulkIdleResourceReviewRequest,
-    BulkIdleResourceReviewResponse,
     BulkRecommendationDismissRequest,
-    BulkRecommendationDismissResponse,
     BulkTagOperation,
     BulkTagResponse,
 )
@@ -105,7 +101,12 @@ async def bulk_acknowledge_anomalies(
 ) -> dict[str, Any]:
     """Acknowledge multiple cost anomalies at once."""
     authz.ensure_at_least_one_tenant()
-    # TODO: Validate user has access to all anomaly tenants
+    # Validate user has access to all anomaly tenants
+    from app.models.cost import CostAnomaly
+    anomalies = db.query(CostAnomaly).filter(CostAnomaly.id.in_(request.anomaly_ids)).all()
+    anomaly_tenant_ids = list({a.tenant_id for a in anomalies})
+    authz.validate_tenants_access(anomaly_tenant_ids)
+
     service = BulkService(db)
     result = await service.bulk_acknowledge_anomalies(
         request.anomaly_ids, current_user.id, request.notes
@@ -125,7 +126,12 @@ async def bulk_dismiss_recommendations(
 ) -> dict[str, Any]:
     """Dismiss multiple recommendations at once."""
     authz.ensure_at_least_one_tenant()
-    # TODO: Validate user has access to all recommendation tenants
+    # Validate user has access to all recommendation tenants
+    from app.models.recommendation import Recommendation
+    recommendations = db.query(Recommendation).filter(Recommendation.id.in_(request.recommendation_ids)).all()
+    recommendation_tenant_ids = list({r.tenant_id for r in recommendations if r.tenant_id})
+    authz.validate_tenants_access(recommendation_tenant_ids)
+
     service = BulkService(db)
     result = await service.bulk_dismiss_recommendations(
         request.recommendation_ids, current_user.id, request.reason
@@ -145,7 +151,12 @@ async def bulk_review_idle_resources(
 ) -> dict[str, Any]:
     """Mark multiple idle resources as reviewed."""
     authz.ensure_at_least_one_tenant()
-    # TODO: Validate user has access to all resource tenants
+    # Validate user has access to all resource tenants
+    from app.models.resource import IdleResource
+    idle_resources = db.query(IdleResource).filter(IdleResource.id.in_(request.idle_resource_ids)).all()
+    resource_tenant_ids = list({r.tenant_id for r in idle_resources})
+    authz.validate_tenants_access(resource_tenant_ids)
+
     service = BulkService(db)
     result = await service.bulk_review_idle_resources(
         request.idle_resource_ids, current_user.id, request.notes

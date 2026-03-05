@@ -2,15 +2,10 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.auth import User, get_current_user, require_roles
-from app.core.authorization import (
-    TenantAuthorization,
-    get_tenant_authorization,
-    validate_tenant_access,
-)
+from app.core.auth import User, get_current_user
 from app.core.database import get_db
 from app.core.monitoring import (
     get_cache_stats,

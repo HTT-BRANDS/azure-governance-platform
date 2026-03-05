@@ -9,8 +9,6 @@ Tests cover:
 - Metrics aggregation
 """
 
-from datetime import date, datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from sqlalchemy.orm import Session
@@ -23,24 +21,17 @@ from app.api.services.riverside_analytics import (
     track_requirement_progress,
 )
 from app.models.riverside import (
-    RequirementCategory,
-    RequirementPriority,
     RequirementStatus,
-    RiversideCompliance,
-    RiversideDeviceCompliance,
-    RiversideMFA,
     RiversideRequirement,
-    RiversideThreatData,
 )
-from app.models.tenant import Tenant
 from tests.fixtures.riverside_fixtures import create_riverside_test_data
 
 
 @pytest.fixture
-def db_with_riverside_data(db: Session) -> Session:
+def db_with_riverside_data(db_session: Session) -> Session:
     """Database session with complete Riverside test data."""
-    create_riverside_test_data(db)
-    return db
+    create_riverside_test_data(db_session)
+    return db_session
 
 
 class TestTrackRequirementProgress:

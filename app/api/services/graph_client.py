@@ -17,7 +17,7 @@ from typing import Any
 import httpx
 from azure.identity import ClientSecretCredential
 
-from app.core.circuit_breaker import GRAPH_API_BREAKER, CircuitBreakerError, circuit_breaker
+from app.core.circuit_breaker import GRAPH_API_BREAKER, circuit_breaker
 from app.core.config import get_settings
 from app.core.retry import GRAPH_API_POLICY, retry_with_backoff
 
@@ -508,7 +508,7 @@ class GraphClient:
                 duration = None
                 if start_time and end_time:
                     try:
-                        from datetime import datetime, timezone
+                        from datetime import datetime
                         start = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
                         end = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
                         duration = str(end - start)
@@ -576,7 +576,7 @@ class GraphClient:
         """
         # Get role definitions
         role_defs = await self.get_directory_role_definitions()
-        role_defs_by_id = {r.role_id: r for r in role_defs}
+        {r.role_id: r for r in role_defs}
 
         # Get all role assignments
         assignments = await self.get_role_assignments_paginated(batch_size)

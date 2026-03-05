@@ -1,7 +1,7 @@
 """Backfill job tracking model with resumable processing support."""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped
 from app.core.database import Base
 
 
-class BackfillStatus(str, Enum):
+class BackfillStatus(StrEnum):
     """Backfill job status states."""
 
     PENDING = "pending"

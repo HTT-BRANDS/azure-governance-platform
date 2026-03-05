@@ -24,7 +24,6 @@ from datetime import datetime
 from typing import Any
 
 import httpx
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -34,7 +33,6 @@ from app.models.riverside import (
     RiversideMFA,
     RiversideRequirement,
 )
-from app.models.tenant import Tenant
 from app.preflight.base import BasePreflightCheck
 from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 
@@ -492,7 +490,7 @@ class RiversideSchedulerCheck(BasePreflightCheck):
                 name=self.name,
                 category=self.category,
                 status=CheckStatus.PASS,
-                message=f"Riverside sync job registered and scheduler running",
+                message="Riverside sync job registered and scheduler running",
                 details={
                     "job_details": job_details,
                     "scheduler_running": True,
@@ -589,7 +587,7 @@ class RiversideAzureADPermissionsCheck(BasePreflightCheck):
 
             try:
                 # Try to get users - tests User.Read.All and Directory.Read.All
-                users = await client.get_users(limit=1)
+                await client.get_users(limit=1)
                 permissions_status["User.Read.All"] = {
                     "granted": True,
                     "test_result": "success",
@@ -892,7 +890,6 @@ class RiversideEvidenceCheck(BasePreflightCheck):
         try:
             from app.models.riverside import (
                 RequirementStatus,
-                RequirementPriority,
             )
 
             db = SessionLocal()

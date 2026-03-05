@@ -24,16 +24,12 @@ Example:
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Any
+from datetime import datetime
 
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
 from app.core.database import SessionLocal
 from app.models.riverside import RiversideMFA
-from app.models.tenant import Tenant
 from app.preflight.base import BasePreflightCheck
 from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 

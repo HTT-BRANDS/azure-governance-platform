@@ -11,12 +11,11 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.services.graph_client import GraphClient
 from app.core.cache import cached, invalidate_on_sync_completion
-from app.models.dmarc import DMARCAlert, DMARCRecord, DMARCReport, DKIMRecord
+from app.models.dmarc import DKIMRecord, DMARCAlert, DMARCRecord, DMARCReport
 from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
@@ -151,7 +150,7 @@ class DMARCService:
         # Build query based on tenant filter
         dmarc_query = self.db.query(DMARCRecord)
         dkim_query = self.db.query(DKIMRecord)
-        tenant_query = self.db.query(Tenant).filter(Tenant.is_active == True)
+        tenant_query = self.db.query(Tenant).filter(Tenant.is_active)
 
         if tenant_id:
             dmarc_query = dmarc_query.filter(DMARCRecord.tenant_id == tenant_id)
@@ -203,7 +202,7 @@ class DMARCService:
         all_dmarc = dmarc_query.all()
         all_dkim = dkim_query.all()
 
-        summary["total_domains"] = len(set(d.domain for d in all_dmarc))
+        summary["total_domains"] = len({d.domain for d in all_dmarc})
         summary["dmarc_enabled"] = sum(1 for d in all_dmarc if d.policy != "none")
         summary["dmarc_compliant"] = sum(1 for d in all_dmarc if d.policy == "reject")
         summary["dkim_enabled"] = sum(1 for d in all_dkim if d.is_enabled)
@@ -545,7 +544,7 @@ class DMARCService:
     async def _get_active_alerts(self, tenant_id: str | None = None) -> list[dict]:
         """Get active DMARC/DKIM alerts."""
         query = self.db.query(DMARCAlert).filter(
-            DMARCAlert.is_acknowledged == False
+            not DMARCAlert.is_acknowledged
         ).order_by(DMARCAlert.created_at.desc()).limit(10)
 
         if tenant_id:

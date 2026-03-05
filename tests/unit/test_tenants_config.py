@@ -4,7 +4,6 @@ Validates that all 5 Riverside tenants are properly configured with valid
 UUIDs, email addresses, Key Vault secret names, and correct lookup behavior.
 """
 
-import re
 import uuid
 
 import pytest

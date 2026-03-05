@@ -7,15 +7,14 @@ MFA enrollment gaps and triggering notifications across Riverside tenants.
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-import pytest
 from sqlalchemy.orm import Session
 
 from app.alerts.mfa_alerts import (
     ADMIN_MFA_TARGET,
-    MFAComplianceStatus,
-    MFAGapDetector,
     RIVERSIDE_TENANTS,
     USER_MFA_TARGET,
+    MFAComplianceStatus,
+    MFAGapDetector,
     check_admin_mfa_compliance,
     check_user_mfa_compliance,
     detect_mfa_gaps,

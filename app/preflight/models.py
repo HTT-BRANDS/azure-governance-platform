@@ -1,13 +1,13 @@
 """Pydantic models for preflight checks."""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class CheckStatus(str, Enum):
+class CheckStatus(StrEnum):
     """Enumeration of possible check statuses."""
 
     PASS = "pass"
@@ -17,7 +17,7 @@ class CheckStatus(str, Enum):
     RUNNING = "running"
 
 
-class CheckCategory(str, Enum):
+class CheckCategory(StrEnum):
     """Categories of preflight checks."""
 
     # Azure checks

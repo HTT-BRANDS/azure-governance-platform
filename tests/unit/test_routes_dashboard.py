@@ -35,7 +35,7 @@ def test_db_session(db_session):
         is_active=True,
     )
     db_session.add(tenant)
-    
+
     user_tenant = UserTenant(
         id=str(uuid.uuid4()),
         user_id="user:admin",
@@ -49,7 +49,7 @@ def test_db_session(db_session):
         granted_at=datetime.utcnow(),
     )
     db_session.add(user_tenant)
-    
+
     db_session.commit()
     return db_session
 
@@ -62,7 +62,7 @@ def client_with_db(test_db_session):
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -87,7 +87,7 @@ def mock_user():
 def mock_services():
     """Mock all dashboard services."""
     services = {}
-    
+
     # Mock CostService
     cost_service = MagicMock()
     cost_service.get_cost_summary.return_value = MagicMock(
@@ -99,7 +99,7 @@ def mock_services():
         ],
     )
     services["cost"] = cost_service
-    
+
     # Mock ComplianceService
     compliance_service = MagicMock()
     compliance_service.get_compliance_summary.return_value = MagicMock(
@@ -110,7 +110,7 @@ def mock_services():
         critical_findings=2,
     )
     services["compliance"] = compliance_service
-    
+
     # Mock ResourceService
     resource_service = MagicMock()
     resource_service.get_resource_inventory.return_value = MagicMock(
@@ -121,7 +121,7 @@ def mock_services():
         ],
     )
     services["resource"] = resource_service
-    
+
     # Mock IdentityService
     identity_service = MagicMock()
     identity_service.get_identity_summary.return_value = MagicMock(
@@ -133,7 +133,7 @@ def mock_services():
         mfa_percentage=72.0,
     )
     services["identity"] = identity_service
-    
+
     # Mock MonitoringService
     monitoring_service = MagicMock()
     monitoring_service.get_overall_status.return_value = {
@@ -154,7 +154,7 @@ def mock_services():
     monitoring_service.get_alert_stats.return_value = {"total": 0}
     monitoring_service.get_metrics.return_value = []
     services["monitoring"] = monitoring_service
-    
+
     return services
 
 
@@ -164,7 +164,7 @@ def mock_services():
 
 class TestMainDashboardPage:
     """Tests for GET / (root) dashboard page."""
-    
+
     @patch("app.api.routes.dashboard.get_current_user")
     @patch("app.api.routes.dashboard.get_tenant_authorization")
     @patch("app.api.routes.dashboard.CostService")
@@ -172,34 +172,34 @@ class TestMainDashboardPage:
     @patch("app.api.routes.dashboard.ResourceService")
     @patch("app.api.routes.dashboard.IdentityService")
     def test_root_dashboard_renders_successfully(
-        self, mock_identity, mock_resource, mock_compliance, mock_cost, 
+        self, mock_identity, mock_resource, mock_compliance, mock_cost,
         mock_authz, mock_get_user, client_with_db, mock_user, mock_services
     ):
         """Root dashboard page renders with all summary data."""
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_authz.return_value.accessible_tenant_ids = ["dashboard-tenant-123"]
-        
+
         # Setup service mocks
         mock_cost.return_value = mock_services["cost"]
         mock_compliance.return_value = mock_services["compliance"]
         mock_resource.return_value = mock_services["resource"]
         mock_identity.return_value = mock_services["identity"]
-        
+
         response = client_with_db.get(
             "/",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
         # Check that dashboard contains expected elements
         assert b"dashboard" in response.content.lower()
-    
+
     def test_root_dashboard_requires_authentication(self, client_with_db):
         """Root dashboard returns 401 without authentication."""
         response = client_with_db.get("/")
-        
+
         assert response.status_code == 401
 
 
@@ -209,7 +209,7 @@ class TestMainDashboardPage:
 
 class TestDashboardAliasPage:
     """Tests for GET /dashboard (alias for root)."""
-    
+
     @patch("app.api.routes.dashboard.get_current_user")
     @patch("app.api.routes.dashboard.get_tenant_authorization")
     @patch("app.api.routes.dashboard.CostService")
@@ -224,17 +224,17 @@ class TestDashboardAliasPage:
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_authz.return_value.accessible_tenant_ids = ["dashboard-tenant-123"]
-        
+
         mock_cost.return_value = mock_services["cost"]
         mock_compliance.return_value = mock_services["compliance"]
         mock_resource.return_value = mock_services["resource"]
         mock_identity.return_value = mock_services["identity"]
-        
+
         response = client_with_db.get(
             "/dashboard",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
 
@@ -245,13 +245,13 @@ class TestDashboardAliasPage:
 
 class TestSyncDashboardPage:
     """Tests for GET /sync-dashboard page."""
-    
+
     @patch("app.api.routes.dashboard.get_current_user")
     @patch("app.api.routes.dashboard.get_tenant_authorization")
     @patch("app.api.routes.dashboard.MonitoringService")
     @patch("app.api.routes.dashboard.get_user_tenants")
     def test_sync_dashboard_renders_monitoring_data(
-        self, mock_get_tenants, mock_monitoring_cls, mock_authz, 
+        self, mock_get_tenants, mock_monitoring_cls, mock_authz,
         mock_get_user, client_with_db, mock_user, mock_services
     ):
         """Sync dashboard page renders with monitoring data."""
@@ -260,19 +260,19 @@ class TestSyncDashboardPage:
         mock_authz.return_value.user = mock_user
         mock_authz.return_value.accessible_tenant_ids = ["dashboard-tenant-123"]
         mock_monitoring_cls.return_value = mock_services["monitoring"]
-        
+
         # Mock tenant query
         mock_get_tenants.return_value = []
-        
+
         response = client_with_db.get(
             "/sync-dashboard",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
         assert b"sync" in response.content.lower()
-    
+
     @patch("app.api.routes.dashboard.get_current_user")
     @patch("app.api.routes.dashboard.get_tenant_authorization")
     @patch("app.api.routes.dashboard.MonitoringService")
@@ -288,12 +288,12 @@ class TestSyncDashboardPage:
         mock_authz.return_value.accessible_tenant_ids = ["dashboard-tenant-123"]
         mock_monitoring_cls.return_value = mock_services["monitoring"]
         mock_get_tenants.return_value = []
-        
+
         response = client_with_db.get(
             "/sync-dashboard",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         # Should call alert stats method
         mock_services["monitoring"].get_alert_stats.assert_called()
@@ -305,25 +305,25 @@ class TestSyncDashboardPage:
 
 class TestDMARCDashboardPage:
     """Tests for GET /dmarc dashboard page."""
-    
+
     @patch("app.api.routes.dashboard.get_current_user")
     def test_dmarc_dashboard_renders_successfully(self, mock_get_user, client_with_db, mock_user):
         """DMARC dashboard page renders for authenticated users."""
         mock_get_user.return_value = mock_user
-        
+
         response = client_with_db.get(
             "/dmarc",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
         assert b"dmarc" in response.content.lower()
-    
+
     def test_dmarc_dashboard_requires_authentication(self, client_with_db):
         """DMARC dashboard returns 401 without authentication."""
         response = client_with_db.get("/dmarc")
-        
+
         assert response.status_code == 401
 
 
@@ -333,24 +333,24 @@ class TestDMARCDashboardPage:
 
 class TestCostSummaryCardPartial:
     """Tests for GET /partials/cost-summary-card HTMX partial."""
-    
+
     @patch("app.api.routes.dashboard.CostService")
     def test_cost_summary_card_returns_html(self, mock_cost_cls, client_with_db, mock_services):
         """Cost summary card partial returns HTML."""
         mock_cost_cls.return_value = mock_services["cost"]
-        
+
         response = client_with_db.get("/partials/cost-summary-card")
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
-    
+
     @patch("app.api.routes.dashboard.CostService")
     def test_cost_summary_card_includes_cost_data(self, mock_cost_cls, client_with_db, mock_services):
         """Cost summary card includes cost summary data."""
         mock_cost_cls.return_value = mock_services["cost"]
-        
+
         response = client_with_db.get("/partials/cost-summary-card")
-        
+
         assert response.status_code == 200
         # Should call cost service
         mock_services["cost"].get_cost_summary.assert_called_once()
@@ -362,24 +362,24 @@ class TestCostSummaryCardPartial:
 
 class TestComplianceGaugePartial:
     """Tests for GET /partials/compliance-gauge HTMX partial."""
-    
+
     @patch("app.api.routes.dashboard.ComplianceService")
     def test_compliance_gauge_returns_html(self, mock_compliance_cls, client_with_db, mock_services):
         """Compliance gauge partial returns HTML."""
         mock_compliance_cls.return_value = mock_services["compliance"]
-        
+
         response = client_with_db.get("/partials/compliance-gauge")
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
-    
+
     @patch("app.api.routes.dashboard.ComplianceService")
     def test_compliance_gauge_includes_score(self, mock_compliance_cls, client_with_db, mock_services):
         """Compliance gauge includes compliance score."""
         mock_compliance_cls.return_value = mock_services["compliance"]
-        
+
         response = client_with_db.get("/partials/compliance-gauge")
-        
+
         assert response.status_code == 200
         mock_services["compliance"].get_compliance_summary.assert_called_once()
 
@@ -390,24 +390,24 @@ class TestComplianceGaugePartial:
 
 class TestSyncStatusCardPartial:
     """Tests for GET /partials/sync-status-card HTMX partial."""
-    
+
     @patch("app.api.routes.dashboard.MonitoringService")
     def test_sync_status_card_returns_html(self, mock_monitoring_cls, client_with_db, mock_services):
         """Sync status card partial returns HTML."""
         mock_monitoring_cls.return_value = mock_services["monitoring"]
-        
+
         response = client_with_db.get("/partials/sync-status-card")
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
-    
+
     @patch("app.api.routes.dashboard.MonitoringService")
     def test_sync_status_card_includes_metrics(self, mock_monitoring_cls, client_with_db, mock_services):
         """Sync status card includes monitoring metrics."""
         mock_monitoring_cls.return_value = mock_services["monitoring"]
-        
+
         response = client_with_db.get("/partials/sync-status-card")
-        
+
         assert response.status_code == 200
         mock_services["monitoring"].get_overall_status.assert_called_once()
         mock_services["monitoring"].get_metrics.assert_called_once()
@@ -419,36 +419,36 @@ class TestSyncStatusCardPartial:
 
 class TestSyncHistoryTablePartial:
     """Tests for GET /partials/sync-history-table HTMX partial."""
-    
+
     @patch("app.api.routes.dashboard.MonitoringService")
     def test_sync_history_table_returns_html(self, mock_monitoring_cls, client_with_db, mock_services):
         """Sync history table partial returns HTML."""
         mock_monitoring_cls.return_value = mock_services["monitoring"]
-        
+
         response = client_with_db.get("/partials/sync-history-table")
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
-    
+
     @patch("app.api.routes.dashboard.MonitoringService")
     def test_sync_history_table_accepts_limit_parameter(self, mock_monitoring_cls, client_with_db, mock_services):
         """Sync history table accepts limit query parameter."""
         mock_monitoring_cls.return_value = mock_services["monitoring"]
-        
+
         response = client_with_db.get("/partials/sync-history-table?limit=20")
-        
+
         assert response.status_code == 200
         mock_services["monitoring"].get_recent_logs.assert_called_once_with(
             limit=20, include_running=True
         )
-    
+
     @patch("app.api.routes.dashboard.MonitoringService")
     def test_sync_history_table_uses_default_limit(self, mock_monitoring_cls, client_with_db, mock_services):
         """Sync history table uses default limit when not specified."""
         mock_monitoring_cls.return_value = mock_services["monitoring"]
-        
+
         response = client_with_db.get("/partials/sync-history-table")
-        
+
         assert response.status_code == 200
         # Default limit should be 15
         mock_services["monitoring"].get_recent_logs.assert_called_once_with(

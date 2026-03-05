@@ -99,7 +99,7 @@ class PreflightRunner:
         """
         db = SessionLocal()
         try:
-            query = db.query(Tenant).filter(Tenant.is_active == True)
+            query = db.query(Tenant).filter(Tenant.is_active)
 
             if self.tenant_ids:
                 query = query.filter(Tenant.id.in_(self.tenant_ids))

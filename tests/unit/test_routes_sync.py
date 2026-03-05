@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 from app.core.auth import User
 from app.core.database import get_db
 from app.main import app
-from app.models.monitoring import Alert, SyncJobLog, SyncMetric
+from app.models.monitoring import Alert, SyncJobLog
 from app.models.tenant import Tenant, UserTenant
 
 
@@ -36,7 +36,7 @@ def test_db_session(db_session):
         is_active=True,
     )
     db_session.add(tenant)
-    
+
     user_tenant = UserTenant(
         id=str(uuid.uuid4()),
         user_id="user:admin",
@@ -50,7 +50,7 @@ def test_db_session(db_session):
         granted_at=datetime.utcnow(),
     )
     db_session.add(user_tenant)
-    
+
     # Create sync job log
     log = SyncJobLog(
         id=str(uuid.uuid4()),
@@ -64,7 +64,7 @@ def test_db_session(db_session):
         errors_count=0,
     )
     db_session.add(log)
-    
+
     # Create sync alert
     alert = Alert(
         id=1,
@@ -78,7 +78,7 @@ def test_db_session(db_session):
         created_at=datetime.utcnow(),
     )
     db_session.add(alert)
-    
+
     db_session.commit()
     return db_session
 
@@ -91,7 +91,7 @@ def client_with_db(test_db_session):
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -196,32 +196,32 @@ def mock_monitoring_service():
 
 class TestTriggerSyncEndpoint:
     """Tests for POST /api/v1/sync/{sync_type} endpoint."""
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.trigger_manual_sync")
     def test_trigger_sync_starts_manual_job(self, mock_trigger, mock_get_user, client_with_db, mock_user):
         """Trigger sync endpoint starts manual sync job."""
         mock_get_user.return_value = mock_user
         mock_trigger.return_value = True
-        
+
         response = client_with_db.post(
             "/api/v1/sync/costs",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "triggered"
         assert data["sync_type"] == "costs"
         mock_trigger.assert_called_once_with("costs")
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.trigger_manual_sync")
     def test_trigger_sync_supports_all_sync_types(self, mock_trigger, mock_get_user, client_with_db, mock_user):
         """Trigger sync supports all valid sync types."""
         mock_get_user.return_value = mock_user
         mock_trigger.return_value = True
-        
+
         sync_types = ["costs", "compliance", "resources", "identity"]
         for sync_type in sync_types:
             response = client_with_db.post(
@@ -229,19 +229,19 @@ class TestTriggerSyncEndpoint:
                 headers={"Authorization": "Bearer fake-token"},
             )
             assert response.status_code == 200
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.trigger_manual_sync")
     def test_trigger_sync_returns_400_for_invalid_type(self, mock_trigger, mock_get_user, client_with_db, mock_user):
         """Trigger sync returns 400 for invalid sync type."""
         mock_get_user.return_value = mock_user
         mock_trigger.return_value = False
-        
+
         response = client_with_db.post(
             "/api/v1/sync/invalid_type",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 400
         assert "Unknown sync type" in response.json()["detail"]
 
@@ -252,45 +252,45 @@ class TestTriggerSyncEndpoint:
 
 class TestSyncStatusEndpoint:
     """Tests for GET /api/v1/sync/status endpoint."""
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.get_scheduler")
     def test_status_returns_job_schedule(self, mock_scheduler, mock_get_user, client_with_db, mock_user):
         """Status endpoint returns scheduled job information."""
         mock_get_user.return_value = mock_user
-        
+
         mock_job = MagicMock()
         mock_job.id = "costs-sync"
         mock_job.name = "Cost Sync Job"
         mock_job.next_run_time = datetime.utcnow()
-        
+
         scheduler = MagicMock()
         scheduler.get_jobs.return_value = [mock_job]
         mock_scheduler.return_value = scheduler
-        
+
         response = client_with_db.get(
             "/api/v1/sync/status",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "running"
         assert len(data["jobs"]) == 1
         assert data["jobs"][0]["id"] == "costs-sync"
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.get_scheduler")
     def test_status_handles_uninitialized_scheduler(self, mock_scheduler, mock_get_user, client_with_db, mock_user):
         """Status endpoint handles scheduler not initialized."""
         mock_get_user.return_value = mock_user
         mock_scheduler.return_value = None
-        
+
         response = client_with_db.get(
             "/api/v1/sync/status",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "scheduler_not_initialized"
@@ -303,19 +303,19 @@ class TestSyncStatusEndpoint:
 
 class TestSyncHealthEndpoint:
     """Tests for GET /api/v1/sync/status/health endpoint."""
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.MonitoringService")
     def test_health_returns_overall_sync_metrics(self, mock_service_cls, mock_get_user, client_with_db, mock_user, mock_monitoring_service):
         """Health endpoint returns overall sync health status."""
         mock_get_user.return_value = mock_user
         mock_service_cls.return_value = mock_monitoring_service
-        
+
         response = client_with_db.get(
             "/api/v1/sync/status/health",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
@@ -328,7 +328,7 @@ class TestSyncHealthEndpoint:
 
 class TestSyncHistoryEndpoint:
     """Tests for GET /api/v1/sync/history endpoint."""
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.get_tenant_authorization")
     @patch("app.api.routes.sync.MonitoringService")
@@ -338,12 +338,12 @@ class TestSyncHistoryEndpoint:
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_authz.return_value.accessible_tenant_ids = ["sync-tenant-123"]
         mock_service_cls.return_value = mock_monitoring_service
-        
+
         response = client_with_db.get(
             "/api/v1/sync/history",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "logs" in data
@@ -351,7 +351,7 @@ class TestSyncHistoryEndpoint:
         log = data["logs"][0]
         assert log["job_type"] == "costs"
         assert log["status"] == "completed"
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.get_tenant_authorization")
     @patch("app.api.routes.sync.MonitoringService")
@@ -361,12 +361,12 @@ class TestSyncHistoryEndpoint:
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_authz.return_value.accessible_tenant_ids = ["sync-tenant-123"]
         mock_service_cls.return_value = mock_monitoring_service
-        
+
         response = client_with_db.get(
             "/api/v1/sync/history?job_type=costs&limit=20",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         mock_monitoring_service.get_recent_logs.assert_called_once_with(
             job_type="costs", limit=20, include_running=False
@@ -379,7 +379,7 @@ class TestSyncHistoryEndpoint:
 
 class TestSyncMetricsEndpoint:
     """Tests for GET /api/v1/sync/metrics endpoint."""
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.get_tenant_authorization")
     @patch("app.api.routes.sync.MonitoringService")
@@ -389,12 +389,12 @@ class TestSyncMetricsEndpoint:
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_authz.return_value.accessible_tenant_ids = ["sync-tenant-123"]
         mock_service_cls.return_value = mock_monitoring_service
-        
+
         response = client_with_db.get(
             "/api/v1/sync/metrics",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "metrics" in data
@@ -411,7 +411,7 @@ class TestSyncMetricsEndpoint:
 
 class TestSyncAlertsEndpoint:
     """Tests for GET /api/v1/sync/alerts endpoint."""
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.get_tenant_authorization")
     @patch("app.api.routes.sync.MonitoringService")
@@ -421,12 +421,12 @@ class TestSyncAlertsEndpoint:
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_authz.return_value.accessible_tenant_ids = ["sync-tenant-123"]
         mock_service_cls.return_value = mock_monitoring_service
-        
+
         response = client_with_db.get(
             "/api/v1/sync/alerts",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "alerts" in data
@@ -434,7 +434,7 @@ class TestSyncAlertsEndpoint:
         alert = data["alerts"][0]
         assert alert["alert_type"] == "sync_failure"
         assert alert["severity"] == "error"
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.get_tenant_authorization")
     @patch("app.api.routes.sync.MonitoringService")
@@ -444,12 +444,12 @@ class TestSyncAlertsEndpoint:
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_authz.return_value.accessible_tenant_ids = ["sync-tenant-123"]
         mock_service_cls.return_value = mock_monitoring_service
-        
+
         response = client_with_db.get(
             "/api/v1/sync/alerts?severity=error",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         mock_monitoring_service.get_active_alerts.assert_called_once_with(
             job_type=None, severity="error"
@@ -462,24 +462,24 @@ class TestSyncAlertsEndpoint:
 
 class TestResolveAlertEndpoint:
     """Tests for POST /api/v1/sync/alerts/{alert_id}/resolve endpoint."""
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.MonitoringService")
     def test_resolve_marks_alert_as_resolved(self, mock_service_cls, mock_get_user, client_with_db, mock_user, mock_monitoring_service):
         """Resolve endpoint marks alert as resolved."""
         mock_get_user.return_value = mock_user
         mock_service_cls.return_value = mock_monitoring_service
-        
+
         response = client_with_db.post(
             "/api/v1/sync/alerts/1/resolve?resolved_by=admin@example.com",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["is_resolved"] is True
         assert data["resolved_by"] == "admin@example.com"
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.MonitoringService")
     def test_resolve_returns_404_for_invalid_alert(self, mock_service_cls, mock_get_user, client_with_db, mock_user):
@@ -488,12 +488,12 @@ class TestResolveAlertEndpoint:
         service = MagicMock()
         service.resolve_alert.side_effect = ValueError("Alert not found")
         mock_service_cls.return_value = service
-        
+
         response = client_with_db.post(
             "/api/v1/sync/alerts/999/resolve?resolved_by=admin@example.com",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 404
 
 
@@ -503,18 +503,18 @@ class TestResolveAlertEndpoint:
 
 class TestSyncStatusPartialEndpoint:
     """Tests for GET /api/v1/sync/partials/sync-status HTMX partial."""
-    
+
     @patch("app.api.routes.sync.get_current_user")
     @patch("app.api.routes.sync.MonitoringService")
     def test_partial_returns_sync_status_html(self, mock_service_cls, mock_get_user, client_with_db, mock_user, mock_monitoring_service):
         """Sync status partial returns HTML for HTMX rendering."""
         mock_get_user.return_value = mock_user
         mock_service_cls.return_value = mock_monitoring_service
-        
+
         response = client_with_db.get(
             "/api/v1/sync/partials/sync-status",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]

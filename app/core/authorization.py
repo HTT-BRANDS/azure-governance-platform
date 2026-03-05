@@ -6,7 +6,8 @@ authorization decorators for multi-tenant access control.
 
 import functools
 import logging
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session

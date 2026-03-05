@@ -5,7 +5,6 @@ including directory roles, role assignments, PIM, and privileged access data.
 """
 
 import sys
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -17,7 +16,7 @@ sys.modules['azure.identity'] = azure_mock
 sys.modules['azure.core'] = azure_mock
 sys.modules['azure.core.exceptions'] = azure_mock
 
-from app.api.services.graph_client import (
+from app.api.services.graph_client import (  # noqa: E402
     ADMIN_ROLE_TEMPLATE_IDS,
     AdminRoleSummary,
     DirectoryRole,
@@ -371,7 +370,7 @@ class TestGraphClientAdminRoles:
         """Test PIM role assignments retrieval."""
         with patch.object(mock_graph_client, '_get_token') as mock_token:
             mock_token.return_value = "mock-token"
-            
+
             # Mock the _get_pim_assignments_by_type method directly
             with patch.object(mock_graph_client, '_get_pim_assignments_by_type') as mock_get_pim:
                 mock_get_pim.return_value = [
@@ -403,12 +402,12 @@ class TestGraphClientAdminRoles:
         """Test PIM error handling when PIM is not enabled."""
         with patch.object(mock_graph_client, '_get_token') as mock_token:
             mock_token.return_value = "mock-token"
-            
+
             with patch('httpx.AsyncClient') as mock_client:
                 mock_async_client = AsyncMock()
                 mock_async_client.__aenter__ = AsyncMock(return_value=mock_async_client)
                 mock_async_client.__aexit__ = AsyncMock(return_value=None)
-                
+
                 # Simulate 404 error (PIM not enabled)
                 import httpx
                 mock_async_client.request = AsyncMock(

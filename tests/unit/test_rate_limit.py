@@ -9,11 +9,9 @@ This module tests:
 - resilient_api_call helper
 """
 
-import asyncio
 import threading
 import time
-from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -26,23 +24,22 @@ from app.core.circuit_breaker import (
 )
 from app.core.rate_limit import (
     AZURE_API_RATE_LIMITS,
-    TokenBucketRateLimiter,
     MultiApiRateLimiter,
+    TokenBucketRateLimiter,
     calculate_backoff,
     extract_retry_after,
     multi_api_limiter,
 )
 from app.core.resilience import (
-    ResilientAzureClient,
     ResilienceConfig,
     ResilienceError,
-    resilient_api_call,
+    ResilientAzureClient,
     get_arm_client,
-    get_graph_client,
     get_cost_client,
+    get_graph_client,
     get_security_client,
+    resilient_api_call,
 )
-
 
 # =============================================================================
 # TokenBucketRateLimiter Tests
@@ -408,7 +405,7 @@ class TestExtractRetryAfter:
 
     def test_extract_http_date(self):
         """Test extracting HTTP-date format."""
-        future = datetime.now(timezone.utc) + timedelta(seconds=120)
+        future = datetime.now(UTC) + timedelta(seconds=120)
         headers = {"Retry-After": future.strftime("%a, %d %b %Y %H:%M:%S GMT")}
         result = extract_retry_after(headers, default=60.0)
         # Should be approximately 120 seconds (allow for test execution time)
@@ -422,7 +419,7 @@ class TestExtractRetryAfter:
 
     def test_extract_past_date(self):
         """Test extracting past HTTP-date (should return 0 or small value)."""
-        past = datetime.now(timezone.utc) - timedelta(seconds=60)
+        past = datetime.now(UTC) - timedelta(seconds=60)
         headers = {"Retry-After": past.strftime("%a, %d %b %Y %H:%M:%S GMT")}
         result = extract_retry_after(headers, default=60.0)
         # Should return 0 or very small value since date is in the past

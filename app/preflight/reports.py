@@ -395,4 +395,4 @@ def get_recommendations_for_failed_checks(
         for rec in result.recommendations:
             recommendations.add(rec)
 
-    return sorted(list(recommendations))
+    return sorted(recommendations)

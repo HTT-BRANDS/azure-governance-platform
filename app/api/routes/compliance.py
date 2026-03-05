@@ -1,9 +1,8 @@
 """Compliance monitoring API routes."""
 
 import logging
-from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -12,8 +11,6 @@ from app.core.auth import User, get_current_user
 from app.core.authorization import (
     TenantAuthorization,
     get_tenant_authorization,
-    validate_tenant_access,
-    validate_tenants_access,
 )
 from app.core.database import get_db
 from app.models.compliance import PolicyState
@@ -41,11 +38,11 @@ async def get_compliance_summary(
     authz.ensure_at_least_one_tenant()
 
     # Filter tenant_ids to only accessible ones
-    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+    authz.filter_tenant_ids(tenant_ids)
 
     service = ComplianceService(db)
-    # TODO: Filter by accessible tenants
-    return await service.get_compliance_summary()
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+    return await service.get_compliance_summary(tenant_ids=filtered_tenant_ids)
 
 
 @router.get("/scores", response_model=list[ComplianceScore])

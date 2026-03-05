@@ -159,8 +159,8 @@ class BulkTagOperation(BaseModel):
 class TagOperationResult(BaseModel):
     """Result of a single tag operation."""
 
-    resource_id: str
-    resource_name: str
+    resource_id: str | None
+    resource_name: str | None
     success: bool
     message: str
 

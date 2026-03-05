@@ -1,6 +1,6 @@
 """Tests for version consistency."""
 import re
-import pytest
+
 
 class TestVersionConsistency:
     def test_init_version_is_semver(self):

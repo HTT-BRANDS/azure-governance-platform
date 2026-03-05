@@ -14,7 +14,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from fastapi import HTTPException, Request, status
@@ -25,7 +25,7 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 
 
-class RateLimitStrategy(str, Enum):
+class RateLimitStrategy(StrEnum):
     """Rate limiting strategies."""
 
     FIXED_WINDOW = "fixed_window"

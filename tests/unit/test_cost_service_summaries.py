@@ -3,15 +3,17 @@
 Tests for cost summary, trends, tenant breakdowns, and forecasting.
 10 tests covering:
 - get_cost_summary (3 tests)
-- get_cost_trends (2 tests)  
+- get_cost_trends (2 tests)
 - get_costs_by_tenant (2 tests)
 - get_cost_forecast (3 tests)
 """
 
-import pytest
 import sys
-from datetime import date, datetime, timedelta
-from unittest.mock import MagicMock, patch, AsyncMock
+from datetime import date, timedelta
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 
 # Mock the cache decorator BEFORE importing the service
 def no_op_cache(cache_key):
@@ -27,13 +29,13 @@ with patch("app.core.cache.cached", no_op_cache):
         del sys.modules["app.api.services.cost_service"]
     from app.api.services.cost_service import CostService
 
-from app.models.cost import CostSnapshot
-from app.models.tenant import Tenant
-from app.schemas.cost import (
-    CostSummary,
-    CostTrend,
+from app.models.cost import CostSnapshot  # noqa: E402
+from app.models.tenant import Tenant  # noqa: E402
+from app.schemas.cost import (  # noqa: E402
     CostByTenant,
     CostForecast,
+    CostSummary,
+    CostTrend,
 )
 
 
@@ -105,7 +107,7 @@ class TestCostServiceSummaries:
         # Create fresh mocks
         mock_db = MagicMock()
         service = CostService(db=mock_db)
-        
+
         # Setup mock query to return empty
         mock_query = MagicMock()
         mock_query.filter.return_value = mock_query
@@ -129,10 +131,10 @@ class TestCostServiceSummaries:
         # Create fresh mocks and service
         mock_db = MagicMock()
         service = CostService(db=mock_db)
-        
+
         # Create separate snapshots for current and previous periods
         today = date.today()
-        
+
         current_period = []
         for i in range(15):
             snap = MagicMock(spec=CostSnapshot)
@@ -157,11 +159,11 @@ class TestCostServiceSummaries:
         current_query = MagicMock()
         current_query.filter.return_value = current_query
         current_query.all.return_value = current_period
-        
+
         previous_query = MagicMock()
         previous_query.filter.return_value = previous_query
         previous_query.all.return_value = previous_period
-        
+
         # Service makes 2 queries: current period, then previous period
         mock_db.query.side_effect = [current_query, previous_query]
 
@@ -200,7 +202,7 @@ class TestCostServiceSummaries:
         # Create fresh mocks
         mock_db = MagicMock()
         service = CostService(db=mock_db)
-        
+
         # Setup mock query to return empty
         mock_query = MagicMock()
         mock_query.filter.return_value = mock_query
@@ -220,7 +222,7 @@ class TestCostServiceSummaries:
         # Create fresh mocks and data
         mock_db = MagicMock()
         service = CostService(db=mock_db)
-        
+
         # Create tenants
         tenants = []
         for i in range(3):
@@ -229,7 +231,7 @@ class TestCostServiceSummaries:
             tenant.name = f"Tenant {i+1}"
             tenant.is_active = True
             tenants.append(tenant)
-        
+
         # Create cost snapshots
         today = date.today()
         snapshots = []
@@ -241,7 +243,7 @@ class TestCostServiceSummaries:
             snap.subscription_id = "sub-1"
             snap.service_name = "Compute"
             snapshots.append(snap)
-        
+
         # Setup mock queries
         def mock_query_side_effect(model):
             mock_q = MagicMock()
@@ -272,7 +274,7 @@ class TestCostServiceSummaries:
         # Create fresh mocks
         mock_db = MagicMock()
         service = CostService(db=mock_db)
-        
+
         # Setup mock query
         mock_query = MagicMock()
         mock_query.filter.return_value = mock_query
@@ -292,7 +294,7 @@ class TestCostServiceSummaries:
         # Create fresh mocks
         mock_db = MagicMock()
         service = CostService(db=mock_db)
-        
+
         # Create 90 days of historical data
         historical_data = []
         for i in range(90):
@@ -330,7 +332,7 @@ class TestCostServiceSummaries:
         # Create fresh mocks
         mock_db = MagicMock()
         service = CostService(db=mock_db)
-        
+
         # Only 5 days of data (less than 7 required)
         historical_data = []
         for i in range(5):
@@ -360,7 +362,7 @@ class TestCostServiceSummaries:
         # Create fresh mocks
         mock_db = MagicMock()
         service = CostService(db=mock_db)
-        
+
         # Create 90 days of zero cost data
         historical_data = []
         for i in range(90):

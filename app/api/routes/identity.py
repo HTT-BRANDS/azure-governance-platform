@@ -5,12 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.api.services.azure_ad_admin_service import azure_ad_admin_service
 from app.api.services.identity_service import IdentityService
-from app.core.auth import User, get_current_user
+from app.core.auth import get_current_user
 from app.core.authorization import (
     TenantAuthorization,
     get_tenant_authorization,
-    validate_tenant_access,
-    validate_tenants_access,
 )
 from app.core.database import get_db
 from app.schemas.identity import (
@@ -41,11 +39,11 @@ async def get_identity_summary(
     authz.ensure_at_least_one_tenant()
 
     # Filter tenant_ids to only accessible ones
-    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+    authz.filter_tenant_ids(tenant_ids)
 
     service = IdentityService(db)
-    # TODO: Filter summary by accessible tenants
-    return service.get_identity_summary()
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+    return await service.get_identity_summary(tenant_ids=filtered_tenant_ids)
 
 
 @router.get("/privileged", response_model=list[PrivilegedAccount])
@@ -82,7 +80,7 @@ async def get_privileged_accounts(
     filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
 
     service = IdentityService(db)
-    accounts = service.get_privileged_accounts(tenant_id=tenant_id)
+    accounts = await service.get_privileged_accounts(tenant_id=tenant_id)
 
     # Apply tenant isolation
     accessible_tenants = authz.accessible_tenant_ids
@@ -123,7 +121,7 @@ async def get_guest_accounts(
     if tenant_id:
         authz.validate_access(tenant_id)
 
-    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+    authz.filter_tenant_ids(tenant_ids)
 
     service = IdentityService(db)
     guests = service.get_guest_accounts(tenant_id=tenant_id, stale_only=stale_only)
@@ -198,7 +196,7 @@ async def get_identity_trends(
     filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
 
     service = IdentityService(db)
-    return service.get_identity_trends(tenant_ids=filtered_tenant_ids, days=days)
+    return await service.get_identity_trends(tenant_ids=filtered_tenant_ids, days=days)
 
 
 # ============================================================================
@@ -240,7 +238,7 @@ async def get_admin_roles_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get admin roles summary: {e}",
-        )
+        ) from e
 
 
 @router.get("/admin-roles/privileged-users")
@@ -278,7 +276,7 @@ async def get_privileged_users_admin_roles(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get privileged users: {e}",
-        )
+        ) from e
 
 
 @router.get("/admin-roles/global-admins")
@@ -305,7 +303,7 @@ async def get_global_admins(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get global admins: {e}",
-        )
+        ) from e
 
 
 @router.get("/admin-roles/security-admins")
@@ -332,7 +330,7 @@ async def get_security_admins(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get security admins: {e}",
-        )
+        ) from e
 
 
 @router.get("/admin-roles/service-principals")
@@ -361,7 +359,7 @@ async def get_privileged_service_principals(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get privileged service principals: {e}",
-        )
+        ) from e
 
 
 @router.post("/admin-roles/cache/invalidate")

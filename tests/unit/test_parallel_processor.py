@@ -10,17 +10,16 @@ Tests WorkerPool and TenantProcessor functionality including:
 """
 
 import asyncio
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.services.parallel_processor import (
-    TaskStatus,
     TaskResult,
+    TaskStatus,
+    TenantProcessor,
     WorkerPool,
     WorkerPoolConfig,
-    TenantProcessor,
     backfill_tenants_parallel,
 )
 
@@ -662,7 +661,7 @@ class TestConcurrency:
         assert any(r.status == TaskStatus.COMPLETED and r.result == 3 for r in results)
         assert any(r.status == TaskStatus.COMPLETED and r.result == 4 for r in results)
         # Error task should be marked failed
-        assert any(r.status == TaskStatus.FAILED and x == 2 for r, x in zip(results, [1, 2, 3, 4]) if r.error)
+        assert any(r.status == TaskStatus.FAILED and x == 2 for r, x in zip(results, [1, 2, 3, 4], strict=False) if r.error)
 
     @pytest.mark.asyncio
     async def test_single_worker_sequential(self):

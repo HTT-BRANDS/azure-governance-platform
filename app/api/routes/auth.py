@@ -18,6 +18,7 @@ from app.core.auth import (
     TokenData,
     User,
     azure_ad_validator,
+    blacklist_token,
     get_current_user,
     jwt_manager,
 )
@@ -146,7 +147,7 @@ async def login(
     )
 
     tenant_ids = [m.tenant.tenant_id for m in user_tenant_mappings if m.tenant]
-    roles = list(set(m.role for m in user_tenant_mappings)) or ["user"]
+    roles = list({m.role for m in user_tenant_mappings}) or ["user"]
 
     # Generate tokens
     access_token = jwt_manager.create_access_token(
@@ -243,7 +244,7 @@ async def _handle_refresh_token(
         )
 
         tenant_ids = [m.tenant.tenant_id for m in user_tenant_mappings if m.tenant]
-        roles = list(set(m.role for m in user_tenant_mappings)) or ["user"]
+        roles = list({m.role for m in user_tenant_mappings}) or ["user"]
 
         # Generate new tokens
         settings = get_settings()
@@ -270,7 +271,7 @@ async def _handle_refresh_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
-        )
+        ) from e
 
 
 async def _handle_authorization_code(
@@ -586,11 +587,12 @@ async def logout(
     Returns:
         LogoutResponse confirming logout
     """
-    # Get token from header for potential blacklisting
+    # Get token from header for blacklisting
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
-        _token = auth_header[7:]
-        # TODO: Add token to blacklist (Redis/database)
+        token = auth_header[7:]
+        # Add token to blacklist
+        blacklist_token(token)
         logger.info(f"Token revoked for logout: {current_user.id}")
 
     logger.info(f"User logged out: {current_user.id}")

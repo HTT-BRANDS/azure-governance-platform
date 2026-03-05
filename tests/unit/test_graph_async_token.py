@@ -10,7 +10,7 @@ Verifies that the GraphClient properly:
 import asyncio
 import sys
 import time
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 

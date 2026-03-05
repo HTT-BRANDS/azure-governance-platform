@@ -21,7 +21,6 @@ from app.core.circuit_breaker import RIVERSIDE_SYNC_BREAKER, CircuitBreakerError
 from app.core.database import get_db_context
 from app.core.retry import RIVERSIDE_SYNC_POLICY, retry_with_backoff
 from app.models.riverside import (
-    RequirementCategory,
     RequirementPriority,
     RequirementStatus,
     RiversideCompliance,
@@ -32,7 +31,10 @@ from app.models.riverside import (
 from app.models.tenant import Tenant
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    pass
+
+# Import constant from graph_client (safe, no circular dependency)
+from app.api.services.graph_client import ADMIN_ROLE_TEMPLATE_IDS
 
 # Lazy imports to avoid circular dependency issues
 _graph_client = None
@@ -52,22 +54,6 @@ def _get_monitoring_service(db):
     return MonitoringService(db)
 
 logger = logging.getLogger(__name__)
-
-# Import from graph_client to ensure consistency
-from app.api.services.graph_client import ADMIN_ROLE_TEMPLATE_IDS
-
-# Azure constants (kept for backward compatibility)
-ADMIN_ROLE_TEMPLATE_IDS = {
-    "62e90394-69f5-4237-9190-012177145e10",  # Global Administrator
-    "194ae4cb-b126-40b2-bd5b-6091b380977d",  # Security Administrator
-    "f28a1f50-f6e7-4571-818b-6a12f2af6b6c",  # SharePoint Administrator
-    "29232cdf-9323-42fd-ade2-1d097af3e4de",  # Exchange Administrator
-    "b1be1c3e-b65d-4f19-8427-f6fa0d9feb5c",  # Conditional Access Administrator
-    "729827e3-9c14-49f7-bb1b-9608f156bbb8",  # Helpdesk Administrator
-    "966707d0-3269-4727-9be2-8c3a10f19b9d",  # Password Administrator
-    "7be44c8a-adaf-4e2a-84d6-ab2649e08a13",  # Privileged Authentication Administrator
-    "e8611ab8-c189-46e8-94e1-60213ab1f814",  # Privileged Role Administrator
-}
 
 RIVERSIDE_DEADLINE = date(2026, 7, 8)
 TARGET_MATURITY_SCORE = 3.0
@@ -378,7 +364,7 @@ async def sync_tenant_mfa(
                             admin_user_ids.add(user_id)
 
             # Build user lookup by UPN
-            user_lookup: dict[str, dict] = {
+            {
                 u.get("userPrincipalName", "").lower(): u
                 for u in users
             }

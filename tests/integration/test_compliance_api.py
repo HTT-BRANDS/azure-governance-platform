@@ -11,13 +11,12 @@ Covered endpoints:
 - GET /api/v1/compliance/status - Returns sync status
 """
 
+
 import pytest
-from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from app.core.database import get_db
 from app.main import app
-
 
 # ============================================================================
 # Fixtures - Custom clients with compliance route authentication
@@ -28,21 +27,21 @@ def compliance_client(seeded_db, test_user, mock_authz):
     """Test client with authentication for compliance routes."""
     from app.core.auth import get_current_user
     from app.core.authorization import get_tenant_authorization
-    
+
     def override_get_db():
         try:
             yield seeded_db
         finally:
             pass
-    
+
     # Use FastAPI's dependency override system instead of mocking
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = lambda: test_user
     app.dependency_overrides[get_tenant_authorization] = lambda: mock_authz
-    
+
     with TestClient(app) as client:
         yield client
-    
+
     app.dependency_overrides.clear()
 
 
@@ -51,21 +50,21 @@ def compliance_admin_client(seeded_db, admin_user, mock_authz_admin):
     """Test client with admin authentication for compliance routes."""
     from app.core.auth import get_current_user
     from app.core.authorization import get_tenant_authorization
-    
+
     def override_get_db():
         try:
             yield seeded_db
         finally:
             pass
-    
+
     # Use FastAPI's dependency override system
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = lambda: admin_user
     app.dependency_overrides[get_tenant_authorization] = lambda: mock_authz_admin
-    
+
     with TestClient(app) as client:
         yield client
-    
+
     app.dependency_overrides.clear()
 
 
@@ -77,12 +76,12 @@ def compliance_unauth_client(seeded_db):
             yield seeded_db
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with TestClient(app) as client:
         yield client
-    
+
     app.dependency_overrides.clear()
 
 

@@ -26,7 +26,6 @@ import inspect
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, TypeVar
 
 from app.core.circuit_breaker import (

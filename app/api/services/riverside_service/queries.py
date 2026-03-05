@@ -8,9 +8,6 @@ from app.api.services.riverside_service.constants import (
 )
 from app.api.services.riverside_service.models import (
     GapAnalysis,
-    RequirementListItem,
-    TenantMFAStatus,
-    TenantMaturityScore,
 )
 from app.models.riverside import (
     RequirementCategory,

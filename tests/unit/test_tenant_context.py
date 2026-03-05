@@ -3,18 +3,19 @@
 Tests brand color data structures, palette lookups, and context generation.
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 from fastapi import Request
 
 from app.core.tenant_context import (
-    BrandColors,
     BRAND_PALETTES,
     DEFAULT_BRAND,
+    BrandColors,
     get_brand_colors_by_code,
-    get_tenant_brand_from_request,
-    get_template_context,
     get_brand_css_variables,
+    get_template_context,
+    get_tenant_brand_from_request,
 )
 
 
@@ -89,7 +90,8 @@ class TestBrandColors:
         )
 
         # Should raise FrozenInstanceError when trying to modify
-        with pytest.raises(Exception):  # dataclass.FrozenInstanceError
+        import dataclasses
+        with pytest.raises(dataclasses.FrozenInstanceError):
             brand.primary = "#000000"
 
 

@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 
-from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped
 
 from app.core.database import Base
@@ -44,7 +44,7 @@ class CostAnomaly(Base):
     percentage_change: Mapped[float] = Column(Float)
     resource_group: Mapped[str | None] = Column(String(255))
     service_name: Mapped[str | None] = Column(String(255))
-    is_acknowledged: Mapped[bool] = Column(Integer, default=False)  # SQLite bool
+    is_acknowledged: Mapped[bool] = Column(Boolean, default=False)
     acknowledged_by: Mapped[str | None] = Column(String(255))
     acknowledged_at: Mapped[datetime | None] = Column(DateTime)
 

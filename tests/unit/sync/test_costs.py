@@ -1,9 +1,8 @@
 """Tests for cost synchronization module."""
 
-import pytest
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock
 
+import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.sync.costs import sync_costs
@@ -24,7 +23,7 @@ class TestCostSync:
         """Test successful cost synchronization."""
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
-        
+
         # Mock cost query result
         mock_result = MagicMock()
         mock_result.properties = MagicMock()
@@ -32,15 +31,15 @@ class TestCostSync:
             [10.50, 20240115, "USD", "rg-test", "Storage"],
             [25.00, 20240115, "USD", "rg-test", "Compute"],
         ]
-        
+
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()
         mock_cost_client.query.usage = MagicMock(return_value=mock_result)
         mock_azure_client_manager["costs"].get_cost_client.return_value = mock_cost_client
-        
+
         # Execute
         await sync_costs()
-        
+
         # Verify
         mock_azure_client_manager["costs"].list_subscriptions.assert_called_once_with(
             mock_tenant.tenant_id
@@ -61,19 +60,19 @@ class TestCostSync:
         """Test cost sync with empty data."""
         # Setup - no rows returned
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
-        
+
         mock_result = MagicMock()
         mock_result.properties = MagicMock()
         mock_result.properties.rows = []
-        
+
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()
         mock_cost_client.query.usage = MagicMock(return_value=mock_result)
         mock_azure_client_manager["costs"].get_cost_client.return_value = mock_cost_client
-        
+
         # Execute - should not raise
         await sync_costs()
-        
+
         # Verify - should complete without errors
         mock_cost_client.query.usage.assert_called_once()
 
@@ -88,10 +87,10 @@ class TestCostSync:
         """Test cost sync with no subscriptions."""
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = []
-        
+
         # Execute - should not raise
         await sync_costs()
-        
+
         # Verify - no cost client should be created
         mock_azure_client_manager["costs"].get_cost_client.assert_not_called()
 
@@ -109,10 +108,10 @@ class TestCostSync:
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [
             mock_disabled_subscription
         ]
-        
+
         # Execute
         await sync_costs()
-        
+
         # Verify - should skip disabled subscriptions
         mock_azure_client_manager["costs"].get_cost_client.assert_not_called()
 
@@ -128,7 +127,7 @@ class TestCostSync:
         """Test cost sync handles HTTP errors gracefully."""
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
-        
+
         mock_cost_client = MagicMock()
         error = MagicMock()
         error.status_code = 403
@@ -136,10 +135,10 @@ class TestCostSync:
         mock_cost_client.query = MagicMock()
         mock_cost_client.query.usage = MagicMock(side_effect=Exception("HTTP 403"))
         mock_azure_client_manager["costs"].get_cost_client.return_value = mock_cost_client
-        
+
         # Execute - should not raise, just log error
         await sync_costs()
-        
+
         # Verify - error handled gracefully
         mock_cost_client.query.usage.assert_called_once()
 
@@ -155,15 +154,15 @@ class TestCostSync:
         """Test cost sync handles authentication errors."""
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
-        
+
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()
         mock_cost_client.query.usage = MagicMock(side_effect=Exception("Auth failed"))
         mock_azure_client_manager["costs"].get_cost_client.return_value = mock_cost_client
-        
+
         # Execute - should not raise
         await sync_costs()
-        
+
         # Verify - error handled
         mock_cost_client.query.usage.assert_called_once()
 
@@ -179,19 +178,19 @@ class TestCostSync:
         """Test cost sync handles database errors."""
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
-        
+
         mock_result = MagicMock()
         mock_result.properties = MagicMock()
         mock_result.properties.rows = [[10.50, 20240115, "USD", "rg-test", "Storage"]]
-        
+
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()
         mock_cost_client.query.usage = MagicMock(return_value=mock_result)
         mock_azure_client_manager["costs"].get_cost_client.return_value = mock_cost_client
-        
+
         # Make db.commit raise an error
         mock_db_session.commit.side_effect = SQLAlchemyError("Database error")
-        
+
         # Execute - should raise after retries are exhausted
         with pytest.raises(SQLAlchemyError):
             await sync_costs()
@@ -208,7 +207,7 @@ class TestCostSync:
         """Test that zero cost entries are skipped."""
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
-        
+
         mock_result = MagicMock()
         mock_result.properties = MagicMock()
         mock_result.properties.rows = [
@@ -216,15 +215,15 @@ class TestCostSync:
             [0.0, 20240115, "USD", "rg-test", "Network"],  # Should be skipped
             [0.00, 20240115, "USD", "rg-test", "DNS"],  # Should be skipped
         ]
-        
+
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()
         mock_cost_client.query.usage = MagicMock(return_value=mock_result)
         mock_azure_client_manager["costs"].get_cost_client.return_value = mock_cost_client
-        
+
         # Execute
         await sync_costs()
-        
+
         # Verify - 2 records added: 1 for SyncJobLog + 1 cost record (zero costs skipped)
         assert mock_db_session.add.call_count == 2
 
@@ -240,7 +239,7 @@ class TestCostSync:
         """Test handling of malformed cost rows."""
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
-        
+
         mock_result = MagicMock()
         mock_result.properties = MagicMock()
         mock_result.properties.rows = [
@@ -248,15 +247,15 @@ class TestCostSync:
             [],  # Malformed row
             [25.00, 20240115],  # Missing columns
         ]
-        
+
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()
         mock_cost_client.query.usage = MagicMock(return_value=mock_result)
         mock_azure_client_manager["costs"].get_cost_client.return_value = mock_cost_client
-        
+
         # Execute - should not raise
         await sync_costs()
-        
+
         # Verify - valid row processed
         assert mock_db_session.add.call_count >= 1
 
@@ -276,26 +275,26 @@ class TestCostSync:
         tenant2.tenant_id = "test-tenant-id-456"
         tenant2.name = "Test Tenant 2"
         tenant2.is_active = True
-        
+
         # Setup to return two tenants
         mock_db_query = MagicMock()
         mock_db_query.filter.return_value = mock_db_query
         mock_db_query.all.return_value = [mock_tenant, tenant2]
         mock_db_session.query.return_value = mock_db_query
-        
+
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
-        
+
         mock_result = MagicMock()
         mock_result.properties = MagicMock()
         mock_result.properties.rows = [[10.50, 20240115, "USD", "rg-test", "Storage"]]
-        
+
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()
         mock_cost_client.query.usage = MagicMock(return_value=mock_result)
         mock_azure_client_manager["costs"].get_cost_client.return_value = mock_cost_client
-        
+
         # Execute
         await sync_costs()
-        
+
         # Verify - called for each tenant
         assert mock_azure_client_manager["costs"].list_subscriptions.call_count == 2

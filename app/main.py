@@ -41,6 +41,7 @@ register_template_filters(templates.env)
 
 # Expose app version to all templates as a global
 from app import __version__ as _app_version  # noqa: E402
+
 templates.env.globals["app_version"] = _app_version
 
 # Configure logging

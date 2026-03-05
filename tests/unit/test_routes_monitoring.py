@@ -11,7 +11,7 @@ Tests monitoring endpoints:
 
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -33,7 +33,7 @@ def test_db_session(db_session):
         is_active=True,
     )
     db_session.add(tenant)
-    
+
     user_tenant = UserTenant(
         id=str(uuid.uuid4()),
         user_id="user:monitoring-admin",
@@ -47,7 +47,7 @@ def test_db_session(db_session):
         granted_at=datetime.utcnow(),
     )
     db_session.add(user_tenant)
-    
+
     db_session.commit()
     return db_session
 
@@ -60,7 +60,7 @@ def client_with_db(test_db_session):
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -100,11 +100,11 @@ def test_get_performance_metrics_success(client_with_db, mock_user):
             "avg_duration_ms": 45.2,
         },
     }
-    
+
     with patch("app.api.routes.monitoring.get_current_user", return_value=mock_user):
         with patch("app.api.routes.monitoring.get_performance_dashboard", return_value=mock_dashboard):
             response = client_with_db.get("/api/v1/monitoring/performance")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["cache"]["hit_rate_percent"] == 85.5
@@ -121,11 +121,11 @@ def test_get_cache_metrics_success(client_with_db, mock_user):
         "evictions": 12,
         "cache_size_mb": 256.5,
     }
-    
+
     with patch("app.api.routes.monitoring.get_current_user", return_value=mock_user):
         with patch("app.api.routes.monitoring.get_cache_stats", return_value=mock_cache_stats):
             response = client_with_db.get("/api/v1/monitoring/cache")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["hit_rate_percent"] == 82.3
@@ -153,13 +153,13 @@ def test_get_sync_job_metrics_all_jobs(client_with_db, mock_user):
             "timestamp": datetime.utcnow().isoformat(),
         },
     ]
-    
+
     with patch("app.api.routes.monitoring.get_current_user", return_value=mock_user):
         with patch("app.api.routes.monitoring.performance_monitor") as mock_monitor:
             mock_monitor.get_sync_metrics.return_value = mock_sync_metrics
-            
+
             response = client_with_db.get("/api/v1/monitoring/sync-jobs")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
@@ -177,15 +177,15 @@ def test_get_sync_job_metrics_with_filters(client_with_db, mock_user):
             "status": "completed",
         },
     ]
-    
+
     with patch("app.api.routes.monitoring.get_current_user", return_value=mock_user):
         with patch("app.api.routes.monitoring.performance_monitor") as mock_monitor:
             mock_monitor.get_sync_metrics.return_value = mock_sync_metrics
-            
+
             response = client_with_db.get(
                 "/api/v1/monitoring/sync-jobs?job_type=resources&tenant_id=monitoring-tenant-123&limit=50"
             )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
@@ -210,13 +210,13 @@ def test_get_query_metrics_all(client_with_db, mock_user):
             "timestamp": datetime.utcnow().isoformat(),
         },
     ]
-    
+
     with patch("app.api.routes.monitoring.get_current_user", return_value=mock_user):
         with patch("app.api.routes.monitoring.performance_monitor") as mock_monitor:
             mock_monitor.get_query_metrics.return_value = mock_query_metrics
-            
+
             response = client_with_db.get("/api/v1/monitoring/queries")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
@@ -232,13 +232,13 @@ def test_get_query_metrics_slow_only(client_with_db, mock_user):
             "slow": True,
         },
     ]
-    
+
     with patch("app.api.routes.monitoring.get_current_user", return_value=mock_user):
         with patch("app.api.routes.monitoring.performance_monitor") as mock_monitor:
             mock_monitor.get_query_metrics.return_value = mock_slow_queries
-            
+
             response = client_with_db.get("/api/v1/monitoring/queries?slow_only=true&limit=50")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
@@ -251,7 +251,7 @@ def test_reset_performance_metrics_success(client_with_db, mock_user):
     with patch("app.api.routes.monitoring.get_current_user", return_value=mock_user):
         with patch("app.api.routes.monitoring.reset_metrics") as mock_reset:
             response = client_with_db.post("/api/v1/monitoring/reset")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "Metrics reset successfully"
@@ -263,7 +263,7 @@ def test_health_check_good_cache(client_with_db, mock_user):
     mock_cache_stats = {
         "hit_rate_percent": 88.5,
     }
-    
+
     mock_perf_summary = {
         "sync_jobs": {
             "total_jobs": 100,
@@ -273,12 +273,12 @@ def test_health_check_good_cache(client_with_db, mock_user):
             "slow_queries": 10,
         },
     }
-    
+
     with patch("app.api.routes.monitoring.get_current_user", return_value=mock_user):
         with patch("app.api.routes.monitoring.get_cache_stats", return_value=mock_cache_stats):
             with patch("app.api.routes.monitoring.get_performance_dashboard", return_value=mock_perf_summary):
                 response = client_with_db.get("/api/v1/monitoring/health")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
@@ -291,7 +291,7 @@ def test_health_check_poor_cache(client_with_db, mock_user):
     mock_cache_stats = {
         "hit_rate_percent": 45.0,
     }
-    
+
     mock_perf_summary = {
         "sync_jobs": {
             "total_jobs": 50,
@@ -301,12 +301,12 @@ def test_health_check_poor_cache(client_with_db, mock_user):
             "slow_queries": 100,
         },
     }
-    
+
     with patch("app.api.routes.monitoring.get_current_user", return_value=mock_user):
         with patch("app.api.routes.monitoring.get_cache_stats", return_value=mock_cache_stats):
             with patch("app.api.routes.monitoring.get_performance_dashboard", return_value=mock_perf_summary):
                 response = client_with_db.get("/api/v1/monitoring/health")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"

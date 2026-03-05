@@ -5,15 +5,6 @@ across Riverside tenants.
 """
 
 # MFA Alerts
-from app.alerts.mfa_alerts import (
-    MFAGapDetector,
-    MFAComplianceStatus,
-    detect_mfa_gaps,
-    check_admin_mfa_compliance,
-    check_user_mfa_compliance,
-    trigger_mfa_alert,
-)
-
 # Deadline Alerts
 from app.alerts.deadline_alerts import (
     ALERT_SCHEDULE,
@@ -22,12 +13,20 @@ from app.alerts.deadline_alerts import (
     DeadlineAlert,
     DeadlineTracker,
     DeadlineTrackingResult,
-    calculate_deadline_warnings,
     calculate_critical_alerts,
+    calculate_deadline_warnings,
     check_deadlines_with_tracker,
     send_deadline_alerts_from_tracker,
-    trigger_deadline_alert,
     track_requirement_deadlines,
+    trigger_deadline_alert,
+)
+from app.alerts.mfa_alerts import (
+    MFAComplianceStatus,
+    MFAGapDetector,
+    check_admin_mfa_compliance,
+    check_user_mfa_compliance,
+    detect_mfa_gaps,
+    trigger_mfa_alert,
 )
 
 __all__ = [

@@ -9,7 +9,7 @@ SECURITY: Webhook URLs are never logged and sanitized from all output.
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import httpx
@@ -25,7 +25,7 @@ from app.core.notifications import (
 logger = logging.getLogger(__name__)
 
 
-class AlertType(str, Enum):
+class AlertType(StrEnum):
     """Types of alerts for Teams card formatting."""
 
     MFA_GAP = "mfa_gap"

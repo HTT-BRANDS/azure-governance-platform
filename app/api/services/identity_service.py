@@ -27,9 +27,18 @@ class IdentityService:
         self.db = db
 
     @cached("identity_summary")
-    async def get_identity_summary(self) -> IdentitySummary:
-        """Get aggregated identity summary across all tenants."""
-        tenants = self.db.query(Tenant).filter(Tenant.is_active == True).all()
+    async def get_identity_summary(
+        self, tenant_ids: list[str] | None = None
+    ) -> IdentitySummary:
+        """Get aggregated identity summary across all tenants.
+
+        Args:
+            tenant_ids: Optional list of tenant IDs to filter by
+        """
+        query = self.db.query(Tenant).filter(Tenant.is_active)
+        if tenant_ids:
+            query = query.filter(Tenant.id.in_(tenant_ids))
+        tenants = query.all()
 
         total_users = 0
         active_users = 0

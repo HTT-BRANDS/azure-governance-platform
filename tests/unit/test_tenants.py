@@ -1,7 +1,8 @@
 """Tests for tenant API endpoints."""
 
-import pytest
 import uuid
+
+import pytest
 
 from app.core.auth import User, get_current_user
 
@@ -24,44 +25,44 @@ def mock_tenant_auth(monkeypatch):
     """Mock tenant authorization and rate limiting to allow all access."""
     from app.core import authorization
     from app.core.rate_limit import RateLimiter
-    
+
     def mock_get_user_tenants(*args, **kwargs):
         """Return empty list - admin has access to all."""
         return []
-    
+
     def mock_validate_tenant_access(*args, **kwargs):
         """Always return True for access validation."""
         return True
-    
+
     async def mock_check_rate_limit(*args, **kwargs):
         """Bypass rate limiting for tests."""
         pass
-    
+
     # Mock authorization functions
     monkeypatch.setattr(
-        authorization, 
-        "get_user_tenants", 
+        authorization,
+        "get_user_tenants",
         mock_get_user_tenants
     )
     monkeypatch.setattr(
-        authorization, 
-        "validate_tenant_access", 
+        authorization,
+        "validate_tenant_access",
         mock_validate_tenant_access
     )
-    
+
     # Also mock the app.api.routes.tenants imports
     import app.api.routes.tenants as tenants_module
     monkeypatch.setattr(
-        tenants_module, 
-        "get_user_tenants", 
+        tenants_module,
+        "get_user_tenants",
         mock_get_user_tenants
     )
     monkeypatch.setattr(
-        tenants_module, 
-        "validate_tenant_access", 
+        tenants_module,
+        "validate_tenant_access",
         mock_validate_tenant_access
     )
-    
+
     # Mock rate limiting to prevent 429 errors
     monkeypatch.setattr(
         RateLimiter,
@@ -74,23 +75,24 @@ def mock_tenant_auth(monkeypatch):
 def auth_client(db_session, mock_current_user, mock_tenant_auth):
     """Create a test client with authentication mocked."""
     from fastapi.testclient import TestClient
-    from app.main import app
+
     from app.core.database import get_db
-    
+    from app.main import app
+
     # Override the database dependency
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
-    
+
     # Override the get_current_user dependency
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = lambda: mock_current_user
-    
+
     with TestClient(app) as test_client:
         yield test_client
-    
+
     # Clean up overrides
     app.dependency_overrides.clear()
 
@@ -162,7 +164,7 @@ def test_delete_tenant(auth_client):
     # First list tenants to get the current state
     response = auth_client.get("/api/v1/tenants")
     assert response.status_code == 200
-    
+
     # Create tenant (use unique tenant_id to avoid conflicts with other tests)
     tenant_data = {
         "name": "To Delete",

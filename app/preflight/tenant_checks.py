@@ -319,7 +319,7 @@ async def check_all_tenants(
         ]
         tenant_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        for tenant, tenant_checks in zip(tenants, tenant_results):
+        for tenant, tenant_checks in zip(tenants, tenant_results, strict=False):
             if isinstance(tenant_checks, Exception):
                 logger.error(
                     f"Failed to run checks for tenant {tenant.tenant_id}: {tenant_checks}"
@@ -367,7 +367,7 @@ async def check_all_tenants(
     total_duration = (datetime.utcnow() - start_time).total_seconds() * 1000
 
     # Calculate summary statistics
-    total_checks = sum(len(checks) for checks in results.values())
+    sum(len(checks) for checks in results.values())
     passed = sum(
         1 for checks in results.values() for c in checks if c.status == CheckStatus.PASS
     )
@@ -434,7 +434,7 @@ async def check_tenants_quick(
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     output: dict[str, CheckResult] = {}
-    for tenant, result in zip(tenants, results):
+    for tenant, result in zip(tenants, results, strict=False):
         if isinstance(result, Exception):
             output[tenant.tenant_id] = _create_error_result(
                 check_id="tenant_connectivity",

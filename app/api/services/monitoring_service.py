@@ -21,8 +21,6 @@ from app.core.notifications import (
 )
 from app.models.monitoring import Alert, SyncJobLog, SyncJobMetrics
 from app.models.notifications import NotificationLog
-from app.models.sync import SyncJob
-from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
@@ -548,8 +546,8 @@ class MonitoringService:
             "total": total_alerts,
             "active": active_alerts,
             "resolved": resolved_alerts,
-            "by_severity": {s: c for s, c in severity_counts},
-            "by_type": {t: c for t, c in type_counts},
+            "by_severity": dict(severity_counts),
+            "by_type": dict(type_counts),
         }
 
     # ==========================================================================
@@ -781,6 +779,6 @@ class MonitoringService:
             "failed": failed,
             "pending": pending,
             "success_rate": sent / total if total > 0 else 0.0,
-            "by_channel": {c: n for c, n in channel_counts},
+            "by_channel": dict(channel_counts),
             "recent_failures_24h": recent_failures,
         }

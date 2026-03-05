@@ -2,7 +2,7 @@
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -22,6 +22,9 @@ from app.schemas.cost import (
     TopAnomaly,
 )
 
+if TYPE_CHECKING:
+    from app.schemas import cost as cost_schemas
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,6 +38,7 @@ class CostService:
     async def get_cost_summary(
         self,
         period_days: int = 30,
+        tenant_ids: list[str] | None = None,
     ) -> CostSummary:
         """Get aggregated cost summary across all tenants."""
         end_date = date.today()
@@ -42,20 +46,20 @@ class CostService:
         prev_start = start_date - timedelta(days=period_days)
 
         # Current period costs
-        current_costs = (
-            self.db.query(CostSnapshot)
-            .filter(CostSnapshot.date >= start_date)
-            .filter(CostSnapshot.date <= end_date)
-            .all()
+        query = self.db.query(CostSnapshot).filter(
+            CostSnapshot.date >= start_date, CostSnapshot.date <= end_date
         )
+        if tenant_ids:
+            query = query.filter(CostSnapshot.tenant_id.in_(tenant_ids))
+        current_costs = query.all()
 
         # Previous period costs for comparison
-        prev_costs = (
-            self.db.query(CostSnapshot)
-            .filter(CostSnapshot.date >= prev_start)
-            .filter(CostSnapshot.date < start_date)
-            .all()
+        prev_query = self.db.query(CostSnapshot).filter(
+            CostSnapshot.date >= prev_start, CostSnapshot.date < start_date
         )
+        if tenant_ids:
+            prev_query = prev_query.filter(CostSnapshot.tenant_id.in_(tenant_ids))
+        prev_costs = prev_query.all()
 
         current_total = sum(c.total_cost for c in current_costs)
         prev_total = sum(c.total_cost for c in prev_costs)
@@ -66,8 +70,8 @@ class CostService:
             change_percent = ((current_total - prev_total) / prev_total) * 100
 
         # Get unique counts
-        tenant_ids = set(c.tenant_id for c in current_costs)
-        sub_ids = set(c.subscription_id for c in current_costs)
+        tenant_ids = {c.tenant_id for c in current_costs}
+        sub_ids = {c.subscription_id for c in current_costs}
 
         # Top services by cost
         service_costs = {}
@@ -105,7 +109,7 @@ class CostService:
         end_date = date.today()
         start_date = end_date - timedelta(days=period_days)
 
-        tenants = self.db.query(Tenant).filter(Tenant.is_active == True).all()
+        tenants = self.db.query(Tenant).filter(Tenant.is_active).all()
         result = []
 
         for tenant in tenants:
@@ -131,19 +135,21 @@ class CostService:
         return sorted(result, key=lambda x: x.total_cost, reverse=True)
 
     @cached("cost_summary")
-    async def get_cost_trends(self, days: int = 30) -> list[CostTrend]:
+    async def get_cost_trends(
+        self, days: int = 30, tenant_ids: list[str] | None = None
+    ) -> list[CostTrend]:
         """Get daily cost trends."""
         end_date = date.today()
         start_date = end_date - timedelta(days=days)
 
         # Aggregate costs by date
         daily_costs = {}
-        costs = (
-            self.db.query(CostSnapshot)
-            .filter(CostSnapshot.date >= start_date)
-            .filter(CostSnapshot.date <= end_date)
-            .all()
+        query = self.db.query(CostSnapshot).filter(
+            CostSnapshot.date >= start_date, CostSnapshot.date <= end_date
         )
+        if tenant_ids:
+            query = query.filter(CostSnapshot.tenant_id.in_(tenant_ids))
+        costs = query.all()
 
         for cost in costs:
             daily_costs[cost.date] = daily_costs.get(cost.date, 0) + cost.total_cost
@@ -203,17 +209,19 @@ class CostService:
         )
 
     @cached("cost_summary")
-    async def get_anomaly_trends(self, months: int = 6) -> list[AnomalyTrend]:
+    async def get_anomaly_trends(
+        self, months: int = 6, tenant_ids: list[str] | None = None
+    ) -> list[AnomalyTrend]:
         """Get anomaly trends over time grouped by month."""
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=30 * months)
 
-        anomalies = (
-            self.db.query(CostAnomaly)
-            .filter(CostAnomaly.detected_at >= start_date)
-            .filter(CostAnomaly.detected_at <= end_date)
-            .all()
+        query = self.db.query(CostAnomaly).filter(
+            CostAnomaly.detected_at >= start_date, CostAnomaly.detected_at <= end_date
         )
+        if tenant_ids:
+            query = query.filter(CostAnomaly.tenant_id.in_(tenant_ids))
+        anomalies = query.all()
 
         # Group by month
         by_month: dict[str, dict[str, Any]] = {}
@@ -249,10 +257,13 @@ class CostService:
 
     @cached("cost_summary")
     async def get_anomalies_by_service(
-        self, limit: int = 20
+        self, limit: int = 20, tenant_ids: list[str] | None = None
     ) -> list[AnomaliesByService]:
         """Get anomalies grouped by service."""
-        anomalies = self.db.query(CostAnomaly).all()
+        query = self.db.query(CostAnomaly)
+        if tenant_ids:
+            query = query.filter(CostAnomaly.tenant_id.in_(tenant_ids))
+        anomalies = query.all()
 
         # Group by service
         by_service: dict[str, dict[str, Any]] = {}
@@ -339,7 +350,7 @@ class CostService:
 
     def _to_anomaly_schema(
         self, anomaly: CostAnomaly, tenant_names: dict[str, str]
-    ) -> "schemas.cost.CostAnomaly":
+    ) -> "cost_schemas.CostAnomaly":
         """Convert database anomaly to schema."""
         from app.schemas import cost as schemas
 
@@ -361,20 +372,21 @@ class CostService:
         )
 
     @cached("cost_summary")
-    async def get_cost_forecast(self, days: int = 30) -> list[CostForecast]:
+    async def get_cost_forecast(
+        self, days: int = 30, tenant_ids: list[str] | None = None
+    ) -> list[CostForecast]:
         """Generate cost forecast using simple linear projection."""
         # Get last 90 days of historical data for trend calculation
         end_date = date.today()
         start_date = end_date - timedelta(days=90)
 
-        historical_costs = (
+        query = (
             self.db.query(CostSnapshot.date, func.sum(CostSnapshot.total_cost).label("daily_cost"))
-            .filter(CostSnapshot.date >= start_date)
-            .filter(CostSnapshot.date <= end_date)
-            .group_by(CostSnapshot.date)
-            .order_by(CostSnapshot.date)
-            .all()
+            .filter(CostSnapshot.date >= start_date, CostSnapshot.date <= end_date)
         )
+        if tenant_ids:
+            query = query.filter(CostSnapshot.tenant_id.in_(tenant_ids))
+        historical_costs = query.group_by(CostSnapshot.date).order_by(CostSnapshot.date).all()
 
         if len(historical_costs) < 7:
             # Not enough data, return empty

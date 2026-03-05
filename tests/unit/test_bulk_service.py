@@ -8,9 +8,10 @@ Tests for bulk operations including:
 Minimum 8 tests covering all public methods and edge cases.
 """
 
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from datetime import datetime, UTC
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from app.api.services.bulk_service import BulkService
 from app.models.cost import CostAnomaly
@@ -531,7 +532,7 @@ class TestBulkService:
 
         # Verify cache was invalidated for affected tenants
         # Resources are split between tenant-1 and tenant-2
-        affected_tenants = list(set(r.tenant_id for r in sample_resources))
+        affected_tenants = list({r.tenant_id for r in sample_resources})
         assert mock_invalidate_cache.call_count == len(affected_tenants)
 
     # ==========================================================================
@@ -657,7 +658,6 @@ class TestBulkService:
     @pytest.mark.asyncio
     async def test_bulk_review_idle_resources_partial_match(self, bulk_service, mock_db):
         """Test bulk_review_idle_resources when some IDs don't exist."""
-        from app.models.resource import IdleResource
 
         # Setup mock query - only 3 of 5 exist
         mock_query = MagicMock()
@@ -765,7 +765,6 @@ class TestBulkService:
     @pytest.mark.asyncio
     async def test_bulk_review_idle_resources_with_none_notes(self, bulk_service, mock_db):
         """Test bulk_review_idle_resources handles None notes gracefully."""
-        from app.models.resource import IdleResource
 
         # Setup mock query
         mock_query = MagicMock()

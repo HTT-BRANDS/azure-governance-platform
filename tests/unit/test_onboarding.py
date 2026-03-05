@@ -11,8 +11,6 @@ Covers the self-service onboarding flow:
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 from app.models.tenant import Tenant
 from app.services.lighthouse_client import LighthouseDelegationError
 

@@ -1,12 +1,10 @@
 """Tests for Application Insights middleware (4vv)."""
 
-import time
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.testclient import TestClient
 
 from app.core.app_insights import AppInsightsMiddleware, init_app_insights
 

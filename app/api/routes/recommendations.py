@@ -1,6 +1,6 @@
 """Recommendations API routes."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.services.recommendation_service import RecommendationService
@@ -84,8 +84,8 @@ async def get_recommendations_by_category(
     """Get recommendations grouped by category (cost, security, performance, reliability)."""
     authz.ensure_at_least_one_tenant()
     service = RecommendationService(db)
-    # TODO: Filter by accessible tenants
-    return service.get_recommendations_by_category()
+    accessible_tenants = authz.accessible_tenant_ids
+    return service.get_recommendations_by_category(tenant_ids=accessible_tenants)
 
 
 @router.get("/by-tenant")
@@ -96,8 +96,8 @@ async def get_recommendations_by_tenant(
     """Get recommendations grouped by tenant."""
     authz.ensure_at_least_one_tenant()
     service = RecommendationService(db)
-    # TODO: Filter by accessible tenants
-    return service.get_recommendations_by_tenant()
+    accessible_tenants = authz.accessible_tenant_ids
+    return service.get_recommendations_by_tenant(tenant_ids=accessible_tenants)
 
 
 @router.get("/savings-potential", response_model=SavingsPotential)
@@ -108,8 +108,8 @@ async def get_savings_potential(
     """Get total potential savings across all recommendations."""
     authz.ensure_at_least_one_tenant()
     service = RecommendationService(db)
-    # TODO: Filter by accessible tenants
-    return service.get_savings_potential()
+    accessible_tenants = authz.accessible_tenant_ids
+    return service.get_savings_potential(tenant_ids=accessible_tenants)
 
 
 @router.get("/summary", response_model=list[RecommendationSummary])
@@ -120,8 +120,8 @@ async def get_recommendation_summary(
     """Get summary statistics by category."""
     authz.ensure_at_least_one_tenant()
     service = RecommendationService(db)
-    # TODO: Filter by accessible tenants
-    return service.get_recommendation_summary()
+    accessible_tenants = authz.accessible_tenant_ids
+    return service.get_recommendation_summary(tenant_ids=accessible_tenants)
 
 
 @router.post("/{recommendation_id}/dismiss", response_model=DismissRecommendationResponse)
@@ -140,7 +140,12 @@ async def dismiss_recommendation(
         current_user: User performing the dismissal
     """
     authz.ensure_at_least_one_tenant()
-    # TODO: Validate user has access to recommendation's tenant
+    # Validate user has access to recommendation's tenant
+    from app.models.recommendation import Recommendation as RecommendationModel
+    recommendation = db.query(RecommendationModel).filter(RecommendationModel.id == recommendation_id).first()
+    if recommendation and recommendation.tenant_id:
+        authz.validate_access(recommendation.tenant_id)
+
     service = RecommendationService(db)
     return service.dismiss_recommendation(
         recommendation_id=recommendation_id,

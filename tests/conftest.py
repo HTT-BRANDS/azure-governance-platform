@@ -34,8 +34,9 @@ def db_session():
 def client(db_session):
     """Create test client with overridden database."""
     from fastapi.testclient import TestClient
+
     from app.main import app
-    
+
     def override_get_db():
         try:
             yield db_session

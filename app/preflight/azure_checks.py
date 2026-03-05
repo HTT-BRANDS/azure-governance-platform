@@ -231,9 +231,8 @@ def _create_check_result(
     """
     duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
 
-    error_details = None
     if error:
-        error_details = _sanitize_error(error)
+        _sanitize_error(error)
 
     return CheckResult(
         check_id=check_id,
@@ -751,7 +750,7 @@ async def check_azure_subscriptions(tenant_id: str) -> CheckResult:
     category = CheckCategory.AZURE_SUBSCRIPTIONS
 
     try:
-        credential = _get_credential(tenant_id)
+        _get_credential(tenant_id)
         client = azure_client_manager.get_subscription_client(tenant_id)
 
         subscriptions = []
@@ -905,6 +904,7 @@ async def check_cost_management_access(
     from azure.core.exceptions import HttpResponseError
 
     start_time = datetime.utcnow()
+    check_id = "cost_management_access"
     name = "Cost Management API Access"
     category = CheckCategory.AZURE_COST_MANAGEMENT
 
@@ -1069,6 +1069,8 @@ async def check_policy_access(tenant_id: str, subscription_id: str) -> CheckResu
     Returns:
         CheckResult with policy API access status
     """
+    from azure.core.exceptions import HttpResponseError
+
     start_time = datetime.utcnow()
     check_id = "policy_access"
     name = "Azure Policy Insights API Access"
@@ -1173,6 +1175,8 @@ async def check_resource_manager_access(
     Returns:
         CheckResult with resource manager access status
     """
+    from azure.core.exceptions import HttpResponseError
+
     start_time = datetime.utcnow()
     check_id = "resource_manager_access"
     name = "Azure Resource Manager Access"
@@ -1270,6 +1274,8 @@ async def check_graph_api_access(tenant_id: str) -> CheckResult:
     Returns:
         CheckResult with Graph API access status and permission details
     """
+    from azure.core.exceptions import ClientAuthenticationError
+
     start_time = datetime.utcnow()
     check_id = "graph_api_access"
     name = "Microsoft Graph API Access"
@@ -1430,6 +1436,8 @@ async def check_security_center_access(
     Returns:
         CheckResult with security center access status
     """
+    from azure.core.exceptions import HttpResponseError
+
     start_time = datetime.utcnow()
     check_id = "security_center_access"
     name = "Azure Security Center Access"
@@ -1571,6 +1579,7 @@ async def check_rbac_permissions(tenant_id: str, subscription_id: str) -> CheckR
         CheckResult with RBAC assignment details
     """
     # Lazy import to avoid namespace package issues in tests
+    from azure.core.exceptions import HttpResponseError
     from azure.mgmt.authorization import AuthorizationManagementClient
 
     start_time = datetime.utcnow()
@@ -1592,7 +1601,6 @@ async def check_rbac_permissions(tenant_id: str, subscription_id: str) -> CheckR
 
         # Find our service principal's assignments
         # We need to match by principal ID (client_id)
-        client_id = settings.azure_client_id
 
         our_assignments = []
         for assignment in assignments:

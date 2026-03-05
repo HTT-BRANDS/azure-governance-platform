@@ -3,9 +3,7 @@
 Tests cache metrics, in-memory cache, cache manager, and cached decorator.
 """
 
-import asyncio
-import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -14,9 +12,7 @@ from app.core.cache import (
     CacheMetrics,
     InMemoryCache,
     cached,
-    cache_manager,
 )
-
 
 # ============================================================================
 # CacheMetrics Tests
@@ -343,7 +339,7 @@ async def test_cached_decorator_caches_function_result():
     """Test cached() decorator caches async function results."""
     # Create fresh cache manager for this test
     test_manager = CacheManager()
-    
+
     with patch("app.core.cache.get_settings") as mock_settings, \
          patch("app.core.cache.cache_manager", test_manager):
         settings = MagicMock()
@@ -416,7 +412,7 @@ async def test_cached_decorator_with_tenant_id_kwarg():
     """Test cached() decorator extracts tenant_id from kwargs."""
     # Create fresh cache manager for this test
     test_manager = CacheManager()
-    
+
     with patch("app.core.cache.get_settings") as mock_settings, \
          patch("app.core.cache.cache_manager", test_manager):
         settings = MagicMock()
@@ -459,7 +455,7 @@ async def test_cached_decorator_does_not_cache_none_results():
     """Test cached() decorator skips caching None results."""
     # Create fresh cache manager for this test
     test_manager = CacheManager()
-    
+
     with patch("app.core.cache.get_settings") as mock_settings, \
          patch("app.core.cache.cache_manager", test_manager):
         settings = MagicMock()

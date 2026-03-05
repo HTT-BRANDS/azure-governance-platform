@@ -12,7 +12,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.orm import Session
 
-from app.core.auth import User, get_current_user, require_roles
+from app.core.auth import User, get_current_user
 from app.core.authorization import (
     TenantAuthorization,
     get_tenant_authorization,
@@ -21,7 +21,7 @@ from app.core.authorization import (
 )
 from app.core.database import get_db
 from app.core.rate_limit import rate_limit
-from app.models.tenant import Tenant, UserTenant
+from app.models.tenant import Tenant
 from app.schemas.tenant import (
     SubscriptionResponse,
     TenantCreate,

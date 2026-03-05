@@ -450,7 +450,7 @@ class AzureClientManager:
         Returns:
             Dict with cache statistics
         """
-        now = time.time()
+        time.time()
         return {
             "credential_cache_size": len(self._credentials),
             "secret_cache_size": len(self._key_vault_cache),

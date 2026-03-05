@@ -4,9 +4,10 @@ Tests for the mfa_checks.py module to ensure all MFA compliance checks
 function correctly and return expected result structures.
 """
 
-import pytest
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from app.preflight.models import CheckCategory, CheckStatus
 
@@ -46,7 +47,6 @@ class TestMFATenantDataCheck:
     @pytest.mark.asyncio
     async def test_check_stale_data(self, check):
         """Test check warns when MFA data is stale."""
-        from app.models.riverside import RiversideMFA
 
         with patch("app.preflight.mfa_checks.SessionLocal") as mock_session:
             mock_db = MagicMock()
@@ -391,8 +391,8 @@ class TestMFACheckFunctions:
     @pytest.mark.asyncio
     async def test_run_all_mfa_checks(self):
         """Test run_all_mfa_checks runs all checks."""
-        from app.preflight.mfa_checks import run_all_mfa_checks
         from app.preflight.base import BasePreflightCheck
+        from app.preflight.mfa_checks import run_all_mfa_checks
         BasePreflightCheck.clear_cache()
 
         with patch("app.preflight.mfa_checks.SessionLocal") as mock_session:
@@ -468,8 +468,8 @@ class TestCheckResultStructure:
         BasePreflightCheck.clear_cache()
 
         from app.preflight.mfa_checks import (
-            MFATenantDataCheck,
             MFAAdminEnrollmentCheck,
+            MFATenantDataCheck,
             MFAUserEnrollmentCheck,
         )
 

@@ -4,7 +4,6 @@ Contains all the concrete check implementations for Azure, GitHub, and system ch
 """
 
 import logging
-from typing import List
 
 import httpx
 
@@ -247,7 +246,7 @@ class AzureCostManagementCheck(BasePreflightCheck):
             effective_tenant = tenant_id or settings.azure_tenant_id
             subs = await manager.list_subscriptions(effective_tenant)
             if subs:
-                client = manager.get_cost_client(effective_tenant, subs[0]["subscription_id"])
+                manager.get_cost_client(effective_tenant, subs[0]["subscription_id"])
                 # If we get here, client creation succeeded
 
             return CheckResult(
@@ -313,7 +312,7 @@ class AzurePolicyCheck(BasePreflightCheck):
             effective_tenant = tenant_id or settings.azure_tenant_id
             subs = await manager.list_subscriptions(effective_tenant)
             if subs:
-                client = manager.get_policy_client(effective_tenant, subs[0]["subscription_id"])
+                manager.get_policy_client(effective_tenant, subs[0]["subscription_id"])
                 # PolicyInsightsClient creation verifies access
 
             return CheckResult(
@@ -413,8 +412,6 @@ class AzureGraphCheck(BasePreflightCheck):
         self, tenant_id: str | None = None
     ) -> CheckResult:
         """Execute Graph API check with lightweight direct call."""
-        import asyncio
-        import httpx
 
         settings = get_settings()
         effective_tenant = tenant_id or settings.azure_tenant_id
@@ -431,7 +428,7 @@ class AzureGraphCheck(BasePreflightCheck):
 
         try:
             # Step 1: Verify token acquisition (tests Azure AD auth)
-            from app.api.services.graph_client import GraphClient, GRAPH_API_BASE
+            from app.api.services.graph_client import GRAPH_API_BASE, GraphClient
 
             client = GraphClient(effective_tenant)
             token = await client._get_token()
@@ -842,10 +839,10 @@ def get_all_checks() -> dict[str, BasePreflightCheck]:
     # Import and add MFA compliance checks
     try:
         from app.preflight.mfa_checks import (
-            MFATenantDataCheck,
             MFAAdminEnrollmentCheck,
-            MFAUserEnrollmentCheck,
             MFAGapReportCheck,
+            MFATenantDataCheck,
+            MFAUserEnrollmentCheck,
         )
         checks.extend([
             MFATenantDataCheck(),
@@ -884,7 +881,7 @@ def get_all_checks() -> dict[str, BasePreflightCheck]:
 
 def get_checks_by_category(
     category: CheckCategory,
-) -> List[BasePreflightCheck]:
+) -> list[BasePreflightCheck]:
     """Get all checks for a specific category.
 
     Args:

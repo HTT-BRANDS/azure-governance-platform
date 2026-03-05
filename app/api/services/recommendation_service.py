@@ -89,9 +89,17 @@ class RecommendationService:
             for r in recommendations
         ]
 
-    def get_recommendations_by_category(self) -> list[RecommendationsByCategory]:
-        """Get recommendations grouped by category."""
-        recommendations = self.get_recommendations(dismissed=False, limit=500)
+    def get_recommendations_by_category(
+        self, tenant_ids: list[str] | None = None
+    ) -> list[RecommendationsByCategory]:
+        """Get recommendations grouped by category.
+
+        Args:
+            tenant_ids: Optional list of tenant IDs to filter by
+        """
+        recommendations = self.get_recommendations(
+            dismissed=False, limit=500, tenant_ids=tenant_ids
+        )
 
         # Group by category
         by_category: dict[RecommendationCategory, list[Recommendation]] = {}
@@ -117,9 +125,17 @@ class RecommendationService:
         # Sort by potential savings
         return sorted(result, key=lambda x: x.total_potential_savings_monthly, reverse=True)
 
-    def get_recommendations_by_tenant(self) -> dict[str, list[Recommendation]]:
-        """Get recommendations grouped by tenant."""
-        recommendations = self.get_recommendations(dismissed=False, limit=500)
+    def get_recommendations_by_tenant(
+        self, tenant_ids: list[str] | None = None
+    ) -> dict[str, list[Recommendation]]:
+        """Get recommendations grouped by tenant.
+
+        Args:
+            tenant_ids: Optional list of tenant IDs to filter by
+        """
+        recommendations = self.get_recommendations(
+            dismissed=False, limit=500, tenant_ids=tenant_ids
+        )
 
         # Group by tenant
         by_tenant: dict[str, list[Recommendation]] = {}
@@ -131,9 +147,17 @@ class RecommendationService:
 
         return by_tenant
 
-    def get_savings_potential(self) -> SavingsPotential:
-        """Get total potential savings across all recommendations."""
-        recommendations = self.get_recommendations(dismissed=False, limit=1000)
+    def get_savings_potential(
+        self, tenant_ids: list[str] | None = None
+    ) -> SavingsPotential:
+        """Get total potential savings across all recommendations.
+
+        Args:
+            tenant_ids: Optional list of tenant IDs to filter by
+        """
+        recommendations = self.get_recommendations(
+            dismissed=False, limit=1000, tenant_ids=tenant_ids
+        )
 
         total_monthly = sum(
             (r.potential_savings_monthly or 0) for r in recommendations
@@ -161,9 +185,17 @@ class RecommendationService:
             by_tenant=by_tenant,
         )
 
-    def get_recommendation_summary(self) -> list[RecommendationSummary]:
-        """Get summary statistics by category."""
-        recommendations = self.get_recommendations(dismissed=False, limit=1000)
+    def get_recommendation_summary(
+        self, tenant_ids: list[str] | None = None
+    ) -> list[RecommendationSummary]:
+        """Get summary statistics by category.
+
+        Args:
+            tenant_ids: Optional list of tenant IDs to filter by
+        """
+        recommendations = self.get_recommendations(
+            dismissed=False, limit=1000, tenant_ids=tenant_ids
+        )
 
         # Group by category
         by_category: dict[RecommendationCategory, list[Recommendation]] = {}

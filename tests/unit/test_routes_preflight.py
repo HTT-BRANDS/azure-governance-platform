@@ -34,7 +34,7 @@ def test_db_session(db_session):
         is_active=True,
     )
     db_session.add(tenant)
-    
+
     user_tenant = UserTenant(
         id=str(uuid.uuid4()),
         user_id="user:preflight-admin",
@@ -48,7 +48,7 @@ def test_db_session(db_session):
         granted_at=datetime.utcnow(),
     )
     db_session.add(user_tenant)
-    
+
     db_session.commit()
     return db_session
 
@@ -61,7 +61,7 @@ def client_with_db(test_db_session):
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -130,9 +130,9 @@ def test_get_preflight_status_with_report(client_with_db, mock_user, mock_prefli
         with patch("app.api.routes.preflight.get_latest_report", return_value=mock_preflight_report):
             with patch("app.api.routes.preflight.get_runner") as mock_runner:
                 mock_runner.return_value.is_running = False
-                
+
                 response = client_with_db.get("/api/v1/preflight/status")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["latest_report"] is not None
@@ -145,9 +145,9 @@ def test_get_preflight_status_no_report(client_with_db, mock_user):
         with patch("app.api.routes.preflight.get_latest_report", return_value=None):
             with patch("app.api.routes.preflight.get_runner") as mock_runner:
                 mock_runner.return_value.is_running = False
-                
+
                 response = client_with_db.get("/api/v1/preflight/status")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["latest_report"] is None
@@ -161,19 +161,19 @@ def test_run_preflight_checks_success(client_with_db, mock_user, mock_preflight_
         "fail_fast": False,
         "timeout_seconds": 300,
     }
-    
+
     with patch("app.api.routes.preflight.get_current_user", return_value=mock_user):
         with patch("app.api.routes.preflight.get_runner") as mock_get_runner:
             mock_runner = MagicMock()
             mock_runner.is_running = False
             mock_get_runner.return_value = mock_runner
-            
+
             with patch("app.api.routes.preflight.PreflightRunner") as MockRunner:
                 mock_new_runner = MockRunner.return_value
                 mock_new_runner.run_checks.return_value = mock_preflight_report
-                
+
                 response = client_with_db.post("/api/v1/preflight/run", json=request_data)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["total_checks"] == 10
@@ -188,9 +188,9 @@ def test_run_preflight_checks_already_running(client_with_db, mock_user):
             mock_runner = MagicMock()
             mock_runner.is_running = True
             mock_get_runner.return_value = mock_runner
-            
+
             response = client_with_db.post("/api/v1/preflight/run", json={})
-    
+
     assert response.status_code == 409
     assert "already running" in response.json()["detail"]
 
@@ -198,19 +198,19 @@ def test_run_preflight_checks_already_running(client_with_db, mock_user):
 def test_check_tenant_preflight_success(client_with_db, mock_user, mock_preflight_report):
     """Test running preflight checks for specific tenant."""
     tenant_id = "preflight-tenant-123"
-    
+
     with patch("app.api.routes.preflight.get_current_user", return_value=mock_user):
         with patch("app.api.routes.preflight.get_runner") as mock_get_runner:
             mock_runner = MagicMock()
             mock_runner.is_running = False
             mock_get_runner.return_value = mock_runner
-            
+
             with patch("app.api.routes.preflight.PreflightRunner") as MockRunner:
                 mock_new_runner = MockRunner.return_value
                 mock_new_runner.run_checks.return_value = mock_preflight_report
-                
+
                 response = client_with_db.get(f"/api/v1/preflight/tenants/{tenant_id}")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["total_checks"] == 10
@@ -223,13 +223,13 @@ def test_check_github_preflight_success(client_with_db, mock_user, mock_prefligh
             mock_runner = MagicMock()
             mock_runner.is_running = False
             mock_get_runner.return_value = mock_runner
-            
+
             with patch("app.api.routes.preflight.PreflightRunner") as MockRunner:
                 mock_new_runner = MockRunner.return_value
                 mock_new_runner.run_checks.return_value = mock_preflight_report
-                
+
                 response = client_with_db.get("/api/v1/preflight/github")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["passed_count"] == 8
@@ -242,9 +242,9 @@ def test_get_report_json_success(client_with_db, mock_user, mock_preflight_repor
             with patch("app.api.routes.preflight.ReportGenerator") as MockGenerator:
                 mock_gen = MockGenerator.return_value
                 mock_gen.to_json.return_value = '{"total_checks": 10}'
-                
+
                 response = client_with_db.get("/api/v1/preflight/report/json")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "total_checks" in data
@@ -255,6 +255,6 @@ def test_get_report_json_no_report(client_with_db, mock_user):
     with patch("app.api.routes.preflight.get_current_user", return_value=mock_user):
         with patch("app.api.routes.preflight.get_latest_report", return_value=None):
             response = client_with_db.get("/api/v1/preflight/report/json")
-    
+
     assert response.status_code == 404
     assert "No preflight report available" in response.json()["detail"]

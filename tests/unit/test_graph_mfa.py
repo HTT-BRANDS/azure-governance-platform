@@ -5,8 +5,7 @@ including pagination, error handling, and retry logic.
 """
 
 import sys
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -17,7 +16,7 @@ sys.modules['azure.identity'] = azure_mock
 sys.modules['azure.core'] = azure_mock
 sys.modules['azure.core.exceptions'] = azure_mock
 
-from app.api.services.graph_client import (
+from app.api.services.graph_client import (  # noqa: E402
     ADMIN_ROLE_TEMPLATE_IDS,
     GraphClient,
     MFAError,

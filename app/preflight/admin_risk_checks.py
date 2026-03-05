@@ -34,7 +34,6 @@ from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
 from app.models.identity import PrivilegedUser
-from app.models.tenant import Tenant
 from app.preflight.base import BasePreflightCheck
 from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 
@@ -772,7 +771,7 @@ class AdminComplianceGapCheck(BasePreflightCheck):
 
             # Calculate compliance metrics
             total_unique_users = len(
-                set(u.user_principal_name for u in users)
+                {u.user_principal_name for u in users}
             )
 
             # MFA compliance

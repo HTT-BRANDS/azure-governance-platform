@@ -9,13 +9,12 @@ import logging
 import time
 import uuid
 from collections.abc import Callable, Coroutine
-from dataclasses import dataclass, field
-from enum import Enum
+from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any, Generic, TypeVar
 
 from sqlalchemy.orm import Session
 
-from app.models.backfill_job import BackfillJob, BackfillStatus
 from app.services.backfill_service import ResumableBackfillService
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,7 @@ T = TypeVar("T")
 R = TypeVar("R")
 
 
-class TaskStatus(str, Enum):
+class TaskStatus(StrEnum):
     """Status of a parallel task."""
 
     PENDING = "pending"
@@ -265,7 +264,7 @@ class WorkerPool:
                         duration_seconds=duration,
                     )
 
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     duration = time.monotonic() - start_time
                     if retries < self.config.max_retries and self.config.retry_failed_tasks:
                         logger.warning(f"Task {task_id} timed out, retrying ({retries + 1}/{self.config.max_retries})")

@@ -22,8 +22,6 @@ from app.alerts.deadline_alerts import (
     DeadlineAlert,
     DeadlineTracker,
     DeadlineTrackingResult,
-    calculate_deadline_warnings,
-    calculate_critical_alerts,
     check_deadlines_with_tracker,
     send_deadline_alerts_from_tracker,
 )
@@ -341,7 +339,7 @@ class TestDeadlineTrackerCalculateWarnings:
         """Test finding warning alerts at 60 days."""
         tracker = DeadlineTracker()
         requirements = []
-        
+
         for days in [90, 60, 30]:
             req = MagicMock(spec=RiversideRequirement)
             req.requirement_id = f"RC-{days}"
@@ -361,7 +359,7 @@ class TestDeadlineTrackerCalculateWarnings:
         """Test no warnings when not at 60 day threshold."""
         tracker = DeadlineTracker()
         requirements = []
-        
+
         for days in [90, 30, 14]:
             req = MagicMock(spec=RiversideRequirement)
             req.requirement_id = f"RC-{days}"
@@ -383,7 +381,7 @@ class TestDeadlineTrackerCalculateCriticalAlerts:
         """Test finding critical alerts at 14, 7, and 1 days."""
         tracker = DeadlineTracker()
         requirements = []
-        
+
         for days in [14, 7, 1, 30, 60]:
             req = MagicMock(spec=RiversideRequirement)
             req.requirement_id = f"RC-{days}"
@@ -600,7 +598,7 @@ class TestDeadlineTrackerTriggerAlert:
 
         assert result["success"] is True
         mock_send.assert_called_once()
-        
+
         # Verify notification was created with correct severity
         call_args = mock_send.call_args[0][0]
         assert call_args.severity == Severity.INFO
@@ -629,7 +627,7 @@ class TestDeadlineTrackerTriggerAlert:
 
         assert result["success"] is True
         mock_send.assert_called_once()
-        
+
         # Verify notification was created with CRITICAL severity
         call_args = mock_send.call_args[0][0]
         assert call_args.severity == Severity.CRITICAL
@@ -800,7 +798,7 @@ class TestSchedulerIntegration:
     async def test_schedule_deadline_checks(self, mock_send, mock_track):
         """Test schedule_deadline_checks from riverside_scheduler."""
         from app.core.riverside_scheduler import schedule_deadline_checks
-        
+
         mock_result = DeadlineTrackingResult(
             alerts=[
                 DeadlineAlert(
@@ -832,7 +830,7 @@ class TestSchedulerIntegration:
     async def test_schedule_deadline_checks_error_handling(self, mock_track):
         """Test error handling in schedule_deadline_checks."""
         from app.core.riverside_scheduler import schedule_deadline_checks
-        
+
         mock_track.side_effect = Exception("Database error")
 
         result = await schedule_deadline_checks()

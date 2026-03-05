@@ -1,14 +1,11 @@
 """Tests for the data retention service (6ty)."""
 
-from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from app.services.retention_service import (
+    _TABLE_CONFIG,
     DEFAULT_RETENTION,
     RetentionService,
-    _TABLE_CONFIG,
     run_retention_cleanup,
 )
 
@@ -72,7 +69,7 @@ class TestRetentionService:
 
     def test_table_config_uses_correct_columns(self):
         """Verify _TABLE_CONFIG references real model attributes."""
-        for table_name, model, date_col in _TABLE_CONFIG:
+        for table_name, _model, date_col in _TABLE_CONFIG:
             assert table_name in DEFAULT_RETENTION, f"{table_name} not in DEFAULT_RETENTION"
             # date_col should be an InstrumentedAttribute with a key
             assert hasattr(date_col, "key"), (

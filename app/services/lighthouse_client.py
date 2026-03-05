@@ -7,31 +7,29 @@ delegation.
 
 Example:
     client = LighthouseAzureClient()
-    
+
     # Verify delegation is working
     is_valid = await client.verify_delegation(subscription_id="customer-sub-id")
-    
+
     # Get cost data
     cost_data = await client.get_cost_data(subscription_id="customer-sub-id")
-    
+
     # List resources
     resources = await client.list_resources(subscription_id="customer-sub-id")
 """
 
-import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Any
 
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.costmanagement import CostManagementClient
-from azure.mgmt.costmanagement.models import QueryDefinition, TimeframeType
+from azure.mgmt.costmanagement.models import QueryDefinition
 from azure.mgmt.resource import ResourceManagementClient, SubscriptionClient
 from azure.mgmt.security import SecurityCenter
 
 from app.core.resilience import (
     ResilientAzureClient,
-    ResilienceConfig,
     resilient_api_call,
 )
 
@@ -68,7 +66,7 @@ class LighthouseAzureClient:
 
     Example:
         client = LighthouseAzureClient()
-        
+
         # Verify access before operations
         if await client.verify_delegation("sub-123"):
             resources = await client.list_resources("sub-123")
@@ -82,12 +80,12 @@ class LighthouseAzureClient:
         """
         self.credential = credential or DefaultAzureCredential()
         self.resilience = ResilientAzureClient(api_name="arm")
-        
+
         # Initialize per-API resilient clients
         self._arm_resilience = ResilientAzureClient(api_name="arm")
         self._cost_resilience = ResilientAzureClient(api_name="cost")
         self._security_resilience = ResilientAzureClient(api_name="security")
-        
+
         logger.debug("LighthouseAzureClient initialized with DefaultAzureCredential")
 
 
@@ -144,7 +142,7 @@ class LighthouseAzureClient:
                         "tenant_id": subscription.get("tenant_id"),
                         "error": "Subscription is disabled",
                     }
-                
+
                 logger.info(f"Delegation verified for {subscription_id}: {subscription.get('display_name')}")
                 return {
                     "success": True,
@@ -173,7 +171,7 @@ class LighthouseAzureClient:
             error_to_check = e
             if hasattr(e, 'last_error') and e.last_error:
                 error_to_check = e.last_error
-            
+
             error_str = str(error_to_check).lower()
             if any(err in error_str for err in ['authentication', 'unauthorized', 'forbidden', 'timeout', 'network']):
                 logger.error(f"Delegation verification failed with API error for {subscription_id}: {error_to_check}")
@@ -181,7 +179,7 @@ class LighthouseAzureClient:
                     subscription_id,
                     f"API error during delegation verification: {str(error_to_check)}"
                 ) from e
-            
+
             # Other errors return as failure result
             logger.error(f"Delegation verification failed for {subscription_id}: {e}")
             return {
@@ -202,7 +200,7 @@ class LighthouseAzureClient:
 
         Returns:
             Subscription details or None if not found
-            
+
         Raises:
             Exception: If API call fails (authentication, network, etc.)
         """
@@ -517,7 +515,7 @@ class LighthouseAzureClient:
                         "currency": str(row[1]) if len(row) > 1 else "USD",
                         "date": str(row[2]) if len(row) > 2 else None,
                     }
-                    
+
                     # Add grouping dimensions dynamically
                     if len(row) > 3 and group_by:
                         for i, dim in enumerate(group_by):
@@ -527,7 +525,7 @@ class LighthouseAzureClient:
                         # Default grouping
                         row_dict["resource_group"] = str(row[3]) if len(row) > 3 else None
                         row_dict["service_name"] = str(row[4]) if len(row) > 4 else None
-                    
+
                     rows.append(row_dict)
                     total_cost += row_dict["cost"]
                     currency = row_dict["currency"]

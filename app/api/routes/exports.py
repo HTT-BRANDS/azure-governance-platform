@@ -5,14 +5,14 @@ import io
 from datetime import date, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.services.compliance_service import ComplianceService
 from app.api.services.cost_service import CostService
 from app.api.services.resource_service import ResourceService
-from app.core.auth import User, get_current_user
+from app.core.auth import get_current_user
 from app.core.authorization import (
     TenantAuthorization,
     get_tenant_authorization,
@@ -114,6 +114,7 @@ async def export_resources(
     resource_type: str | None = Query(default=None),
     include_orphaned: bool = Query(default=True),
     db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """Export resource inventory to CSV.
 

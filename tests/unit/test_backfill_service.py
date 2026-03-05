@@ -12,12 +12,12 @@ This module tests:
 """
 
 import uuid
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from datetime import datetime
+from unittest.mock import patch
 
 import pytest
-from sqlalchemy import Column, Integer, String, create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base
 from app.models.backfill_job import BackfillJob, BackfillStatus
@@ -31,10 +31,9 @@ from app.services.backfill_service import (
     ComplianceDataProcessor,
     CostDataProcessor,
     IdentityDataProcessor,
-    ResumableBackfillService,
     ResourcesDataProcessor,
+    ResumableBackfillService,
 )
-
 
 # =============================================================================
 # Fixtures
@@ -678,7 +677,6 @@ class TestBackfillIntegration:
             mock_fetch.return_value = []
 
             # Mock to simulate pause after day 5
-            original_run = service.run_job
 
             def mock_run(job_id, batch_size=500, day_by_day=True):
                 job = service.get_job(job_id)

@@ -36,7 +36,7 @@ def test_db_session(db_session):
     )
     db_session.add(tenant)
     db_session.commit()
-    
+
     user_tenant = UserTenant(
         id=str(uuid.uuid4()),
         user_id="user:admin",
@@ -51,7 +51,7 @@ def test_db_session(db_session):
     )
     db_session.add(user_tenant)
     db_session.commit()
-    
+
     return db_session
 
 
@@ -63,7 +63,7 @@ def client_with_db(test_db_session):
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -140,25 +140,25 @@ def mock_riverside_service():
 
 class TestRiversideDashboardPage:
     """Tests for GET /riverside dashboard page."""
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     def test_riverside_dashboard_renders_successfully(self, mock_get_user, client_with_db, mock_user):
         """Riverside dashboard page renders for authenticated users."""
         mock_get_user.return_value = mock_user
-        
+
         response = client_with_db.get(
             "/riverside",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
         assert b"riverside" in response.content.lower()
-    
+
     def test_riverside_dashboard_requires_authentication(self, client_with_db):
         """Riverside dashboard returns 401 without authentication."""
         response = client_with_db.get("/riverside")
-        
+
         assert response.status_code == 401
 
 
@@ -168,7 +168,7 @@ class TestRiversideDashboardPage:
 
 class TestRiversideBadgePartial:
     """Tests for GET /partials/riverside-badge HTMX partial."""
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
@@ -177,12 +177,12 @@ class TestRiversideBadgePartial:
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_service_cls.return_value = mock_riverside_service
-        
+
         response = client_with_db.get(
             "/partials/riverside-badge",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
         # Should contain critical gaps count
@@ -195,7 +195,7 @@ class TestRiversideBadgePartial:
 
 class TestRiversideSummaryEndpoint:
     """Tests for GET /api/v1/riverside/summary endpoint."""
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
@@ -204,23 +204,23 @@ class TestRiversideSummaryEndpoint:
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_service_cls.return_value = mock_riverside_service
-        
+
         response = client_with_db.get(
             "/api/v1/riverside/summary",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["total_critical_gaps"] == 12
         assert data["days_remaining"] == 425
         assert data["financial_risk"] == 4000000
         assert data["overall_maturity"] == 65.5
-    
+
     def test_summary_requires_authentication(self, client_with_db):
         """Summary endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/riverside/summary")
-        
+
         assert response.status_code == 401
 
 
@@ -230,7 +230,7 @@ class TestRiversideSummaryEndpoint:
 
 class TestRiversideMFAStatusEndpoint:
     """Tests for GET /api/v1/riverside/mfa-status endpoint."""
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
@@ -239,12 +239,12 @@ class TestRiversideMFAStatusEndpoint:
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_service_cls.return_value = mock_riverside_service
-        
+
         response = client_with_db.get(
             "/api/v1/riverside/mfa-status",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["total_users"] == 250
@@ -259,7 +259,7 @@ class TestRiversideMFAStatusEndpoint:
 
 class TestRiversideMaturityScoresEndpoint:
     """Tests for GET /api/v1/riverside/maturity-scores endpoint."""
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
@@ -268,12 +268,12 @@ class TestRiversideMaturityScoresEndpoint:
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_service_cls.return_value = mock_riverside_service
-        
+
         response = client_with_db.get(
             "/api/v1/riverside/maturity-scores",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "iam" in data
@@ -289,7 +289,7 @@ class TestRiversideMaturityScoresEndpoint:
 
 class TestRiversideRequirementsEndpoint:
     """Tests for GET /api/v1/riverside/requirements endpoint."""
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
@@ -298,18 +298,18 @@ class TestRiversideRequirementsEndpoint:
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_service_cls.return_value = mock_riverside_service
-        
+
         response = client_with_db.get(
             "/api/v1/riverside/requirements?category=IAM&priority=P0",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "requirements" in data
         assert data["total"] == 2
         assert len(data["requirements"]) == 2
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
@@ -318,12 +318,12 @@ class TestRiversideRequirementsEndpoint:
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_service_cls.return_value = mock_riverside_service
-        
+
         response = client_with_db.get(
             "/api/v1/riverside/requirements?status=in_progress",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         # Service should have been called with status filter
         mock_riverside_service.get_requirements.assert_called_once()
@@ -335,7 +335,7 @@ class TestRiversideRequirementsEndpoint:
 
 class TestRiversideGapsEndpoint:
     """Tests for GET /api/v1/riverside/gaps endpoint."""
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
@@ -344,12 +344,12 @@ class TestRiversideGapsEndpoint:
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_service_cls.return_value = mock_riverside_service
-        
+
         response = client_with_db.get(
             "/api/v1/riverside/gaps",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "critical_gaps" in data
@@ -363,7 +363,7 @@ class TestRiversideGapsEndpoint:
 
 class TestRiversideSyncEndpoint:
     """Tests for POST /api/v1/riverside/sync endpoint."""
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
@@ -372,18 +372,18 @@ class TestRiversideSyncEndpoint:
         mock_get_user.return_value = mock_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
         mock_service_cls.return_value = mock_riverside_service
-        
+
         response = client_with_db.post(
             "/api/v1/riverside/sync",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "success"
         assert "results" in data
         assert data["results"]["mfa"]["synced"] == 250
-    
+
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     def test_sync_forbidden_for_regular_users(self, mock_authz, mock_get_user, client_with_db):
@@ -399,11 +399,11 @@ class TestRiversideSyncEndpoint:
         )
         mock_get_user.return_value = regular_user
         mock_authz.return_value.ensure_at_least_one_tenant.return_value = None
-        
+
         response = client_with_db.post(
             "/api/v1/riverside/sync",
             headers={"Authorization": "Bearer fake-token"},
         )
-        
+
         assert response.status_code == 403
         assert "operator or admin role" in response.json()["detail"]

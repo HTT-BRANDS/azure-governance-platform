@@ -16,7 +16,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.api.services.dmarc_service import DMARCService
-from app.models.dmarc import DMARCAlert, DMARCRecord, DMARCReport, DKIMRecord
+from app.models.dmarc import DKIMRecord, DMARCAlert, DMARCRecord, DMARCReport
 from app.models.tenant import Tenant
 
 
@@ -133,11 +133,11 @@ class TestDMARCRecordParsing:
             "v=DMARC1; p=reject; pct=100; rua=mailto:dmarc@example.com; "
             "ruf=mailto:forensic@example.com; adkim=s; aspf=s; fo=1"
         )
-        
+
         result = dmarc_service._parse_dmarc_record(
             "tenant-001", "example.com", record_text
         )
-        
+
         assert result.domain == "example.com"
         assert result.tenant_id == "tenant-001"
         assert result.policy == "reject"
@@ -153,11 +153,11 @@ class TestDMARCRecordParsing:
     def test_parse_dmarc_record_quarantine_policy(self, dmarc_service):
         """Test parsing DMARC record with quarantine policy."""
         record_text = "v=DMARC1; p=quarantine; pct=50; rua=mailto:reports@example.com"
-        
+
         result = dmarc_service._parse_dmarc_record(
             "tenant-002", "test.com", record_text
         )
-        
+
         assert result.policy == "quarantine"
         assert result.pct == 50
         assert result.is_valid is True
@@ -165,11 +165,11 @@ class TestDMARCRecordParsing:
     def test_parse_dmarc_record_none_policy(self, dmarc_service):
         """Test parsing DMARC record with none policy."""
         record_text = "v=DMARC1; p=none; rua=mailto:monitoring@example.com"
-        
+
         result = dmarc_service._parse_dmarc_record(
             "tenant-003", "weak.com", record_text
         )
-        
+
         assert result.policy == "none"
         assert result.pct == 100  # Default value
         assert result.is_valid is True
@@ -177,11 +177,11 @@ class TestDMARCRecordParsing:
     def test_parse_dmarc_record_defaults(self, dmarc_service):
         """Test parsing DMARC record applies correct defaults."""
         record_text = "v=DMARC1; p=reject"
-        
+
         result = dmarc_service._parse_dmarc_record(
             "tenant-004", "minimal.com", record_text
         )
-        
+
         assert result.policy == "reject"
         assert result.pct == 100  # Default
         assert result.adkim == "r"  # Default relaxed
@@ -192,22 +192,22 @@ class TestDMARCRecordParsing:
     def test_parse_dmarc_record_invalid_missing_version(self, dmarc_service):
         """Test parsing invalid DMARC record (missing version)."""
         record_text = "p=reject; pct=100; rua=mailto:dmarc@example.com"
-        
+
         result = dmarc_service._parse_dmarc_record(
             "tenant-005", "invalid.com", record_text
         )
-        
+
         assert result.is_valid is False
         assert result.validation_errors == "Missing or invalid DMARC version"
 
     def test_parse_dmarc_record_invalid_wrong_version(self, dmarc_service):
         """Test parsing DMARC record with wrong version."""
         record_text = "v=DMARC2; p=reject; pct=100"
-        
+
         result = dmarc_service._parse_dmarc_record(
             "tenant-006", "wrongversion.com", record_text
         )
-        
+
         assert result.is_valid is False
         assert result.validation_errors == "Missing or invalid DMARC version"
 
@@ -220,11 +220,11 @@ class TestSecurityScoreCalculation:
         sample_dmarc_record.policy = "reject"
         sample_dkim_record.is_enabled = True
         sample_dkim_record.is_aligned = True
-        
+
         score = dmarc_service._calculate_tenant_security_score(
             [sample_dmarc_record], [sample_dkim_record]
         )
-        
+
         # Perfect: (100 * 0.6) + (100 * 0.4) = 100
         assert score == 100.0
 
@@ -233,11 +233,11 @@ class TestSecurityScoreCalculation:
         sample_dmarc_record.policy = "quarantine"
         sample_dkim_record.is_enabled = True
         sample_dkim_record.is_aligned = True
-        
+
         score = dmarc_service._calculate_tenant_security_score(
             [sample_dmarc_record], [sample_dkim_record]
         )
-        
+
         # DMARC: 75 (quarantine) * 0.6 = 45
         # DKIM: 100 (enabled+aligned) * 0.4 = 40
         # Total: 85
@@ -248,11 +248,11 @@ class TestSecurityScoreCalculation:
         sample_dmarc_record.policy = "none"
         sample_dkim_record.is_enabled = True
         sample_dkim_record.is_aligned = False
-        
+
         score = dmarc_service._calculate_tenant_security_score(
             [sample_dmarc_record], [sample_dkim_record]
         )
-        
+
         # DMARC: 25 (none) * 0.6 = 15
         # DKIM: 50 (enabled but not aligned) * 0.4 = 20
         # Total: 35
@@ -263,11 +263,11 @@ class TestSecurityScoreCalculation:
         sample_dmarc_record.policy = "reject"
         sample_dkim_record.is_enabled = False
         sample_dkim_record.is_aligned = False
-        
+
         score = dmarc_service._calculate_tenant_security_score(
             [sample_dmarc_record], [sample_dkim_record]
         )
-        
+
         # DMARC: 100 * 0.6 = 60
         # DKIM: 0 * 0.4 = 0
         # Total: 60
@@ -281,11 +281,11 @@ class TestSecurityScoreCalculation:
     def test_calculate_security_score_only_dmarc(self, dmarc_service, sample_dmarc_record):
         """Test security score with only DMARC records."""
         sample_dmarc_record.policy = "reject"
-        
+
         score = dmarc_service._calculate_tenant_security_score(
             [sample_dmarc_record], []
         )
-        
+
         # Only DMARC: 100 * 0.6 = 60
         assert score == 60.0
 
@@ -293,11 +293,11 @@ class TestSecurityScoreCalculation:
         """Test security score with only DKIM records."""
         sample_dkim_record.is_enabled = True
         sample_dkim_record.is_aligned = True
-        
+
         score = dmarc_service._calculate_tenant_security_score(
             [], [sample_dkim_record]
         )
-        
+
         # Only DKIM: 100 * 0.4 = 40
         assert score == 40.0
 
@@ -321,7 +321,7 @@ class TestSecurityScoreCalculation:
                 synced_at=datetime.utcnow(),
             ),
         ]
-        
+
         dkim_records = [
             DKIMRecord(
                 id=str(uuid.uuid4()),
@@ -342,11 +342,11 @@ class TestSecurityScoreCalculation:
                 synced_at=datetime.utcnow(),
             ),
         ]
-        
+
         score = dmarc_service._calculate_tenant_security_score(
             dmarc_records, dkim_records
         )
-        
+
         # DMARC avg: (100 + 75) / 2 = 87.5 * 0.6 = 52.5
         # DKIM avg: (100 + 50) / 2 = 75 * 0.4 = 30
         # Total: 82.5
@@ -390,7 +390,7 @@ class TestDMARCSummary:
         self, dmarc_service, mock_db, sample_tenant, sample_dmarc_record, sample_dkim_record
     ):
         """Test DMARC summary for a single tenant.
-        
+
         Note: Skipped due to @cached decorator causing test issues.
         The underlying logic is tested through other tests and covered in integration tests.
         """
@@ -406,15 +406,15 @@ class TestDMARCSummary:
         mock_db.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.all.return_value = []
-        
+
         with patch.object(dmarc_service, '_get_recent_failures', new_callable=AsyncMock) as mock_failures, \
              patch.object(dmarc_service, '_get_active_alerts', new_callable=AsyncMock) as mock_alerts:
-            
+
             mock_failures.return_value = []
             mock_alerts.return_value = []
-            
+
             result = await dmarc_service.get_dmarc_summary()
-        
+
         assert result["total_domains"] == 0
         assert result["dmarc_enabled"] == 0
         assert result["dmarc_compliant"] == 0
@@ -442,16 +442,16 @@ class TestComplianceTrends:
             )
             for i in range(5)
         ]
-        
+
         # Setup mock query
         mock_query = MagicMock()
         mock_db.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.order_by.return_value = mock_query
         mock_query.all.return_value = reports
-        
+
         result = dmarc_service.get_compliance_trends(tenant_id="tenant-001", days=7)
-        
+
         assert isinstance(result, list)
         assert len(result) > 0
         for trend in result:
@@ -469,9 +469,9 @@ class TestComplianceTrends:
         mock_query.filter.return_value = mock_query
         mock_query.order_by.return_value = mock_query
         mock_query.all.return_value = []
-        
+
         result = dmarc_service.get_compliance_trends(tenant_id="tenant-001", days=30)
-        
+
         assert isinstance(result, list)
         assert len(result) == 0
 
@@ -492,7 +492,7 @@ class TestAlertManagement:
             domain="example.com",
             details={"old_policy": "reject", "new_policy": "quarantine"},
         )
-        
+
         assert alert.tenant_id == "tenant-001"
         assert alert.alert_type == "policy_change"
         assert alert.severity == "high"
@@ -519,15 +519,15 @@ class TestAlertManagement:
             is_acknowledged=False,
             created_at=datetime.utcnow(),
         )
-        
+
         # Setup mock query
         mock_query = MagicMock()
         mock_db.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = alert
-        
+
         result = await dmarc_service.acknowledge_alert("alert-001", "admin@example.com")
-        
+
         assert result.is_acknowledged is True
         assert result.acknowledged_by == "admin@example.com"
         assert result.acknowledged_at is not None
@@ -542,9 +542,9 @@ class TestAlertManagement:
         mock_db.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = None
-        
+
         result = await dmarc_service.acknowledge_alert("nonexistent", "admin@example.com")
-        
+
         assert result is None
         mock_db.commit.assert_not_called()
 
@@ -559,7 +559,7 @@ class TestSPFValidation:
         # Report has spf_passed=920, spf_failed=80, total=1000
         spf_total = sample_dmarc_report.spf_passed + sample_dmarc_report.spf_failed
         spf_pass_rate = (sample_dmarc_report.spf_passed / spf_total * 100) if spf_total > 0 else 0
-        
+
         assert spf_pass_rate == 92.0
 
     def test_dkim_pass_rate_calculation(
@@ -569,7 +569,7 @@ class TestSPFValidation:
         # Report has dkim_passed=900, dkim_failed=100, total=1000
         dkim_total = sample_dmarc_report.dkim_passed + sample_dmarc_report.dkim_failed
         dkim_pass_rate = (sample_dmarc_report.dkim_passed / dkim_total * 100) if dkim_total > 0 else 0
-        
+
         assert dkim_pass_rate == 90.0
 
     def test_both_auth_pass_rate(
@@ -579,7 +579,7 @@ class TestSPFValidation:
         # Report has both_passed=880, messages_total=1000
         both_pass_rate = (sample_dmarc_report.both_passed / sample_dmarc_report.messages_total * 100) \
             if sample_dmarc_report.messages_total > 0 else 0
-        
+
         assert both_pass_rate == 88.0
 
 
@@ -593,7 +593,7 @@ class TestDomainSecurityScore:
         # Setup mock queries
         dmarc_query = MagicMock()
         dkim_query = MagicMock()
-        
+
         def query_side_effect(model):
             if model == DMARCRecord:
                 dmarc_query.filter.return_value = dmarc_query
@@ -604,16 +604,16 @@ class TestDomainSecurityScore:
                 dkim_query.all.return_value = [sample_dkim_record]
                 return dkim_query
             return MagicMock()
-        
+
         mock_db.query.side_effect = query_side_effect
-        
+
         # Set perfect config
         sample_dmarc_record.policy = "reject"
         sample_dkim_record.is_enabled = True
         sample_dkim_record.is_aligned = True
-        
+
         score = dmarc_service.get_domain_security_score("tenant-001")
-        
+
         assert score == 100.0
 
 
@@ -624,7 +624,7 @@ class TestHelperMethods:
         """Test parsing valid ISO datetime string."""
         dt_string = "2025-03-05T12:00:00Z"
         result = dmarc_service._parse_datetime(dt_string)
-        
+
         assert result is not None
         assert isinstance(result, datetime)
 
@@ -648,6 +648,6 @@ class TestHelperMethods:
         """Test DKIM selector extraction returns default when not found."""
         result = dmarc_service._extract_dkim_selector(None)
         assert result == "default"
-        
+
         result = dmarc_service._extract_dkim_selector({"label": "invalid-format"})
         assert result == "default"

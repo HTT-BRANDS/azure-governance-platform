@@ -1,9 +1,9 @@
 """Riverside compliance enums."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class RequirementCategory(str, Enum):
+class RequirementCategory(StrEnum):
     """Riverside compliance requirement categories."""
 
     IAM = "IAM"  # Identity and Access Management
@@ -11,7 +11,7 @@ class RequirementCategory(str, Enum):
     DS = "DS"  # Domain Security
 
 
-class RequirementPriority(str, Enum):
+class RequirementPriority(StrEnum):
     """Riverside compliance requirement priorities."""
 
     P0 = "P0"  # Critical
@@ -19,7 +19,7 @@ class RequirementPriority(str, Enum):
     P2 = "P2"  # Medium
 
 
-class RequirementStatus(str, Enum):
+class RequirementStatus(StrEnum):
     """Riverside compliance requirement statuses."""
 
     NOT_STARTED = "not_started"

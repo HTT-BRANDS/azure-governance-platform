@@ -9,10 +9,12 @@ Tests for anomaly detection, acknowledgment, and grouping.
 - bulk_acknowledge_anomalies (2 tests)
 """
 
-import pytest
 import sys
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 
 # Mock the cache decorator BEFORE importing the service
 def no_op_cache(cache_key):
@@ -28,11 +30,11 @@ with patch("app.core.cache.cached", no_op_cache):
         del sys.modules["app.api.services.cost_service"]
     from app.api.services.cost_service import CostService
 
-from app.models.cost import CostAnomaly
-from app.models.tenant import Tenant
-from app.schemas.cost import (
-    BulkAcknowledgeResponse,
+from app.models.cost import CostAnomaly  # noqa: E402
+from app.models.tenant import Tenant  # noqa: E402
+from app.schemas.cost import (  # noqa: E402
     AnomaliesByService,
+    BulkAcknowledgeResponse,
     TopAnomaly,
 )
 
@@ -172,7 +174,7 @@ class TestCostServiceAnomalies:
         # Create fresh mocks
         mock_db = MagicMock()
         service = CostService(db=mock_db)
-        
+
         # Setup mock query
         mock_query = MagicMock()
         mock_query.all.return_value = []
@@ -295,7 +297,7 @@ class TestCostServiceAnomalies:
         """Test bulk_acknowledge_anomalies with all successful."""
         # Setup
         anomaly_ids = [1, 2, 3]
-        
+
         # Mock acknowledge_anomaly to succeed
         with patch.object(
             cost_service, "acknowledge_anomaly", new_callable=AsyncMock
@@ -321,7 +323,7 @@ class TestCostServiceAnomalies:
         """Test bulk_acknowledge_anomalies with some failures."""
         # Setup
         anomaly_ids = [1, 2, 3]
-        
+
         # Mock acknowledge_anomaly to fail for id 2
         async def mock_acknowledge(anomaly_id, user):
             return anomaly_id != 2

@@ -26,7 +26,6 @@ from fastapi.testclient import TestClient
 from app.core.auth import User, get_current_user
 from app.core.database import get_db
 
-
 # =============================================================================
 # FIXTURES
 # =============================================================================
@@ -94,7 +93,6 @@ def mock_tenant_auth(monkeypatch):
     monkeypatch.setattr(authorization, "validate_tenant_access", mock_validate_tenant_access)
 
     # Also mock the app.api.routes.riverside imports
-    import app.api.routes.riverside as riverside_module
 
 
 
@@ -105,9 +103,10 @@ def mock_tenant_auth(monkeypatch):
 @pytest.fixture
 def auth_client(db_session, admin_user, mock_tenant_auth):
     """Create a test client with admin authentication."""
-    from app.main import app
-    from app.core.authorization import TenantAuthorization, get_tenant_authorization
     from unittest.mock import MagicMock
+
+    from app.core.authorization import TenantAuthorization, get_tenant_authorization
+    from app.main import app
 
     def override_get_db():
         try:
@@ -131,9 +130,10 @@ def auth_client(db_session, admin_user, mock_tenant_auth):
 @pytest.fixture
 def operator_client(db_session, operator_user, mock_tenant_auth):
     """Create a test client with operator authentication."""
-    from app.main import app
-    from app.core.authorization import TenantAuthorization, get_tenant_authorization
     from unittest.mock import MagicMock
+
+    from app.core.authorization import TenantAuthorization, get_tenant_authorization
+    from app.main import app
 
     def override_get_db():
         try:
@@ -157,9 +157,10 @@ def operator_client(db_session, operator_user, mock_tenant_auth):
 @pytest.fixture
 def viewer_client(db_session, regular_user, mock_tenant_auth):
     """Create a test client with regular user authentication."""
-    from app.main import app
-    from app.core.authorization import TenantAuthorization, get_tenant_authorization
     from unittest.mock import MagicMock
+
+    from app.core.authorization import TenantAuthorization, get_tenant_authorization
+    from app.main import app
 
     def override_get_db():
         try:
@@ -183,9 +184,10 @@ def viewer_client(db_session, regular_user, mock_tenant_auth):
 @pytest.fixture
 def unauthenticated_client(db_session):
     """Create a test client without authentication."""
-    from app.main import app
-    from app.core.authorization import TenantAuthorization, get_tenant_authorization
     from unittest.mock import MagicMock
+
+    from app.core.authorization import TenantAuthorization, get_tenant_authorization
+    from app.main import app
 
     def override_get_db():
         try:

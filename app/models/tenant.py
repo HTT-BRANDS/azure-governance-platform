@@ -3,13 +3,16 @@
 Includes tenant configuration, subscriptions, and user-tenant access mappings.
 """
 
-import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.models.brand import BrandConfig
 
 
 class Tenant(Base):

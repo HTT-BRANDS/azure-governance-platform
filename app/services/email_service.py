@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import aiosmtplib
@@ -24,7 +24,7 @@ from app.core.notifications import Notification, NotificationChannel, Severity
 logger = logging.getLogger(__name__)
 
 
-class EmailTemplate(str, Enum):
+class EmailTemplate(StrEnum):
     """Email template types."""
 
     MFA_ALERT = "mfa_alert"

@@ -5,14 +5,14 @@ reports for all Riverside tenants with email security compliance.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from app.api.services.dmarc_service import DMARCService
 from app.api.services.monitoring_service import MonitoringService
 from app.core.circuit_breaker import DMARC_SYNC_BREAKER, circuit_breaker
 from app.core.database import get_db_context
 from app.core.retry import DMARC_SYNC_POLICY, retry_with_backoff
-from app.models.dmarc import DMARCAlert, DMARCRecord, DMARCReport, DKIMRecord
+from app.models.dmarc import DKIMRecord, DMARCAlert, DMARCRecord
 from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)

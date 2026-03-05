@@ -125,7 +125,7 @@ class BulkService:
             logger.info(f"Bulk inserted {inserted} tag records")
 
         # Invalidate cache for affected tenants
-        tenant_ids = list(set(r.tenant_id for r in resources))
+        tenant_ids = list({r.tenant_id for r in resources})
         for tenant_id in tenant_ids:
             await invalidate_on_sync_completion(tenant_id)
 
@@ -179,7 +179,7 @@ class BulkService:
             success_count += 1
 
         # Invalidate cache
-        tenant_ids = list(set(r.tenant_id for r in resources))
+        tenant_ids = list({r.tenant_id for r in resources})
         for tenant_id in tenant_ids:
             await invalidate_on_sync_completion(tenant_id)
 

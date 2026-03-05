@@ -5,7 +5,6 @@ admin role data, including caching, retry logic, and multi-tenant support.
 """
 
 import sys
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -17,13 +16,13 @@ sys.modules['azure.identity'] = azure_mock
 sys.modules['azure.core'] = azure_mock
 sys.modules['azure.core.exceptions'] = azure_mock
 
-from app.api.services.azure_ad_admin_service import (
+from app.api.services.azure_ad_admin_service import (  # noqa: E402
     AdminRoleError,
     AdminRoleMetrics,
     AzureADAdminService,
     azure_ad_admin_service,
 )
-from app.api.services.graph_client import (
+from app.api.services.graph_client import (  # noqa: E402
     AdminRoleSummary,
     DirectoryRole,
     PrivilegedAccessAssignment,
@@ -292,7 +291,7 @@ class TestAzureADAdminService:
             result = await admin_service.get_privileged_users("tenant-123", include_pim=True)
 
             assert len(result) == 3  # 2 direct + 1 PIM
-            
+
             # Check first user (Global Admin)
             user1 = next(u for u in result if u["principal_id"] == "user-1")
             assert user1["user_principal_name"] == "admin@example.com"

@@ -16,7 +16,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from datetime import datetime, timedelta
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from azure.core.exceptions import HttpResponseError
 from sqlalchemy.orm import Session
@@ -24,10 +24,10 @@ from sqlalchemy.orm import Session
 from app.api.services.azure_client import azure_client_manager
 from app.core.database import bulk_insert_chunks
 from app.models.backfill_job import BackfillJob, BackfillStatus
-from app.models.compliance import ComplianceSnapshot, PolicyState
-from app.models.cost import CostAnomaly, CostSnapshot
-from app.models.identity import IdentitySnapshot, PrivilegedUser
-from app.models.resource import IdleResource, Resource, ResourceTag
+from app.models.compliance import ComplianceSnapshot
+from app.models.cost import CostSnapshot
+from app.models.identity import IdentitySnapshot
+from app.models.resource import Resource
 
 logger = logging.getLogger(__name__)
 
@@ -210,8 +210,11 @@ class CostDataProcessor(BackfillProcessor):
         service name. Skips zero-cost entries to save storage.
         """
         from azure.mgmt.costmanagement.models import (
-            QueryAggregation, QueryDataset, QueryDefinition,
-            QueryGrouping, QueryTimePeriod,
+            QueryAggregation,
+            QueryDataset,
+            QueryDefinition,
+            QueryGrouping,
+            QueryTimePeriod,
         )
 
         try:

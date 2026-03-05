@@ -10,7 +10,7 @@ Tests bulk operation endpoints:
 
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -32,7 +32,7 @@ def test_db_session(db_session):
         is_active=True,
     )
     db_session.add(tenant)
-    
+
     user_tenant = UserTenant(
         id=str(uuid.uuid4()),
         user_id="user:bulk-admin",
@@ -46,7 +46,7 @@ def test_db_session(db_session):
         granted_at=datetime.utcnow(),
     )
     db_session.add(user_tenant)
-    
+
     db_session.commit()
     return db_session
 
@@ -59,7 +59,7 @@ def client_with_db(test_db_session):
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -115,7 +115,7 @@ def test_bulk_apply_tags_success(client_with_db, mock_admin_user):
         "tags": {"Environment": "Production", "Owner": "DevOps"},
         "operation": "merge",
     }
-    
+
     mock_response = {
         "success_count": 3,
         "failure_count": 0,
@@ -125,14 +125,14 @@ def test_bulk_apply_tags_success(client_with_db, mock_admin_user):
             {"resource_id": "res-3", "success": True},
         ],
     }
-    
+
     with patch("app.api.routes.bulk.get_current_user", return_value=mock_admin_user):
         with patch("app.api.routes.bulk.BulkService") as MockBulkService:
             mock_service = MockBulkService.return_value
             mock_service.bulk_tag_resources.return_value = mock_response
-            
+
             response = client_with_db.post("/api/v1/bulk/tags/apply", json=request_data)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["success_count"] == 3
@@ -146,21 +146,17 @@ def test_bulk_apply_tags_requires_operator_role(client_with_db, mock_viewer_user
         "tags": {"Test": "Value"},
         "operation": "merge",
     }
-    
+
     with patch("app.api.routes.bulk.get_current_user", return_value=mock_viewer_user):
         response = client_with_db.post("/api/v1/bulk/tags/apply", json=request_data)
-    
+
     assert response.status_code == 403
     assert "operator or admin role" in response.json()["detail"]
 
 
 def test_bulk_remove_tags_success(client_with_db, mock_operator_user):
     """Test successful bulk tag removal."""
-    request_data = {
-        "resource_ids": ["res-1", "res-2"],
-        "tag_names": ["OldTag", "DeprecatedTag"],
-    }
-    
+
     mock_response = {
         "success_count": 2,
         "failure_count": 0,
@@ -169,17 +165,17 @@ def test_bulk_remove_tags_success(client_with_db, mock_operator_user):
             {"resource_id": "res-2", "success": True},
         ],
     }
-    
+
     with patch("app.api.routes.bulk.get_current_user", return_value=mock_operator_user):
         with patch("app.api.routes.bulk.BulkService") as MockBulkService:
             mock_service = MockBulkService.return_value
             mock_service.bulk_remove_tags.return_value = mock_response
-            
+
             response = client_with_db.post(
                 "/api/v1/bulk/tags/remove",
                 params={"resource_ids": ["res-1", "res-2"], "tag_names": ["OldTag", "DeprecatedTag"]},
             )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["success_count"] == 2
@@ -191,20 +187,20 @@ def test_bulk_acknowledge_anomalies_success(client_with_db, mock_admin_user):
         "anomaly_ids": [1, 2, 3],
         "notes": "Reviewed and acknowledged as expected spikes",
     }
-    
+
     mock_response = {
         "acknowledged_count": 3,
         "failed_count": 0,
         "anomaly_ids": [1, 2, 3],
     }
-    
+
     with patch("app.api.routes.bulk.get_current_user", return_value=mock_admin_user):
         with patch("app.api.routes.bulk.BulkService") as MockBulkService:
             mock_service = MockBulkService.return_value
             mock_service.bulk_acknowledge_anomalies.return_value = mock_response
-            
+
             response = client_with_db.post("/api/v1/bulk/anomalies/acknowledge", json=request_data)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["acknowledged_count"] == 3
@@ -217,22 +213,22 @@ def test_bulk_dismiss_recommendations_success(client_with_db, mock_admin_user):
         "recommendation_ids": [10, 20, 30],
         "reason": "Not applicable for our use case",
     }
-    
+
     mock_response = {
         "dismissed_count": 3,
         "failed_count": 0,
         "recommendation_ids": [10, 20, 30],
     }
-    
+
     with patch("app.api.routes.bulk.get_current_user", return_value=mock_admin_user):
         with patch("app.api.routes.bulk.BulkService") as MockBulkService:
             mock_service = MockBulkService.return_value
             mock_service.bulk_dismiss_recommendations.return_value = mock_response
-            
+
             response = client_with_db.post(
                 "/api/v1/bulk/recommendations/dismiss", json=request_data
             )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["dismissed_count"] == 3
@@ -244,22 +240,22 @@ def test_bulk_review_idle_resources_success(client_with_db, mock_admin_user):
         "idle_resource_ids": ["idle-1", "idle-2", "idle-3"],
         "notes": "Resources are idle but needed for seasonal workloads",
     }
-    
+
     mock_response = {
         "reviewed_count": 3,
         "failed_count": 0,
         "idle_resource_ids": ["idle-1", "idle-2", "idle-3"],
     }
-    
+
     with patch("app.api.routes.bulk.get_current_user", return_value=mock_admin_user):
         with patch("app.api.routes.bulk.BulkService") as MockBulkService:
             mock_service = MockBulkService.return_value
             mock_service.bulk_review_idle_resources.return_value = mock_response
-            
+
             response = client_with_db.post(
                 "/api/v1/bulk/idle-resources/review", json=request_data
             )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["reviewed_count"] == 3

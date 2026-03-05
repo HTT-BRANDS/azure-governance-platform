@@ -18,13 +18,12 @@ Tenant List:
 """
 
 from dataclasses import dataclass, field
-from typing import Literal
 
 
 @dataclass(frozen=True)
 class TenantConfig:
     """Configuration for a single Azure tenant.
-    
+
     Attributes:
         tenant_id: Azure AD tenant ID (GUID)
         name: Human-readable tenant name
@@ -52,23 +51,23 @@ class TenantConfig:
 @dataclass(frozen=True)
 class GraphPermissions:
     """Required Microsoft Graph API permissions for DMARC/DKIM monitoring.
-    
+
     These permissions follow the principle of least privilege.
     All are Application permissions requiring admin consent.
     """
-    
+
     # Read security reports including email authentication reports
     REPORTS_READ_ALL: str = "Reports.Read.All"
-    
+
     # Read security events and alerts
     SECURITY_EVENTS_READ_ALL: str = "SecurityEvents.Read.All"
-    
+
     # Read domain information for custom domain verification
     DOMAIN_READ_ALL: str = "Domain.Read.All"
-    
+
     # Read directory data (users, groups, apps)
     DIRECTORY_READ_ALL: str = "Directory.Read.All"
-    
+
     @classmethod
     def all_permissions(cls) -> list[str]:
         """Return all required permissions as a list."""
@@ -78,7 +77,7 @@ class GraphPermissions:
             cls.DOMAIN_READ_ALL,
             cls.DIRECTORY_READ_ALL,
         ]
-    
+
     @classmethod
     def permission_descriptions(cls) -> dict[str, str]:
         """Return human-readable descriptions of each permission."""
@@ -165,25 +164,25 @@ RIVERSIDE_TENANTS: dict[str, TenantConfig] = {
 @dataclass(frozen=True)
 class DmarcDkimConfig:
     """Configuration for DMARC/DKIM monitoring across all tenants."""
-    
+
     # Graph API endpoints for email authentication
     GRAPH_BASE_URL: str = "https://graph.microsoft.com/v1.0"
-    
+
     # Security report endpoints
     EMAIL_AUTHENTICATION_REPORTS_ENDPOINT: str = "/reports/getEmailActivityUserDetail"
     SECURITY_ALERTS_ENDPOINT: str = "/security/alerts"
-    
+
     # Sync intervals (in minutes)
     DMARC_SYNC_INTERVAL_MINUTES: int = 60
     DKIM_SYNC_INTERVAL_MINUTES: int = 60
-    
+
     # Alert thresholds
     DMARC_FAILURE_THRESHOLD_PERCENT: float = 5.0
     DKIM_FAILURE_THRESHOLD_PERCENT: float = 5.0
-    
+
     # Data retention (days)
     DMARC_DATA_RETENTION_DAYS: int = 90
-    
+
     @classmethod
     def get_graph_endpoints(cls) -> dict[str, str]:
         """Return all relevant Graph API endpoints for DMARC/DKIM."""
@@ -204,10 +203,10 @@ KEY_VAULT_CONFIG = {
     # Key Vault URL should be set via environment variable
     # Format: https://{vault-name}.vault.azure.net/
     "vault_url_env_var": "KEY_VAULT_URL",
-    
+
     # Secret naming convention for tenant credentials
     "secret_name_template": "{tenant_code.lower()}-client-secret",
-    
+
     # Certificate-based auth (preferred over secrets)
     "use_certificate_auth": False,  # Set to True when certificates are available
     "certificate_env_var": "AZURE_CLIENT_CERTIFICATE_PATH",
@@ -221,8 +220,8 @@ KEY_VAULT_CONFIG = {
 def get_active_tenants() -> dict[str, TenantConfig]:
     """Return only active tenant configurations."""
     return {
-        code: config 
-        for code, config in RIVERSIDE_TENANTS.items() 
+        code: config
+        for code, config in RIVERSIDE_TENANTS.items()
         if config.is_active
     }
 
@@ -248,8 +247,8 @@ def get_all_tenant_ids() -> list[str]:
 def get_all_active_tenant_ids() -> list[str]:
     """Return list of active tenant IDs."""
     return [
-        config.tenant_id 
-        for config in RIVERSIDE_TENANTS.values() 
+        config.tenant_id
+        for config in RIVERSIDE_TENANTS.values()
         if config.is_active
     ]
 
@@ -265,15 +264,15 @@ def get_key_vault_secret_name(tenant_code: str) -> str:
 def validate_tenant_config() -> list[str]:
     """Validate all tenant configurations and return list of issues."""
     issues = []
-    
+
     for code, config in RIVERSIDE_TENANTS.items():
         # Check for placeholder values
         if config.tenant_id in ("TBD", "", None):
             issues.append(f"{code}: Tenant ID is not set")
-        
+
         if config.app_id in ("TBD", "", None):
             issues.append(f"{code}: App ID is not set")
-        
+
         # Validate UUID format
         import uuid
         try:
@@ -281,17 +280,17 @@ def validate_tenant_config() -> list[str]:
                 uuid.UUID(config.tenant_id)
         except ValueError:
             issues.append(f"{code}: Tenant ID is not a valid UUID")
-        
+
         try:
             if config.app_id not in ("TBD", "", None):
                 uuid.UUID(config.app_id)
         except ValueError:
             issues.append(f"{code}: App ID is not a valid UUID")
-        
+
         # Check admin email format
         if "@" not in config.admin_email:
             issues.append(f"{code}: Admin email is invalid")
-    
+
     return issues
 
 
@@ -302,14 +301,14 @@ def validate_tenant_config() -> list[str]:
 DEFAULT_TENANT_SETTINGS = {
     # Graph API version to use
     "graph_api_version": "v1.0",
-    
+
     # Default sync intervals (hours)
     "sync_intervals": {
         "dmarc_dkim": 1,
         "security_alerts": 1,
         "domain_status": 24,
     },
-    
+
     # Monitoring flags
     "monitoring": {
         "enable_dmarc_monitoring": True,
@@ -317,7 +316,7 @@ DEFAULT_TENANT_SETTINGS = {
         "enable_spf_monitoring": True,
         "alert_on_failure": True,
     },
-    
+
     # Retry configuration
     "retry": {
         "max_retries": 3,

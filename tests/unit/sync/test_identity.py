@@ -1,16 +1,16 @@
 """Tests for identity synchronization module."""
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.sync.identity import (
-    sync_identity,
     _is_privileged_role,
     _parse_last_sign_in,
     _process_user_activity,
+    sync_identity,
 )
 
 
@@ -31,7 +31,7 @@ class TestIdentitySync:
         with patch("app.core.sync.identity.GraphClient") as mock_graph_class:
             mock_graph_client = AsyncMock()
             mock_graph_class.return_value = mock_graph_client
-            
+
             mock_graph_client.get_users.return_value = sample_users
             mock_graph_client.get_guest_users.return_value = [
                 {"userPrincipalName": "guest@example.com"}
@@ -46,10 +46,10 @@ class TestIdentitySync:
                     {"userPrincipalName": "guest@example.com", "isMfaRegistered": False},
                 ]
             }
-            
+
             # Execute
             await sync_identity()
-            
+
             # Verify
             mock_graph_client.get_users.assert_called_once()
             mock_graph_client.get_directory_roles.assert_called_once()
@@ -68,16 +68,16 @@ class TestIdentitySync:
         with patch("app.core.sync.identity.GraphClient") as mock_graph_class:
             mock_graph_client = AsyncMock()
             mock_graph_class.return_value = mock_graph_client
-            
+
             mock_graph_client.get_users.return_value = []
             mock_graph_client.get_guest_users.return_value = []
             mock_graph_client.get_directory_roles.return_value = []
             mock_graph_client.get_service_principals.return_value = []
             mock_graph_client.get_mfa_status.return_value = {"value": []}
-            
+
             # Execute
             await sync_identity()
-            
+
             # Verify - should still create snapshot
             mock_db_session.add.assert_called()
 
@@ -93,10 +93,10 @@ class TestIdentitySync:
         mock_db_query.filter.return_value = mock_db_query
         mock_db_query.all.return_value = []
         mock_db_session.query.return_value = mock_db_query
-        
+
         # Execute
         await sync_identity()
-        
+
         # Verify - no GraphClient calls, but SyncJobLog is still added for monitoring
         # The sync starts before checking for tenants, so add is called once for SyncJobLog
         mock_db_session.add.assert_called_once()
@@ -113,9 +113,9 @@ class TestIdentitySync:
         with patch("app.core.sync.identity.GraphClient") as mock_graph_class:
             mock_graph_client = AsyncMock()
             mock_graph_class.return_value = mock_graph_client
-            
+
             mock_graph_client.get_users.side_effect = Exception("Graph API error")
-            
+
             # Execute - should not raise
             await sync_identity()
 
@@ -133,16 +133,16 @@ class TestIdentitySync:
         with patch("app.core.sync.identity.GraphClient") as mock_graph_class:
             mock_graph_client = AsyncMock()
             mock_graph_class.return_value = mock_graph_client
-            
+
             mock_graph_client.get_users.return_value = sample_users
             mock_graph_client.get_guest_users.return_value = []
             mock_graph_client.get_directory_roles.return_value = sample_directory_roles
             mock_graph_client.get_service_principals.return_value = []
             mock_graph_client.get_mfa_status.side_effect = Exception("MFA permission denied")
-            
+
             # Execute - should not raise
             await sync_identity()
-            
+
             # Verify - should complete without MFA data
             mock_db_session.add.assert_called()
 
@@ -160,15 +160,15 @@ class TestIdentitySync:
         with patch("app.core.sync.identity.GraphClient") as mock_graph_class:
             mock_graph_client = AsyncMock()
             mock_graph_class.return_value = mock_graph_client
-            
+
             mock_graph_client.get_users.return_value = sample_users
             mock_graph_client.get_guest_users.return_value = []
             mock_graph_client.get_directory_roles.return_value = sample_directory_roles
             mock_graph_client.get_service_principals.return_value = []
             mock_graph_client.get_mfa_status.return_value = {"value": []}
-            
+
             mock_db_session.commit.side_effect = SQLAlchemyError("Database error")
-            
+
             # Execute - should raise after retries are exhausted
             with pytest.raises(SQLAlchemyError):
                 await sync_identity()
@@ -192,7 +192,7 @@ class TestIdentitySync:
                 "lastSignInDateTime": (datetime.utcnow() - timedelta(days=100)).isoformat() + "Z"
             }
         }
-        
+
         active_user = {
             "id": "user-active",
             "displayName": "Active User",
@@ -202,7 +202,7 @@ class TestIdentitySync:
                 "lastSignInDateTime": (datetime.utcnow() - timedelta(days=5)).isoformat() + "Z"
             }
         }
-        
+
         never_signed_in = {
             "id": "user-never",
             "displayName": "Never Signed In",
@@ -210,20 +210,20 @@ class TestIdentitySync:
             "userType": "Member",
             "signInActivity": {}
         }
-        
+
         with patch("app.core.sync.identity.GraphClient") as mock_graph_class:
             mock_graph_client = AsyncMock()
             mock_graph_class.return_value = mock_graph_client
-            
+
             mock_graph_client.get_users.return_value = [stale_user, active_user, never_signed_in]
             mock_graph_client.get_guest_users.return_value = []
             mock_graph_client.get_directory_roles.return_value = []
             mock_graph_client.get_service_principals.return_value = []
             mock_graph_client.get_mfa_status.return_value = {"value": []}
-            
+
             # Execute
             await sync_identity()
-            
+
             # Verify
             mock_db_session.add.assert_called()
 
@@ -272,20 +272,20 @@ class TestIdentitySync:
                 ]
             },
         ]
-        
+
         with patch("app.core.sync.identity.GraphClient") as mock_graph_class:
             mock_graph_client = AsyncMock()
             mock_graph_class.return_value = mock_graph_client
-            
+
             mock_graph_client.get_users.return_value = sample_users
             mock_graph_client.get_guest_users.return_value = []
             mock_graph_client.get_directory_roles.return_value = directory_roles
             mock_graph_client.get_service_principals.return_value = []
             mock_graph_client.get_mfa_status.return_value = {"value": []}
-            
+
             # Execute
             await sync_identity()
-            
+
             # Verify - should create privileged user records for Global and Security admins
             mock_db_session.add.assert_called()
 
@@ -317,20 +317,20 @@ class TestIdentitySync:
                 ]
             },
         ]
-        
+
         with patch("app.core.sync.identity.GraphClient") as mock_graph_class:
             mock_graph_client = AsyncMock()
             mock_graph_class.return_value = mock_graph_client
-            
+
             mock_graph_client.get_users.return_value = sample_users
             mock_graph_client.get_guest_users.return_value = []
             mock_graph_client.get_directory_roles.return_value = directory_roles
             mock_graph_client.get_service_principals.return_value = []
             mock_graph_client.get_mfa_status.return_value = {"value": []}
-            
+
             # Execute
             await sync_identity()
-            
+
             # Verify
             mock_db_session.add.assert_called()
 
@@ -350,25 +350,25 @@ class TestIdentitySync:
         tenant2.tenant_id = "test-tenant-id-456"
         tenant2.name = "Test Tenant 2"
         tenant2.is_active = True
-        
+
         mock_db_query = MagicMock()
         mock_db_query.filter.return_value = mock_db_query
         mock_db_query.all.return_value = [mock_tenant, tenant2]
         mock_db_session.query.return_value = mock_db_query
-        
+
         with patch("app.core.sync.identity.GraphClient") as mock_graph_class:
             mock_graph_client = AsyncMock()
             mock_graph_class.return_value = mock_graph_client
-            
+
             mock_graph_client.get_users.return_value = sample_users
             mock_graph_client.get_guest_users.return_value = []
             mock_graph_client.get_directory_roles.return_value = sample_directory_roles
             mock_graph_client.get_service_principals.return_value = []
             mock_graph_client.get_mfa_status.return_value = {"value": []}
-            
+
             # Execute
             await sync_identity()
-            
+
             # Verify - GraphClient should be initialized for each tenant
             assert mock_graph_class.call_count == 2
 
@@ -436,9 +436,9 @@ class TestIdentityHelpers:
         }
         stale_30d = datetime.utcnow() - timedelta(days=30)
         stale_90d = datetime.utcnow() - timedelta(days=90)
-        
+
         is_active, is_stale_30d, is_stale_90d = _process_user_activity(user, stale_30d, stale_90d)
-        
+
         assert is_active is True
         assert is_stale_30d is False
         assert is_stale_90d is False
@@ -452,9 +452,9 @@ class TestIdentityHelpers:
         }
         stale_30d = datetime.utcnow() - timedelta(days=30)
         stale_90d = datetime.utcnow() - timedelta(days=90)
-        
+
         is_active, is_stale_30d, is_stale_90d = _process_user_activity(user, stale_30d, stale_90d)
-        
+
         assert is_active is False
         assert is_stale_30d is True
         assert is_stale_90d is False
@@ -468,9 +468,9 @@ class TestIdentityHelpers:
         }
         stale_30d = datetime.utcnow() - timedelta(days=30)
         stale_90d = datetime.utcnow() - timedelta(days=90)
-        
+
         is_active, is_stale_30d, is_stale_90d = _process_user_activity(user, stale_30d, stale_90d)
-        
+
         assert is_active is False
         assert is_stale_30d is True
         assert is_stale_90d is True
@@ -480,9 +480,9 @@ class TestIdentityHelpers:
         user = {"signInActivity": {}}
         stale_30d = datetime.utcnow() - timedelta(days=30)
         stale_90d = datetime.utcnow() - timedelta(days=90)
-        
+
         is_active, is_stale_30d, is_stale_90d = _process_user_activity(user, stale_30d, stale_90d)
-        
+
         assert is_active is False
         assert is_stale_30d is True
         assert is_stale_90d is True

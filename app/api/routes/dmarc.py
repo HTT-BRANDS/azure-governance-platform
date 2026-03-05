@@ -9,8 +9,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.api.services.dmarc_service import DMARCService
+from app.core.database import get_db
 
 router = APIRouter(prefix="/api/v1/dmarc", tags=["dmarc"])
 
@@ -161,7 +161,7 @@ async def get_dmarc_reports(
     if not tenant_id:
         raise HTTPException(status_code=400, detail="tenant_id is required")
 
-    service = DMARCService(db)
+    DMARCService(db)
 
     # Get reports via service
     from app.models.dmarc import DMARCReport
@@ -304,7 +304,7 @@ async def sync_dmarc_data(
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}") from e
 
 
 # Helper functions

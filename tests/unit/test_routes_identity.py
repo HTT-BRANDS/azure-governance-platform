@@ -14,8 +14,7 @@ Tests all identity endpoints with FastAPI TestClient:
 """
 
 import uuid
-from datetime import datetime
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,7 +26,6 @@ from app.models.tenant import Tenant
 from app.schemas.identity import (
     IdentitySummary,
     PrivilegedAccount,
-    GuestAccount,
     StaleAccount,
 )
 
@@ -54,7 +52,7 @@ def client_with_db(test_db_session):
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -92,7 +90,7 @@ def mock_authz():
 
 class TestIdentitySummaryEndpoint:
     """Tests for GET /api/v1/identity/summary endpoint."""
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.IdentityService")
@@ -100,7 +98,7 @@ class TestIdentitySummaryEndpoint:
         """Identity summary endpoint returns aggregated data."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         # Mock the service response
         mock_service_instance = MagicMock()
         mock_service_instance.get_identity_summary.return_value = IdentitySummary(
@@ -111,14 +109,14 @@ class TestIdentitySummaryEndpoint:
             mfa_enabled_percentage=85.5,
         )
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/identity/summary")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["total_users"] == 100
         assert data["mfa_enabled_percentage"] == 85.5
-    
+
     def test_get_summary_requires_auth(self, client_with_db):
         """Identity summary endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/identity/summary")
@@ -131,7 +129,7 @@ class TestIdentitySummaryEndpoint:
 
 class TestPrivilegedAccountsEndpoint:
     """Tests for GET /api/v1/identity/privileged endpoint."""
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.IdentityService")
@@ -139,7 +137,7 @@ class TestPrivilegedAccountsEndpoint:
         """Privileged accounts endpoint returns account list."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         mock_service_instance = MagicMock()
         mock_service_instance.get_privileged_accounts.return_value = [
             PrivilegedAccount(
@@ -151,18 +149,18 @@ class TestPrivilegedAccountsEndpoint:
             ),
         ]
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/identity/privileged")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-    
+
     def test_get_privileged_accounts_requires_auth(self, client_with_db):
         """Privileged accounts endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/identity/privileged")
         assert response.status_code == 401
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.IdentityService")
@@ -170,15 +168,15 @@ class TestPrivilegedAccountsEndpoint:
         """Privileged accounts endpoint supports filtering."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         mock_service_instance = MagicMock()
         mock_service_instance.get_privileged_accounts.return_value = []
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get(
             "/api/v1/identity/privileged?risk_level=High&mfa_enabled=false"
         )
-        
+
         assert response.status_code == 200
 
 
@@ -188,7 +186,7 @@ class TestPrivilegedAccountsEndpoint:
 
 class TestGuestAccountsEndpoint:
     """Tests for GET /api/v1/identity/guests endpoint."""
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.IdentityService")
@@ -196,22 +194,22 @@ class TestGuestAccountsEndpoint:
         """Guest accounts endpoint returns guest list."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         mock_service_instance = MagicMock()
         mock_service_instance.get_guest_accounts.return_value = []
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/identity/guests")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-    
+
     def test_get_guest_accounts_requires_auth(self, client_with_db):
         """Guest accounts endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/identity/guests")
         assert response.status_code == 401
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.IdentityService")
@@ -219,13 +217,13 @@ class TestGuestAccountsEndpoint:
         """Guest accounts endpoint filters stale guests."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         mock_service_instance = MagicMock()
         mock_service_instance.get_guest_accounts.return_value = []
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/identity/guests?stale_only=true")
-        
+
         assert response.status_code == 200
         mock_service_instance.get_guest_accounts.assert_called_once()
 
@@ -236,7 +234,7 @@ class TestGuestAccountsEndpoint:
 
 class TestStaleAccountsEndpoint:
     """Tests for GET /api/v1/identity/stale endpoint."""
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.IdentityService")
@@ -244,7 +242,7 @@ class TestStaleAccountsEndpoint:
         """Stale accounts endpoint returns stale account list."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         mock_service_instance = MagicMock()
         mock_service_instance.get_stale_accounts.return_value = [
             StaleAccount(
@@ -255,13 +253,13 @@ class TestStaleAccountsEndpoint:
             ),
         ]
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/identity/stale?days_inactive=30")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-    
+
     def test_get_stale_accounts_requires_auth(self, client_with_db):
         """Stale accounts endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/identity/stale")
@@ -274,7 +272,7 @@ class TestStaleAccountsEndpoint:
 
 class TestIdentityTrendsEndpoint:
     """Tests for GET /api/v1/identity/trends endpoint."""
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.IdentityService")
@@ -282,20 +280,20 @@ class TestIdentityTrendsEndpoint:
         """Identity trends endpoint returns time series data."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         mock_service_instance = MagicMock()
         mock_service_instance.get_identity_trends.return_value = {
             "mfa_adoption": [{"date": "2024-01-01", "percentage": 85.0}],
             "guest_count": [{"date": "2024-01-01", "count": 20}],
         }
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/identity/trends?days=30")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, dict)
-    
+
     def test_get_identity_trends_requires_auth(self, client_with_db):
         """Identity trends endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/identity/trends")
@@ -308,7 +306,7 @@ class TestIdentityTrendsEndpoint:
 
 class TestAdminRolesSummaryEndpoint:
     """Tests for GET /api/v1/identity/admin-roles/summary endpoint."""
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.azure_ad_admin_service.get_admin_role_summary")
@@ -316,7 +314,7 @@ class TestAdminRolesSummaryEndpoint:
         """Admin roles summary endpoint returns role data."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         # Mock async service method
         mock_summary = MagicMock()
         mock_summary.__dict__ = {
@@ -325,15 +323,15 @@ class TestAdminRolesSummaryEndpoint:
             "global_admin_count": 3,
         }
         mock_service_method.return_value = mock_summary
-        
+
         response = client_with_db.get(
             "/api/v1/identity/admin-roles/summary?tenant_id=test-tenant-123"
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "total_roles" in data
-    
+
     def test_get_admin_roles_summary_requires_auth(self, client_with_db):
         """Admin roles summary endpoint returns 401 without authentication."""
         response = client_with_db.get(
@@ -348,7 +346,7 @@ class TestAdminRolesSummaryEndpoint:
 
 class TestGlobalAdminsEndpoint:
     """Tests for GET /api/v1/identity/admin-roles/global-admins endpoint."""
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.azure_ad_admin_service.get_global_admins")
@@ -356,21 +354,21 @@ class TestGlobalAdminsEndpoint:
         """Global admins endpoint returns admin list."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         # Mock async service method
         mock_service_method.return_value = [
             {"id": "admin-1", "displayName": "Admin User"},
         ]
-        
+
         response = client_with_db.get(
             "/api/v1/identity/admin-roles/global-admins?tenant_id=test-tenant-123"
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "admins" in data
         assert "count" in data
-    
+
     def test_get_global_admins_requires_auth(self, client_with_db):
         """Global admins endpoint returns 401 without authentication."""
         response = client_with_db.get(
@@ -385,7 +383,7 @@ class TestGlobalAdminsEndpoint:
 
 class TestInvalidateCacheEndpoint:
     """Tests for POST /api/v1/identity/admin-roles/cache/invalidate endpoint."""
-    
+
     @patch("app.api.routes.identity.get_current_user")
     @patch("app.api.routes.identity.get_tenant_authorization")
     @patch("app.api.routes.identity.azure_ad_admin_service.invalidate_cache")
@@ -393,18 +391,18 @@ class TestInvalidateCacheEndpoint:
         """Cache invalidate endpoint succeeds."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         # Mock async service method
         mock_service_method.return_value = 5
-        
+
         response = client_with_db.post(
             "/api/v1/identity/admin-roles/cache/invalidate?tenant_id=test-tenant-123"
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "cache_entries_invalidated" in data
-    
+
     def test_invalidate_cache_requires_auth(self, client_with_db):
         """Cache invalidate endpoint returns 401 without authentication."""
         response = client_with_db.post(

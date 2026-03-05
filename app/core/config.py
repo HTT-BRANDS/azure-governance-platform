@@ -6,7 +6,6 @@ variable management with sensible defaults.
 
 import logging
 import os
-import re
 import secrets
 from functools import lru_cache
 from typing import Literal

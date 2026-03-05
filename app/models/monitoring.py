@@ -1,11 +1,15 @@
 """Monitoring and observability models for sync jobs."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, relationship
 
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.models.tenant import Tenant
 
 
 class SyncJobLog(Base):

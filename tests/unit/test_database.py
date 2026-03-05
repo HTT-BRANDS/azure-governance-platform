@@ -6,15 +6,12 @@ Tests core database functionality with in-memory SQLite:
 3. Models have __tablename__
 """
 
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.orm import Session
 
 from app.core.database import Base, get_db
-from app.models.tenant import Tenant
-from app.models.resource import Resource
 from app.models.cost import CostSnapshot
+from app.models.resource import Resource
+from app.models.tenant import Tenant
 
 
 def test_base_has_metadata():
@@ -28,10 +25,10 @@ def test_get_db_yields_session():
     """Test that get_db yields a valid Session instance."""
     gen = get_db()
     session = next(gen)
-    
+
     assert isinstance(session, Session)
     assert session is not None
-    
+
     # Clean up
     try:
         next(gen)

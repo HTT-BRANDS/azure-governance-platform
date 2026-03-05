@@ -1,7 +1,7 @@
 """Riverside Service - Sync functions for Graph API integration."""
 
 import logging
-from datetime import date, datetime
+from datetime import datetime
 
 from sqlalchemy import func
 
@@ -9,7 +9,6 @@ from app.api.services.graph_client import GraphClient
 from app.api.services.riverside_service.constants import (
     ADMIN_ROLE_IDS,
     RIVERSIDE_DEADLINE,
-    RIVERSIDE_TENANTS,
 )
 from app.models.riverside import (
     RiversideCompliance,

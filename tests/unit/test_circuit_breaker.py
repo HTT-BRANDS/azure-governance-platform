@@ -1,6 +1,5 @@
 """Unit tests for circuit breaker module."""
 
-import time
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 

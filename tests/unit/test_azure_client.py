@@ -15,7 +15,7 @@ Coverage:
 """
 
 import time
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -491,7 +491,7 @@ class TestClientCreation:
 
         with patch('app.api.services.azure_client.ResourceManagementClient') as mock_resource_client:
             manager = AzureClientManager()
-            client = manager.get_resource_client("tenant-123", "sub-456")
+            manager.get_resource_client("tenant-123", "sub-456")
 
             mock_resource_client.assert_called_once()
             args = mock_resource_client.call_args[0]
@@ -503,7 +503,7 @@ class TestClientCreation:
 
         with patch('app.api.services.azure_client.CostManagementClient') as mock_cost_client:
             manager = AzureClientManager()
-            client = manager.get_cost_client("tenant-123", "sub-456")
+            manager.get_cost_client("tenant-123", "sub-456")
 
             mock_cost_client.assert_called_once()
             args = mock_cost_client.call_args[0]
@@ -515,7 +515,7 @@ class TestClientCreation:
 
         with patch('app.api.services.azure_client.PolicyInsightsClient') as mock_policy_client:
             manager = AzureClientManager()
-            client = manager.get_policy_client("tenant-123", "sub-456")
+            manager.get_policy_client("tenant-123", "sub-456")
 
             mock_policy_client.assert_called_once()
             args = mock_policy_client.call_args[0]
@@ -527,7 +527,7 @@ class TestClientCreation:
 
         with patch('app.api.services.azure_client.SecurityCenter') as mock_security_client:
             manager = AzureClientManager()
-            client = manager.get_security_client("tenant-123", "sub-456")
+            manager.get_security_client("tenant-123", "sub-456")
 
             mock_security_client.assert_called_once()
             args = mock_security_client.call_args[0]

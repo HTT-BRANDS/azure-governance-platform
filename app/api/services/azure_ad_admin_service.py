@@ -16,10 +16,8 @@ Features:
 - Multi-tenant support
 """
 
-import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 from typing import Any
 
 from app.api.services.graph_client import (
@@ -29,7 +27,7 @@ from app.api.services.graph_client import (
     PrivilegedAccessAssignment,
     RoleAssignment,
 )
-from app.core.cache import cache_manager, cached
+from app.core.cache import cache_manager
 from app.core.retry import GRAPH_API_POLICY, retry_with_backoff
 
 logger = logging.getLogger(__name__)
@@ -67,13 +65,13 @@ class AzureADAdminService:
 
     Example:
         service = AzureADAdminService()
-        
+
         # Get admin role summary for a tenant
         summary = await service.get_admin_role_summary("tenant-id")
-        
+
         # Get privileged users with their roles
         users = await service.get_privileged_users("tenant-id")
-        
+
         # Sync data to database
         await service.sync_privileged_users("tenant-id", db_session)
     """

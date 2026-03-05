@@ -30,7 +30,7 @@ def test_db_session(db_session):
         is_active=True,
     )
     db_session.add(tenant)
-    
+
     user_tenant = UserTenant(
         id=str(uuid.uuid4()),
         user_id="user:exports-admin",
@@ -44,7 +44,7 @@ def test_db_session(db_session):
         granted_at=datetime.utcnow(),
     )
     db_session.add(user_tenant)
-    
+
     db_session.commit()
     return db_session
 
@@ -57,7 +57,7 @@ def client_with_db(test_db_session):
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -84,7 +84,7 @@ def test_export_costs_success(client_with_db, mock_user):
         MagicMock(date=date.today() - timedelta(days=i), cost=1000 + i * 100)
         for i in range(5)
     ]
-    
+
     mock_tenant_costs = [
         MagicMock(
             tenant_id="exports-tenant-123",
@@ -93,19 +93,19 @@ def test_export_costs_success(client_with_db, mock_user):
             currency="USD",
         )
     ]
-    
+
     with patch("app.api.routes.exports.get_current_user", return_value=mock_user):
         with patch("app.api.routes.exports.CostService") as MockCostService:
             mock_service = MockCostService.return_value
             mock_service.get_cost_trends.return_value = mock_trends
             mock_service.get_costs_by_tenant.return_value = mock_tenant_costs
-            
+
             response = client_with_db.get("/api/v1/exports/costs")
-    
+
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
     assert "attachment; filename=costs_export_" in response.headers["content-disposition"]
-    
+
     # Verify CSV content
     csv_content = response.text
     assert "type,date,tenant_id,tenant_name,cost,currency" in csv_content
@@ -117,20 +117,20 @@ def test_export_costs_with_date_range(client_with_db, mock_user):
     """Test cost export with specific date range."""
     start_date = date.today() - timedelta(days=7)
     end_date = date.today()
-    
+
     mock_trends = []
     mock_tenant_costs = []
-    
+
     with patch("app.api.routes.exports.get_current_user", return_value=mock_user):
         with patch("app.api.routes.exports.CostService") as MockCostService:
             mock_service = MockCostService.return_value
             mock_service.get_cost_trends.return_value = mock_trends
             mock_service.get_costs_by_tenant.return_value = mock_tenant_costs
-            
+
             response = client_with_db.get(
                 f"/api/v1/exports/costs?start_date={start_date}&end_date={end_date}"
             )
-    
+
     assert response.status_code == 200
     mock_service.get_cost_trends.assert_called_once()
 
@@ -174,17 +174,17 @@ def test_export_resources_success(client_with_db, mock_user):
             last_synced=datetime.utcnow(),
         ),
     ]
-    
+
     with patch("app.api.routes.exports.get_current_user", return_value=mock_user):
         with patch("app.api.routes.exports.ResourceService") as MockResourceService:
             mock_service = MockResourceService.return_value
             mock_service.get_resource_inventory.return_value = mock_inventory
-            
+
             response = client_with_db.get("/api/v1/exports/resources")
-    
+
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
-    
+
     # Verify CSV content
     csv_content = response.text
     assert "resource_id,name,resource_type" in csv_content
@@ -196,16 +196,16 @@ def test_export_resources_filter_by_type(client_with_db, mock_user):
     """Test resource export with resource type filter."""
     mock_inventory = MagicMock()
     mock_inventory.resources = []
-    
+
     with patch("app.api.routes.exports.get_current_user", return_value=mock_user):
         with patch("app.api.routes.exports.ResourceService") as MockResourceService:
             mock_service = MockResourceService.return_value
             mock_service.get_resource_inventory.return_value = mock_inventory
-            
+
             response = client_with_db.get(
                 "/api/v1/exports/resources?resource_type=Microsoft.Compute/virtualMachines"
             )
-    
+
     assert response.status_code == 200
     mock_service.get_resource_inventory.assert_called_once()
     call_kwargs = mock_service.get_resource_inventory.call_args[1]
@@ -227,7 +227,7 @@ def test_export_compliance_success(client_with_db, mock_user):
             exempt_resources=0,
         )
     ]
-    
+
     mock_non_compliant = [
         MagicMock(
             tenant_id="exports-tenant-123",
@@ -240,18 +240,18 @@ def test_export_compliance_success(client_with_db, mock_user):
             recommendation="Enable HTTPS-only traffic",
         )
     ]
-    
+
     with patch("app.api.routes.exports.get_current_user", return_value=mock_user):
         with patch("app.api.routes.exports.ComplianceService") as MockComplianceService:
             mock_service = MockComplianceService.return_value
             mock_service.get_compliance_summary.return_value = mock_summary
             mock_service.get_non_compliant_policies.return_value = mock_non_compliant
-            
+
             response = client_with_db.get("/api/v1/exports/compliance")
-    
+
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
-    
+
     # Verify CSV content
     csv_content = response.text
     assert "type,tenant_id" in csv_content
@@ -263,16 +263,16 @@ def test_export_compliance_exclude_non_compliant(client_with_db, mock_user):
     """Test compliance export excluding non-compliant policies."""
     mock_summary = MagicMock()
     mock_summary.scores_by_tenant = []
-    
+
     with patch("app.api.routes.exports.get_current_user", return_value=mock_user):
         with patch("app.api.routes.exports.ComplianceService") as MockComplianceService:
             mock_service = MockComplianceService.return_value
             mock_service.get_compliance_summary.return_value = mock_summary
-            
+
             response = client_with_db.get(
                 "/api/v1/exports/compliance?include_non_compliant=false"
             )
-    
+
     assert response.status_code == 200
     # Should only call get_compliance_summary, not get_non_compliant_policies
     mock_service.get_compliance_summary.assert_called_once()

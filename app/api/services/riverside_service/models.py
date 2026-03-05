@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from app.api.services.riverside_service.constants import (
     DeadlinePhase,
+    MFAStatus,
     RequirementLevel,
     RequirementStatus,
     RiversideRequirementCategory,

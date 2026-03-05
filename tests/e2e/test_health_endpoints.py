@@ -8,7 +8,6 @@ middleware, serialisation, and Prometheus instrumentation.
 import httpx
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Shared fixture – thin httpx client scoped to the module
 # ---------------------------------------------------------------------------

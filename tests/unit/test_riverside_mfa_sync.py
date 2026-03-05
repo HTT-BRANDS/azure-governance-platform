@@ -5,7 +5,6 @@ GraphClient methods for improved MFA data collection.
 """
 
 import sys
-from datetime import date, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -25,8 +24,7 @@ class MockHttpResponseError(Exception):
 azure_mock.HttpResponseError = MockHttpResponseError
 sys.modules['azure.core.exceptions'].HttpResponseError = MockHttpResponseError
 
-from app.models.riverside import RequirementStatus
-from app.services.riverside_sync import (
+from app.services.riverside_sync import (  # noqa: E402
     SyncError,
     sync_all_tenants,
     sync_tenant_mfa,

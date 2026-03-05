@@ -11,13 +11,15 @@ from app.models.resource import IdleResource, Resource
 from app.models.tenant import Subscription, Tenant
 from app.schemas.resource import (
     IdleResource as IdleResourceSchema,
+)
+from app.schemas.resource import (
     IdleResourceSummary,
     MissingTags,
     OrphanedResource,
     ResourceInventory,
     ResourceItem,
-    TagResourceResponse,
     TaggingCompliance,
+    TagResourceResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -292,11 +294,18 @@ class ResourceService:
         ]
 
     @cached("resource_inventory")
-    async def get_idle_resources_summary(self) -> IdleResourceSummary:
-        """Get summary of idle resources."""
-        idle_resources = self.db.query(IdleResource).filter(
-            IdleResource.is_reviewed == 0
-        ).all()
+    async def get_idle_resources_summary(
+        self, tenant_ids: list[str] | None = None
+    ) -> IdleResourceSummary:
+        """Get summary of idle resources.
+
+        Args:
+            tenant_ids: Optional list of tenant IDs to filter by
+        """
+        query = self.db.query(IdleResource).filter(IdleResource.is_reviewed == 0)
+        if tenant_ids:
+            query = query.filter(IdleResource.tenant_id.in_(tenant_ids))
+        idle_resources = query.all()
 
         total_count = len(idle_resources)
         total_monthly_savings = sum(

@@ -11,7 +11,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import httpx
@@ -35,7 +35,7 @@ SENSITIVE_PATTERNS = {
 }
 
 
-class NotificationChannel(str, Enum):
+class NotificationChannel(StrEnum):
     """Supported notification channels."""
 
     TEAMS = "teams"
@@ -44,7 +44,7 @@ class NotificationChannel(str, Enum):
     BOTH = "both"  # Send to both Teams and email
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     """Alert severity levels."""
 
     INFO = "info"

@@ -1,7 +1,6 @@
 """Tests for Riverside Azure sync services module."""
 
 import sys
-from datetime import date, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -39,15 +38,10 @@ class MockHttpResponseError(Exception):
 azure_mock.HttpResponseError = MockHttpResponseError
 sys.modules['azure.core.exceptions'].HttpResponseError = MockHttpResponseError
 
-from app.models.riverside import (
-    RequirementPriority,
+from app.models.riverside import (  # noqa: E402
     RequirementStatus,
-    RiversideCompliance,
-    RiversideDeviceCompliance,
-    RiversideMFA,
-    RiversideRequirement,
 )
-from app.services.riverside_sync import (
+from app.services.riverside_sync import (  # noqa: E402
     ProgressTracker,
     SyncError,
     sync_all_tenants,

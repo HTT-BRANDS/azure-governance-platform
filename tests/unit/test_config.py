@@ -5,13 +5,11 @@ and the cached get_settings() singleton.
 """
 
 import os
-from functools import lru_cache
 from unittest.mock import patch
 
 import pytest
 
 from app.core.config import Settings, get_settings
-
 
 # ============================================================================
 # Settings Initialization Tests
@@ -89,7 +87,7 @@ def test_is_production_returns_true_for_production(monkeypatch):
     """Test is_production returns True when environment='production'."""
     # Set environment variable so the validator picks it up
     monkeypatch.setenv("ENVIRONMENT", "production")
-    
+
     # Pass values directly to avoid list parsing issues
     settings = Settings(
         debug=False,
@@ -123,7 +121,7 @@ def test_is_development_returns_true_for_development(monkeypatch):
 def test_is_development_returns_false_for_production(monkeypatch):
     """Test is_development returns False for non-development."""
     monkeypatch.setenv("ENVIRONMENT", "production")
-    
+
     settings = Settings(
         debug=False,
         cors_origins=["https://prod.example.com"],
@@ -201,7 +199,7 @@ def test_is_azure_app_service_returns_false_outside_azure(monkeypatch):
 def test_validate_debug_mode_raises_error_in_production(monkeypatch):
     """Test validate_debug_mode prevents debug=True in production."""
     monkeypatch.setenv("ENVIRONMENT", "production")
-    
+
     with pytest.raises(ValueError, match="DEBUG cannot be True in production"):
         Settings(
             debug=True,
@@ -224,7 +222,7 @@ def test_validate_debug_mode_allows_debug_in_development(monkeypatch):
 def test_validate_cors_origins_prevents_wildcard_in_production(monkeypatch):
     """Test validate_cors_origins prevents wildcard in production."""
     monkeypatch.setenv("ENVIRONMENT", "production")
-    
+
     with pytest.raises(ValueError, match="Wildcard CORS origin.*not allowed in production"):
         Settings(
             debug=False,
@@ -236,7 +234,7 @@ def test_validate_cors_origins_prevents_wildcard_in_production(monkeypatch):
 def test_validate_cors_origins_prevents_default_localhost_in_production(monkeypatch):
     """Test validate_cors_origins prevents default localhost in production."""
     monkeypatch.setenv("ENVIRONMENT", "production")
-    
+
     with pytest.raises(ValueError, match="CORS origins must be explicitly configured"):
         # Use default cors_origins (localhost)
         Settings(
@@ -248,7 +246,7 @@ def test_validate_cors_origins_prevents_default_localhost_in_production(monkeypa
 def test_validate_cors_origins_allows_explicit_origins_in_production(monkeypatch):
     """Test validate_cors_origins allows explicit origins in production."""
     monkeypatch.setenv("ENVIRONMENT", "production")
-    
+
     settings = Settings(
         debug=False,
         cors_origins=["https://app.example.com", "https://api.example.com"],

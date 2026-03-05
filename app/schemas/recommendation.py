@@ -1,12 +1,12 @@
 """Recommendation-related Pydantic schemas."""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class RecommendationCategory(str, Enum):
+class RecommendationCategory(StrEnum):
     """Recommendation categories."""
 
     COST_OPTIMIZATION = "cost_optimization"
@@ -15,7 +15,7 @@ class RecommendationCategory(str, Enum):
     RELIABILITY = "reliability"
 
 
-class RecommendationImpact(str, Enum):
+class RecommendationImpact(StrEnum):
     """Recommendation impact levels."""
 
     LOW = "Low"
@@ -24,7 +24,7 @@ class RecommendationImpact(str, Enum):
     CRITICAL = "Critical"
 
 
-class ImplementationEffort(str, Enum):
+class ImplementationEffort(StrEnum):
     """Implementation effort levels."""
 
     LOW = "Low"

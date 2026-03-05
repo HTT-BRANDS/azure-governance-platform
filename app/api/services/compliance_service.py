@@ -77,10 +77,19 @@ class ComplianceService:
         return "Medium"
 
     @cached("compliance_summary")
-    async def get_compliance_summary(self) -> ComplianceSummary:
-        """Get aggregated compliance summary across all tenants."""
+    async def get_compliance_summary(
+        self, tenant_ids: list[str] | None = None
+    ) -> ComplianceSummary:
+        """Get aggregated compliance summary across all tenants.
+
+        Args:
+            tenant_ids: Optional list of tenant IDs to filter by
+        """
         # Get latest snapshots per tenant
-        tenants = self.db.query(Tenant).filter(Tenant.is_active == True).all()
+        query = self.db.query(Tenant).filter(Tenant.is_active)
+        if tenant_ids:
+            query = query.filter(Tenant.id.in_(tenant_ids))
+        tenants = query.all()
 
         scores = []
         total_compliant = 0
@@ -170,7 +179,7 @@ class ComplianceService:
     @cached("compliance_summary")
     async def get_scores_by_tenant(self, tenant_id: str | None = None) -> list[ComplianceScore]:
         """Get compliance scores, optionally filtered by tenant."""
-        query = self.db.query(Tenant).filter(Tenant.is_active == True)
+        query = self.db.query(Tenant).filter(Tenant.is_active)
 
         if tenant_id:
             query = query.filter(Tenant.id == tenant_id)

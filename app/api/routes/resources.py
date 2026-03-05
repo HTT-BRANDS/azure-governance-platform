@@ -7,11 +7,10 @@ SECURITY FEATURES:
 """
 
 import re
-from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
-
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.services.resource_service import ResourceService
@@ -19,8 +18,6 @@ from app.core.auth import User, get_current_user
 from app.core.authorization import (
     TenantAuthorization,
     get_tenant_authorization,
-    validate_tenant_access,
-    validate_tenants_access,
 )
 from app.core.database import get_db
 from app.core.rate_limit import rate_limit
@@ -29,13 +26,10 @@ from app.schemas.resource import (
     IdleResourceSummary,
     OrphanedResource,
     ResourceInventory,
-    ResourceFilterParams,
+    TaggingCompliance,
     TagResourceRequest,
     TagResourceResponse,
-    TaggingCompliance,
 )
-from pydantic import BaseModel, Field
-
 
 # UUID validation pattern
 UUID_PATTERN = re.compile(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
@@ -59,7 +53,7 @@ def validate_tenant_id(tenant_id: str | None) -> str | None:
     if not UUID_PATTERN.match(tenant_id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"tenant_id must be a valid UUID format (e.g., '12345678-1234-1234-1234-123456789abc')",
+            detail="tenant_id must be a valid UUID format (e.g., '12345678-1234-1234-1234-123456789abc')",
         )
 
     return tenant_id.lower()
@@ -240,8 +234,8 @@ async def get_idle_resources_summary(
     """Get summary of idle resources."""
     authz.ensure_at_least_one_tenant()
     service = ResourceService(db)
-    # TODO: Filter summary by accessible tenants
-    return await service.get_idle_resources_summary()
+    accessible_tenants = authz.accessible_tenant_ids
+    return await service.get_idle_resources_summary(tenant_ids=accessible_tenants)
 
 
 @router.post(
@@ -263,7 +257,12 @@ async def tag_idle_resource(
         request_data: Optional review notes
         current_user: User performing the tagging
     """
-    # TODO: Validate user has access to the resource's tenant
+    # Get the idle resource to validate tenant access
+    from app.models.resource import IdleResource
+    idle_resource = db.query(IdleResource).filter(IdleResource.id == idle_resource_id).first()
+    if idle_resource:
+        authz.validate_access(idle_resource.tenant_id)
+
     service = ResourceService(db)
     return await service.tag_idle_resource_as_reviewed(
         idle_resource_id=idle_resource_id,
@@ -292,7 +291,7 @@ async def get_tagging_compliance(
     authz.ensure_at_least_one_tenant()
 
     # Filter tenant_ids to only accessible ones
-    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+    authz.filter_tenant_ids(tenant_ids)
 
     service = ResourceService(db)
     return await service.get_tagging_compliance(required_tags=required_tags)

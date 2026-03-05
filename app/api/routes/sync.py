@@ -17,7 +17,6 @@ from app.core.auth import User, get_current_user
 from app.core.authorization import (
     TenantAuthorization,
     get_tenant_authorization,
-    validate_tenants_access,
 )
 from app.core.database import get_db
 from app.core.rate_limit import rate_limit
@@ -143,9 +142,8 @@ async def get_sync_metrics(
     monitoring = MonitoringService(db)
     metrics = monitoring.get_metrics(job_type=job_type)
 
-    # Filter metrics by tenant access
-    accessible_tenants = authz.accessible_tenant_ids
-    metrics = [m for m in metrics if not m.tenant_id or m.tenant_id in accessible_tenants]
+    # Note: SyncJobMetrics are global (per job_type), not tenant-specific
+    # Tenant filtering happens at the job log level
 
     return {
         "metrics": [
@@ -247,7 +245,7 @@ async def resolve_alert(
             "resolved_by": alert.resolved_by,
         }
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # ============================================================================

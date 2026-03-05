@@ -46,6 +46,20 @@ from app.preflight.azure_checks import (
     run_all_azure_checks,
 )
 from app.preflight.base import BasePreflightCheck
+
+# MFA compliance checks
+from app.preflight.mfa_checks import (
+    MFAAdminEnrollmentCheck,
+    MFAGapReportCheck,
+    MFATenantDataCheck,
+    MFAUserEnrollmentCheck,
+    check_mfa_admin_enrollment,
+    check_mfa_gap_report,
+    check_mfa_tenant_data,
+    check_mfa_user_enrollment,
+    get_mfa_checks,
+    run_all_mfa_checks,
+)
 from app.preflight.models import (
     CheckCategory,
     CheckResult,
@@ -67,20 +81,6 @@ from app.preflight.riverside_checks import (
     check_riverside_scheduler,
     get_riverside_checks,
     run_all_riverside_checks,
-)
-
-# MFA compliance checks
-from app.preflight.mfa_checks import (
-    MFATenantDataCheck,
-    MFAAdminEnrollmentCheck,
-    MFAUserEnrollmentCheck,
-    MFAGapReportCheck,
-    check_mfa_tenant_data,
-    check_mfa_admin_enrollment,
-    check_mfa_user_enrollment,
-    check_mfa_gap_report,
-    get_mfa_checks,
-    run_all_mfa_checks,
 )
 
 # Tenant orchestration

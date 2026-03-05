@@ -8,13 +8,13 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.core.auth import User, get_current_user, require_roles
+from app.core.auth import User, get_current_user
 from app.core.authorization import (
     TenantAuthorization,
     get_tenant_authorization,
-    get_user_tenants,
 )
 from app.core.database import get_db
+from app.core.tenant_context import get_brand_context_for_request
 from app.preflight.models import (
     CategorySummary,
     CheckCategory,
@@ -30,7 +30,6 @@ from app.preflight.runner import (
     get_runner,
     set_latest_report,
 )
-from app.core.tenant_context import get_brand_context_for_request
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +145,7 @@ async def run_preflight_checks(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Preflight check run failed: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/tenants/{tenant_id}", response_model=PreflightReport)
@@ -195,7 +194,7 @@ async def check_tenant_preflight(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Tenant preflight check failed: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/github", response_model=PreflightReport)
@@ -234,7 +233,7 @@ async def check_github_preflight() -> PreflightReport:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"GitHub preflight check failed: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/report/json")

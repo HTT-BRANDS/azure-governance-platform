@@ -12,7 +12,6 @@ Tests all cost endpoints with FastAPI TestClient:
 """
 
 import uuid
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -22,7 +21,7 @@ from app.core.auth import User
 from app.core.database import get_db
 from app.main import app
 from app.models.tenant import Tenant
-from app.schemas.cost import CostSummary, CostByTenant, CostTrend
+from app.schemas.cost import CostByTenant, CostSummary, CostTrend
 
 
 @pytest.fixture
@@ -47,7 +46,7 @@ def client_with_db(test_db_session):
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -85,7 +84,7 @@ def mock_authz():
 
 class TestCostSummaryEndpoint:
     """Tests for GET /api/v1/costs/summary endpoint."""
-    
+
     @patch("app.api.routes.costs.get_current_user")
     @patch("app.api.routes.costs.get_tenant_authorization")
     @patch("app.api.routes.costs.CostService")
@@ -93,7 +92,7 @@ class TestCostSummaryEndpoint:
         """Cost summary endpoint returns aggregated data."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         # Mock the service response
         mock_service_instance = MagicMock()
         mock_service_instance.get_cost_summary.return_value = CostSummary(
@@ -103,27 +102,27 @@ class TestCostSummaryEndpoint:
             trend="increasing",
         )
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/costs/summary?period_days=30")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["total_cost"] == 1500.50
         assert data["period_days"] == 30
         assert "cost_by_service" in data
-    
+
     def test_get_summary_requires_auth(self, client_with_db):
         """Cost summary endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/costs/summary")
         assert response.status_code == 401
-    
+
     @patch("app.api.routes.costs.get_current_user")
     @patch("app.api.routes.costs.get_tenant_authorization")
     def test_get_summary_validates_period_days(self, mock_authz_fn, mock_get_user, client_with_db, mock_user, mock_authz):
         """Cost summary validates period_days parameter."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         # Test invalid period (too large)
         response = client_with_db.get("/api/v1/costs/summary?period_days=500")
         assert response.status_code == 422
@@ -135,7 +134,7 @@ class TestCostSummaryEndpoint:
 
 class TestCostsByTenantEndpoint:
     """Tests for GET /api/v1/costs/by-tenant endpoint."""
-    
+
     @patch("app.api.routes.costs.get_current_user")
     @patch("app.api.routes.costs.get_tenant_authorization")
     @patch("app.api.routes.costs.CostService")
@@ -143,22 +142,22 @@ class TestCostsByTenantEndpoint:
         """Costs by tenant endpoint returns tenant breakdown."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         # Mock service response
         mock_service_instance = MagicMock()
         mock_service_instance.get_costs_by_tenant.return_value = [
             CostByTenant(tenant_id="test-tenant-123", tenant_name="Test Tenant", total_cost=1000.0),
         ]
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/costs/by-tenant")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
         assert len(data) == 1
         assert data[0]["tenant_id"] == "test-tenant-123"
-    
+
     def test_get_costs_by_tenant_requires_auth(self, client_with_db):
         """Costs by tenant endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/costs/by-tenant")
@@ -171,7 +170,7 @@ class TestCostsByTenantEndpoint:
 
 class TestCostTrendsEndpoint:
     """Tests for GET /api/v1/costs/trends endpoint."""
-    
+
     @patch("app.api.routes.costs.get_current_user")
     @patch("app.api.routes.costs.get_tenant_authorization")
     @patch("app.api.routes.costs.CostService")
@@ -179,7 +178,7 @@ class TestCostTrendsEndpoint:
         """Cost trends endpoint returns time series data."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         # Mock service response
         mock_service_instance = MagicMock()
         mock_service_instance.get_cost_trends.return_value = [
@@ -187,14 +186,14 @@ class TestCostTrendsEndpoint:
             CostTrend(date="2024-01-02", cost=110.0),
         ]
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/costs/trends?days=30")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
         assert len(data) == 2
-    
+
     def test_get_cost_trends_requires_auth(self, client_with_db):
         """Cost trends endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/costs/trends")
@@ -207,7 +206,7 @@ class TestCostTrendsEndpoint:
 
 class TestCostAnomaliesEndpoint:
     """Tests for GET /api/v1/costs/anomalies endpoint."""
-    
+
     @patch("app.api.routes.costs.get_current_user")
     @patch("app.api.routes.costs.get_tenant_authorization")
     @patch("app.api.routes.costs.CostService")
@@ -215,7 +214,7 @@ class TestCostAnomaliesEndpoint:
         """Cost anomalies endpoint returns anomaly list."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         # Mock service response
         mock_service_instance = MagicMock()
         mock_anomaly = MagicMock()
@@ -223,18 +222,18 @@ class TestCostAnomaliesEndpoint:
         mock_anomaly.id = 1
         mock_service_instance.get_anomalies.return_value = [mock_anomaly]
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/costs/anomalies")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-    
+
     def test_get_anomalies_requires_auth(self, client_with_db):
         """Cost anomalies endpoint returns 401 without authentication."""
         response = client_with_db.get("/api/v1/costs/anomalies")
         assert response.status_code == 401
-    
+
     @patch("app.api.routes.costs.get_current_user")
     @patch("app.api.routes.costs.get_tenant_authorization")
     @patch("app.api.routes.costs.CostService")
@@ -242,13 +241,13 @@ class TestCostAnomaliesEndpoint:
         """Cost anomalies endpoint supports filtering."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         mock_service_instance = MagicMock()
         mock_service_instance.get_anomalies.return_value = []
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.get("/api/v1/costs/anomalies?acknowledged=false&limit=10")
-        
+
         assert response.status_code == 200
         mock_service_instance.get_anomalies.assert_called_once()
 
@@ -259,7 +258,7 @@ class TestCostAnomaliesEndpoint:
 
 class TestAcknowledgeAnomalyEndpoint:
     """Tests for POST /api/v1/costs/anomalies/{anomaly_id}/acknowledge endpoint."""
-    
+
     @patch("app.api.routes.costs.get_current_user")
     @patch("app.api.routes.costs.get_tenant_authorization")
     @patch("app.api.routes.costs.CostService")
@@ -267,17 +266,17 @@ class TestAcknowledgeAnomalyEndpoint:
         """Acknowledge anomaly endpoint succeeds."""
         mock_get_user.return_value = mock_user
         mock_authz_fn.return_value = mock_authz
-        
+
         mock_service_instance = MagicMock()
         mock_service_instance.acknowledge_anomaly.return_value = True
         mock_service.return_value = mock_service_instance
-        
+
         response = client_with_db.post("/api/v1/costs/anomalies/1/acknowledge")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-    
+
     def test_acknowledge_anomaly_requires_auth(self, client_with_db):
         """Acknowledge anomaly endpoint returns 401 without authentication."""
         response = client_with_db.post("/api/v1/costs/anomalies/1/acknowledge")

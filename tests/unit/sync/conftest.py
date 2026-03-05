@@ -1,7 +1,7 @@
 """Shared fixtures for sync tests."""
 
 import sys
-from unittest.mock import AsyncMock, MagicMock, MagicMock as Mock
+from unittest.mock import AsyncMock, MagicMock
 
 # Mock Azure SDK modules before importing sync modules
 azure_mock = MagicMock()
@@ -17,10 +17,11 @@ sys.modules['azure.identity'] = azure_mock
 sys.modules['azure.core'] = azure_mock
 sys.modules['azure.core.exceptions'] = azure_mock
 
-import pytest
-from datetime import datetime, timedelta
-from unittest.mock import patch
-import uuid
+import uuid  # noqa: E402
+from datetime import datetime, timedelta  # noqa: E402
+from unittest.mock import patch  # noqa: E402
+
+import pytest  # noqa: E402
 
 
 @pytest.fixture
@@ -111,20 +112,20 @@ def mock_azure_client_manager(
     ) as mock_compliance, patch(
         "app.core.sync.resources.azure_client_manager"
     ) as mock_resources:
-        
+
         # Configure mock_costs
         mock_costs.list_subscriptions = AsyncMock()
         mock_costs.get_cost_client.return_value = mock_cost_client
-        
+
         # Configure mock_compliance
         mock_compliance.list_subscriptions = AsyncMock()
         mock_compliance.get_policy_client.return_value = mock_policy_client
         mock_compliance.get_security_client.return_value = mock_security_client
-        
+
         # Configure mock_resources
         mock_resources.list_subscriptions = AsyncMock()
         mock_resources.get_resource_client.return_value = mock_resource_client
-        
+
         yield {
             "costs": mock_costs,
             "compliance": mock_compliance,
@@ -163,20 +164,20 @@ def mock_get_db_context(mock_db_session):
     ) as mock_resources_ctx, patch(
         "app.core.sync.identity.get_db_context"
     ) as mock_identity_ctx:
-        
+
         # Create context managers that yield the mock session
         class MockContextManager:
             def __enter__(self):
                 return mock_db_session
             def __exit__(self, *args):
                 pass
-        
+
         ctx = MockContextManager()
         mock_costs_ctx.return_value = ctx
         mock_compliance_ctx.return_value = ctx
         mock_resources_ctx.return_value = ctx
         mock_identity_ctx.return_value = ctx
-        
+
         yield {
             "costs": mock_costs_ctx,
             "compliance": mock_compliance_ctx,
@@ -222,7 +223,7 @@ def sample_policy_states():
     state1.compliance_state.value = "Compliant"
     state1.resource_id = "/subscriptions/sub-123/resourceGroups/rg-test/providers/Microsoft.Storage/storageAccounts/testsa"
     state1.policy_definition_group_names = ["Storage"]
-    
+
     state2 = MagicMock()
     state2.policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/test-policy-2"
     state2.policy_definition_reference_id = "Test Policy 2"
@@ -230,7 +231,7 @@ def sample_policy_states():
     state2.compliance_state.value = "NonCompliant"
     state2.resource_id = "/subscriptions/sub-123/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/testvm"
     state2.policy_definition_group_names = ["Compute"]
-    
+
     return [state1, state2]
 
 
@@ -246,7 +247,7 @@ def sample_resources():
     resource1.tags = {"environment": "test", "costMonthly": "50.00"}
     resource1.sku = MagicMock()
     resource1.sku.name = "Standard_LRS"
-    
+
     resource2 = MagicMock()
     resource2.id = "/subscriptions/sub-123/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/testvm"
     resource2.name = "testvm"
@@ -255,7 +256,7 @@ def sample_resources():
     resource2.provisioning_state = "Failed"
     resource2.tags = {"orphaned": "true"}
     resource2.sku = None
-    
+
     return [resource1, resource2]
 
 

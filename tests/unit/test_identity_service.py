@@ -10,10 +10,12 @@ Tests for identity governance operations including:
 Minimum 11 tests covering all public methods and edge cases.
 """
 
-import pytest
 import sys
 from datetime import date, datetime, timedelta
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 
 # Mock the cache decorator BEFORE importing the service
 def no_op_cache(cache_key):
@@ -29,8 +31,8 @@ with patch("app.core.cache.cached", no_op_cache):
         del sys.modules["app.api.services.identity_service"]
     from app.api.services.identity_service import IdentityService
 
-from app.models.identity import IdentitySnapshot, PrivilegedUser
-from app.models.tenant import Tenant
+from app.models.identity import IdentitySnapshot, PrivilegedUser  # noqa: E402
+from app.models.tenant import Tenant  # noqa: E402
 
 
 class TestIdentityServiceSummary:
@@ -84,11 +86,11 @@ class TestIdentityServiceSummary:
         # Setup mock queries
         tenant_query_mock = MagicMock()
         tenant_query_mock.filter.return_value.all.return_value = sample_tenants
-        
+
         snapshot_query_mock = MagicMock()
         # Return the correct snapshot for each tenant query
         snapshot_query_mock.filter.return_value.order_by.return_value.first.side_effect = sample_snapshots
-        
+
         mock_db.query.side_effect = [tenant_query_mock, snapshot_query_mock, snapshot_query_mock, snapshot_query_mock]
 
         # Execute
@@ -101,13 +103,13 @@ class TestIdentityServiceSummary:
         assert result.privileged_users == 18  # 5 + 6 + 7
         assert result.stale_accounts == 12  # 3 + 4 + 5
         assert result.service_principals == 51  # 15 + 17 + 19
-        
+
         # Verify MFA percentage calculation
         # Total MFA enabled: 80 + 88 + 96 = 264
         # Total users: 330
         # Expected: 264/330 * 100 = 80.0
         assert result.mfa_enabled_percent == pytest.approx(80.0, rel=0.01)
-        
+
         # Verify tenant summaries
         assert len(result.by_tenant) == 3
         assert result.by_tenant[0].tenant_id == "tenant-1"
@@ -141,10 +143,10 @@ class TestIdentityServiceSummary:
         # Setup mocks - tenants exist but no snapshots
         tenant_query_mock = MagicMock()
         tenant_query_mock.filter.return_value.all.return_value = sample_tenants
-        
+
         snapshot_query_mock = MagicMock()
         snapshot_query_mock.filter.return_value.order_by.return_value.first.return_value = None
-        
+
         mock_db.query.side_effect = [tenant_query_mock, snapshot_query_mock, snapshot_query_mock, snapshot_query_mock]
 
         # Execute
@@ -172,7 +174,7 @@ class TestIdentityServicePrivilegedAccounts:
     def sample_privileged_users(self):
         """Create sample privileged users with varying attributes."""
         users = []
-        
+
         # High risk: Guest, no MFA, permanent, no recent sign-in
         user1 = MagicMock(spec=PrivilegedUser)
         user1.tenant_id = "tenant-1"
@@ -185,7 +187,7 @@ class TestIdentityServicePrivilegedAccounts:
         user1.mfa_enabled = False
         user1.last_sign_in = datetime.utcnow() - timedelta(days=100)
         users.append(user1)
-        
+
         # Low risk: Member, MFA enabled, not permanent, recent sign-in
         user2 = MagicMock(spec=PrivilegedUser)
         user2.tenant_id = "tenant-1"
@@ -198,7 +200,7 @@ class TestIdentityServicePrivilegedAccounts:
         user2.mfa_enabled = True
         user2.last_sign_in = datetime.utcnow() - timedelta(days=1)
         users.append(user2)
-        
+
         # Medium risk: Member, no MFA, permanent
         user3 = MagicMock(spec=PrivilegedUser)
         user3.tenant_id = "tenant-2"
@@ -211,7 +213,7 @@ class TestIdentityServicePrivilegedAccounts:
         user3.mfa_enabled = False
         user3.last_sign_in = datetime.utcnow() - timedelta(days=15)
         users.append(user3)
-        
+
         return users
 
     @pytest.fixture
@@ -220,11 +222,11 @@ class TestIdentityServicePrivilegedAccounts:
         tenant1 = MagicMock(spec=Tenant)
         tenant1.id = "tenant-1"
         tenant1.name = "Tenant 1"
-        
+
         tenant2 = MagicMock(spec=Tenant)
         tenant2.id = "tenant-2"
         tenant2.name = "Tenant 2"
-        
+
         return [tenant1, tenant2]
 
     @pytest.mark.asyncio
@@ -233,10 +235,10 @@ class TestIdentityServicePrivilegedAccounts:
         # Setup mocks
         user_query_mock = MagicMock()
         user_query_mock.order_by.return_value.all.return_value = sample_privileged_users
-        
+
         tenant_query_mock = MagicMock()
         tenant_query_mock.all.return_value = sample_tenants
-        
+
         mock_db.query.side_effect = [user_query_mock, tenant_query_mock]
 
         # Execute
@@ -256,15 +258,15 @@ class TestIdentityServicePrivilegedAccounts:
         """Test get_privileged_accounts filters by tenant_id correctly."""
         # Setup mocks - only return tenant-1 users
         filtered_users = [u for u in sample_privileged_users if u.tenant_id == "tenant-1"]
-        
+
         user_query_mock = MagicMock()
         filter_mock = MagicMock()
         filter_mock.order_by.return_value.all.return_value = filtered_users
         user_query_mock.filter.return_value = filter_mock
-        
+
         tenant_query_mock = MagicMock()
         tenant_query_mock.all.return_value = sample_tenants
-        
+
         mock_db.query.side_effect = [user_query_mock, tenant_query_mock]
 
         # Execute
@@ -292,7 +294,7 @@ class TestIdentityServiceRiskCalculation:
         user.last_sign_in = datetime.utcnow() - timedelta(days=100)
 
         result = identity_service._calculate_risk_level(user)
-        
+
         # Risk score: Guest(3) + No MFA(2) + Permanent(1) + 90d+ signin(2) = 8
         assert result == "High"
 
@@ -305,7 +307,7 @@ class TestIdentityServiceRiskCalculation:
         user.last_sign_in = datetime.utcnow() - timedelta(days=10)
 
         result = identity_service._calculate_risk_level(user)
-        
+
         # Risk score: No MFA(2) + Permanent(1) = 3
         assert result == "Medium"
 
@@ -318,7 +320,7 @@ class TestIdentityServiceRiskCalculation:
         user.last_sign_in = datetime.utcnow() - timedelta(days=1)
 
         result = identity_service._calculate_risk_level(user)
-        
+
         # Risk score: 0
         assert result == "Low"
 
@@ -331,7 +333,7 @@ class TestIdentityServiceRiskCalculation:
         user.last_sign_in = None
 
         result = identity_service._calculate_risk_level(user)
-        
+
         # Should not crash, just skip the sign-in checks
         assert result == "Low"
 
@@ -354,7 +356,7 @@ class TestIdentityServiceTrends:
         """Create sample snapshots over 7 days for trends."""
         snapshots = []
         base_date = date.today()
-        
+
         for i in range(7):
             snapshot = MagicMock(spec=IdentitySnapshot)
             snapshot.snapshot_date = base_date - timedelta(days=i)
@@ -368,7 +370,7 @@ class TestIdentityServiceTrends:
             snapshot.stale_accounts_90d = 8
             snapshot.service_principals = 15
             snapshots.append(snapshot)
-        
+
         return snapshots
 
     @pytest.mark.asyncio
@@ -378,7 +380,7 @@ class TestIdentityServiceTrends:
         query_mock = MagicMock()
         filter_mock = MagicMock()
         order_mock = MagicMock()
-        
+
         order_mock.all.return_value = sample_trend_snapshots
         filter_mock.order_by.return_value = order_mock
         query_mock.filter.return_value = filter_mock
@@ -389,7 +391,7 @@ class TestIdentityServiceTrends:
 
         # Verify
         assert len(result) == 7
-        
+
         # Check first trend point
         first_trend = result[0]
         assert "date" in first_trend
@@ -398,7 +400,7 @@ class TestIdentityServiceTrends:
         assert "guest_users" in first_trend
         assert "privileged_users" in first_trend
         assert "stale_accounts_30d" in first_trend
-        
+
         # Verify MFA adoption calculation for at least one point
         # Should be (mfa_enabled / total_users * 100)
         assert first_trend["mfa_adoption_rate"] > 70.0  # Roughly 80+/100+
@@ -410,16 +412,16 @@ class TestIdentityServiceTrends:
         query_mock = MagicMock()
         filter_mock = MagicMock()
         order_mock = MagicMock()
-        
+
         # Mock the filter calls (date range + tenant filter)
         order_mock.all.return_value = sample_trend_snapshots
         filter_mock.order_by.return_value = order_mock
-        
+
         # Create a chain that handles both filter calls
         filter_chain = MagicMock()
         filter_chain.filter.return_value = filter_mock
         query_mock.filter.return_value = filter_chain
-        
+
         mock_db.query.return_value = query_mock
 
         # Execute with tenant filter
@@ -436,7 +438,7 @@ class TestIdentityServiceTrends:
         query_mock = MagicMock()
         filter_mock = MagicMock()
         order_mock = MagicMock()
-        
+
         order_mock.all.return_value = []
         filter_mock.order_by.return_value = order_mock
         query_mock.filter.return_value = filter_mock
@@ -461,7 +463,7 @@ class TestIdentityServicePlaceholders:
         """Test get_guest_accounts returns empty list (placeholder implementation)."""
         result = identity_service.get_guest_accounts()
         assert result == []
-        
+
         result_with_params = identity_service.get_guest_accounts(tenant_id="tenant-1", stale_only=True)
         assert result_with_params == []
 
@@ -469,6 +471,6 @@ class TestIdentityServicePlaceholders:
         """Test get_stale_accounts returns empty list (placeholder implementation)."""
         result = identity_service.get_stale_accounts()
         assert result == []
-        
+
         result_with_params = identity_service.get_stale_accounts(days_inactive=60, tenant_id="tenant-2")
         assert result_with_params == []

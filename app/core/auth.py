@@ -9,7 +9,7 @@ Features:
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -77,7 +77,7 @@ class AzureADTokenValidator:
     async def _get_jwks(self) -> dict[str, Any]:
         """Fetch JWKS from Azure AD with caching."""
         if self._jwks_cache and self._jwks_cache_time:
-            if datetime.now(timezone.utc) - self._jwks_cache_time < self._jwks_cache_ttl:
+            if datetime.now(UTC) - self._jwks_cache_time < self._jwks_cache_ttl:
                 return self._jwks_cache
 
         try:
@@ -85,14 +85,14 @@ class AzureADTokenValidator:
                 response = await client.get(self.settings.azure_ad_jwks_uri)
                 response.raise_for_status()
                 self._jwks_cache = response.json()
-                self._jwks_cache_time = datetime.now(timezone.utc)
+                self._jwks_cache_time = datetime.now(UTC)
                 return self._jwks_cache
         except Exception as e:
             logger.error(f"Failed to fetch Azure AD JWKS: {e}")
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Unable to validate token: JWKS unavailable",
-            )
+            ) from e
 
     def _get_signing_key(self, jwks: dict[str, Any], kid: str) -> dict[str, Any] | None:
         """Get signing key from JWKS by key ID."""
@@ -166,8 +166,8 @@ class AzureADTokenValidator:
                 name=name,
                 roles=self._map_groups_to_roles(groups),
                 tenant_ids=self._extract_tenant_ids_from_groups(groups),
-                exp=datetime.fromtimestamp(exp, tz=timezone.utc) if exp else None,
-                iat=datetime.fromtimestamp(iat, tz=timezone.utc) if iat else None,
+                exp=datetime.fromtimestamp(exp, tz=UTC) if exp else None,
+                iat=datetime.fromtimestamp(iat, tz=UTC) if iat else None,
                 iss=payload.get("iss"),
                 aud=payload.get("aud"),
             )
@@ -178,7 +178,7 @@ class AzureADTokenValidator:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"Invalid token: {e}",
                 headers={"WWW-Authenticate": "Bearer"},
-            )
+            ) from e
 
     def _map_groups_to_roles(self, groups: list[str]) -> list[str]:
         """Map Azure AD groups to application roles.
@@ -252,7 +252,7 @@ class JWTTokenManager:
         if expires_delta is None:
             expires_delta = timedelta(minutes=self.settings.jwt_access_token_expire_minutes)
 
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
 
         to_encode = {
             "sub": user_id,
@@ -261,7 +261,7 @@ class JWTTokenManager:
             "roles": roles or ["user"],
             "tenant_ids": tenant_ids or [],
             "exp": expire,
-            "iat": datetime.now(timezone.utc),
+            "iat": datetime.now(UTC),
             "iss": "azure-governance-platform",
             "aud": "azure-governance-api",
             "type": "access",
@@ -290,12 +290,12 @@ class JWTTokenManager:
         if expires_delta is None:
             expires_delta = timedelta(days=self.settings.jwt_refresh_token_expire_days)
 
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
 
         to_encode = {
             "sub": user_id,
             "exp": expire,
-            "iat": datetime.now(timezone.utc),
+            "iat": datetime.now(UTC),
             "iss": "azure-governance-platform",
             "aud": "azure-governance-api",
             "type": "refresh",
@@ -334,12 +334,46 @@ class JWTTokenManager:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"Invalid token: {e}",
                 headers={"WWW-Authenticate": "Bearer"},
-            )
+            ) from e
 
 
 # Global instances
 azure_ad_validator = AzureADTokenValidator()
 jwt_manager = JWTTokenManager()
+
+# In-memory token blacklist for logout functionality
+# In production, use Redis or a database table
+_token_blacklist: set[str] = set()
+
+
+def is_token_blacklisted(token: str) -> bool:
+    """Check if a token has been blacklisted.
+
+    Args:
+        token: JWT token to check
+
+    Returns:
+        True if token is blacklisted
+    """
+    return token in _token_blacklist
+
+
+def blacklist_token(token: str) -> None:
+    """Add a token to the blacklist.
+
+    Args:
+        token: JWT token to blacklist
+    """
+    _token_blacklist.add(token)
+
+
+def get_blacklist_size() -> int:
+    """Get the number of blacklisted tokens.
+
+    Returns:
+        Count of blacklisted tokens
+    """
+    return len(_token_blacklist)
 
 
 async def get_current_user(
@@ -376,6 +410,14 @@ async def get_current_user(
 
     if not token:
         raise credentials_exception
+
+    # Check if token is blacklisted
+    if is_token_blacklisted(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     # Detect token type and validate accordingly
     try:
@@ -424,7 +466,7 @@ async def get_current_user(
         raise
     except Exception as e:
         logger.error(f"Unexpected auth error: {e}")
-        raise credentials_exception
+        raise credentials_exception from e
 
 
 async def get_current_active_user(

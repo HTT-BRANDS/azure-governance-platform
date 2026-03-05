@@ -19,7 +19,7 @@ import logging
 import os
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, TypeVar
 
 from app.core.config import get_settings
@@ -183,12 +183,12 @@ class RedisCache:
                         await self._redis.ping()
                         self._initialized = True
                         logger.info("Redis cache initialized")
-                    except ImportError:
+                    except ImportError as import_err:
                         logger.error("redis package not installed, falling back to memory")
-                        raise RuntimeError("Redis not available")
+                        raise RuntimeError("Redis not available") from import_err
                     except Exception as e:
                         logger.error(f"Redis connection failed: {e}")
-                        raise RuntimeError(f"Redis connection failed: {e}")
+                        raise RuntimeError(f"Redis connection failed: {e}") from e
         return self._redis
 
     async def get(self, key: str) -> Any | None:

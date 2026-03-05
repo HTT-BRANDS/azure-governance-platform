@@ -11,15 +11,11 @@ Tests cover:
 - Recommendation generation
 """
 
-from datetime import datetime
-from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.orm import Session
 
 from app.api.services.riverside_compliance import (
-    RIVERSIDE_DEADLINE,
-    TARGET_MATURITY_SCORE,
     analyze_mfa_gaps,
     calculate_compliance_summary,
 )
@@ -43,7 +39,7 @@ class TestCalculateComplianceSummary:
 
     def test_compliance_summary_with_all_tenants(self, db_with_riverside_data: Session):
         """Test compliance summary calculation across all 5 Riverside tenants.
-        
+
         Validates:
         - Overall compliance percentage is correctly weighted
         - Average maturity score is computed across all tenants
@@ -162,7 +158,7 @@ class TestCalculateComplianceSummary:
         # Set up diverse maturity scores
         compliance_records = db_with_riverside_data.query(RiversideCompliance).all()
         maturity_scores = [1.5, 2.5, 3.5, 4.5, 2.8]  # Mix of all ranges
-        for record, score in zip(compliance_records, maturity_scores):
+        for record, score in zip(compliance_records, maturity_scores, strict=False):
             record.overall_maturity_score = score
         db_with_riverside_data.commit()
 
@@ -180,7 +176,7 @@ class TestAnalyzeMFAGaps:
 
     def test_mfa_gaps_all_tenants(self, db_with_riverside_data: Session):
         """Test MFA gap analysis across all tenants.
-        
+
         Validates:
         - Overall coverage percentage calculation
         - Admin coverage percentage calculation
@@ -238,7 +234,7 @@ class TestAnalyzeMFAGaps:
         """Test MFA gap analysis for a single tenant."""
         # Get HTT tenant ID
         tenant = db_with_riverside_data.query(Tenant).filter(Tenant.name == "HTT").first()
-        
+
         result = analyze_mfa_gaps(db_with_riverside_data, tenant_id=tenant.id)
 
         # Should only have 1 tenant in breakdown
@@ -254,7 +250,7 @@ class TestAnalyzeMFAGaps:
         """Test that high-risk tenants (< 50% coverage) are identified correctly."""
         # Update some tenants to have low MFA coverage
         mfa_records = db_with_riverside_data.query(RiversideMFA).all()
-        
+
         # Set FN and DCE to have < 50% coverage
         for record in mfa_records:
             if record.tenant_id in ["33333333-3333-3333-3333-333333333333", "55555555-5555-5555-5555-555555555555"]:
@@ -292,8 +288,8 @@ class TestAnalyzeMFAGaps:
             (280, 250),  # 89.3% - medium
             (85, 80),    # 94.1% - medium
         ]
-        
-        for record, (total, enrolled) in zip(mfa_records, coverage_levels):
+
+        for record, (total, enrolled) in zip(mfa_records, coverage_levels, strict=False):
             record.total_users = total
             record.mfa_enrolled_users = enrolled
             record.mfa_coverage_percentage = round((enrolled / total) * 100, 2)
@@ -345,7 +341,7 @@ class TestAnalyzeMFAGaps:
         """Test that recommendations mention high-risk tenant count."""
         # Create some high-risk tenants
         mfa_records = db_with_riverside_data.query(RiversideMFA).all()
-        for i, record in enumerate(mfa_records[:3]):  # Make first 3 high-risk
+        for _i, record in enumerate(mfa_records[:3]):  # Make first 3 high-risk
             record.mfa_enrolled_users = int(record.total_users * 0.45)  # 45% coverage
             record.mfa_coverage_percentage = 45.0
         db_with_riverside_data.commit()
@@ -390,10 +386,10 @@ class TestAnalyzeMFAGaps:
             assert "unprotected_users" in tenant_info
             assert "total_users" in tenant_info
             assert "risk_level" in tenant_info
-            
+
             # Verify risk level is valid
             assert tenant_info["risk_level"] in ["critical", "high", "medium"]
-            
+
             # Verify percentages are rounded to 1 decimal
             assert isinstance(tenant_info["coverage_percentage"], float)
             assert isinstance(tenant_info["admin_coverage_percentage"], float)

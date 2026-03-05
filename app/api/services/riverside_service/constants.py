@@ -3,7 +3,6 @@
 from datetime import date
 from enum import Enum
 
-
 # Critical deadline - July 8, 2026
 RIVERSIDE_DEADLINE = date(2026, 7, 8)
 FINANCIAL_RISK = "$4M"

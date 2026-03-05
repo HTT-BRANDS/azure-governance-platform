@@ -4,8 +4,7 @@ Tests JWT token generation/validation, Azure AD integration,
 and role-based access control helpers.
 """
 
-import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -46,8 +45,8 @@ class TestTokenData:
             name="Test User",
             roles=["admin", "user"],
             tenant_ids=["tenant-1", "tenant-2"],
-            exp=datetime.now(timezone.utc) + timedelta(hours=1),
-            iat=datetime.now(timezone.utc),
+            exp=datetime.now(UTC) + timedelta(hours=1),
+            iat=datetime.now(UTC),
             iss="test-issuer",
             aud="test-audience",
         )
@@ -256,8 +255,8 @@ class TestJWTTokenManager:
         )
 
         # Check expiration is approximately 5 minutes from now
-        exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-        expected_exp = datetime.now(timezone.utc) + custom_delta
+        exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
+        expected_exp = datetime.now(UTC) + custom_delta
         # Allow 10 second tolerance
         assert abs((exp_time - expected_exp).total_seconds()) < 10
 
@@ -343,8 +342,8 @@ class TestJWTTokenManager:
         # Create token with different audience
         payload = {
             "sub": "user-808",
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(UTC) + timedelta(hours=1),
+            "iat": datetime.now(UTC),
             "iss": "azure-governance-platform",
             "aud": "wrong-audience",  # Wrong audience
             "type": "access",
@@ -439,7 +438,7 @@ class TestAzureADTokenValidator:
         validator = AzureADTokenValidator()
 
         # Mock datetime for cache timing
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         mock_datetime.now.return_value = now
 
         # Mock httpx client
@@ -466,7 +465,7 @@ class TestAzureADTokenValidator:
 
             # Third call after TTL - should hit the API again
             mock_datetime.now.return_value = now + timedelta(hours=25)
-            jwks3 = await validator._get_jwks()
+            await validator._get_jwks()
             assert mock_client.get.call_count == 2  # New call
 
 

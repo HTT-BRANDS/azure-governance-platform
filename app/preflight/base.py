@@ -119,7 +119,7 @@ class BasePreflightCheck(ABC):
                 return cached
 
         # Return running status while executing
-        running_result = CheckResult(
+        CheckResult(
             check_id=self.check_id,
             name=self.name,
             category=self.category,
@@ -233,7 +233,6 @@ class BasePreflightCheck(ABC):
         Returns:
             List of recommendation strings
         """
-        error_type = type(error).__name__
         error_msg = str(error).lower()
 
         recommendations = []

@@ -1,8 +1,9 @@
 """Unit tests for ComplianceService."""
 
-import pytest
 from datetime import date, datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+
+import pytest
 
 from app.api.services.compliance_service import ComplianceService
 from app.models.compliance import ComplianceSnapshot, PolicyState
@@ -51,7 +52,7 @@ class TestComplianceServiceMapSeverity:
         """Test high severity detection for TLS/SSL keywords."""
         result = service._map_severity("Require TLS 1.2 or higher", "Security")
         assert result == "High"
-        
+
         result = service._map_severity("Enable SSL connections only", "Database")
         assert result == "High"
 
@@ -59,7 +60,7 @@ class TestComplianceServiceMapSeverity:
         """Test high severity detection for authentication keywords."""
         result = service._map_severity("Enable MFA for admin accounts", "Identity")
         assert result == "High"
-        
+
         result = service._map_severity("Configure auth settings", "Security")
         assert result == "High"
 
@@ -67,7 +68,7 @@ class TestComplianceServiceMapSeverity:
         """Test high severity detection for network/firewall keywords."""
         result = service._map_severity("Configure firewall rules", "Network")
         assert result == "High"
-        
+
         result = service._map_severity("Restrict network access", "Security")
         assert result == "High"
 
@@ -75,10 +76,10 @@ class TestComplianceServiceMapSeverity:
         """Test high severity detection for access control keywords."""
         result = service._map_severity("Review access permissions", "Identity")
         assert result == "High"
-        
+
         result = service._map_severity("Assign role-based access", "Security")
         assert result == "High"
-        
+
         result = service._map_severity("Manage identity providers", "Identity")
         assert result == "High"
 
@@ -86,7 +87,7 @@ class TestComplianceServiceMapSeverity:
         """Test high severity detection for secrets/keys keywords."""
         result = service._map_severity("Rotate secret keys regularly", "Security")
         assert result == "High"
-        
+
         result = service._map_severity("Store passwords in Key Vault", "Security")
         assert result == "High"
 
@@ -94,7 +95,7 @@ class TestComplianceServiceMapSeverity:
         """Test low severity detection for tagging keywords."""
         result = service._map_severity("Apply required tags", "Governance")
         assert result == "Low"
-        
+
         result = service._map_severity("Tag resources with cost center", "Billing")
         assert result == "Low"
 
@@ -107,10 +108,10 @@ class TestComplianceServiceMapSeverity:
         """Test low severity detection for logging/monitoring keywords."""
         result = service._map_severity("Enable diagnostic logs", "Monitoring")
         assert result == "Low"
-        
+
         result = service._map_severity("Configure monitor alerts", "Observability")
         assert result == "Low"
-        
+
         result = service._map_severity("Enable audit logging", "Compliance")
         assert result == "Low"
 
@@ -118,7 +119,7 @@ class TestComplianceServiceMapSeverity:
         """Test low severity detection for cost/billing keywords."""
         result = service._map_severity("Optimize cost allocation", "Cost Management")
         assert result == "Low"
-        
+
         result = service._map_severity("Review billing reports", "Finance")
         assert result == "Low"
 
@@ -126,7 +127,7 @@ class TestComplianceServiceMapSeverity:
         """Test medium severity as default when no keywords match."""
         result = service._map_severity("Configure backup retention", "Operations")
         assert result == "Medium"
-        
+
         result = service._map_severity("Enable geo-replication", "Disaster Recovery")
         assert result == "Medium"
 
@@ -134,10 +135,10 @@ class TestComplianceServiceMapSeverity:
         """Test _map_severity with None inputs."""
         result = service._map_severity(None, None)
         assert result == "Medium"
-        
+
         result = service._map_severity("encryption", None)
         assert result == "High"
-        
+
         result = service._map_severity(None, "tag")
         assert result == "Low"
 
@@ -145,7 +146,7 @@ class TestComplianceServiceMapSeverity:
         """Test that keyword matching is case-insensitive."""
         result = service._map_severity("ENCRYPTION at rest", "SECURITY")
         assert result == "High"
-        
+
         result = service._map_severity("Tag Resources", "GOVERNANCE")
         assert result == "Low"
 
@@ -163,8 +164,8 @@ class TestComplianceServiceMapSeverity:
         # "encryption" keyword is in the list, so "encryption" should match
         result = service._map_severity("data encryption storage account", "Security")
         assert result == "High"
-        
-        # "tag" keyword is in the list, so "tag" or "tagging" should match  
+
+        # "tag" keyword is in the list, so "tag" or "tagging" should match
         result = service._map_severity("resource tag policy", "Governance")
         assert result == "Low"
 
@@ -216,7 +217,7 @@ class TestComplianceServiceGetComplianceSummary:
     @pytest.mark.asyncio
     async def test_get_compliance_summary_single_tenant(self, service, mock_db):
         """Test compliance summary with a single tenant."""
-        
+
         # Setup mock data
         tenant = self._create_mock_tenant("tenant-1", "Tenant One")
         snapshot = self._create_mock_snapshot(
@@ -228,17 +229,17 @@ class TestComplianceServiceGetComplianceSummary:
             exempt=5,
             secure_score=78.0,
         )
-        
+
         # Setup query mocks
         tenant_query = MagicMock()
         tenant_query.filter.return_value = tenant_query
         tenant_query.all.return_value = [tenant]
-        
+
         snapshot_query = MagicMock()
         snapshot_query.filter.return_value = snapshot_query
         snapshot_query.order_by.return_value = snapshot_query
         snapshot_query.first.return_value = snapshot
-        
+
         # Setup db.query to return appropriate mocks
         def query_side_effect(model):
             if model == Tenant:
@@ -251,12 +252,12 @@ class TestComplianceServiceGetComplianceSummary:
                 policy_query.all.return_value = []
                 return policy_query
             return MagicMock()
-        
+
         mock_db.query.side_effect = query_side_effect
-        
+
         # Execute
         result = await service.get_compliance_summary()
-        
+
         # Verify
         assert isinstance(result, ComplianceSummary)
         assert result.average_compliance_percent == 85.5
@@ -273,27 +274,27 @@ class TestComplianceServiceGetComplianceSummary:
         # Create fresh mocks for this test
         db = MagicMock()
         service = ComplianceService(db=db)
-        
+
         # Setup mock data - 3 tenants
         tenants = [
             self._create_mock_tenant("tenant-1", "Tenant One"),
             self._create_mock_tenant("tenant-2", "Tenant Two"),
             self._create_mock_tenant("tenant-3", "Tenant Three"),
         ]
-        
+
         snapshots = [
             self._create_mock_snapshot("tenant-1", "sub-1", 90.0, 90, 10, 0),
             self._create_mock_snapshot("tenant-2", "sub-2", 80.0, 80, 15, 5),
             self._create_mock_snapshot("tenant-3", "sub-3", 70.0, 70, 25, 5),
         ]
-        
+
         # Setup query mocks
         tenant_query = MagicMock()
         tenant_query.filter.return_value = tenant_query
         tenant_query.all.return_value = tenants
-        
+
         snapshot_index = [0]
-        
+
         def query_side_effect(model):
             if model == Tenant:
                 return tenant_query
@@ -313,12 +314,12 @@ class TestComplianceServiceGetComplianceSummary:
                 policy_query.all.return_value = []
                 return policy_query
             return MagicMock()
-        
+
         db.query.side_effect = query_side_effect
-        
+
         # Execute
         result = await service.get_compliance_summary()
-        
+
         # Verify
         assert isinstance(result, ComplianceSummary)
         # Average of 90, 80, 70 = 80.0
@@ -334,14 +335,14 @@ class TestComplianceServiceGetComplianceSummary:
         # Create fresh mocks for this test
         db = MagicMock()
         service = ComplianceService(db=db)
-        
+
         # Setup mock data - tenant with no snapshots
         tenant = self._create_mock_tenant("tenant-1", "Tenant One")
-        
+
         tenant_query = MagicMock()
         tenant_query.filter.return_value = tenant_query
         tenant_query.all.return_value = [tenant]
-        
+
         def query_side_effect(model):
             if model == Tenant:
                 return tenant_query
@@ -357,12 +358,12 @@ class TestComplianceServiceGetComplianceSummary:
                 policy_query.all.return_value = []
                 return policy_query
             return MagicMock()
-        
+
         db.query.side_effect = query_side_effect
-        
+
         # Execute
         result = await service.get_compliance_summary()
-        
+
         # Verify
         assert isinstance(result, ComplianceSummary)
         assert result.average_compliance_percent == 0.0
@@ -377,11 +378,11 @@ class TestComplianceServiceGetComplianceSummary:
         # Create fresh mocks for this test
         db = MagicMock()
         service = ComplianceService(db=db)
-        
+
         tenant_query = MagicMock()
         tenant_query.filter.return_value = tenant_query
         tenant_query.all.return_value = []
-        
+
         def query_side_effect(model):
             if model == Tenant:
                 return tenant_query
@@ -391,12 +392,12 @@ class TestComplianceServiceGetComplianceSummary:
                 policy_query.all.return_value = []
                 return policy_query
             return MagicMock()
-        
+
         db.query.side_effect = query_side_effect
-        
+
         # Execute
         result = await service.get_compliance_summary()
-        
+
         # Verify
         assert isinstance(result, ComplianceSummary)
         assert result.average_compliance_percent == 0.0
@@ -442,7 +443,7 @@ class TestComplianceServiceGetScoresByTenant:
         # Create fresh mocks for this test
         db = MagicMock()
         service = ComplianceService(db=db)
-        
+
         tenants = [
             self._create_mock_tenant("tenant-1", "Tenant One"),
             self._create_mock_tenant("tenant-2", "Tenant Two"),
@@ -451,13 +452,13 @@ class TestComplianceServiceGetScoresByTenant:
             self._create_mock_snapshot("tenant-1", 85.0),
             self._create_mock_snapshot("tenant-2", 75.0),
         ]
-        
+
         tenant_query = MagicMock()
         tenant_query.filter.return_value = tenant_query
         tenant_query.all.return_value = tenants
-        
+
         snapshot_index = [0]
-        
+
         def query_side_effect(model):
             if model == Tenant:
                 return tenant_query
@@ -472,12 +473,12 @@ class TestComplianceServiceGetScoresByTenant:
                     snapshot_query.first.return_value = None
                 return snapshot_query
             return MagicMock()
-        
+
         db.query.side_effect = query_side_effect
-        
+
         # Execute
         result = await service.get_scores_by_tenant()
-        
+
         # Verify
         assert len(result) == 2
         assert all(isinstance(score, ComplianceScore) for score in result)
@@ -487,7 +488,7 @@ class TestComplianceServiceGetScoresByTenant:
     @pytest.mark.asyncio
     async def test_get_scores_by_tenant_specific_tenant(self):
         """Test getting scores for a specific tenant.
-        
+
         Note: This test works around a known issue with the @cached decorator
         where tenant_id as a parameter conflicts with cache key generation.
         We test the filtering by mocking the query result directly.
@@ -495,15 +496,15 @@ class TestComplianceServiceGetScoresByTenant:
         # Create fresh mocks for this test
         db = MagicMock()
         service = ComplianceService(db=db)
-        
+
         tenant = self._create_mock_tenant("tenant-1", "Tenant One")
         snapshot = self._create_mock_snapshot("tenant-1", 85.0)
-        
+
         # Mock to return filtered result (as if tenant_id filter was applied)
         tenant_query = MagicMock()
         tenant_query.filter.return_value = tenant_query
         tenant_query.all.return_value = [tenant]
-        
+
         def query_side_effect(model):
             if model == Tenant:
                 return tenant_query
@@ -514,13 +515,13 @@ class TestComplianceServiceGetScoresByTenant:
                 snapshot_query.first.return_value = snapshot
                 return snapshot_query
             return MagicMock()
-        
+
         db.query.side_effect = query_side_effect
-        
+
         # Execute - the query mock already returns only tenant-1's data
         # so we effectively test the tenant filtering logic
         result = await service.get_scores_by_tenant()
-        
+
         # Verify - should only have the one tenant we mocked
         assert len(result) == 1
         assert result[0].tenant_id == "tenant-1"
@@ -562,18 +563,18 @@ class TestComplianceServiceGetNonCompliantPolicies:
             self._create_mock_policy_state("policy-1", "Policy One", "tenant-1", 10),
             self._create_mock_policy_state("policy-2", "Policy Two", "tenant-2", 5),
         ]
-        
+
         query = MagicMock()
         query.filter.return_value = query
         query.order_by.return_value = query
         query.limit.return_value = query
         query.all.return_value = policies
-        
+
         mock_db.query.return_value = query
-        
+
         # Execute
         result = service.get_non_compliant_policies()
-        
+
         # Verify
         assert len(result) == 2
         assert all(isinstance(p, PolicyStatus) for p in result)
@@ -585,18 +586,18 @@ class TestComplianceServiceGetNonCompliantPolicies:
         policies = [
             self._create_mock_policy_state("policy-1", "Policy One", "tenant-1", 10),
         ]
-        
+
         query = MagicMock()
         query.filter.return_value = query
         query.order_by.return_value = query
         query.limit.return_value = query
         query.all.return_value = policies
-        
+
         mock_db.query.return_value = query
-        
+
         # Execute with tenant filter
         result = service.get_non_compliant_policies(tenant_id="tenant-1")
-        
+
         # Verify
         assert len(result) == 1
         assert result[0].tenant_id == "tenant-1"
@@ -608,12 +609,12 @@ class TestComplianceServiceGetNonCompliantPolicies:
         query.order_by.return_value = query
         query.limit.return_value = query
         query.all.return_value = []
-        
+
         mock_db.query.return_value = query
-        
+
         # Execute
         result = service.get_non_compliant_policies()
-        
+
         # Verify
         assert len(result) == 0
         assert isinstance(result, list)
@@ -650,25 +651,25 @@ class TestComplianceServiceGetComplianceTrends:
     @pytest.mark.asyncio
     async def test_get_compliance_trends_30_days(self, service, mock_db):
         """Test getting compliance trends for 30 days."""
-        
+
         today = date.today()
         yesterday = today - timedelta(days=1)
-        
+
         snapshots = [
             self._create_mock_snapshot_for_date(yesterday, 80.0, 80, 20, 5),
             self._create_mock_snapshot_for_date(today, 85.0, 85, 15, 5),
         ]
-        
+
         query = MagicMock()
         query.filter.return_value = query
         query.order_by.return_value = query
         query.all.return_value = snapshots
-        
+
         mock_db.query.return_value = query
-        
+
         # Execute
         result = await service.get_compliance_trends(days=30)
-        
+
         # Verify
         assert len(result) == 2
         assert result[0]["date"] == yesterday.isoformat()
@@ -680,25 +681,25 @@ class TestComplianceServiceGetComplianceTrends:
     @pytest.mark.asyncio
     async def test_get_compliance_trends_specific_tenants(self, service, mock_db):
         """Test getting compliance trends for specific tenants."""
-        
+
         today = date.today()
         snapshots = [
             self._create_mock_snapshot_for_date(today, 85.0, 85, 15, 5),
         ]
-        
+
         query = MagicMock()
         query.filter.return_value = query
         query.order_by.return_value = query
         query.all.return_value = snapshots
-        
+
         mock_db.query.return_value = query
-        
+
         # Execute with tenant filter
         result = await service.get_compliance_trends(
             tenant_ids=["tenant-1", "tenant-2"],
             days=7
         )
-        
+
         # Verify
         assert isinstance(result, list)
         assert len(result) >= 0
@@ -706,25 +707,25 @@ class TestComplianceServiceGetComplianceTrends:
     @pytest.mark.asyncio
     async def test_get_compliance_trends_multiple_snapshots_same_day(self, service, mock_db):
         """Test getting trends when multiple snapshots exist for the same day."""
-        
+
         today = date.today()
-        
+
         # Two snapshots for the same day (different tenants)
         snapshots = [
             self._create_mock_snapshot_for_date(today, 80.0, 80, 20, 5),
             self._create_mock_snapshot_for_date(today, 90.0, 90, 10, 5),
         ]
-        
+
         query = MagicMock()
         query.filter.return_value = query
         query.order_by.return_value = query
         query.all.return_value = snapshots
-        
+
         mock_db.query.return_value = query
-        
+
         # Execute
         result = await service.get_compliance_trends(days=1)
-        
+
         # Verify - should average the two snapshots
         assert len(result) == 1
         assert result[0]["date"] == today.isoformat()
@@ -740,17 +741,17 @@ class TestComplianceServiceGetComplianceTrends:
         # Create fresh mocks for this test
         db = MagicMock()
         service = ComplianceService(db=db)
-        
+
         query = MagicMock()
         query.filter.return_value = query
         query.order_by.return_value = query
         query.all.return_value = []
-        
+
         db.query.return_value = query
-        
+
         # Execute
         result = await service.get_compliance_trends(days=30)
-        
+
         # Verify
         assert len(result) == 0
         assert isinstance(result, list)
@@ -796,26 +797,26 @@ class TestComplianceServiceGetTopViolations:
                 "Require encryption", "Security", "tenant-2", 10
             ),
         ]
-        
+
         query = MagicMock()
         query.filter.return_value = query
         query.all.return_value = policies
-        
+
         mock_db.query.return_value = query
-        
+
         # Execute
         result = await service._get_top_violations(limit=10)
-        
+
         # Verify
         assert len(result) == 2  # Two unique policies
         assert all(isinstance(v, PolicyViolation) for v in result)
-        
+
         # First should be "Require encryption" with 30 total violations (20 + 10)
         assert result[0].policy_name == "Require encryption"
         assert result[0].violation_count == 30
         assert result[0].affected_tenants == 2
         assert result[0].severity == "High"  # encryption keyword
-        
+
         # Second should be "Apply required tags" with 15 violations
         assert result[1].policy_name == "Apply required tags"
         assert result[1].violation_count == 15
@@ -832,16 +833,16 @@ class TestComplianceServiceGetTopViolations:
             )
             for i in range(15)
         ]
-        
+
         query = MagicMock()
         query.filter.return_value = query
         query.all.return_value = policies
-        
+
         mock_db.query.return_value = query
-        
+
         # Execute with limit of 5
         result = await service._get_top_violations(limit=5)
-        
+
         # Verify
         assert len(result) == 5
         # Should be sorted by violation count descending
@@ -853,12 +854,12 @@ class TestComplianceServiceGetTopViolations:
         query = MagicMock()
         query.filter.return_value = query
         query.all.return_value = []
-        
+
         mock_db.query.return_value = query
-        
+
         # Execute
         result = await service._get_top_violations()
-        
+
         # Verify
         assert len(result) == 0
         assert isinstance(result, list)

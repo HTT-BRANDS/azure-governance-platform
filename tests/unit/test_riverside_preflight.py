@@ -4,9 +4,9 @@ Tests for the riverside_checks.py module to ensure all checks
 function correctly and return expected result structures.
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
 
 from app.preflight.models import CheckCategory, CheckStatus
 
@@ -264,8 +264,8 @@ class TestRiversideEvidenceCheck:
     async def test_check_with_completed_requirements_all_have_evidence(self, check):
         """Test check with completed requirements that all have evidence."""
         from app.models.riverside import (
-            RequirementStatus,
             RequirementPriority,
+            RequirementStatus,
             RiversideRequirement,
         )
 
@@ -294,8 +294,8 @@ class TestRiversideEvidenceCheck:
     async def test_check_p0_missing_evidence(self, check):
         """Test check fails when P0 requirement is missing evidence."""
         from app.models.riverside import (
-            RequirementStatus,
             RequirementPriority,
+            RequirementStatus,
             RiversideRequirement,
         )
 
@@ -324,8 +324,8 @@ class TestRiversideEvidenceCheck:
     async def test_check_p1_missing_evidence(self, check):
         """Test check warns when P1 requirement is missing evidence."""
         from app.models.riverside import (
-            RequirementStatus,
             RequirementPriority,
+            RequirementStatus,
             RiversideRequirement,
         )
 
@@ -373,8 +373,8 @@ class TestRiversideCheckFunctions:
     @pytest.mark.asyncio
     async def test_run_all_riverside_checks(self):
         """Test run_all_riverside_checks runs all checks."""
-        from app.preflight.riverside_checks import run_all_riverside_checks
         from app.preflight.base import BasePreflightCheck
+        from app.preflight.riverside_checks import run_all_riverside_checks
         BasePreflightCheck.clear_cache()
 
         with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
@@ -423,8 +423,8 @@ class TestCheckResultStructure:
         BasePreflightCheck.clear_cache()
 
         from app.preflight.riverside_checks import (
-            RiversideDatabaseCheck,
             RiversideAPIEndpointCheck,
+            RiversideDatabaseCheck,
             RiversideSchedulerCheck,
         )
 

@@ -18,7 +18,7 @@ import json
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
@@ -186,7 +186,7 @@ LANDING_PAGE_HTML = """
     <div class="container" id="onboarding-container">
         <h1>🏢 Azure Governance Platform - Self-Service Onboarding</h1>
         <p>Welcome! This guided onboarding will help you connect your Azure subscription to the Azure Governance Platform using Azure Lighthouse delegation.</p>
-        
+
         <div class="step">
             <h2><span class="step-number">1</span> Generate Your ARM Template</h2>
             <p>Click the button below to generate a customized Azure Resource Manager (ARM) template for your organization.</p>
@@ -267,17 +267,17 @@ LANDING_PAGE_HTML = """
 
 def get_delegation_template(settings: Any, org_name: str = "") -> dict[str, Any]:
     """Generate the Lighthouse delegation ARM template.
-    
+
     Args:
         settings: Application settings with Azure configuration
         org_name: Organization name for customization
-        
+
     Returns:
         ARM template as a dictionary
     """
     managed_by_tenant_id = settings.azure_ad_tenant_id or settings.azure_tenant_id
     managed_by_principal_id = getattr(settings, 'managed_identity_object_id', None)
-    
+
     return {
         "$schema": "https://schema.management.azure.com/schemas/2019-08-01/subscriptionDeploymentTemplate.json#",
         "contentVersion": "1.0.0.0",
@@ -384,7 +384,7 @@ def get_delegation_template(settings: Any, org_name: str = "") -> dict[str, Any]
 
 def get_deployment_instructions() -> str:
     """Get deployment instructions HTML.
-    
+
     Returns:
         HTML string with deployment instructions
     """
@@ -392,7 +392,7 @@ def get_deployment_instructions() -> str:
 <div class="alert alert-info">
     <h3>🚀 Deployment Instructions</h3>
     <p>Deploy this template to your Azure subscription using one of these methods:</p>
-    
+
     <h4>Option 1: Azure Portal (Recommended)</h4>
     <ol>
         <li>Save the template JSON to a file (e.g., <code>lighthouse-delegation.json</code>)</li>
@@ -403,7 +403,7 @@ def get_deployment_instructions() -> str:
         <li>Select your subscription and click Review + Create</li>
         <li>After deployment, return here to verify access</li>
     </ol>
-    
+
     <h4>Option 2: Azure CLI</h4>
     <div class="code-block">
         <button class="copy-btn" onclick="copyToClipboard('cli-command')">Copy</button>
@@ -413,7 +413,7 @@ az deployment sub create \\
   --location eastus \\
   --template-file lighthouse-delegation.json</pre>
     </div>
-    
+
     <h4>Option 3: PowerShell</h4>
     <div class="code-block">
         <button class="copy-btn" onclick="copyToClipboard('ps-command')">Copy</button>
@@ -423,7 +423,7 @@ New-AzSubscriptionDeployment `
   -Location eastus `
   -TemplateFile lighthouse-delegation.json</pre>
     </div>
-    
+
     <p><strong>⚠️ Important:</strong> You need Owner or Contributor access to the subscription to deploy this template.</p>
 </div>
 """
@@ -432,11 +432,11 @@ New-AzSubscriptionDeployment `
 @router.get("/", response_class=HTMLResponse)
 async def onboarding_landing_page(request: Request):
     """Landing page for self-service onboarding.
-    
+
     Returns the full HTML onboarding page with HTMX integration.
     """
     settings = get_settings()
-    
+
     # Check if Lighthouse is enabled
     if not getattr(settings, 'lighthouse_enabled', True):
         return HTMLResponse(
@@ -451,7 +451,7 @@ async def onboarding_landing_page(request: Request):
             """,
             status_code=503
         )
-    
+
     return HTMLResponse(content=LANDING_PAGE_HTML)
 
 
@@ -461,27 +461,27 @@ async def generate_template(
     org_name: str = Form(default="", description="Organization name"),
 ) -> HTMLResponse:
     """Generate a customized ARM template for Lighthouse delegation.
-    
+
     Args:
         request: FastAPI request object
         org_name: Organization name for customization
-        
+
     Returns:
         HTML response with the template and deployment instructions
     """
     settings = get_settings()
-    
+
     # Check if Lighthouse is enabled
     if not getattr(settings, 'lighthouse_enabled', True):
         return HTMLResponse(
             content='<div class="alert alert-error">Self-service onboarding is disabled.</div>',
             status_code=503
         )
-    
+
     # Validate required settings
     managed_by_tenant_id = settings.azure_ad_tenant_id or settings.azure_tenant_id
-    managed_by_principal_id = getattr(settings, 'managed_identity_object_id', None)
-    
+    getattr(settings, 'managed_identity_object_id', None)
+
     if not managed_by_tenant_id:
         return HTMLResponse(
             content='''
@@ -492,11 +492,11 @@ async def generate_template(
             ''',
             status_code=500
         )
-    
+
     # Generate template
     template = get_delegation_template(settings, org_name)
     template_json = json.dumps(template, indent=2)
-    
+
     # Build HTML response
     html_content = f"""
 <div class="alert alert-success">
@@ -531,7 +531,7 @@ async def generate_template(
     `;
 </script>
 """
-    
+
     return HTMLResponse(content=html_content)
 
 
@@ -545,12 +545,12 @@ async def verify_delegation(
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     """Verify Lighthouse delegation and create tenant record.
-    
+
     This endpoint:
     1. Verifies the subscription is accessible via Lighthouse
     2. Creates a Tenant record with use_lighthouse=True
     3. Returns success/failure with details
-    
+
     Args:
         request: FastAPI request object
         tenant_name: Friendly name for the tenant
@@ -558,37 +558,37 @@ async def verify_delegation(
         subscription_id: Azure Subscription ID
         description: Optional description
         db: Database session
-        
+
     Returns:
         HTML response with verification result
     """
-    settings = get_settings()
-    
+    get_settings()
+
     # Validate inputs
     if not tenant_name.strip():
         return HTMLResponse(
             content='<div class="alert alert-error">Tenant name is required.</div>',
             status_code=400
         )
-    
+
     if not tenant_id.strip() or len(tenant_id.replace('-', '')) != 32:
         return HTMLResponse(
             content='<div class="alert alert-error">Invalid Azure Tenant ID format.</div>',
             status_code=400
         )
-    
+
     if not subscription_id.strip() or len(subscription_id.replace('-', '')) != 32:
         return HTMLResponse(
             content='<div class="alert alert-error">Invalid Azure Subscription ID format.</div>',
             status_code=400
         )
-    
+
     # Check for existing tenant
     existing = db.query(Tenant).filter(
-        (Tenant.tenant_id == tenant_id) | 
+        (Tenant.tenant_id == tenant_id) |
         (Tenant.name == tenant_name)
     ).first()
-    
+
     if existing:
         return HTMLResponse(
             content=f'''
@@ -601,12 +601,12 @@ async def verify_delegation(
             ''',
             status_code=409
         )
-    
+
     # Initialize Lighthouse client and verify delegation
     try:
         client = LighthouseAzureClient()
         delegation_result = await client.verify_delegation(subscription_id)
-        
+
         if not delegation_result.get("is_delegated"):
             error_msg = delegation_result.get("error", "Unknown error")
             return HTMLResponse(
@@ -627,7 +627,7 @@ async def verify_delegation(
                 ''',
                 status_code=400
             )
-        
+
         # Delegation verified - create tenant record
         new_tenant = Tenant(
             id=str(uuid.uuid4()),
@@ -640,11 +640,11 @@ async def verify_delegation(
             client_id=None,
             client_secret_ref=None,
         )
-        
+
         db.add(new_tenant)
         db.commit()
         db.refresh(new_tenant)
-        
+
         # Return success
         return HTMLResponse(
             content=f'''
@@ -671,7 +671,7 @@ async def verify_delegation(
             ''',
             status_code=201
         )
-        
+
     except LighthouseDelegationError as e:
         return HTMLResponse(
             content=f'''
@@ -702,17 +702,17 @@ async def get_onboarding_status(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Check the onboarding status of a tenant.
-    
+
     Args:
         tenant_id: The tenant UUID (not Azure Tenant ID)
         db: Database session
-        
+
     Returns:
         JSON response with tenant status
     """
     # Find tenant by UUID
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
-    
+
     if not tenant:
         return JSONResponse(
             status_code=404,
@@ -721,10 +721,10 @@ async def get_onboarding_status(
                 "message": f"Tenant with ID {tenant_id} not found"
             }
         )
-    
+
     # Get subscription count
     subscription_count = len(tenant.subscriptions) if tenant.subscriptions else 0
-    
+
     return JSONResponse(
         status_code=200,
         content={
@@ -753,23 +753,23 @@ async def get_template_json(
     org_name: str = "",
 ) -> JSONResponse:
     """Get the ARM template as JSON (API endpoint).
-    
+
     Args:
         org_name: Organization name for customization
-        
+
     Returns:
         JSON response with the ARM template
     """
     settings = get_settings()
-    
+
     if not getattr(settings, 'lighthouse_enabled', True):
         return JSONResponse(
             status_code=503,
             content={"error": "Self-service onboarding is disabled"}
         )
-    
+
     template = get_delegation_template(settings, org_name)
-    
+
     return JSONResponse(
         status_code=200,
         content={
@@ -791,25 +791,25 @@ async def verify_delegation_json(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Verify delegation and create tenant (JSON API endpoint).
-    
+
     Returns:
         JSON response with verification result
     """
-    settings = get_settings()
-    
+    get_settings()
+
     # Validate inputs
     if not tenant_name.strip():
         return JSONResponse(
             status_code=400,
             content={"error": "Tenant name is required"}
         )
-    
+
     # Check for existing tenant
     existing = db.query(Tenant).filter(
-        (Tenant.tenant_id == tenant_id) | 
+        (Tenant.tenant_id == tenant_id) |
         (Tenant.name == tenant_name)
     ).first()
-    
+
     if existing:
         return JSONResponse(
             status_code=409,
@@ -822,12 +822,12 @@ async def verify_delegation_json(
                 }
             }
         )
-    
+
     # Verify delegation
     try:
         client = LighthouseAzureClient()
         delegation_result = await client.verify_delegation(subscription_id)
-        
+
         if not delegation_result.get("is_delegated"):
             return JSONResponse(
                 status_code=400,
@@ -837,7 +837,7 @@ async def verify_delegation_json(
                     "delegation_result": delegation_result,
                 }
             )
-        
+
         # Create tenant
         new_tenant = Tenant(
             id=str(uuid.uuid4()),
@@ -849,11 +849,11 @@ async def verify_delegation_json(
             client_id=None,
             client_secret_ref=None,
         )
-        
+
         db.add(new_tenant)
         db.commit()
         db.refresh(new_tenant)
-        
+
         return JSONResponse(
             status_code=201,
             content={
@@ -870,7 +870,7 @@ async def verify_delegation_json(
                 "delegation": delegation_result,
             }
         )
-        
+
     except Exception as e:
         return JSONResponse(
             status_code=500,
