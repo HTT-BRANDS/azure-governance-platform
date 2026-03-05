@@ -864,7 +864,7 @@ A task is considered complete if ANY of the following are true:
   - **Scope**: `app/core/auth.py`, `app/core/authorization.py`, `app/api/routes/auth.py`
   - **Validation**: Security audit report with 0 critical/high findings
 
-- [ ] **Task 6.2.2**: Add `detect-secrets` pre-commit hook (BD issue `fp0`)
+- [x] **Task 6.2.2**: Add `detect-secrets` pre-commit hook (BD issue `fp0`)
   - **Files**: `.pre-commit-config.yaml` (create/modify), `pyproject.toml` (modify)
   - **Agent**: `code-puppy`
   - **Validation**: `pre-commit run detect-secrets --all-files` exits 0
