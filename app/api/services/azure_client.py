@@ -336,6 +336,7 @@ class AzureClientManager:
             tenant_id=tenant_id,
             client_id=client_id,
             client_secret=client_secret,
+            connection_timeout=10,
         )
 
         # Cache with expiration

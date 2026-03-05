@@ -155,13 +155,18 @@ class GraphClient:
                 tenant_id=self.tenant_id,
                 client_id=settings.azure_client_id,
                 client_secret=settings.azure_client_secret,
+                connection_timeout=10,
             )
         return self._credential
 
-    def _get_token(self) -> str:
-        """Get access token for Graph API."""
+    async def _get_token(self) -> str:
+        """Get access token for Graph API.
+
+        Uses asyncio.to_thread() to avoid blocking the event loop
+        since ClientSecretCredential.get_token() is synchronous.
+        """
         credential = self._get_credential()
-        token = credential.get_token(*GRAPH_SCOPES)
+        token = await asyncio.to_thread(credential.get_token, *GRAPH_SCOPES)
         return token.token
 
     async def _request(
@@ -171,7 +176,7 @@ class GraphClient:
         params: dict | None = None,
     ) -> dict:
         """Make authenticated request to Graph API."""
-        token = self._get_token()
+        token = await self._get_token()
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -454,7 +459,7 @@ class GraphClient:
         while current_endpoint:
             try:
                 # Use beta API for PIM
-                token = self._get_token()
+                token = await self._get_token()
                 headers = {
                     "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json",
