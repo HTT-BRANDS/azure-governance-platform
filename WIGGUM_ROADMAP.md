@@ -13,9 +13,9 @@ version: 0.2.0
 created: 2025-03-06
 last_updated: 2025-03-07
 loop_status: IN_PROGRESS  # NOT_STARTED | IN_PROGRESS | COMPLETED | BLOCKED
-current_phase: 3
+current_phase: 5
 total_phases: 7
-completed_tasks: 27
+completed_tasks: 55
 total_tasks: 89
 stop_condition: "All checkboxes marked [x] AND all quality gates pass"
 ```
@@ -377,7 +377,7 @@ The `/wiggum ralph` loop should call `/wiggum_stop` when ALL of the following ar
 
 > All 14 route files lack dedicated tests. Test request/response shapes, status codes, auth enforcement.
 
-- [ ] **Task 3.1**: Create `tests/unit/test_routes_auth.py` — Route tests for `app/api/routes/auth.py`
+- [x] **Task 3.1**: Create `tests/unit/test_routes_auth.py` — Route tests for `app/api/routes/auth.py`
   - **Files**: `tests/unit/test_routes_auth.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Test Coverage Required**:
@@ -395,7 +395,7 @@ The `/wiggum ralph` loop should call `/wiggum_stop` when ALL of the following ar
   - **Minimum Tests**: 12
   - **Validation**: `uv run pytest tests/unit/test_routes_auth.py -v`
 
-- [ ] **Task 3.2**: Create `tests/unit/test_routes_costs.py` — Route tests for `app/api/routes/costs.py`
+- [x] **Task 3.2**: Create `tests/unit/test_routes_costs.py` — Route tests for `app/api/routes/costs.py`
   - **Files**: `tests/unit/test_routes_costs.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Test Coverage Required**:
@@ -407,73 +407,73 @@ The `/wiggum ralph` loop should call `/wiggum_stop` when ALL of the following ar
   - **Minimum Tests**: 10
   - **Validation**: `uv run pytest tests/unit/test_routes_costs.py -v`
 
-- [ ] **Task 3.3**: Create `tests/unit/test_routes_compliance.py` — Route tests for `app/api/routes/compliance.py`
+- [x] **Task 3.3**: Create `tests/unit/test_routes_compliance.py` — Route tests for `app/api/routes/compliance.py`
   - **Files**: `tests/unit/test_routes_compliance.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 8
   - **Validation**: `uv run pytest tests/unit/test_routes_compliance.py -v`
 
-- [ ] **Task 3.4**: Create `tests/unit/test_routes_resources.py` — Route tests for `app/api/routes/resources.py`
+- [x] **Task 3.4**: Create `tests/unit/test_routes_resources.py` — Route tests for `app/api/routes/resources.py`
   - **Files**: `tests/unit/test_routes_resources.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 10
   - **Validation**: `uv run pytest tests/unit/test_routes_resources.py -v`
 
-- [ ] **Task 3.5**: Create `tests/unit/test_routes_identity.py` — Route tests for `app/api/routes/identity.py`
+- [x] **Task 3.5**: Create `tests/unit/test_routes_identity.py` — Route tests for `app/api/routes/identity.py`
   - **Files**: `tests/unit/test_routes_identity.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 8
   - **Validation**: `uv run pytest tests/unit/test_routes_identity.py -v`
 
-- [ ] **Task 3.6**: Create `tests/unit/test_routes_riverside.py` — Route tests for `app/api/routes/riverside.py`
+- [x] **Task 3.6**: Create `tests/unit/test_routes_riverside.py` — Route tests for `app/api/routes/riverside.py`
   - **Files**: `tests/unit/test_routes_riverside.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 8
   - **Validation**: `uv run pytest tests/unit/test_routes_riverside.py -v`
 
-- [ ] **Task 3.7**: Create `tests/unit/test_routes_dmarc.py` — Route tests for `app/api/routes/dmarc.py`
+- [x] **Task 3.7**: Create `tests/unit/test_routes_dmarc.py` — Route tests for `app/api/routes/dmarc.py`
   - **Files**: `tests/unit/test_routes_dmarc.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 8
   - **Validation**: `uv run pytest tests/unit/test_routes_dmarc.py -v`
 
-- [ ] **Task 3.8**: Create `tests/unit/test_routes_sync.py` — Route tests for `app/api/routes/sync.py`
+- [x] **Task 3.8**: Create `tests/unit/test_routes_sync.py` — Route tests for `app/api/routes/sync.py`
   - **Files**: `tests/unit/test_routes_sync.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 8
   - **Validation**: `uv run pytest tests/unit/test_routes_sync.py -v`
 
-- [ ] **Task 3.9**: Create `tests/unit/test_routes_dashboard.py` — Route tests for `app/api/routes/dashboard.py`
+- [x] **Task 3.9**: Create `tests/unit/test_routes_dashboard.py` — Route tests for `app/api/routes/dashboard.py`
   - **Files**: `tests/unit/test_routes_dashboard.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 6
   - **Validation**: `uv run pytest tests/unit/test_routes_dashboard.py -v`
 
-- [ ] **Task 3.10**: Create `tests/unit/test_routes_exports.py` — Route tests for `app/api/routes/exports.py`
+- [x] **Task 3.10**: Create `tests/unit/test_routes_exports.py` — Route tests for `app/api/routes/exports.py`
   - **Files**: `tests/unit/test_routes_exports.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 6
   - **Validation**: `uv run pytest tests/unit/test_routes_exports.py -v`
 
-- [ ] **Task 3.11**: Create `tests/unit/test_routes_bulk.py` — Route tests for `app/api/routes/bulk.py`
+- [x] **Task 3.11**: Create `tests/unit/test_routes_bulk.py` — Route tests for `app/api/routes/bulk.py`
   - **Files**: `tests/unit/test_routes_bulk.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 6
   - **Validation**: `uv run pytest tests/unit/test_routes_bulk.py -v`
 
-- [ ] **Task 3.12**: Create `tests/unit/test_routes_recommendations.py` — Route tests for `app/api/routes/recommendations.py`
+- [x] **Task 3.12**: Create `tests/unit/test_routes_recommendations.py` — Route tests for `app/api/routes/recommendations.py`
   - **Files**: `tests/unit/test_routes_recommendations.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 6
   - **Validation**: `uv run pytest tests/unit/test_routes_recommendations.py -v`
 
-- [ ] **Task 3.13**: Create `tests/unit/test_routes_preflight.py` — Route tests for `app/api/routes/preflight.py`
+- [x] **Task 3.13**: Create `tests/unit/test_routes_preflight.py` — Route tests for `app/api/routes/preflight.py`
   - **Files**: `tests/unit/test_routes_preflight.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 6
   - **Validation**: `uv run pytest tests/unit/test_routes_preflight.py -v`
 
-- [ ] **Task 3.14**: Create `tests/unit/test_routes_monitoring.py` — Route tests for `app/api/routes/monitoring.py`
+- [x] **Task 3.14**: Create `tests/unit/test_routes_monitoring.py` — Route tests for `app/api/routes/monitoring.py`
   - **Files**: `tests/unit/test_routes_monitoring.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 4
@@ -485,7 +485,7 @@ The `/wiggum ralph` loop should call `/wiggum_stop` when ALL of the following ar
 
 > Misc modules that need test coverage.
 
-- [ ] **Task 4.1**: Create `tests/unit/test_email_service.py` — Unit tests for `app/services/email_service.py`
+- [x] **Task 4.1**: Create `tests/unit/test_email_service.py` — Unit tests for `app/services/email_service.py`
   - **Files**: `tests/unit/test_email_service.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Test Coverage Required**:
@@ -497,7 +497,7 @@ The `/wiggum ralph` loop should call `/wiggum_stop` when ALL of the following ar
   - **Minimum Tests**: 8
   - **Validation**: `uv run pytest tests/unit/test_email_service.py -v`
 
-- [ ] **Task 4.2**: Create `tests/unit/test_teams_webhook.py` — Unit tests for `app/services/teams_webhook.py`
+- [x] **Task 4.2**: Create `tests/unit/test_teams_webhook.py` — Unit tests for `app/services/teams_webhook.py`
   - **Files**: `tests/unit/test_teams_webhook.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Test Coverage Required**:
@@ -509,7 +509,7 @@ The `/wiggum ralph` loop should call `/wiggum_stop` when ALL of the following ar
   - **Minimum Tests**: 8
   - **Validation**: `uv run pytest tests/unit/test_teams_webhook.py -v`
 
-- [ ] **Task 4.3**: Create `tests/unit/test_preflight_runner.py` — Unit tests for `app/preflight/runner.py`
+- [x] **Task 4.3**: Create `tests/unit/test_preflight_runner.py` — Unit tests for `app/preflight/runner.py`
   - **Files**: `tests/unit/test_preflight_runner.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Test Coverage Required**:
@@ -521,7 +521,7 @@ The `/wiggum ralph` loop should call `/wiggum_stop` when ALL of the following ar
   - **Minimum Tests**: 8
   - **Validation**: `uv run pytest tests/unit/test_preflight_runner.py -v`
 
-- [ ] **Task 4.4**: Create `tests/unit/test_preflight_reports.py` — Unit tests for `app/preflight/reports.py`
+- [x] **Task 4.4**: Create `tests/unit/test_preflight_reports.py` — Unit tests for `app/preflight/reports.py`
   - **Files**: `tests/unit/test_preflight_reports.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Test Coverage Required**:
@@ -532,19 +532,19 @@ The `/wiggum ralph` loop should call `/wiggum_stop` when ALL of the following ar
   - **Minimum Tests**: 6
   - **Validation**: `uv run pytest tests/unit/test_preflight_reports.py -v`
 
-- [ ] **Task 4.5**: Create `tests/unit/test_preflight_tenant_checks.py` — Unit tests for `app/preflight/tenant_checks.py`
+- [x] **Task 4.5**: Create `tests/unit/test_preflight_tenant_checks.py` — Unit tests for `app/preflight/tenant_checks.py`
   - **Files**: `tests/unit/test_preflight_tenant_checks.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 6
   - **Validation**: `uv run pytest tests/unit/test_preflight_tenant_checks.py -v`
 
-- [ ] **Task 4.6**: Create `tests/unit/sync/test_riverside.py` — Unit tests for `app/core/sync/riverside.py`
+- [x] **Task 4.6**: Create `tests/unit/sync/test_riverside.py` — Unit tests for `app/core/sync/riverside.py`
   - **Files**: `tests/unit/sync/test_riverside.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 6
   - **Validation**: `uv run pytest tests/unit/sync/test_riverside.py -v`
 
-- [ ] **Task 4.7**: Create `tests/unit/sync/test_dmarc.py` — Unit tests for `app/core/sync/dmarc.py`
+- [x] **Task 4.7**: Create `tests/unit/sync/test_dmarc.py` — Unit tests for `app/core/sync/dmarc.py`
   - **Files**: `tests/unit/sync/test_dmarc.py` (create)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Minimum Tests**: 6
