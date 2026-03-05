@@ -243,6 +243,134 @@ class TestGraphClientRequestIntegration:
             await client._request("GET", "/users")
 
 
+class TestAzureGraphPreflightCheck:
+    """Test suite for the lightweight AzureGraphCheck preflight."""
+
+    @pytest.fixture(autouse=True)
+    def setup_mocks(self):
+        """Set up mock settings."""
+        self.mock_settings = MagicMock()
+        self.mock_settings.azure_client_id = "test-client-id"
+        self.mock_settings.azure_client_secret = "test-client-secret"
+        self.mock_settings.azure_tenant_id = "test-tenant-id"
+
+        with patch('app.preflight.checks.get_settings', return_value=self.mock_settings):
+            from app.preflight.checks import AzureGraphCheck
+            self.GraphCheck = AzureGraphCheck
+            yield
+
+    @pytest.mark.asyncio
+    async def test_graph_check_passes_with_org_response(self):
+        """Verify Graph check passes when /organization returns data."""
+        check = self.GraphCheck()
+
+        mock_token = "test-bearer-token"
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"value": [{"id": "org1", "displayName": "Test Org"}]}
+        mock_response.raise_for_status = MagicMock()
+
+        mock_http = AsyncMock()
+        mock_http.get.return_value = mock_response
+        mock_http.__aenter__ = AsyncMock(return_value=mock_http)
+        mock_http.__aexit__ = AsyncMock(return_value=None)
+
+        with patch('app.api.services.graph_client.GraphClient') as mock_gc_class, \
+             patch('httpx.AsyncClient', return_value=mock_http):
+            mock_gc = MagicMock()
+            mock_gc._get_token = AsyncMock(return_value=mock_token)
+            mock_gc_class.return_value = mock_gc
+
+            result = await check._execute_check()
+
+        assert result.status.value == "pass"
+        assert "Test Org" in result.message
+        assert result.details["token_acquired"] is True
+
+    @pytest.mark.asyncio
+    async def test_graph_check_fails_on_timeout(self):
+        """Verify Graph check returns descriptive failure on timeout."""
+        import httpx as httpx_mod
+        check = self.GraphCheck()
+
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx_mod.TimeoutException("Connection timed out")
+        mock_http.__aenter__ = AsyncMock(return_value=mock_http)
+        mock_http.__aexit__ = AsyncMock(return_value=None)
+
+        with patch('app.api.services.graph_client.GraphClient') as mock_gc_class, \
+             patch('httpx.AsyncClient', return_value=mock_http):
+            mock_gc = MagicMock()
+            mock_gc._get_token = AsyncMock(return_value="test-token")
+            mock_gc_class.return_value = mock_gc
+
+            result = await check._execute_check()
+
+        assert result.status.value == "fail"
+        assert "timed out" in result.message.lower()
+        assert "network connectivity" in result.message.lower()
+
+    @pytest.mark.asyncio
+    async def test_graph_check_fails_on_token_failure(self):
+        """Verify Graph check fails gracefully when token acquisition fails."""
+        check = self.GraphCheck()
+
+        with patch('app.api.services.graph_client.GraphClient') as mock_gc_class:
+            mock_gc = MagicMock()
+            mock_gc._get_token = AsyncMock(side_effect=Exception("Auth failed"))
+            mock_gc_class.return_value = mock_gc
+
+            result = await check._execute_check()
+
+        assert result.status.value == "fail"
+        assert "Auth failed" in result.message
+
+    @pytest.mark.asyncio
+    async def test_graph_check_fails_without_tenant(self):
+        """Verify Graph check fails when no tenant ID is configured."""
+        self.mock_settings.azure_tenant_id = None
+
+        with patch('app.preflight.checks.get_settings', return_value=self.mock_settings):
+            from app.preflight.checks import AzureGraphCheck
+            check = AzureGraphCheck()
+            result = await check._execute_check()
+
+        assert result.status.value == "fail"
+        assert "No tenant ID" in result.message
+
+    @pytest.mark.asyncio
+    async def test_graph_check_handles_http_error(self):
+        """Verify Graph check reports HTTP status errors clearly."""
+        import httpx as httpx_mod
+        check = self.GraphCheck()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_response.raise_for_status.side_effect = httpx_mod.HTTPStatusError(
+            "Forbidden", request=MagicMock(), response=mock_response
+        )
+
+        mock_http = AsyncMock()
+        mock_http.get.return_value = mock_response
+        mock_http.__aenter__ = AsyncMock(return_value=mock_http)
+        mock_http.__aexit__ = AsyncMock(return_value=None)
+
+        with patch('app.api.services.graph_client.GraphClient') as mock_gc_class, \
+             patch('httpx.AsyncClient', return_value=mock_http):
+            mock_gc = MagicMock()
+            mock_gc._get_token = AsyncMock(return_value="test-token")
+            mock_gc_class.return_value = mock_gc
+
+            result = await check._execute_check()
+
+        assert result.status.value == "fail"
+        assert "403" in result.message
+
+    def test_graph_check_has_20s_timeout(self):
+        """Verify the check uses 20s timeout (not the old 60s)."""
+        check = self.GraphCheck()
+        assert check.timeout_seconds == 20.0
+
+
 class TestAzureClientConnectionTimeout:
     """Test suite for azure_client.py connection_timeout parameter."""
 

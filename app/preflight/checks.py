@@ -6,6 +6,8 @@ Contains all the concrete check implementations for Azure, GitHub, and system ch
 import logging
 from typing import List
 
+import httpx
+
 from app.core.config import get_settings
 from app.core.database import SessionLocal
 from app.models.tenant import Tenant
@@ -390,7 +392,13 @@ class AzureResourcesCheck(BasePreflightCheck):
 
 
 class AzureGraphCheck(BasePreflightCheck):
-    """Check Microsoft Graph API access."""
+    """Check Microsoft Graph API access.
+
+    Uses a lightweight approach:
+    1. Verify token acquisition (fast, tests Azure AD connectivity)
+    2. Make a single direct HTTP call to /organization (lightweight endpoint)
+       with a short 10s timeout and NO retries (avoids retry amplification)
+    """
 
     def __init__(self):
         super().__init__(
@@ -398,43 +406,111 @@ class AzureGraphCheck(BasePreflightCheck):
             name="Microsoft Graph API",
             category=CheckCategory.AZURE_GRAPH,
             description="Verify access to Microsoft Graph API",
-            timeout_seconds=30.0,
+            timeout_seconds=20.0,
         )
 
     async def _execute_check(
         self, tenant_id: str | None = None
     ) -> CheckResult:
-        """Execute Graph API check."""
+        """Execute Graph API check with lightweight direct call."""
+        import asyncio
+        import httpx
+
         settings = get_settings()
+        effective_tenant = tenant_id or settings.azure_tenant_id
+
+        if not effective_tenant:
+            return CheckResult(
+                check_id=self.check_id,
+                name=self.name,
+                category=self.category,
+                status=CheckStatus.FAIL,
+                message="No tenant ID configured for Graph API check",
+                recommendations=["Set AZURE_TENANT_ID environment variable"],
+            )
 
         try:
-            from app.api.services.graph_client import GraphClient
+            # Step 1: Verify token acquisition (tests Azure AD auth)
+            from app.api.services.graph_client import GraphClient, GRAPH_API_BASE
 
-            effective_tenant = tenant_id or settings.azure_tenant_id
             client = GraphClient(effective_tenant)
-            users = await client.get_users(top=1)
+            token = await client._get_token()
 
-            if users is not None:
+            if not token:
                 return CheckResult(
                     check_id=self.check_id,
                     name=self.name,
                     category=self.category,
-                    status=CheckStatus.PASS,
-                    message="Microsoft Graph API accessible",
-                    details={
-                        "tenant_id": effective_tenant,
-                        "users_returned": len(users),
-                    },
-                )
-            else:
-                return CheckResult(
-                    check_id=self.check_id,
-                    name=self.name,
-                    category=self.category,
-                    status=CheckStatus.WARNING,
-                    message="Graph API returned empty response",
+                    status=CheckStatus.FAIL,
+                    message="Failed to acquire Graph API token",
                     tenant_id=tenant_id,
+                    recommendations=["Check AZURE_CLIENT_ID and AZURE_CLIENT_SECRET"],
                 )
+
+            # Step 2: Make a single lightweight Graph call (no retries)
+            # Use /organization endpoint - faster than /users, always available
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            }
+
+            async with httpx.AsyncClient() as http_client:
+                response = await http_client.get(
+                    f"{GRAPH_API_BASE}/organization",
+                    headers=headers,
+                    params={"$select": "id,displayName"},
+                    timeout=10.0,  # Short timeout for preflight
+                )
+                response.raise_for_status()
+                data = response.json()
+
+            org_count = len(data.get("value", []))
+            org_name = data.get("value", [{}])[0].get("displayName", "Unknown") if org_count > 0 else "N/A"
+
+            return CheckResult(
+                check_id=self.check_id,
+                name=self.name,
+                category=self.category,
+                status=CheckStatus.PASS,
+                message=f"Microsoft Graph API accessible (org: {org_name})",
+                details={
+                    "tenant_id": effective_tenant,
+                    "organization_name": org_name,
+                    "organizations_found": org_count,
+                    "token_acquired": True,
+                },
+                tenant_id=tenant_id,
+            )
+
+        except httpx.TimeoutException:
+            return CheckResult(
+                check_id=self.check_id,
+                name=self.name,
+                category=self.category,
+                status=CheckStatus.FAIL,
+                message="Graph API request timed out (10s) - network connectivity issue",
+                tenant_id=tenant_id,
+                details={"tenant_id": effective_tenant, "token_acquired": True},
+                recommendations=[
+                    "Check container outbound network connectivity to graph.microsoft.com",
+                    "Verify App Service outbound IP is not blocked",
+                    "Check if VNet integration has restrictive NSG rules",
+                ],
+            )
+        except httpx.HTTPStatusError as e:
+            return CheckResult(
+                check_id=self.check_id,
+                name=self.name,
+                category=self.category,
+                status=CheckStatus.FAIL,
+                message=f"Graph API returned HTTP {e.response.status_code}",
+                tenant_id=tenant_id,
+                details={"status_code": e.response.status_code, "tenant_id": effective_tenant},
+                recommendations=[
+                    "Check app registration has Graph API permissions",
+                    "Verify admin consent is granted",
+                ],
+            )
         except Exception as e:
             return CheckResult(
                 check_id=self.check_id,
