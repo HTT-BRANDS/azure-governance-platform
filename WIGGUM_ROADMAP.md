@@ -11,11 +11,11 @@
 project: azure-governance-platform
 version: 0.2.0
 created: 2025-03-06
-last_updated: 2025-03-10
+last_updated: 2026-03-05
 loop_status: IN_PROGRESS  # NOT_STARTED | IN_PROGRESS | COMPLETED | BLOCKED
-current_phase: 6
+current_phase: 7
 total_phases: 7
-completed_tasks: 64
+completed_tasks: 59
 total_tasks: 89
 stop_condition: "All checkboxes marked [x] AND all quality gates pass"
 ```
@@ -290,8 +290,8 @@ python scripts/sync_roadmap.py --verify --json | jq '.next_task.id'
 
 > All API service classes lack unit tests. These are the business logic layer.
 
-- [x] **Task 2.1**: Create `tests/unit/test_cost_service.py` — Unit tests for `app/api/services/cost_service.py`
-  - **Files**: `tests/unit/test_cost_service.py` (create)
+- [x] **Task 2.1**: Create cost service unit tests — Unit tests for `app/api/services/cost_service.py`
+  - **Files**: `tests/unit/test_cost_service_anomalies.py`, `tests/unit/test_cost_service_summaries.py` (split for maintainability)
   - **Agent**: `code-puppy`, `python-reviewer`
   - **Test Coverage Required**:
     - `CostService` initialization
@@ -304,8 +304,8 @@ python scripts/sync_roadmap.py --verify --json | jq '.next_task.id'
     - `bulk_acknowledge()` — batch operation
     - `get_cost_forecast()` — linear projection
     - `get_cost_by_tenant()` — per-tenant breakdown
-  - **Minimum Tests**: 12
-  - **Validation**: `uv run pytest tests/unit/test_cost_service.py -v`
+  - **Minimum Tests**: 12 (split across both files)
+  - **Validation**: `uv run pytest tests/unit/test_cost_service_*.py -v`
 
 - [x] **Task 2.2**: Create `tests/unit/test_compliance_service.py` — Unit tests for `app/api/services/compliance_service.py`
   - **Files**: `tests/unit/test_compliance_service.py` (create)
@@ -859,7 +859,7 @@ A task is considered complete if ANY of the following are true:
 
 ### 6.2 Security Review
 
-- [ ] **Task 6.2.1**: Run full security audit on auth and authorization modules
+- [x] **Task 6.2.1**: Run full security audit on auth and authorization modules
   - **Agent**: `security-auditor`
   - **Scope**: `app/core/auth.py`, `app/core/authorization.py`, `app/api/routes/auth.py`
   - **Validation**: Security audit report with 0 critical/high findings
