@@ -1,6 +1,6 @@
 # Session Handoff — Azure Governance Platform
 
-**Last Updated:** July 2025
+**Last Updated:** July 2025 (session close)
 **Version:** 0.2.0
 
 ## Current State: Dev Environment LIVE ✅
@@ -40,6 +40,7 @@ The platform is deployed and healthy on Azure App Service.
 | Security findings | 5/5 | ✅ All fixed |
 | Live health check | 1 | ✅ Healthy |
 | Live security headers | 6 | ✅ All present |
+| Smoke tests (live) | 13 | ✅ 9 pass, 4 skipped (Graph API) |
 
 ## What Was Accomplished
 
@@ -72,6 +73,10 @@ The platform is deployed and healthy on Azure App Service.
 
 ### P0 — Immediate
 - [ ] Fix health endpoint version (shows 0.1.0, should read from pyproject.toml → 0.2.0)
+- [ ] Graph API preflight check times out in container — 60s timeout (`azure-governance-platform-a83`)
+  - `GraphClient.get_users(top=1)` works locally (0.4s) but hangs in App Service
+  - Likely: `ClientSecretCredential` trying managed identity before client_secret fallback
+  - Cascades into 6 MFA-related preflight failures (4 smoke tests skipped)
 
 ### P1 — Next Sprint
 - [ ] Connect real Azure tenant credentials (HTT, BCC, FN, TLL, DCE) via Key Vault
@@ -103,6 +108,12 @@ The platform is deployed and healthy on Azure App Service.
 | SECURITY_IMPLEMENTATION.md | Security posture + audit results |
 | SESSION_HANDOFF.md | **Active state — read this first** |
 | AGENTS.md | Agent workflow instructions |
+
+## Latest Session Summary
+- Filed `azure-governance-platform-a83`: Graph API preflight timeout in container (P2)
+- Closed `azure-governance-platform-9u4`: Smoke test suite complete
+- Final smoke test: **9 passed, 0 failed, 4 skipped** (skips are Graph-dependent Riverside tests)
+- All core endpoints healthy, auth working, scheduler running 6 jobs
 
 ## Quick Start for Next Session
 ```bash
