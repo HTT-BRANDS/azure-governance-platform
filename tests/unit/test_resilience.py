@@ -4,8 +4,7 @@ Tests resilience patterns including rate limiting, circuit breaker,
 and exponential backoff retry logic.
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
