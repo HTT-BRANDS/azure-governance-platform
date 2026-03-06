@@ -1,0 +1,68 @@
+WCAG 2.2 New Success Criteria (Published October 5, 2023)
+
+=== Guideline 2.4 Navigable ===
+
+2.4.11 Focus Not Obscured (Minimum) (AA)
+- When a user interface component receives keyboard focus, the component is not entirely hidden by author-created content
+- Exception: Content opened by user may obscure focused component if user can reveal it without advancing focus
+- Automated Detection: Partial - difficult with dynamic content
+
+2.4.12 Focus Not Obscured (Enhanced) (AAA)
+- When a user interface component receives keyboard focus, no part of the component is hidden by author-created content
+- Stricter version of 2.4.11
+- Automated Detection: Partial
+
+2.4.13 Focus Appearance (AAA)
+- Focus indicator must be at least as large as 2 CSS pixel thick perimeter
+- Must have contrast ratio of at least 3:1 between focused/unfocused states
+- Automated Detection: Limited - cannot reliably calculate all focus states
+
+=== Guideline 2.5 Input Modalities ===
+
+2.5.7 Dragging Movements (AA)
+- All functionality using dragging must have single-pointer alternative
+- Exception: dragging is essential or determined by user agent
+- Automated Detection: Very Limited - requires semantic understanding
+
+2.5.8 Target Size (Minimum) (AA)
+- Target size must be at least 24x24 CSS pixels
+- Exceptions: spacing, equivalent control, inline, user agent, essential
+- Automated Detection: Partial - inline targets difficult
+
+=== Guideline 3.2 Predictable ===
+
+3.2.6 Consistent Help (A)
+- Help mechanisms must be in same relative order across pages
+- Applies to: human contact, self-help, automated contact
+- Automated Detection: None - requires semantic understanding
+
+=== Guideline 3.3 Input Assistance ===
+
+3.3.7 Redundant Entry (A)
+- Previously entered information must be auto-populated or available for selection
+- Exceptions: essential, security, invalid
+- Automated Detection: Limited - requires session/form tracking
+
+3.3.8 Accessible Authentication (Minimum) (AA)
+- Cognitive function test not required unless alternative available
+- Acceptable: object recognition, personal content, password managers
+- Automated Detection: None - requires cognitive assessment
+
+3.3.9 Accessible Authentication (Enhanced) (AAA)
+- Cognitive function test not required unless alternative available
+- Stricter than 3.3.8 - no object recognition
+- Automated Detection: None
+
+=== Removed ===
+
+4.1.1 Parsing (obsolete in WCAG 2.2)
+- Browsers handle parsing automatically now
+- Still good practice but not required for conformance
+
+=== Summary ===
+
+Total new criteria: 9
+Automatable: 2 (partially: 2.4.11, 2.4.12)
+Requires manual testing: 7
+
+Automated testing coverage: ~57% of WCAG 2.2 AA
