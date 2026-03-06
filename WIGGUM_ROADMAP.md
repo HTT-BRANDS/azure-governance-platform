@@ -212,28 +212,28 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 ## Phase 5: Design System Migration (DNS → Governance Platform)
 
 ### 5.1 Design Token Foundation
-- [ ] 5.1.1 Create Pydantic design token models (Python Programmer 🐍)
+- [x] 5.1.1 Create Pydantic design token models (Python Programmer 🐍)
   - File: app/core/design_tokens.py
   - Source: ~/dev/DNS-Domain-Management/lib/types/brand.ts
   - Validation: `uv run python -c "from app.core.design_tokens import BrandConfig; print('OK')"`
   - Reviewed by: Python Reviewer 🐍
   - Signed off by: Planning Agent 📋
 
-- [ ] 5.1.2 Port color utilities to Python (Python Programmer 🐍)
+- [x] 5.1.2 Port color utilities to Python (Python Programmer 🐍)
   - File: app/core/color_utils.py
   - Source: ~/dev/DNS-Domain-Management/lib/theme/brand-utils.ts
   - Validation: `uv run pytest tests/unit/test_color_utils.py -v`
   - Reviewed by: Python Reviewer 🐍 + Security Auditor 🛡️
   - Signed off by: Pack Leader 🐺
 
-- [ ] 5.1.3 Create server-side CSS generator (Python Programmer 🐍)
+- [x] 5.1.3 Create server-side CSS generator (Python Programmer 🐍)
   - File: app/core/css_generator.py
   - Source: ~/dev/DNS-Domain-Management/lib/theme/css-generator.ts
   - Validation: `uv run pytest tests/unit/test_css_generator.py -v`
   - Reviewed by: Python Reviewer 🐍
   - Signed off by: Planning Agent 📋
 
-- [ ] 5.1.4 Create brand configuration YAML (Experience Architect 🎨)
+- [x] 5.1.4 Create brand configuration YAML (Experience Architect 🎨)
   - File: config/brands.yaml
   - Source: ~/dev/DNS-Domain-Management/config/brands.yaml
   - Validation: `uv run python -c "from app.core.design_tokens import load_brands; load_brands()"`
@@ -362,8 +362,8 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 2: Governance | 13 | 13 | 0 | ✅ Complete |
 | Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
-| Phase 5: Design System Migration | 24 | 0 | 24 | ⬜ Not Started |
-| **TOTAL** | **56** | **32** | **24** | **🔄 In Progress** |
+| Phase 5: Design System Migration | 24 | 4 | 20 | 🔄 In Progress |
+| **TOTAL** | **56** | **36** | **20** | **🔄 In Progress** |
 
 ---
 

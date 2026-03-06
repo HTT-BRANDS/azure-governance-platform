@@ -1,0 +1,180 @@
+# Azure Governance Platform - Brand Registry
+# Adapted from ~/dev/DNS-Domain-Management/config/brands.yaml
+# Logo paths point to app/static/assets/brands/{key}/logos/
+
+brands:
+  httbrands:
+    name: "Head to Toe Brands"
+    shortName: "HTT Brands"
+    domains:
+      - httbrands.com
+    primaryDomain: httbrands.com
+    pages:
+      - url: https://httbrands.com
+        name: homepage
+    logo:
+      primary: "/static/assets/brands/httbrands/logos/logo-primary.svg"
+      white: "/static/assets/brands/httbrands/logos/logo-white.svg"
+      icon: "/static/assets/brands/httbrands/logos/icon.svg"
+    logoUrl: "https://swg.ayu.mybluehost.me/wp-content/uploads/2025/03/Head-To-Toe-logo_horizontal_maroon-scaled-1.webp"
+    colors:
+      primary: "#000000"
+      secondary: "#004a59"
+      accent: "#007cba"
+      background: "#FFFFFF"
+      text: "#000000"
+      palette:
+        - "#000000"
+        - "#004a59"
+        - "#005a87"
+        - "#006ba1"
+        - "#007cba"
+      gradient: "linear-gradient(135deg, #000000 0%, #007cba 100%)"
+    typography:
+      headingFont: "Montserrat"
+      bodyFont: "Open Sans"
+    designSystem:
+      borderRadius: "4px"
+      shadowStyle: "sharp"
+    description: "Parent company for franchise beauty brands"
+
+  frenchies:
+    name: "Frenchies Modern Nail Care"
+    shortName: "Frenchies"
+    domains:
+      - frenchiesnails.com
+      - franchise.frenchiesnails.com
+    primaryDomain: frenchiesnails.com
+    pages:
+      - url: https://frenchiesnails.com
+        name: homepage
+      - url: https://frenchiesnails.com/locations
+        name: locations
+      - url: https://franchise.frenchiesnails.com
+        name: franchise
+    logo:
+      primary: "/static/assets/brands/frenchies/logos/logo-primary.svg"
+      white: "/static/assets/brands/frenchies/logos/logo-white.svg"
+      icon: "/static/assets/brands/frenchies/logos/icon.svg"
+    logoUrl: "https://frenchiesnails.com/wp-content/themes/frenchies/img/logo.svg"
+    colors:
+      primary: "#000000"
+      secondary: "#004a59"
+      accent: "#007cba"
+      background: "#FFFFFF"
+      text: "#000000"
+      palette:
+        - "#000000"
+        - "#004a59"
+        - "#005a87"
+        - "#006ba1"
+        - "#007cba"
+      gradient: "linear-gradient(135deg, #000000 0%, #007cba 100%)"
+    typography:
+      headingFont: "Mulish"
+      bodyFont: "Spectral"
+    designSystem:
+      borderRadius: "8px"
+      shadowStyle: "soft"
+    description: "Modern nail care franchise"
+
+  bishops:
+    name: "Bishops Cuts/Color"
+    shortName: "Bishops"
+    domains:
+      - bishops.co
+    primaryDomain: bishops.co
+    pages:
+      - url: https://bishops.co
+        name: homepage
+      - url: https://bishops.co/locations
+        name: locations
+    logo:
+      primary: "/static/assets/brands/bishops/logos/logo-primary.svg"
+      white: "/static/assets/brands/bishops/logos/logo-white.svg"
+      icon: "/static/assets/brands/bishops/logos/icon.svg"
+    logoUrl: "https://bishops.co/wp-content/themes/bishops/img/logo.svg"
+    colors:
+      primary: "#000000"
+      secondary: "#00d084"
+      accent: "#00d084"
+      background: "#FFFFFF"
+      text: "#000000"
+      palette:
+        - "#000000"
+        - "#00d084"
+      gradient: "linear-gradient(135deg, #000000 0%, #00d084 100%)"
+    typography:
+      headingFont: "Montserrat"
+      bodyFont: "Montserrat"
+    designSystem:
+      borderRadius: "0px"
+      shadowStyle: "sharp"
+    description: "Barbershop and hair color franchise"
+
+  lashlounge:
+    name: "The Lash Lounge"
+    shortName: "Lash Lounge"
+    domains:
+      - thelashlounge.com
+      - lashlounge.com
+      - thelashlounge.net
+    primaryDomain: thelashlounge.com
+    pages:
+      - url: https://thelashlounge.com
+        name: homepage
+      - url: https://thelashlounge.com/locations
+        name: locations
+    logo:
+      primary: "/static/assets/brands/lashlounge/logos/logo-primary.svg"
+      white: "/static/assets/brands/lashlounge/logos/logo-white.svg"
+      icon: "/static/assets/brands/lashlounge/logos/icon.svg"
+    logoUrl: "https://www.thelashlounge.com/wp-content/uploads/2021/04/logo.png"
+    colors:
+      primary: "#000000"
+      secondary: "#00d084"
+      accent: "#00d084"
+      background: "#FFFFFF"
+      text: "#000000"
+      palette:
+        - "#000000"
+        - "#00d084"
+      gradient: "linear-gradient(135deg, #000000 0%, #00d084 100%)"
+    typography:
+      headingFont: "Playfair Display"
+      bodyFont: "Lato"
+    designSystem:
+      borderRadius: "12px"
+      shadowStyle: "soft"
+    description: "Lash extension and beauty franchise"
+
+  deltacrown:
+    name: "Delta Crown Extensions"
+    shortName: "Delta Crown"
+    domains:
+      - deltacrown.com
+    primaryDomain: deltacrown.com
+    pages:
+      - url: https://deltacrown.com
+        name: homepage
+    logo:
+      primary: "/static/assets/brands/deltacrown/logos/logo-primary.svg"
+      white: "/static/assets/brands/deltacrown/logos/logo-white.svg"
+      icon: "/static/assets/brands/deltacrown/logos/icon.svg"
+    logoUrl: "https://deltacrown.com/logo.svg"
+    colors:
+      primary: "#004538"
+      secondary: "#004538"
+      accent: "#004538"
+      background: "#FFFFFF"
+      text: "#004538"
+      palette:
+        - "#004538"
+      gradient: "linear-gradient(135deg, #004538 0%, #004538 100%)"
+    typography:
+      headingFont: "Source Sans 3"
+      bodyFont: "Source Sans 3"
+    designSystem:
+      borderRadius: "6px"
+      shadowStyle: "soft"
+    description: "Hair extension brand"
