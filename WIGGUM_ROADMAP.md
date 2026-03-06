@@ -292,21 +292,21 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Signed off by: Pack Leader 🐺
 
 ### 5.4 Testing & Validation
-- [ ] 5.4.1 Unit tests for design token modules (Watchdog 🐕‍🦺)
+- [x] 5.4.1 Unit tests for design token modules (Watchdog 🐕‍🦺)
   - Files: tests/unit/test_color_utils.py, test_css_generator.py, test_design_tokens.py, test_theme_middleware.py
   - Validation: `uv run pytest tests/unit/test_color_utils.py tests/unit/test_css_generator.py tests/unit/test_design_tokens.py tests/unit/test_theme_middleware.py -v` all pass
   - Signed off by: Pack Leader 🐺
 
-- [ ] 5.4.2 Integration tests for brand theme rendering (Watchdog 🐕‍🦺)
+- [x] 5.4.2 Integration tests for brand theme rendering (Watchdog 🐕‍🦺)
   - File: tests/integration/test_theme_rendering.py
   - Validation: All 5 brands render with correct CSS variables
   - Signed off by: Planning Agent 📋
 
-- [ ] 5.4.3 WCAG accessibility validation (QA Expert 🐾)
+- [x] 5.4.3 WCAG accessibility validation (QA Expert 🐾)
   - Validation: All brand color combinations pass WCAG AA contrast (4.5:1)
   - Signed off by: Pack Leader 🐺
 
-- [ ] 5.4.4 Architecture fitness functions for design system (Python Programmer 🐍)
+- [x] 5.4.4 Architecture fitness functions for design system (Python Programmer 🐍)
   - File: tests/architecture/test_fitness_functions.py (extend)
   - Validation: No hardcoded hex in templates; all brands validate; WCAG pass
   - Reviewed by: Python Reviewer 🐍
@@ -362,8 +362,8 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 2: Governance | 13 | 13 | 0 | ✅ Complete |
 | Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
-| Phase 5: Design System Migration | 24 | 12 | 12 | 🔄 In Progress |
-| **TOTAL** | **56** | **44** | **12** | **🔄 In Progress** |
+| Phase 5: Design System Migration | 24 | 15 | 9 | 🔄 In Progress |
+| **TOTAL** | **56** | **47** | **9** | **🔄 In Progress** |
 
 ---
 

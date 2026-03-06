@@ -97,7 +97,7 @@ brands:
     colors:
       primary: "#000000"
       secondary: "#00d084"
-      accent: "#00d084"
+      accent: "#008754"
       background: "#FFFFFF"
       text: "#000000"
       palette:
@@ -133,7 +133,7 @@ brands:
     colors:
       primary: "#000000"
       secondary: "#00d084"
-      accent: "#00d084"
+      accent: "#008754"
       background: "#FFFFFF"
       text: "#000000"
       palette:

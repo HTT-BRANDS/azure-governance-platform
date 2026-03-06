@@ -21,6 +21,7 @@ __all__ = [
     "generate_scoped_brand_css",
     "generate_all_brands_css",
     "generate_inline_style",
+    "SHADOW_PRESETS",
 ]
 
 SHADOW_PRESETS = {
