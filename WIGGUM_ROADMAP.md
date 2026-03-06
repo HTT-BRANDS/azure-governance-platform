@@ -81,7 +81,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Reviewed by: Code Reviewer 🛡️
   - Signed off by: Pack Leader 🐺
 
-- [ ] 2.1.3 MCP trust boundary audit (Security Auditor 🛡️)
+- [x] 2.1.3 MCP trust boundary audit (Security Auditor 🛡️)
   - Output: docs/security/mcp-trust-audit.md
   - Validation: All MCP servers documented with trust level
   - Reviewed by: Solutions Architect 🏛️
@@ -98,7 +98,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Signed off by: Planning Agent 📋
 
 ### 2.2 Architecture Governance (Epic 7)
-- [ ] 2.2.1 Establish MADR 4.0 ADR workflow (Solutions Architect 🏛️)
+- [x] 2.2.1 Establish MADR 4.0 ADR workflow (Solutions Architect 🏛️)
   - Directory: docs/decisions/
   - Validation: Template exists with STRIDE section; 3 retroactive ADRs written
   - Reviewed by: Security Auditor 🛡️
@@ -216,10 +216,10 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase | Total Tasks | Completed | Remaining | Status |
 |-------|-----------|-----------|-----------|--------|
 | Phase 1: Foundation | 7 | 7 | 0 | ✅ Complete |
-| Phase 2: Governance | 13 | 2 | 11 | 🔄 In Progress |
+| Phase 2: Governance | 13 | 4 | 9 | 🔄 In Progress |
 | Phase 3: Process | 7 | 0 | 7 | ⬜ Not Started |
 | Phase 4: Validation | 5 | 0 | 5 | ⬜ Not Started |
-| **TOTAL** | **32** | **9** | **23** | **🔄 In Progress** |
+| **TOTAL** | **32** | **11** | **21** | **🔄 In Progress** |
 
 ---
 
