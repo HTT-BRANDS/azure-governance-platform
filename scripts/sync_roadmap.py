@@ -1,609 +1,540 @@
 #!/usr/bin/env python3
-"""Roadmap synchronization script for Azure Governance Platform.
+"""Roadmap synchronization script for the /wiggum ralph protocol.
 
-This script solves the /wiggum ralph inefficiency where the loop wastes time
-re-verifying already-completed tasks. It provides three modes:
+Parses WIGGUM_ROADMAP.md — the single source of truth for task tracking —
+and provides verification, update, and status reporting capabilities.
 
-1. --verify (default): Read-only check of roadmap vs. filesystem state
-2. --update: Mark tasks as complete and update metadata
-3. --report: Generate completion statistics and discrepancies
+Python 3.11+ | stdlib only (no external dependencies).
 
 Usage:
+    python scripts/sync_roadmap.py --verify
     python scripts/sync_roadmap.py --verify --json
-    python scripts/sync_roadmap.py --update --task 6.2.1 --reason "validation passed"
-    python scripts/sync_roadmap.py --report
+    python scripts/sync_roadmap.py --update --task 1.2.3
+    python scripts/sync_roadmap.py --status
 """
+
+from __future__ import annotations
 
 import argparse
 import json
-import logging
 import re
-import shutil
-import subprocess
 import sys
-from dataclasses import dataclass, asdict
-from datetime import datetime
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple
+from typing import TextIO
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
+# ---------------------------------------------------------------------------
 # Constants
+# ---------------------------------------------------------------------------
+
 ROADMAP_PATH = Path("WIGGUM_ROADMAP.md")
-BACKUP_DIR = Path(".roadmap_backups")
+
+# A task line looks like:
+#   - [x] 1.1.1 Create Solutions Architect JSON agent (Agent Creator 🏗️)
+#   - [ ] 2.1.3 MCP trust boundary audit (Security Auditor 🛡️)
+#
+# Capture groups:
+#   1: checkbox content  ("x" or " ")
+#   2: task ID           ("1.1.1")
+#   3: description       ("Create Solutions Architect JSON agent")
+#   4: owner agent       ("Agent Creator 🏗️")
+TASK_RE = re.compile(
+    r"^- \[([ xX])\]\s+"       # checkbox
+    r"(\d+\.\d+\.\d+)\s+"      # task ID  (X.Y.Z)
+    r"(.+?)\s*"                 # description (lazy)
+    r"\(([^)]+)\)\s*$"          # (owner agent)
+)
+
+# Progress Summary table row, e.g.:
+# | Phase 1: Foundation | 7 | 4 | 3 | 🔄 In Progress |
+TABLE_ROW_RE = re.compile(
+    r"^\|\s*Phase\s+(\d+)\b[^|]*\|"  # phase number
+    r"\s*(\d+)\s*\|"                  # total
+    r"\s*(\d+)\s*\|"                  # completed
+    r"\s*(\d+)\s*\|"                  # remaining
+    r"\s*([^|]+?)\s*\|$"              # status emoji/text
+)
+
+# TOTAL row
+TABLE_TOTAL_RE = re.compile(
+    r"^\|\s*\*\*TOTAL\*\*\s*\|"
+    r"\s*\*\*(\d+)\*\*\s*\|"
+    r"\s*\*\*(\d+)\*\*\s*\|"
+    r"\s*\*\*(\d+)\*\*\s*\|"
+    r"\s*\*\*([^|]+?)\*\*\s*\|$"
+)
 
 
-@dataclass
-class TaskMetadata:
-    """Metadata for a single task."""
+# ---------------------------------------------------------------------------
+# Data structures
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True, slots=True)
+class Task:
+    """A single parsed task from the roadmap."""
+
     task_id: str
-    phase: int
-    title: str
+    description: str
+    owner: str
     completed: bool
-    files: List[str]
-    agent: Optional[str]
-    validation_command: Optional[str]
-    line_number: int  # Line number in the roadmap file
+    line_number: int  # 1-based
+
+    @property
+    def phase(self) -> int:
+        """Extract phase number from task ID (e.g. '2.1.3' -> 2)."""
+        return int(self.task_id.split(".")[0])
 
 
 @dataclass
-class RoadmapMetadata:
-    """Metadata from the YAML frontmatter."""
-    project: str
-    version: str
-    created: str
-    last_updated: str
-    loop_status: str
-    current_phase: int
-    total_phases: int
-    completed_tasks: int
+class ValidationIssue:
+    """A single validation issue found during --verify."""
+
+    line_number: int
+    line_content: str
+    message: str
+
+
+@dataclass
+class PhaseStats:
+    """Per-phase completion statistics."""
+
+    phase: int
+    total: int = 0
+    completed: int = 0
+
+    @property
+    def remaining(self) -> int:
+        return self.total - self.completed
+
+    @property
+    def status_emoji(self) -> str:
+        if self.completed == self.total:
+            return "✅ Complete"
+        if self.completed > 0:
+            return "🔄 In Progress"
+        return "⬜ Not Started"
+
+
+@dataclass
+class VerifyResult:
+    """Result of --verify operation."""
+
+    valid: bool
     total_tasks: int
-    stop_condition: str
+    completed_tasks: int
+    remaining_tasks: int
+    phases: dict[int, dict[str, int | str]] = field(default_factory=dict)
+    issues: list[dict[str, str | int]] = field(default_factory=list)
 
 
-@dataclass
-class SyncResult:
-    """Result of sync operation."""
-    status: str  # "ok" or "discrepancies_found"
-    metadata: Dict
-    next_task: Optional[Dict]
-    discrepancies: List[Dict]
-    timestamp: str
+# ---------------------------------------------------------------------------
+# Parser
+# ---------------------------------------------------------------------------
 
+def parse_tasks(lines: list[str]) -> list[Task]:
+    """Parse all task lines from the roadmap content.
 
-class RoadmapParser:
-    """Parse the WIGGUM_ROADMAP.md file."""
+    Args:
+        lines: Raw lines from WIGGUM_ROADMAP.md.
 
-    # Regex patterns
-    TASK_PATTERN = re.compile(r'^- \[(.?)\] \*\*Task ([\d.]+)\*\*: (.+)$')
-    YAML_START = re.compile(r'^```yaml\s*$')
-    YAML_END = re.compile(r'^```\s*$')
-    FILES_PATTERN = re.compile(r'\*\*Files\*\*: `([^`]+)`')
-    AGENT_PATTERN = re.compile(r'\*\*Agent\*\*: `([^`]+)`')
-    VALIDATION_PATTERN = re.compile(r'\*\*Validation\*\*: `([^`]+)`')
-
-    def __init__(self, roadmap_path: Path):
-        self.roadmap_path = roadmap_path
-        self.lines = []
-        self.metadata = None
-        self.tasks = []
-
-    def parse(self) -> Tuple[RoadmapMetadata, List[TaskMetadata]]:
-        """Parse roadmap file and return metadata + tasks."""
-        if not self.roadmap_path.exists():
-            raise FileNotFoundError(f"Roadmap not found: {self.roadmap_path}")
-
-        with open(self.roadmap_path, 'r', encoding='utf-8') as f:
-            self.lines = f.readlines()
-
-        self.metadata = self._parse_metadata()
-        self.tasks = self._parse_tasks()
-
-        return self.metadata, self.tasks
-
-    def _parse_metadata(self) -> RoadmapMetadata:
-        """Extract YAML metadata from roadmap."""
-        in_yaml = False
-        yaml_lines = []
-
-        for line in self.lines:
-            if self.YAML_START.match(line):
-                in_yaml = True
-                continue
-            if in_yaml and self.YAML_END.match(line):
-                break
-            if in_yaml:
-                yaml_lines.append(line.strip())
-
-        # Parse YAML manually (avoid dependency on pyyaml)
-        metadata_dict = {}
-        for line in yaml_lines:
-            if ':' in line:
-                key, value = line.split(':', 1)
-                key = key.strip()
-                value = value.strip().strip('"')
-                metadata_dict[key] = value
-
-        # Convert to RoadmapMetadata
-        return RoadmapMetadata(
-            project=metadata_dict.get('project', 'unknown'),
-            version=metadata_dict.get('version', '0.0.0'),
-            created=metadata_dict.get('created', ''),
-            last_updated=metadata_dict.get('last_updated', ''),
-            loop_status=metadata_dict.get('loop_status', 'UNKNOWN'),
-            current_phase=int(metadata_dict.get('current_phase', 0)),
-            total_phases=int(metadata_dict.get('total_phases', 0)),
-            completed_tasks=int(metadata_dict.get('completed_tasks', 0)),
-            total_tasks=int(metadata_dict.get('total_tasks', 0)),
-            stop_condition=metadata_dict.get('stop_condition', '')
-        )
-
-    def _parse_tasks(self) -> List[TaskMetadata]:
-        """Extract all tasks from roadmap."""
-        tasks = []
-        current_task = None
-        task_content_lines = []
-
-        for line_num, line in enumerate(self.lines, start=1):
-            task_match = self.TASK_PATTERN.match(line)
-
-            if task_match:
-                # Save previous task if exists
-                if current_task:
-                    self._finalize_task(current_task, task_content_lines)
-                    tasks.append(current_task)
-
-                # Start new task
-                completed = task_match.group(1).lower() == 'x'
-                task_id = task_match.group(2)
-                title = task_match.group(3)
-
-                # Extract phase from task_id (e.g., "6.2.1" -> phase 6)
-                phase = int(task_id.split('.')[0])
-
-                current_task = TaskMetadata(
+    Returns:
+        List of parsed Task objects.
+    """
+    tasks: list[Task] = []
+    for line_num, line in enumerate(lines, start=1):
+        m = TASK_RE.match(line.rstrip("\n"))
+        if m:
+            checkbox, task_id, description, owner = m.groups()
+            tasks.append(
+                Task(
                     task_id=task_id,
-                    phase=phase,
-                    title=title,
-                    completed=completed,
-                    files=[],
-                    agent=None,
-                    validation_command=None,
-                    line_number=line_num
+                    description=description.strip(),
+                    owner=owner.strip(),
+                    completed=checkbox.lower() == "x",
+                    line_number=line_num,
                 )
-                task_content_lines = []
-            elif current_task:
-                # Accumulate lines for current task metadata
-                task_content_lines.append(line)
-
-        # Don't forget the last task
-        if current_task:
-            self._finalize_task(current_task, task_content_lines)
-            tasks.append(current_task)
-
-        return tasks
-
-    def _finalize_task(self, task: TaskMetadata, content_lines: List[str]):
-        """Extract file paths, agent, and validation from task content."""
-        content = ''.join(content_lines)
-
-        # Extract files - find all backtick-delimited paths in the Files line
-        # Look for the line containing "**Files**:" and extract all `path` patterns
-        files_line_match = re.search(r'\*\*Files\*\*:([^\n]+)', content)
-        if files_line_match:
-            files_line = files_line_match.group(1)
-            # Find all backtick-delimited paths
-            task.files = re.findall(r'`([^`]+)`', files_line)
-
-        # Extract agent
-        agent_match = self.AGENT_PATTERN.search(content)
-        if agent_match:
-            task.agent = agent_match.group(1).split(',')[0].strip()
-
-        # Extract validation command
-        validation_match = self.VALIDATION_PATTERN.search(content)
-        if validation_match:
-            task.validation_command = validation_match.group(1)
-
-
-class RoadmapValidator:
-    """Validate roadmap state against filesystem."""
-
-    def __init__(self, tasks: List[TaskMetadata]):
-        self.tasks = tasks
-        self.discrepancies = []
-
-    def validate(self) -> List[Dict]:
-        """Check each task's files and validation."""
-        self.discrepancies = []
-
-        for task in self.tasks:
-            if task.completed:
-                # Task marked done - verify files exist
-                self._check_completed_task(task)
-            else:
-                # Task not done - check if it should be marked complete
-                self._check_incomplete_task(task)
-
-        return self.discrepancies
-
-    def _check_completed_task(self, task: TaskMetadata):
-        """Verify completed task has required files."""
-        for file_path in task.files:
-            path = Path(file_path)
-            if not path.exists():
-                self.discrepancies.append({
-                    "task": task.task_id,
-                    "issue": f"marked [x] but file missing: {file_path}",
-                    "severity": "high"
-                })
-            elif path.stat().st_size == 0:
-                self.discrepancies.append({
-                    "task": task.task_id,
-                    "issue": f"marked [x] but file empty: {file_path}",
-                    "severity": "medium"
-                })
-
-    def _check_incomplete_task(self, task: TaskMetadata):
-        """Check if incomplete task actually has files and might be done."""
-        if not task.files:
-            return  # Can't check without file list
-
-        all_files_exist = all(Path(f).exists() for f in task.files)
-        all_files_have_content = all(
-            Path(f).stat().st_size > 100 for f in task.files if Path(f).exists()
-        )
-
-        if all_files_exist and all_files_have_content:
-            # Run validation command if available
-            if task.validation_command:
-                if self._run_validation(task.validation_command):
-                    self.discrepancies.append({
-                        "task": task.task_id,
-                        "issue": "marked [ ] but files exist and validation passes",
-                        "severity": "low",
-                        "suggestion": "consider marking as complete"
-                    })
-
-    def _run_validation(self, command: str, timeout: int = 10) -> bool:
-        """Run validation command and return True if it passes."""
-        try:
-            result = subprocess.run(
-                command,
-                shell=True,
-                capture_output=True,
-                timeout=timeout,
-                text=True
             )
-            return result.returncode == 0
-        except subprocess.TimeoutExpired:
-            logger.warning(f"Validation timed out: {command}")
-            return False
-        except Exception as e:
-            logger.warning(f"Validation failed: {command} - {e}")
-            return False
+    return tasks
 
 
-class RoadmapUpdater:
-    """Update roadmap file with new task statuses."""
-
-    def __init__(self, roadmap_path: Path):
-        self.roadmap_path = roadmap_path
-
-    def backup(self):
-        """Create timestamped backup of roadmap."""
-        BACKUP_DIR.mkdir(exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = BACKUP_DIR / f"WIGGUM_ROADMAP_{timestamp}.md"
-        shutil.copy2(self.roadmap_path, backup_path)
-        logger.info(f"Created backup: {backup_path}")
-        return backup_path
-
-    def mark_task_complete(self, task_id: str) -> bool:
-        """Mark a specific task as complete [x]."""
-        self.backup()
-
-        with open(self.roadmap_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-
-        modified = False
-        for i, line in enumerate(lines):
-            if f'**Task {task_id}**' in line and '- [ ]' in line:
-                lines[i] = line.replace('- [ ]', '- [x]')
-                modified = True
-                logger.info(f"Marked task {task_id} as complete")
-                break
-
-        if modified:
-            with open(self.roadmap_path, 'w', encoding='utf-8') as f:
-                f.writelines(lines)
-            return True
-        else:
-            logger.warning(f"Task {task_id} not found or already complete")
-            return False
-
-    def update_metadata(self, completed_count: int, current_phase: int):
-        """Update YAML metadata block."""
-        with open(self.roadmap_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-
-        in_yaml = False
-        yaml_start = -1
-        yaml_end = -1
-
-        # Find YAML block boundaries
-        for i, line in enumerate(lines):
-            if re.match(r'^```yaml\s*$', line):
-                in_yaml = True
-                yaml_start = i
-            elif in_yaml and re.match(r'^```\s*$', line):
-                yaml_end = i
-                break
-
-        if yaml_start == -1 or yaml_end == -1:
-            logger.error("Could not find YAML metadata block")
-            return False
-
-        # Update metadata lines
-        for i in range(yaml_start + 1, yaml_end):
-            if lines[i].startswith('last_updated:'):
-                lines[i] = f"last_updated: {datetime.now().strftime('%Y-%m-%d')}\n"
-            elif lines[i].startswith('completed_tasks:'):
-                lines[i] = f"completed_tasks: {completed_count}\n"
-            elif lines[i].startswith('current_phase:'):
-                lines[i] = f"current_phase: {current_phase}\n"
-
-        with open(self.roadmap_path, 'w', encoding='utf-8') as f:
-            f.writelines(lines)
-
-        logger.info(f"Updated metadata: {completed_count} tasks completed, phase {current_phase}")
-        return True
+def compute_phase_stats(tasks: list[Task]) -> dict[int, PhaseStats]:
+    """Aggregate tasks into per-phase statistics."""
+    stats: dict[int, PhaseStats] = {}
+    for t in tasks:
+        if t.phase not in stats:
+            stats[t.phase] = PhaseStats(phase=t.phase)
+        stats[t.phase].total += 1
+        if t.completed:
+            stats[t.phase].completed += 1
+    return dict(sorted(stats.items()))
 
 
-class RoadmapSync:
-    """Main orchestrator for roadmap synchronization."""
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
 
-    def __init__(self):
-        self.parser = RoadmapParser(ROADMAP_PATH)
-        self.metadata = None
-        self.tasks = []
+def cmd_verify(
+    roadmap: Path,
+    as_json: bool,
+    out: TextIO = sys.stdout,
+) -> int:
+    """Verify roadmap format. Exit 0 if valid, 1 if invalid."""
+    if not roadmap.exists():
+        _emit_error(f"Roadmap file not found: {roadmap}", as_json, out)
+        return 1
 
-    def load(self):
-        """Load and parse roadmap."""
-        self.metadata, self.tasks = self.parser.parse()
-        logger.info(f"Loaded roadmap: {len(self.tasks)} tasks, {self.metadata.completed_tasks} complete")
+    lines = roadmap.read_text(encoding="utf-8").splitlines(keepends=True)
+    tasks = parse_tasks(lines)
+    issues: list[ValidationIssue] = []
 
-    def verify(self) -> SyncResult:
-        """Verify mode: check roadmap vs filesystem."""
-        self.load()
-
-        validator = RoadmapValidator(self.tasks)
-        discrepancies = validator.validate()
-
-        # Find next incomplete task
-        next_task = self._find_next_task()
-
-        # Calculate actual completion from roadmap
-        actual_completed = sum(1 for t in self.tasks if t.completed)
-        completion_pct = (actual_completed / len(self.tasks) * 100) if self.tasks else 0
-
-        status = "ok" if not discrepancies else "discrepancies_found"
-
-        return SyncResult(
-            status=status,
-            metadata={
-                "completed_tasks": actual_completed,
-                "total_tasks": len(self.tasks),
-                "current_phase": self.metadata.current_phase,
-                "completion_percentage": round(completion_pct, 1)
-            },
-            next_task=next_task,
-            discrepancies=discrepancies,
-            timestamp=datetime.now().isoformat()
+    if not tasks:
+        issues.append(
+            ValidationIssue(
+                line_number=0,
+                line_content="",
+                message="No tasks found in roadmap. Expected lines matching "
+                        "'- [ ] X.Y.Z Description (Owner)'.",
+            )
         )
 
-    def update(self, task_id: str, reason: str = "") -> bool:
-        """Update mode: mark task as complete."""
-        self.load()
+    # Check for duplicate task IDs
+    seen_ids: dict[str, int] = {}
+    for t in tasks:
+        if t.task_id in seen_ids:
+            issues.append(
+                ValidationIssue(
+                    line_number=t.line_number,
+                    line_content=lines[t.line_number - 1].rstrip("\n"),
+                    message=f"Duplicate task ID '{t.task_id}' "
+                            f"(first seen at line {seen_ids[t.task_id]}).",
+                )
+            )
+        else:
+            seen_ids[t.task_id] = t.line_number
 
-        # Find the task
-        task = next((t for t in self.tasks if t.task_id == task_id), None)
-        if not task:
-            logger.error(f"Task {task_id} not found")
-            return False
+    # Scan for lines that look like tasks but don't fully match
+    # (e.g. missing owner in parens, malformed checkbox)
+    _partial_task_re = re.compile(
+        r"^- \[.?\]\s+\d+\.\d+\.\d+\s"
+    )
+    for line_num, line in enumerate(lines, start=1):
+        stripped = line.rstrip("\n")
+        if _partial_task_re.match(stripped) and not TASK_RE.match(stripped):
+            issues.append(
+                ValidationIssue(
+                    line_number=line_num,
+                    line_content=stripped,
+                    message="Line looks like a task but doesn't match expected format. "
+                            "Expected: '- [ ] X.Y.Z Description (Owner Agent)'",
+                )
+            )
 
-        if task.completed:
-            logger.info(f"Task {task_id} already marked complete")
-            return True
+    phase_stats = compute_phase_stats(tasks)
+    total = len(tasks)
+    completed = sum(1 for t in tasks if t.completed)
+    valid = len(issues) == 0
 
-        # Validate before marking complete
-        if task.validation_command:
-            validator = RoadmapValidator([task])
-            if not validator._run_validation(task.validation_command):
-                logger.error(f"Validation failed for task {task_id}")
-                logger.error(f"Command: {task.validation_command}")
-                return False
+    result = VerifyResult(
+        valid=valid,
+        total_tasks=total,
+        completed_tasks=completed,
+        remaining_tasks=total - completed,
+        phases={
+            p: {
+                "total": s.total,
+                "completed": s.completed,
+                "remaining": s.remaining,
+                "status": s.status_emoji,
+            }
+            for p, s in phase_stats.items()
+        },
+        issues=[
+            {
+                "line": i.line_number,
+                "content": i.line_content,
+                "message": i.message,
+            }
+            for i in issues
+        ],
+    )
 
-        # Mark complete
-        updater = RoadmapUpdater(ROADMAP_PATH)
-        success = updater.mark_task_complete(task_id)
+    if as_json:
+        out.write(json.dumps(asdict(result), indent=2, ensure_ascii=False) + "\n")
+    else:
+        if valid:
+            out.write(f"✅ Roadmap is valid. {total} tasks found "
+                      f"({completed} completed, {total - completed} remaining).\n")
+        else:
+            out.write(f"❌ Roadmap has {len(issues)} issue(s):\n")
+            for i in issues:
+                out.write(f"  Line {i.line_number}: {i.message}\n")
+                if i.line_content:
+                    out.write(f"    > {i.line_content}\n")
+        # Phase breakdown
+        out.write("\nPhase breakdown:\n")
+        for p, s in phase_stats.items():
+            out.write(f"  Phase {p}: {s.completed}/{s.total} "
+                      f"({s.status_emoji})\n")
 
-        if success:
-            # Recalculate metadata
-            self.load()  # Reload to get updated counts
-            actual_completed = sum(1 for t in self.tasks if t.completed)
-            current_phase = max((t.phase for t in self.tasks if not t.completed), default=self.metadata.total_phases)
+    return 0 if valid else 1
 
-            updater.update_metadata(actual_completed, current_phase)
 
-            logger.info(f"✅ Task {task_id} marked complete. Reason: {reason or 'N/A'}")
+def cmd_update(roadmap: Path, task_id: str) -> int:
+    """Mark task X.Y.Z as complete and update the Progress Summary table.
 
-        return success
+    Returns 0 on success, 1 on failure.
+    """
+    if not roadmap.exists():
+        print(f"❌ Roadmap file not found: {roadmap}", file=sys.stderr)
+        return 1
 
-    def report(self) -> Dict:
-        """Report mode: generate statistics."""
-        self.load()
+    text = roadmap.read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
 
-        validator = RoadmapValidator(self.tasks)
-        discrepancies = validator.validate()
+    # --- Step 1: Find and toggle the task checkbox -------------------------
+    task_found = False
+    already_done = False
 
-        # Calculate stats by phase
-        phase_stats = {}
-        for task in self.tasks:
-            if task.phase not in phase_stats:
-                phase_stats[task.phase] = {"total": 0, "completed": 0}
-            phase_stats[task.phase]["total"] += 1
-            if task.completed:
-                phase_stats[task.phase]["completed"] += 1
+    for idx, line in enumerate(lines):
+        m = TASK_RE.match(line.rstrip("\n"))
+        if m and m.group(2) == task_id:
+            task_found = True
+            if m.group(1).lower() == "x":
+                already_done = True
+                print(f"ℹ️  Task {task_id} is already marked complete.")
+                break
+            # Replace '- [ ]' with '- [x]'
+            lines[idx] = line.replace("- [ ]", "- [x]", 1)
+            print(f"✅ Marked task {task_id} as complete.")
+            break
 
-        actual_completed = sum(1 for t in self.tasks if t.completed)
-        completion_pct = (actual_completed / len(self.tasks) * 100) if self.tasks else 0
+    if not task_found:
+        print(f"❌ Task {task_id} not found in {roadmap}.", file=sys.stderr)
+        return 1
 
-        return {
-            "summary": {
-                "total_tasks": len(self.tasks),
-                "completed_tasks": actual_completed,
-                "remaining_tasks": len(self.tasks) - actual_completed,
-                "completion_percentage": round(completion_pct, 1),
-                "current_phase": self.metadata.current_phase,
-                "total_phases": self.metadata.total_phases
-            },
-            "phase_breakdown": phase_stats,
-            "discrepancies": discrepancies,
-            "next_task": self._find_next_task(),
-            "timestamp": datetime.now().isoformat()
-        }
+    if already_done:
+        return 0
 
-    def _find_next_task(self) -> Optional[Dict]:
-        """Find the next incomplete task."""
-        for task in self.tasks:
-            if not task.completed:
-                # Check if files exist to determine readiness
-                ready = all(Path(f).exists() for f in task.files) if task.files else False
+    # --- Step 2: Reparse to get fresh stats --------------------------------
+    tasks = parse_tasks(lines)
+    phase_stats = compute_phase_stats(tasks)
+    total_all = len(tasks)
+    completed_all = sum(1 for t in tasks if t.completed)
 
-                return {
-                    "id": task.task_id,
-                    "phase": task.phase,
-                    "title": task.title[:80] + "..." if len(task.title) > 80 else task.title,
-                    "files": task.files,
-                    "validation_command": task.validation_command,
-                    "ready_to_execute": not ready  # Ready if files DON'T exist (needs creation)
+    # --- Step 3: Update the Progress Summary table -------------------------
+    for idx, line in enumerate(lines):
+        stripped = line.rstrip("\n")
+
+        # Phase rows
+        row_m = TABLE_ROW_RE.match(stripped)
+        if row_m:
+            phase_num = int(row_m.group(1))
+            if phase_num in phase_stats:
+                s = phase_stats[phase_num]
+                # Reconstruct the row, preserving the phase label
+                # Extract full phase label from original line
+                label_end = stripped.index("|", 1)  # second pipe
+                phase_label = stripped[1:label_end].strip()
+                lines[idx] = (
+                    f"| {phase_label} | {s.total} | {s.completed} "
+                    f"| {s.remaining} | {s.status_emoji} |\n"
+                )
+            continue
+
+        # TOTAL row
+        total_m = TABLE_TOTAL_RE.match(stripped)
+        if total_m:
+            remaining_all = total_all - completed_all
+            # Determine overall status
+            if completed_all == total_all:
+                overall_status = "✅ Complete"
+            elif completed_all > 0:
+                overall_status = "🔄 In Progress"
+            else:
+                overall_status = "⬜ Not Started"
+            lines[idx] = (
+                f"| **TOTAL** | **{total_all}** | **{completed_all}** "
+                f"| **{remaining_all}** | **{overall_status}** |\n"
+            )
+
+    # --- Step 4: Write back ------------------------------------------------
+    roadmap.write_text("".join(lines), encoding="utf-8")
+    print(f"📊 Progress Summary table updated "
+          f"({completed_all}/{total_all} tasks complete).")
+    return 0
+
+
+def cmd_status(roadmap: Path, as_json: bool, out: TextIO = sys.stdout) -> int:
+    """Print a summary of completed vs remaining tasks."""
+    if not roadmap.exists():
+        _emit_error(f"Roadmap file not found: {roadmap}", as_json, out)
+        return 1
+
+    lines = roadmap.read_text(encoding="utf-8").splitlines(keepends=True)
+    tasks = parse_tasks(lines)
+    phase_stats = compute_phase_stats(tasks)
+
+    total = len(tasks)
+    completed = sum(1 for t in tasks if t.completed)
+    remaining = total - completed
+    pct = (completed / total * 100) if total else 0.0
+
+    if as_json:
+        data = {
+            "total_tasks": total,
+            "completed_tasks": completed,
+            "remaining_tasks": remaining,
+            "completion_percentage": round(pct, 1),
+            "phases": {
+                str(p): {
+                    "total": s.total,
+                    "completed": s.completed,
+                    "remaining": s.remaining,
+                    "status": s.status_emoji,
                 }
-        return None
+                for p, s in phase_stats.items()
+            },
+            "remaining_task_ids": [
+                t.task_id for t in tasks if not t.completed
+            ],
+        }
+        out.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    else:
+        out.write(f"\n📊 WIGGUM ROADMAP STATUS\n")
+        out.write("=" * 55 + "\n")
+        out.write(f"Total tasks:   {total}\n")
+        out.write(f"Completed:     {completed}\n")
+        out.write(f"Remaining:     {remaining}\n")
+        out.write(f"Progress:      {pct:.1f}%\n")
+        out.write("\n")
+
+        # Phase breakdown
+        out.write(f"{'Phase':<10} {'Done':>5} {'Total':>6} {'Status'}\n")
+        out.write("-" * 40 + "\n")
+        for p, s in phase_stats.items():
+            out.write(
+                f"Phase {p:<4} {s.completed:>5}/{s.total:<5} {s.status_emoji}\n"
+            )
+
+        # Remaining tasks
+        remaining_tasks = [t for t in tasks if not t.completed]
+        if remaining_tasks:
+            out.write(f"\n📋 Next up:\n")
+            for t in remaining_tasks[:5]:
+                out.write(f"  [ ] {t.task_id} {t.description} ({t.owner})\n")
+            if len(remaining_tasks) > 5:
+                out.write(f"  ... and {len(remaining_tasks) - 5} more\n")
+
+    return 0
 
 
-def main():
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _emit_error(
+    message: str,
+    as_json: bool,
+    out: TextIO = sys.stdout,
+) -> None:
+    """Emit an error in plain text or JSON format."""
+    if as_json:
+        out.write(
+            json.dumps({"valid": False, "error": message}, indent=2) + "\n"
+        )
+    else:
+        print(f"❌ {message}", file=sys.stderr)
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def build_parser() -> argparse.ArgumentParser:
+    """Construct the argument parser with full help text."""
     parser = argparse.ArgumentParser(
-        description="Roadmap synchronization for /wiggum ralph workflow",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        prog="sync_roadmap",
+        description=(
+            "Synchronize and manage the WIGGUM_ROADMAP.md task roadmap.\n\n"
+            "This script is the backbone of the /wiggum ralph protocol,\n"
+            "providing verification, task updates, and status reporting."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  %(prog)s --verify              Validate roadmap format\n"
+            "  %(prog)s --verify --json        Validate and output JSON\n"
+            "  %(prog)s --update --task 1.2.3  Mark task 1.2.3 done\n"
+            "  %(prog)s --status               Show completion summary\n"
+            "  %(prog)s --status --json        Summary as JSON\n"
+        ),
+    )
+
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--verify",
+        action="store_true",
+        help="Parse and validate roadmap format. Exit 0 if valid, 1 if not.",
+    )
+    mode.add_argument(
+        "--update",
+        action="store_true",
+        help="Mark a task as complete (requires --task).",
+    )
+    mode.add_argument(
+        "--status",
+        action="store_true",
+        help="Print a summary of completed vs remaining tasks.",
     )
 
     parser.add_argument(
-        '--verify',
-        action='store_true',
-        help='Verify roadmap state (default mode)'
-    )
-    parser.add_argument(
-        '--update',
-        action='store_true',
-        help='Update roadmap (mark task complete)'
-    )
-    parser.add_argument(
-        '--report',
-        action='store_true',
-        help='Generate completion report'
-    )
-    parser.add_argument(
-        '--task',
+        "--task",
         type=str,
-        help='Task ID to update (e.g., "6.2.1")'
+        metavar="X.Y.Z",
+        help="Task ID to update (e.g. 1.2.3). Required with --update.",
     )
     parser.add_argument(
-        '--reason',
-        type=str,
-        default='',
-        help='Reason for marking task complete'
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help="Output results as JSON to stdout.",
     )
     parser.add_argument(
-        '--json',
-        action='store_true',
-        help='Output as JSON (for programmatic use)'
+        "--roadmap",
+        type=Path,
+        default=ROADMAP_PATH,
+        help=f"Path to roadmap file (default: {ROADMAP_PATH}).",
     )
 
-    args = parser.parse_args()
+    return parser
 
-    # Default to verify mode
-    if not (args.verify or args.update or args.report):
+
+def main(argv: list[str] | None = None) -> int:
+    """Entry point. Returns exit code."""
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    # Default to --verify when no mode specified
+    if not (args.verify or args.update or args.status):
         args.verify = True
 
-    sync = RoadmapSync()
+    if args.update:
+        if not args.task:
+            parser.error("--update requires --task X.Y.Z")
+        # Validate task ID format
+        if not re.fullmatch(r"\d+\.\d+\.\d+", args.task):
+            parser.error(
+                f"Invalid task ID '{args.task}'. Expected format: X.Y.Z "
+                f"(e.g. 1.2.3)"
+            )
+        return cmd_update(args.roadmap, args.task)
 
-    try:
-        if args.update:
-            if not args.task:
-                logger.error("--task required for --update mode")
-                sys.exit(1)
+    if args.status:
+        return cmd_status(args.roadmap, args.as_json)
 
-            success = sync.update(args.task, args.reason)
-            sys.exit(0 if success else 1)
-
-        elif args.report:
-            report = sync.report()
-
-            if args.json:
-                print(json.dumps(report, indent=2))
-            else:
-                print("\n📊 ROADMAP SYNC REPORT")
-                print("=" * 60)
-                print(f"Total Tasks: {report['summary']['total_tasks']}")
-                print(f"Completed: {report['summary']['completed_tasks']}")
-                print(f"Remaining: {report['summary']['remaining_tasks']}")
-                print(f"Progress: {report['summary']['completion_percentage']}%")
-                print(f"Current Phase: {report['summary']['current_phase']} / {report['summary']['total_phases']}")
-
-                if report['next_task']:
-                    print(f"\n📋 Next Task: {report['next_task']['id']}")
-                    print(f"   {report['next_task']['title']}")
-
-                if report['discrepancies']:
-                    print(f"\n⚠️  {len(report['discrepancies'])} Discrepancies Found:")
-                    for d in report['discrepancies'][:5]:  # Show first 5
-                        print(f"   [{d['severity'].upper()}] Task {d['task']}: {d['issue']}")
-
-        else:  # verify mode
-            result = sync.verify()
-
-            if args.json:
-                output = asdict(result)
-                print(json.dumps(output, indent=2))
-            else:
-                print("\n✅ ROADMAP VERIFICATION")
-                print("=" * 60)
-                print(f"Status: {result.status}")
-                print(f"Completed: {result.metadata['completed_tasks']} / {result.metadata['total_tasks']}")
-                print(f"Progress: {result.metadata['completion_percentage']}%")
-
-                if result.next_task:
-                    print(f"\n📋 Next Task: {result.next_task['id']}")
-                    print(f"   {result.next_task['title']}")
-                    print(f"   Ready: {'Yes' if result.next_task['ready_to_execute'] else 'No'}")
-
-                if result.discrepancies:
-                    print(f"\n⚠️  {len(result.discrepancies)} Discrepancies:")
-                    for d in result.discrepancies[:3]:
-                        print(f"   [{d['severity'].upper()}] Task {d['task']}: {d['issue']}")
-
-        sys.exit(0)
-
-    except Exception as e:
-        logger.error(f"Error: {e}", exc_info=True)
-        sys.exit(1)
+    # --verify (default)
+    return cmd_verify(args.roadmap, args.as_json)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
