@@ -1,7 +1,7 @@
 # WIGGUM ROADMAP — Code Puppy Agile SDLC Implementation
 
 **Single Source of Truth for the `/wiggum ralph` Protocol**
-**Managed By:** Planning Agent 📋 (planning-agent-f52ac5) + Pack Leader 🐺
+**Managed By:** Planning Agent 📋 (planning-agent-781acb) + Pack Leader 🐺
 **Created:** March 6, 2026
 
 ---
@@ -209,6 +209,149 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: All epics passed; all bd issues closed
   - Signed off by: Both (final)
 
+## Phase 5: Design System Migration (DNS → Governance Platform)
+
+### 5.1 Design Token Foundation
+- [ ] 5.1.1 Create Pydantic design token models (Python Programmer 🐍)
+  - File: app/core/design_tokens.py
+  - Source: ~/dev/DNS-Domain-Management/lib/types/brand.ts
+  - Validation: `uv run python -c "from app.core.design_tokens import BrandConfig; print('OK')"`
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Planning Agent 📋
+
+- [ ] 5.1.2 Port color utilities to Python (Python Programmer 🐍)
+  - File: app/core/color_utils.py
+  - Source: ~/dev/DNS-Domain-Management/lib/theme/brand-utils.ts
+  - Validation: `uv run pytest tests/unit/test_color_utils.py -v`
+  - Reviewed by: Python Reviewer 🐍 + Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 5.1.3 Create server-side CSS generator (Python Programmer 🐍)
+  - File: app/core/css_generator.py
+  - Source: ~/dev/DNS-Domain-Management/lib/theme/css-generator.ts
+  - Validation: `uv run pytest tests/unit/test_css_generator.py -v`
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Planning Agent 📋
+
+- [ ] 5.1.4 Create brand configuration YAML (Experience Architect 🎨)
+  - File: config/brands.yaml
+  - Source: ~/dev/DNS-Domain-Management/config/brands.yaml
+  - Validation: `uv run python -c "from app.core.design_tokens import load_brands; load_brands()"`
+  - Reviewed by: Solutions Architect 🏛️
+  - Signed off by: Pack Leader 🐺
+
+### 5.2 Asset Migration & CSS Integration
+- [ ] 5.2.1 Copy brand logo assets (Code-Puppy 🐶)
+  - Directory: app/static/assets/brands/
+  - Source: ~/dev/DNS-Domain-Management/public/assets/brands/ + HTT-Brands-Logo/
+  - Validation: All 5 brand directories contain logo-primary, logo-white, icon files
+  - Signed off by: Planning Agent 📋
+
+- [ ] 5.2.2 Rewrite theme.css with design token architecture (Experience Architect 🎨)
+  - File: app/static/css/theme.css
+  - Source: ~/dev/DNS-Domain-Management/app/globals.css + tailwind.config.ts
+  - Validation: `uv run pytest tests/architecture/test_fitness_functions.py -v`
+  - Reviewed by: Solutions Architect 🏛️ + Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 5.2.3 Rewrite theme_service.py (Python Programmer 🐍)
+  - File: app/services/theme_service.py
+  - Validation: `uv run pytest tests/unit/test_theme_service.py -v`
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Planning Agent 📋
+
+- [ ] 5.2.4 Extend BrandConfig SQLAlchemy model + migration (Python Programmer 🐍)
+  - Files: app/models/brand_config.py, alembic/versions/002_extend_brand_config.py
+  - Validation: `uv run alembic upgrade head`
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
+### 5.3 Template System Overhaul
+- [ ] 5.3.1 Create theme middleware (Python Programmer 🐍)
+  - File: app/core/theme_middleware.py
+  - Validation: `uv run pytest tests/unit/test_theme_middleware.py -v`
+  - Reviewed by: Python Reviewer 🐍 + Solutions Architect 🏛️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 5.3.2 Rewrite base.html with structured theme injection (Experience Architect 🎨)
+  - File: app/templates/base.html
+  - Validation: No duplicate CSS imports; brand logo renders; skip-link present
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Planning Agent 📋
+
+- [ ] 5.3.3 Create Jinja2 UI macro library (Experience Architect 🎨)
+  - File: app/templates/macros/ui.html
+  - Validation: All macros produce valid ARIA attributes
+  - Reviewed by: QA Expert 🐾 + Security Auditor 🛡️
+  - Signed off by: Planning Agent 📋
+
+- [ ] 5.3.4 Update dashboard templates to use new design system (Code-Puppy 🐶)
+  - Files: app/templates/pages/*.html
+  - Validation: No hardcoded hex colors in template files
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Pack Leader 🐺
+
+### 5.4 Testing & Validation
+- [ ] 5.4.1 Unit tests for design token modules (Watchdog 🐕‍🦺)
+  - Files: tests/unit/test_color_utils.py, test_css_generator.py, test_design_tokens.py, test_theme_middleware.py
+  - Validation: `uv run pytest tests/unit/test_color_utils.py tests/unit/test_css_generator.py tests/unit/test_design_tokens.py tests/unit/test_theme_middleware.py -v` all pass
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 5.4.2 Integration tests for brand theme rendering (Watchdog 🐕‍🦺)
+  - File: tests/integration/test_theme_rendering.py
+  - Validation: All 5 brands render with correct CSS variables
+  - Signed off by: Planning Agent 📋
+
+- [ ] 5.4.3 WCAG accessibility validation (QA Expert 🐾)
+  - Validation: All brand color combinations pass WCAG AA contrast (4.5:1)
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 5.4.4 Architecture fitness functions for design system (Python Programmer 🐍)
+  - File: tests/architecture/test_fitness_functions.py (extend)
+  - Validation: No hardcoded hex in templates; all brands validate; WCAG pass
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Watchdog 🐕‍🦺
+
+### 5.5 Security, Performance & Fix Cycle
+- [ ] 5.5.1 Security review of theme injection (Security Auditor 🛡️)
+  - Validation: No XSS via CSS injection; CSP compatible; no tenant data leakage
+  - Reviewed by: Code Reviewer 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 5.5.2 Performance validation (QA Expert 🐾)
+  - Validation: CSS generation < 10ms; no FOUC; fonts use display=swap
+  - Signed off by: Planning Agent 📋
+
+- [ ] 5.5.3 Defect fix and regression cycle (Python Programmer 🐍)
+  - Validation: `uv run pytest tests/ -q` all pass; no regressions
+  - Reviewed by: Shepherd 🐕
+  - Signed off by: Watchdog 🐕‍🦺
+
+### 5.6 Production Prep & Push
+- [ ] 5.6.1 Update all project documentation (Planning Agent 📋)
+  - Files: README.md, ARCHITECTURE.md, TRACEABILITY_MATRIX.md, SESSION_HANDOFF.md
+  - New: docs/design-system.md
+  - Validation: All docs reference new design system architecture
+  - Signed off by: Code Reviewer 🛡️
+
+- [ ] 5.6.2 Fix staging deployment blocker uh2 (Code-Puppy 🐶)
+  - File: infrastructure/modules/log-analytics.bicep
+  - Validation: Bicep deployment to rg-governance-staging succeeds
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 5.6.3 Add pre-commit secrets hook fp0 (Code-Puppy 🐶)
+  - File: .pre-commit-config.yaml
+  - Validation: detect-secrets hook catches test secrets
+  - Signed off by: Security Auditor 🛡️
+
+- [ ] 5.6.4 Final staging smoke test (Terminal QA 🖥️)
+  - Validation: All 5 brand themes render correctly on staging
+  - Signed off by: Watchdog 🐕‍🦺
+
+- [ ] 5.6.5 Stakeholder sign-off and git push (Pack Leader 🐺)
+  - Validation: All tests pass; git push succeeds; git status clean
+  - Signed off by: Pack Leader 🐺 + Planning Agent 📋
+
 ---
 
 ## Progress Summary
@@ -219,7 +362,8 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 2: Governance | 13 | 13 | 0 | ✅ Complete |
 | Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
-| **TOTAL** | **32** | **32** | **0** | **✅ Complete** |
+| Phase 5: Design System Migration | 24 | 0 | 24 | ⬜ Not Started |
+| **TOTAL** | **56** | **32** | **24** | **🔄 In Progress** |
 
 ---
 

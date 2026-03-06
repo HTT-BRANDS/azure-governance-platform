@@ -113,6 +113,18 @@ Each row traces a requirement from **origin → implementation → testing → s
 | REQ-803 | Privacy-by-design patterns | Experience Architect 🎨 → Web Puppy 🕵️‍♂️ | Security Auditor 🛡️ | Documented: layered consent, JIT consent, progressive profiling, consent receipts, GPC | ⬜ Not Started |
 | REQ-804 | Accessibility API metadata contract | Experience Architect 🎨 | Solutions Architect 🏛️ + Code Reviewer 🛡️ | JSON schema for ARIA-compatible errors; integration guide | ⬜ Not Started |
 
+## Epic 9: Design System Migration (DNS → Governance Platform)
+
+| Req ID | User Story | Acceptance Criteria | Impl Agent | Review Agent | Test Type | Test Agent | Security | Sign-Off | Status | bd Issue |
+|--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
+| REQ-901 | Port design token architecture from DNS project | Pydantic models for BrandConfig, BrandColors, BrandTypography, BrandDesignSystem; YAML loader; CSS generator | Python Programmer 🐍 | Python Reviewer 🐍 + Solutions Architect 🏛️ | Unit + Integration | Watchdog 🐕‍🦺 | N/A | Planning Agent 📋 | ⬜ Not Started | — |
+| REQ-902 | WCAG color utilities in Python | hex↔RGB↔HSL conversion; WCAG luminance/contrast; auto text color; lighten/darken; 25+ test cases | Python Programmer 🐍 | Python Reviewer 🐍 + Security Auditor 🛡️ | Unit | Watchdog 🐕‍🦺 | WCAG 2.2 AA compliance | Pack Leader 🐺 | ⬜ Not Started | — |
+| REQ-903 | Server-side CSS generation pipeline | Generate full CSS custom property sets from brand config; scoped brand CSS; all-brands CSS output | Python Programmer 🐍 | Python Reviewer 🐍 | Unit | Watchdog 🐕‍🦺 | XSS sanitization | Planning Agent 📋 | ⬜ Not Started | — |
+| REQ-904 | Brand YAML config as single source of truth | config/brands.yaml with 5 brands; colors, typography, logos, design tokens; Pydantic validation on load; BrandConfig model extended | Experience Architect 🎨 + Python Programmer 🐍 | Solutions Architect 🏛️ | Unit + Integration | QA Expert 🐾 | N/A | Pack Leader 🐺 | ⬜ Not Started | — |
+| REQ-905 | Brand logo/asset organization | All 5 brands have logo-primary, logo-white, icon files in app/static/assets/brands/; HTT horizontal logos copied | Code-Puppy 🐶 | Experience Architect 🎨 | Manual | Terminal QA 🖥️ | N/A | Planning Agent 📋 | ⬜ Not Started | — |
+| REQ-906 | Theme middleware for server-side injection | FastAPI middleware reads tenant context; generates CSS variables via css_generator; injects brand/fonts/logo into Jinja2 context | Python Programmer 🐍 | Solutions Architect 🏛️ + Python Reviewer 🐍 | Unit + Integration | Watchdog 🐕‍🦺 | Tenant isolation review | Pack Leader 🐺 | ⬜ Not Started | — |
+| REQ-907 | Jinja2 UI component macro library | Macros for button, card, badge, alert, stat_card, table, tabs, dialog, progress, skeleton; ARIA attributes; design token CSS vars only | Experience Architect 🎨 | QA Expert 🐾 + Security Auditor 🛡️ | Manual + Unit | Terminal QA 🖥️ | ARIA + keyboard a11y | Planning Agent 📋 | ⬜ Not Started | — |
+
 ---
 
 ## Agent Accountability Summary
