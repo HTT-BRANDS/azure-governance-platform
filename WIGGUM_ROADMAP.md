@@ -188,15 +188,15 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 ## Phase 4: Validation & Closure
 
 ### 4.1 End-to-End Validation
-- [ ] 4.1.1 Full traceability matrix validation (QA Expert 🐾)
+- [x] 4.1.1 Full traceability matrix validation (QA Expert 🐾)
   - Validation: Every REQ-XXX has: impl agent, reviewer, test, sign-off
   - Signed off by: Planning Agent 📋
 
-- [ ] 4.1.2 Agent integration smoke tests (Terminal QA 🖥️)
+- [x] 4.1.2 Agent integration smoke tests (Terminal QA 🖥️)
   - Validation: All 29 agents load; Solutions Architect + Experience Architect invoke web-puppy successfully
   - Signed off by: Watchdog 🐕‍🦺
 
-- [ ] 4.1.3 Security posture final review (Security Auditor 🛡️)
+- [x] 4.1.3 Security posture final review (Security Auditor 🛡️)
   - Validation: All STRIDE rows complete; no open critical findings
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
@@ -218,8 +218,8 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 1: Foundation | 7 | 7 | 0 | ✅ Complete |
 | Phase 2: Governance | 13 | 13 | 0 | ✅ Complete |
 | Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
-| Phase 4: Validation | 5 | 0 | 5 | ⬜ Not Started |
-| **TOTAL** | **32** | **27** | **5** | **🔄 In Progress** |
+| Phase 4: Validation | 5 | 3 | 2 | 🔄 In Progress |
+| **TOTAL** | **32** | **30** | **2** | **🔄 In Progress** |
 
 ---
 
