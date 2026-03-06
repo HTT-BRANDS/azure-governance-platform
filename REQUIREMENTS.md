@@ -364,13 +364,13 @@ The following gaps require immediate attention to meet the July 8, 2026 deadline
 
 ### In Scope
 
-- [ ] Cross-tenant cost aggregation dashboard
-- [ ] Basic compliance score visualization
-- [ ] Resource inventory with tagging status
-- [ ] Identity overview (users, guests, admins)
-- [ ] Single lightweight deployment
-- [ ] Manual data refresh triggers
-- [ ] Riverside compliance dashboard (MVP)
+- [x] Cross-tenant cost aggregation dashboard
+- [x] Basic compliance score visualization
+- [x] Resource inventory with tagging status
+- [x] Identity overview (users, guests, admins)
+- [x] Single lightweight deployment
+- [x] Manual data refresh triggers
+- [x] Riverside compliance dashboard (MVP)
 
 ### Out of Scope (Phase 2+)
 

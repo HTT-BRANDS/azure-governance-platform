@@ -9,7 +9,7 @@
 
 ```yaml
 project: azure-governance-platform
-version: 0.2.0
+version: 1.0.0
 created: 2025-03-06
 last_updated: 2026-03-05
 loop_status: COMPLETED  # NOT_STARTED | IN_PROGRESS | COMPLETED | BLOCKED

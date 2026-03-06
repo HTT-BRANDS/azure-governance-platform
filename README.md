@@ -109,6 +109,7 @@ open http://localhost:8000/docs
 | [Developer Guide](./docs/DEVELOPMENT.md) | Setup and contribution guidelines |
 | [Implementation Guide](./docs/IMPLEMENTATION_GUIDE.md) | Detailed setup instructions |
 | [Common Pitfalls](./docs/COMMON_PITFALLS.md) | Troubleshooting guide |
+| [Traceability Matrix](./TRACEABILITY_MATRIX.md) | Requirements → Tests mapping |
 
 ### Interactive API Documentation
 
@@ -332,13 +333,15 @@ For comprehensive Riverside compliance documentation, see:
 - [x] Data retention service
 - [x] Azure Dev Deployment (Bicep IaC, ACR, App Service, Key Vault)
 - [x] Security audit — 5/5 findings resolved
-- [x] E2E test suite (47 Playwright + httpx tests)
+- [x] E2E test suite (273 Playwright + httpx tests)
 - [x] Documentation consolidation (13 → 7 root docs)
+- [x] US/AC Traceability Matrix (93 requirements mapped)
+- [x] Full quality gate validation (1,686 tests, 0 failures)
+- [x] Version 1.0.0 production release
 
 ### In Progress
 
 - [ ] Connect real Azure tenant credentials via Key Vault
-- [ ] CI/CD OIDC federation (passwordless GitHub → Azure)
 - [ ] Staging environment deployment
 - [ ] Replace backfill placeholder data with real Azure API calls
 - [ ] Production hardening (CORS, token blacklist, rate limits)
