@@ -153,7 +153,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: All 13 steps have named agent owners
   - Signed off by: Pack Leader 🐺
 
-- [ ] 3.1.2 Create bd issue templates for each testing phase (Bloodhound 🐕‍🦺)
+- [x] 3.1.2 Create bd issue templates for each testing phase (Bloodhound 🐕‍🦺)
   - Validation: Templates exist for Test Prep, Execution, Issue Mgmt, Perf/Security, Closure
   - Signed off by: Planning Agent 📋
 
@@ -163,7 +163,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: All 9 Granlund roles mapped to specific agents
   - Signed off by: Pack Leader 🐺
 
-- [ ] 3.2.2 Configure bd workflows for requirements chain (Bloodhound 🐕‍🦺)
+- [x] 3.2.2 Configure bd workflows for requirements chain (Bloodhound 🐕‍🦺)
   - Validation: bd issues flow through Stakeholder → BRD → US → Sprint → Delivery
   - Signed off by: Planning Agent 📋
 
@@ -178,7 +178,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: Dedicated bd issue trees, isolated from sprints, WIGGUM_ROADMAP integration
   - Signed off by: Pack Leader 🐺
 
-- [ ] 3.3.3 Cross-track synchronization protocol (Planning Agent 📋 + Pack Leader 🐺)
+- [x] 3.3.3 Cross-track synchronization protocol (Planning Agent 📋 + Pack Leader 🐺)
   - Output: docs/process/cross-track-sync.md
   - Validation: Shared labels, sync protocol, mutual sign-off documented
   - Signed off by: Both (mutual)
@@ -217,9 +217,9 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 |-------|-----------|-----------|-----------|--------|
 | Phase 1: Foundation | 7 | 7 | 0 | ✅ Complete |
 | Phase 2: Governance | 13 | 13 | 0 | ✅ Complete |
-| Phase 3: Process | 7 | 4 | 3 | 🔄 In Progress |
+| Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
 | Phase 4: Validation | 5 | 0 | 5 | ⬜ Not Started |
-| **TOTAL** | **32** | **24** | **8** | **🔄 In Progress** |
+| **TOTAL** | **32** | **27** | **5** | **🔄 In Progress** |
 
 ---
 
