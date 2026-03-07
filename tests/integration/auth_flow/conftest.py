@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from jose import jwt
 
-from app.core.auth import _token_blacklist
+from app.core.token_blacklist import _token_blacklist
 from app.core.config import get_settings
 
 

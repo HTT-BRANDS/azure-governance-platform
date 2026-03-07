@@ -341,39 +341,15 @@ class JWTTokenManager:
 azure_ad_validator = AzureADTokenValidator()
 jwt_manager = JWTTokenManager()
 
-# In-memory token blacklist for logout functionality
-# In production, use Redis or a database table
-_token_blacklist: set[str] = set()
-
-
-def is_token_blacklisted(token: str) -> bool:
-    """Check if a token has been blacklisted.
-
-    Args:
-        token: JWT token to check
-
-    Returns:
-        True if token is blacklisted
-    """
-    return token in _token_blacklist
-
-
-def blacklist_token(token: str) -> None:
-    """Add a token to the blacklist.
-
-    Args:
-        token: JWT token to blacklist
-    """
-    _token_blacklist.add(token)
-
-
-def get_blacklist_size() -> int:
-    """Get the number of blacklisted tokens.
-
-    Returns:
-        Count of blacklisted tokens
-    """
-    return len(_token_blacklist)
+# Token blacklist (Redis-backed with in-memory fallback)
+from app.core.token_blacklist import (  # noqa: E402
+    TokenBlacklist,
+    _token_blacklist,
+    blacklist_token,
+    get_blacklist_backend,
+    get_blacklist_size,
+    is_token_blacklisted,
+)
 
 
 async def get_current_user(

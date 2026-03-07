@@ -29,6 +29,7 @@ from app.api.routes import (
     sync_router,
     tenants_router,
 )
+from app.core.token_blacklist import get_blacklist_backend, get_blacklist_size
 from app.core.cache import cache_manager
 from app.core.config import get_settings
 from app.core.database import init_db
@@ -263,6 +264,10 @@ async def detailed_health_check():
     cache_metrics = cache_manager.get_metrics()
     components["cache"] = cache_metrics.get("backend", "unknown")
 
+    # Check token blacklist
+    blacklist_backend = get_blacklist_backend()
+    components["token_blacklist"] = blacklist_backend
+
     return {
         "status": "healthy" if all(
             v in ["healthy", "running", True] or v not in ["unhealthy", "not_running"]
@@ -271,6 +276,10 @@ async def detailed_health_check():
         "version": settings.app_version,
         "components": components,
         "cache_metrics": cache_metrics,
+        "token_blacklist": {
+            "backend": blacklist_backend,
+            "size": get_blacklist_size(),
+        },
     }
 
 
