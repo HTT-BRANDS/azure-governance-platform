@@ -66,7 +66,7 @@ With full traceability via WIGGUM_ROADMAP.md + TRACEABILITY_MATRIX.md.
 ### Dev Environment
 - **Health**: 🟢 Healthy (v1.0.0)
 - **Preflight**: 15/24 pass
-- **Unit Tests**: 1651 passing
+- **Unit Tests**: 1674 passing
 
 ### Open bd Issues
 | ID | Priority | Title | Status |
@@ -87,16 +87,14 @@ With full traceability via WIGGUM_ROADMAP.md + TRACEABILITY_MATRIX.md.
 ### Design System Source
 **From**: `~/dev/microsoft-group-management` (React/Vite/TypeScript/Tailwind)
 
-Key files being ported:
+Key files ported from `~/dev/microsoft-group-management`:
 | Source File | → Target File | What |
 |------------|--------------|------|
-| `lib/types/brand.ts` | `app/core/design_tokens.py` | Pydantic models |
-| `lib/theme/brand-utils.ts` | `app/core/color_utils.py` | Color manipulation + WCAG |
-| `lib/theme/css-generator.ts` | `app/core/css_generator.py` | CSS custom property generation |
-| `config/brands.yaml` | `config/brands.yaml` | Brand source of truth |
-| `public/assets/brands/` | `app/static/assets/brands/` | Logo SVGs |
-| `app/globals.css` | `app/static/css/theme.css` | CSS token foundation |
-| `HTT-Brands-Logo/` | `app/static/assets/brands/httbrands/logos/` | HTT logos |
+| `hub/frontend/src/index.css` (`:root` vars) | `app/static/css/theme.css` | CSS custom properties + dark mode |
+| `hub/frontend/tailwind.config.ts` (tenant colors) | `config/brands.yaml` | Brand color registry |
+| `hub/frontend/src/providers/ThemeProvider.tsx` | `app/static/js/darkMode.js` | Dark mode toggle logic |
+| `reference/03-DESIGN-SYSTEM.md` | `docs/design-system.md` | Design system documentation |
+| `hub/frontend/public/images/htt-logo-*.png` | `app/static/assets/brands/httbrands/logos/` | HTT brand logos |
 
 ### Agent Assignments (Epic 9)
 | REQ | What | Impl | Review | Test | Sign-Off |
@@ -133,7 +131,7 @@ uv run pytest tests/unit/ -q
 **All phases complete. Design system migration fully delivered. All bd issues resolved.**
 
 - 🎯 56/56 WIGGUM roadmap tasks complete (100%)
-- 🧪 1651 tests passing (2 skipped, 232 xfailed, 66 xpassed)
+- 🧪 1674 tests passing (2 skipped, 232 xfailed, 66 xpassed)
 - 🌿 Branch: `feature/agile-sdlc` — clean, pushed to origin
 - 📋 WIGGUM_ROADMAP.md: ✅ COMPLETE
 - 🐛 bd Issues: **8/8 closed** (3t8, 5qg, vz6, uh2, fp0, 0p7, rbm, 50e)
