@@ -214,28 +214,28 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 ### 5.1 Design Token Foundation
 - [x] 5.1.1 Create Pydantic design token models (Python Programmer 🐍)
   - File: app/core/design_tokens.py
-  - Source: ~/dev/DNS-Domain-Management/lib/types/brand.ts
+  - Source: ~/dev/microsoft-group-management/hub/frontend/src/types/index.ts
   - Validation: `uv run python -c "from app.core.design_tokens import BrandConfig; print('OK')"`
   - Reviewed by: Python Reviewer 🐍
   - Signed off by: Planning Agent 📋
 
 - [x] 5.1.2 Port color utilities to Python (Python Programmer 🐍)
   - File: app/core/color_utils.py
-  - Source: ~/dev/DNS-Domain-Management/lib/theme/brand-utils.ts
+  - Source: ~/dev/microsoft-group-management/hub/frontend/src/index.css + hub/frontend/tailwind.config.ts
   - Validation: `uv run pytest tests/unit/test_color_utils.py -v`
   - Reviewed by: Python Reviewer 🐍 + Security Auditor 🛡️
   - Signed off by: Pack Leader 🐺
 
 - [x] 5.1.3 Create server-side CSS generator (Python Programmer 🐍)
   - File: app/core/css_generator.py
-  - Source: ~/dev/DNS-Domain-Management/lib/theme/css-generator.ts
+  - Source: ~/dev/microsoft-group-management/hub/frontend/src/index.css
   - Validation: `uv run pytest tests/unit/test_css_generator.py -v`
   - Reviewed by: Python Reviewer 🐍
   - Signed off by: Planning Agent 📋
 
 - [x] 5.1.4 Create brand configuration YAML (Experience Architect 🎨)
   - File: config/brands.yaml
-  - Source: ~/dev/DNS-Domain-Management/config/brands.yaml
+  - Source: ~/dev/microsoft-group-management/hub/frontend/src/index.css + hub/frontend/tailwind.config.ts
   - Validation: `uv run python -c "from app.core.design_tokens import load_brands; load_brands()"`
   - Reviewed by: Solutions Architect 🏛️
   - Signed off by: Pack Leader 🐺
@@ -243,13 +243,13 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 ### 5.2 Asset Migration & CSS Integration
 - [x] 5.2.1 Copy brand logo assets (Code-Puppy 🐶)
   - Directory: app/static/assets/brands/
-  - Source: ~/dev/DNS-Domain-Management/public/assets/brands/ + HTT-Brands-Logo/
+  - Source: ~/dev/microsoft-group-management/hub/frontend/public/images/
   - Validation: All 5 brand directories contain logo-primary, logo-white, icon files
   - Signed off by: Planning Agent 📋
 
 - [x] 5.2.2 Rewrite theme.css with design token architecture (Experience Architect 🎨)
   - File: app/static/css/theme.css
-  - Source: ~/dev/DNS-Domain-Management/app/globals.css + tailwind.config.ts
+  - Source: ~/dev/microsoft-group-management/hub/frontend/src/index.css
   - Validation: `uv run pytest tests/architecture/test_fitness_functions.py -v`
   - Reviewed by: Solutions Architect 🏛️ + Security Auditor 🛡️
   - Signed off by: Pack Leader 🐺

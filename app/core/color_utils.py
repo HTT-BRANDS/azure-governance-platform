@@ -1,6 +1,6 @@
 """Color manipulation and WCAG accessibility utilities.
 
-Port of ~/dev/DNS-Domain-Management/lib/theme/brand-utils.ts to Python.
+Color utilities adapted from ~/dev/microsoft-group-management design system.
 Provides hex/RGB/HSL conversions, WCAG contrast validation, and color variants.
 """
 

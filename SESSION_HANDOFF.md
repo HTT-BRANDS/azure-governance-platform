@@ -8,7 +8,7 @@
 
 ## 🎯 Current Session Objective
 
-**Design System Migration** — Port the design system architecture (tokens, brand configs, logos, typography, spacing, shadows) from `~/dev/DNS-Domain-Management` into the Azure Governance Platform, replacing the current ad-hoc theming.
+**Design System Migration** — Port the design system architecture (tokens, brand configs, logos, typography, spacing, shadows) from `~/dev/microsoft-group-management` into the Azure Governance Platform, replacing the current ad-hoc theming.
 
 ### Full Lifecycle
 
@@ -85,7 +85,7 @@ With full traceability via WIGGUM_ROADMAP.md + TRACEABILITY_MATRIX.md.
 ## 🏗️ Phase 5 Execution Plan
 
 ### Design System Source
-**From**: `~/dev/DNS-Domain-Management` (Next.js/React/TypeScript)
+**From**: `~/dev/microsoft-group-management` (React/Vite/TypeScript/Tailwind)
 
 Key files being ported:
 | Source File | → Target File | What |
