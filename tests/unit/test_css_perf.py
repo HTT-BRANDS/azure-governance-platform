@@ -6,6 +6,8 @@ Task 5.5.2 — validates:
   3. Scoped CSS generation speed: < 10 ms per brand
   4. All-brands CSS generation: < 50 ms total (5 brands)
   5. ThemeContext construction speed: < 15 ms per brand
+
+Updated for microsoft-group-management design system.
 """
 
 import time
@@ -30,6 +32,15 @@ MAX_MS_ALL_BRANDS = 50.0  # generous budget for all 5 brands at once
 MAX_MS_THEME_CTX = 15.0  # ThemeContext construction (includes CSS + inline)
 
 ALL_BRAND_KEYS = ["httbrands", "frenchies", "bishops", "lashlounge", "deltacrown"]
+
+
+@pytest.fixture(autouse=True)
+def clear_brand_cache():
+    """Clear the module-level registry cache."""
+    import app.core.design_tokens as dt
+    dt._registry = None
+    yield
+    dt._registry = None
 
 
 @pytest.fixture(scope="module")
@@ -58,7 +69,7 @@ def test_css_variable_generation_speed(registry, brand_key: str):
 
     # Sanity: must produce at least 40 CSS variables
     assert len(variables) >= 40, (
-        f"{brand_key}: expected ≥40 CSS variables, got {len(variables)}"
+        f"{brand_key}: expected >=40 CSS variables, got {len(variables)}"
     )
     assert p95 < MAX_MS_PER_BRAND, (
         f"{brand_key}: CSS generation p95={p95:.2f}ms exceeds {MAX_MS_PER_BRAND}ms "

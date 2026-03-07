@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html lang="en" data-brand="{{ brand.key if brand else 'httbrands' }}" style="{{ brand.inline_style if brand else '' }}">
+<html lang="en" class="light" data-brand="{{ brand.key if brand else 'httbrands' }}" style="{{ brand.inline_style if brand else '' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Azure Governance Platform{% endblock %}</title>
     
-    <!-- Google Fonts for brand typography -->
-    {% if brand and brand.google_fonts_url %}
+    <!-- Google Fonts: Inter (microsoft-group-management design system) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    {% if brand and brand.google_fonts_url %}
     <link rel="stylesheet" href="{{ brand.google_fonts_url }}">
+    {% else %}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     {% endif %}
     
     <!-- CSS-First Tailwind v4 -->
@@ -26,7 +28,7 @@
     <link rel="stylesheet" href="/static/css/accessibility.css">
     <link rel="stylesheet" href="/static/css/dark-mode.css">
     
-    <!-- Brand Design Token Injection (47+ CSS variables via css_generator.py) -->
+    <!-- Brand Design Token Injection (CSS variables via css_generator.py) -->
     {% if brand and brand.css_variables %}
     <style>
         :root {
@@ -56,11 +58,11 @@
             top: 0;
             left: 0;
             height: 3px;
-            background: var(--brand-primary, #0053e2);
+            background: var(--brand-primary, #500711);
             width: 0%;
             z-index: 9999;
             transition: width 200ms ease-out;
-            box-shadow: 0 0 10px var(--brand-primary, #0053e2);
+            box-shadow: 0 0 10px var(--brand-primary, #500711);
         }
         
         /* Smooth page transitions for hx-boost */
@@ -71,7 +73,7 @@
         
         /* Active navigation item */
         .nav-active {
-            background-color: var(--brand-primary-110, #004ac9) !important;
+            background-color: var(--brand-primary-110, #45060E) !important;
             color: white !important;
         }
         
@@ -98,7 +100,7 @@
     
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-5 text-gray-160 min-h-screen" hx-boost="true" hx-select="main" hx-target="main" hx-swap="outerHTML settle:150ms">
+<body class="bg-surface-primary text-primary-theme min-h-screen" style="font-family: 'Inter', sans-serif;" hx-boost="true" hx-select="main" hx-target="main" hx-swap="outerHTML settle:150ms">
     <!-- HTMX Progress Bar -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="htmx-progress-bar" aria-hidden="true"></div>
@@ -194,9 +196,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-10 border-t border-gray-50 mt-auto">
+    <footer class="bg-surface-secondary border-t mt-auto" style="border-color: var(--border-color);">
         <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center text-sm text-gray-100">
+            <div class="flex justify-between items-center text-sm text-muted-theme">
                 <span>Azure Governance Platform v{{ app_version | default("1.0.0") }}</span>
                 <span>Last sync: <span id="last-sync">Never</span></span>
             </div>

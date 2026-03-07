@@ -2,6 +2,11 @@
 
 Covers both existing functionality and security validators added for bd:3t8
 (CSS injection prevention on gradient, borderRadius, headingFont, bodyFont).
+
+Updated for microsoft-group-management design system:
+- HTT primary: #500711 (burgundy)
+- Font: Inter (all brands)
+- Semantic colors and theme tokens
 """
 
 import pytest
@@ -11,6 +16,9 @@ from app.core.design_tokens import (
     BrandTypography,
     BrandRegistry,
     ShadowStyle,
+    SemanticColors,
+    ThemeTokens,
+    DARK_THEME_TOKENS,
     load_brands,
     get_brand,
     get_google_fonts_url,
@@ -18,7 +26,20 @@ from app.core.design_tokens import (
 
 
 # ---------------------------------------------------------------------------
-# Existing regression tests
+# Clear module-level cache before tests
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def clear_brand_cache():
+    """Clear the module-level registry cache before each test."""
+    import app.core.design_tokens as dt
+    dt._registry = None
+    yield
+    dt._registry = None
+
+
+# ---------------------------------------------------------------------------
+# Existing regression tests (updated for new brand data)
 # ---------------------------------------------------------------------------
 
 
@@ -48,21 +69,30 @@ def test_brand_colors_valid():
     assert b.colors.background.startswith("#")
 
 
-def test_brand_typography():
+def test_brand_primary_is_burgundy():
+    """HTT primary must be #500711 (burgundy) from microsoft-group-management."""
     b = get_brand("httbrands")
-    assert b.typography.headingFont == "Montserrat"
+    assert b.colors.primary == "#500711"
+
+
+def test_brand_typography():
+    """All brands use Inter font from microsoft-group-management."""
+    b = get_brand("httbrands")
+    assert b.typography.headingFont == "Inter"
+    assert b.typography.bodyFont == "Inter"
 
 
 def test_brand_design_system():
+    """HTT uses soft shadow style in microsoft-group-management."""
     b = get_brand("httbrands")
-    assert b.designSystem.shadowStyle == ShadowStyle.SHARP
+    assert b.designSystem.shadowStyle == ShadowStyle.SOFT
 
 
 def test_google_fonts_url():
     b = get_brand("httbrands")
     url = get_google_fonts_url(b)
     assert "fonts.googleapis.com" in url
-    assert "Montserrat" in url
+    assert "Inter" in url
 
 
 def test_hex_color_validation():
@@ -89,16 +119,90 @@ def test_shadow_style_enum():
 
 
 # ---------------------------------------------------------------------------
+# Semantic colors and theme tokens (microsoft-group-management)
+# ---------------------------------------------------------------------------
+
+class TestSemanticColors:
+    """Validate SemanticColors model from microsoft-group-management."""
+
+    def test_defaults(self):
+        sc = SemanticColors()
+        assert sc.success == "#10B981"
+        assert sc.warning == "#F59E0B"
+        assert sc.error == "#EF4444"
+        assert sc.info == "#3B82F6"
+
+    def test_custom_values(self):
+        sc = SemanticColors(success="#00FF00", warning="#FFFF00", error="#FF0000", info="#0000FF")
+        assert sc.success == "#00FF00"
+
+    def test_invalid_hex_rejected(self):
+        with pytest.raises(Exception):
+            SemanticColors(success="invalid")
+
+
+class TestThemeTokens:
+    """Validate ThemeTokens model for light/dark mode."""
+
+    def test_light_defaults(self):
+        tt = ThemeTokens()
+        assert tt.bg_primary == "#FFFFFF"
+        assert tt.text_primary == "#111827"
+        assert tt.border_color == "#E5E7EB"
+
+    def test_dark_theme_tokens(self):
+        assert DARK_THEME_TOKENS.bg_primary == "#0F0F0F"
+        assert DARK_THEME_TOKENS.text_primary == "#F9FAFB"
+        assert DARK_THEME_TOKENS.border_color == "#374151"
+        assert DARK_THEME_TOKENS.sidebar_bg == "#0F0F0F"
+
+
+# ---------------------------------------------------------------------------
+# Brand-specific tests (microsoft-group-management tenant colors)
+# ---------------------------------------------------------------------------
+
+class TestTenantColors:
+    """Validate tenant colors match microsoft-group-management tailwind.config.ts."""
+
+    def test_htt_primary(self):
+        b = get_brand("httbrands")
+        assert b.colors.primary == "#500711"
+
+    def test_frenchies_primary(self):
+        b = get_brand("frenchies")
+        assert b.colors.primary == "#2563EB"
+
+    def test_bishops_primary(self):
+        b = get_brand("bishops")
+        assert b.colors.primary == "#C2410C"
+
+    def test_lashlounge_primary(self):
+        b = get_brand("lashlounge")
+        assert b.colors.primary == "#7C3AED"
+
+    def test_deltacrown_primary(self):
+        b = get_brand("deltacrown")
+        assert b.colors.primary == "#004538"
+
+    def test_all_brands_use_inter(self):
+        r = load_brands()
+        for key in r:
+            brand = r[key]
+            assert brand.typography.headingFont == "Inter", f"{key} heading font is not Inter"
+            assert brand.typography.bodyFont == "Inter", f"{key} body font is not Inter"
+
+
+# ---------------------------------------------------------------------------
 # Gradient validator tests (BrandColors.gradient)  — bd:3t8 / M-1
 # ---------------------------------------------------------------------------
 
 def _make_colors(**overrides):
     """Helper to build a BrandColors with valid defaults, overriding as needed."""
     defaults = dict(
-        primary="#000000",
-        accent="#007CBA",
+        primary="#500711",
+        accent="#FFC957",
         background="#FFFFFF",
-        text="#000000",
+        text="#111827",
     )
     defaults.update(overrides)
     return BrandColors(**defaults)
@@ -174,9 +278,9 @@ class TestFontNameValidator:
     # --- valid ---
 
     def test_simple_font_name(self):
-        t = BrandTypography(headingFont="Montserrat", bodyFont="Lato")
-        assert t.headingFont == "Montserrat"
-        assert t.bodyFont == "Lato"
+        t = BrandTypography(headingFont="Inter", bodyFont="Inter")
+        assert t.headingFont == "Inter"
+        assert t.bodyFont == "Inter"
 
     def test_font_name_with_spaces(self):
         t = BrandTypography(headingFont="Open Sans", bodyFont="Source Sans 3")
@@ -194,39 +298,39 @@ class TestFontNameValidator:
 
     def test_heading_font_rejects_semicolon(self):
         with pytest.raises(Exception, match="font"):
-            BrandTypography(headingFont="Montserrat; } body { color: red", bodyFont="Lato")
+            BrandTypography(headingFont="Inter; } body { color: red", bodyFont="Inter")
 
     def test_body_font_rejects_semicolon(self):
         with pytest.raises(Exception, match="font"):
-            BrandTypography(headingFont="Montserrat", bodyFont="Lato; } body { color: red")
+            BrandTypography(headingFont="Inter", bodyFont="Inter; } body { color: red")
 
     def test_font_rejects_curly_braces(self):
         with pytest.raises(Exception, match="font"):
-            BrandTypography(headingFont="Montserrat}", bodyFont="Lato")
+            BrandTypography(headingFont="Inter}", bodyFont="Inter")
 
     def test_font_rejects_angle_brackets(self):
         with pytest.raises(Exception, match="font"):
-            BrandTypography(headingFont="<script>", bodyFont="Lato")
+            BrandTypography(headingFont="<script>", bodyFont="Inter")
 
     def test_font_rejects_parentheses(self):
         with pytest.raises(Exception, match="font"):
-            BrandTypography(headingFont="expression(alert(1))", bodyFont="Lato")
+            BrandTypography(headingFont="expression(alert(1))", bodyFont="Inter")
 
     def test_font_rejects_quotes(self):
         with pytest.raises(Exception, match="font"):
-            BrandTypography(headingFont="'Montserrat'", bodyFont="Lato")
+            BrandTypography(headingFont="'Inter'", bodyFont="Inter")
 
     def test_font_rejects_colon(self):
         with pytest.raises(Exception, match="font"):
-            BrandTypography(headingFont="javascript:alert(1)", bodyFont="Lato")
+            BrandTypography(headingFont="javascript:alert(1)", bodyFont="Inter")
 
     def test_font_rejects_at_sign(self):
         with pytest.raises(Exception, match="font"):
-            BrandTypography(headingFont="@import", bodyFont="Lato")
+            BrandTypography(headingFont="@import", bodyFont="Inter")
 
     def test_font_rejects_backslash(self):
         with pytest.raises(Exception, match="font"):
-            BrandTypography(headingFont="Mont\\serrat", bodyFont="Lato")
+            BrandTypography(headingFont="Int\\\\er", bodyFont="Inter")
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,8 @@
 """Design token models and brand configuration loader.
 
-Pydantic v2 models mirroring ~/dev/DNS-Domain-Management/lib/types/brand.ts.
+Pydantic v2 models sourced from ~/dev/microsoft-group-management design system.
 Loads brand configurations from config/brands.yaml.
+Includes semantic colors, theme tokens, and dark mode support.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ __all__ = [
     "ShadowStyle", "BrandLogo", "BrandColors", "BrandTypography",
     "BrandDesignSystem", "BrandPageConfig", "BrandConfig", "BrandConfigFull",
     "BrandRegistry", "load_brands", "get_brand", "get_google_fonts_url",
+    "SemanticColors", "ThemeTokens", "DARK_THEME_TOKENS",
 ]
 
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -99,6 +101,55 @@ def _validate_border_radius(v: str) -> str:
             "Must match pattern: <number>(px|rem|em|%), e.g. '8px', '0.5rem'."
         )
     return v
+
+
+# ---------------------------------------------------------------------------
+# Semantic & Theme Tokens (from microsoft-group-management design system)
+# ---------------------------------------------------------------------------
+
+
+class SemanticColors(BaseModel):
+    """Semantic color tokens from microsoft-group-management design system."""
+    success: str = "#10B981"
+    warning: str = "#F59E0B"
+    error: str = "#EF4444"
+    info: str = "#3B82F6"
+
+    @field_validator("success", "warning", "error", "info", mode="before")
+    @classmethod
+    def validate_semantic_colors(cls, v: str) -> str:
+        return _validate_hex(v)
+
+
+class ThemeTokens(BaseModel):
+    """Surface and text tokens that change with light/dark mode."""
+    bg_primary: str = "#FFFFFF"
+    bg_secondary: str = "#F9FAFB"
+    bg_tertiary: str = "#F3F4F6"
+    text_primary: str = "#111827"
+    text_secondary: str = "#4B5563"
+    text_muted: str = "#9CA3AF"
+    border_color: str = "#E5E7EB"
+    sidebar_bg: str = "#FFFFFF"
+    sidebar_border: str = "#E5E7EB"
+
+
+DARK_THEME_TOKENS = ThemeTokens(
+    bg_primary="#0F0F0F",
+    bg_secondary="#171717",
+    bg_tertiary="#262626",
+    text_primary="#F9FAFB",
+    text_secondary="#D1D5DB",
+    text_muted="#6B7280",
+    border_color="#374151",
+    sidebar_bg="#0F0F0F",
+    sidebar_border="#262626",
+)
+
+
+# ---------------------------------------------------------------------------
+# Brand Configuration Models
+# ---------------------------------------------------------------------------
 
 
 class BrandLogo(BaseModel):
@@ -276,8 +327,10 @@ def get_brand(key: str, path: Path = _BRANDS_PATH) -> BrandConfigFull:
 def get_google_fonts_url(brand: BrandConfig) -> str:
     """Generate Google Fonts URL for brand typography.
 
+    All brands in the microsoft-group-management design system use Inter.
+
     >>> get_google_fonts_url(brand)  # doctest: +SKIP
-    'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&display=swap'
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
     """
     fonts = {brand.typography.headingFont, brand.typography.bodyFont}
     params = "&".join(

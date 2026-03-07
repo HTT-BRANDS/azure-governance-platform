@@ -1,15 +1,16 @@
 /**
- * Theme Configuration - CSS-First Tailwind v4 with Brand Color Support
- * 
- * This file uses Tailwind CSS v4's CSS-first configuration approach.
- * The @import "tailwindcss" imports all Tailwind utilities.
- * Custom theme extensions are defined using CSS custom properties.
- * 
- * Brand Colors:
- * - HTT: Burgundy (#500711), Mauve (#d1bdbf), Gold (#ffc957)
- * - Frenchies: Navy (#052b48), Peach (#faaca8)
- * - Bishops: Orange (#EB631B), Tan (#CE9F7C)
- * - Lash Lounge: Purple (#513550), Lavender (#D3BCC5)
+ * Theme Configuration - CSS-First with Brand Color Support
+ * Source: ~/dev/microsoft-group-management (hub/frontend/src/index.css)
+ *
+ * HTT Brand Primary: #500711 (burgundy)
+ * Font: Inter (all brands)
+ *
+ * Tenant Colors:
+ * - HTT: #500711 (burgundy)
+ * - Bishops: #c2410c (orange)
+ * - Lash Lounge: #7c3aed (purple)
+ * - Frenchies: #2563eb (blue)
+ * - Delta Crown: #004538 (green)
  */
 
 /* ==========================================================================
@@ -18,105 +19,120 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   CSS Custom Properties - Brand Colors
+   CSS Custom Properties — microsoft-group-management design system
    These are dynamically updated per tenant via inline style injection
    ========================================================================== */
 :root {
-  /* Primary Brand Color - Maps to tenant's primary */
-  --brand-primary: #0053e2;
-  --brand-primary-5: #f2f8ff;
-  --brand-primary-10: #e5f1ff;
-  --brand-primary-50: #74a8ff;
-  --brand-primary-100: #0053e2;
-  --brand-primary-110: #004ac9;
-  --brand-primary-130: #003999;
-  --brand-primary-140: #002e7a;
-  --brand-primary-160: #001e52;
-  --brand-primary-180: #000f29;
-  
+  /* HTT Brand Colors (defaults) */
+  --htt-primary: #500711;
+  --htt-primary-light: #6B1A24;
+  --htt-primary-dark: #3A0509;
+  --htt-secondary: #BB86FC;
+  --htt-secondary-light: #F4BCD4;
+  --htt-accent: #FFC957;
+  --htt-accent-light: #FFD97A;
+
+  /* Primary Brand Color — overridden per tenant */
+  --brand-primary: #500711;
+  --brand-primary-5: #FBE8EB;
+  --brand-primary-10: #F5D1D6;
+  --brand-primary-50: #A8394A;
+  --brand-primary-100: #500711;
+  --brand-primary-110: #45060E;
+  --brand-primary-130: #30040A;
+  --brand-primary-140: #250307;
+  --brand-primary-160: #1A0205;
+  --brand-primary-180: #0F0103;
+
   /* Secondary Brand Color */
-  --brand-secondary: #ffc220;
-  --brand-secondary-5: #fffbf0;
-  --brand-secondary-10: #fff5d6;
-  --brand-secondary-50: #ffd966;
-  --brand-secondary-100: #ffc220;
-  --brand-secondary-110: #e6a300;
-  --brand-secondary-130: #b37f00;
-  --brand-secondary-140: #995213;
-  --brand-secondary-160: #663800;
-  --brand-secondary-180: #331c00;
-  
+  --brand-secondary: #BB86FC;
+  --brand-secondary-5: #F5EEFF;
+  --brand-secondary-10: #EBD9FF;
+  --brand-secondary-50: #D4B3FE;
+  --brand-secondary-100: #BB86FC;
+  --brand-secondary-110: #A676E3;
+  --brand-secondary-130: #7D58B5;
+  --brand-secondary-140: #654897;
+  --brand-secondary-160: #3E2D5F;
+  --brand-secondary-180: #1E1630;
+
   /* Accent Brand Color */
-  --brand-accent: #2a8703;
-  --brand-accent-5: #f0fff0;
-  --brand-accent-10: #e0ffe0;
-  --brand-accent-50: #5cd65c;
-  --brand-accent-100: #2a8703;
-  --brand-accent-110: #247602;
-  --brand-accent-130: #1a5902;
-  --brand-accent-140: #144701;
-  --brand-accent-160: #0d2f01;
-  --brand-accent-180: #071800;
-  
-  /* Semantic Colors */
-  --color-success: #2a8703;
-  --color-warning: #ffc220;
-  --color-danger: #ea1100;
-  --color-info: #0053e2;
-  
-  /* Neutral Grays */
-  --color-gray-5: #fafafa;
-  --color-gray-10: #f5f5f5;
-  --color-gray-50: #e0e0e0;
-  --color-gray-100: #9e9e9e;
-  --color-gray-110: #8a8a8a;
-  --color-gray-130: #616161;
-  --color-gray-140: #424242;
-  --color-gray-160: #212121;
-  --color-gray-180: #121212;
-  
-  /* Text Colors */
-  --text-primary: var(--color-gray-160);
-  --text-secondary: var(--color-gray-130);
-  --text-muted: var(--color-gray-100);
+  --brand-accent: #FFC957;
+  --brand-accent-5: #FFF8E8;
+  --brand-accent-10: #FFF0CE;
+  --brand-accent-50: #FFD97A;
+  --brand-accent-100: #FFC957;
+  --brand-accent-110: #E6B44E;
+  --brand-accent-130: #B38D3D;
+  --brand-accent-140: #997831;
+  --brand-accent-160: #664F20;
+  --brand-accent-180: #332810;
+
+  /* Semantic Colors (from microsoft-group-management) */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* Text Colors (light mode) */
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --text-muted: #9CA3AF;
   --text-on-primary: white;
-  --text-on-secondary: var(--color-gray-160);
-  
-  /* Background Colors */
-  --bg-primary: white;
-  --bg-secondary: var(--color-gray-5);
-  --bg-tertiary: var(--color-gray-10);
-  
+  --text-on-secondary: #111827;
+
+  /* Background Colors (light mode) */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F9FAFB;
+  --bg-tertiary: #F3F4F6;
+
   /* Border Colors */
-  --border-light: var(--color-gray-10);
-  --border-default: var(--color-gray-50);
+  --border-color: #E5E7EB;
+  --border-light: #F3F4F6;
+  --border-default: #E5E7EB;
   --border-focus: var(--brand-primary-100);
+
+  /* Sidebar */
+  --sidebar-bg: #FFFFFF;
+  --sidebar-border: #E5E7EB;
+}
+
+/* ==========================================================================
+   Dark Mode — .dark class toggle (microsoft-group-management ThemeProvider)
+   ========================================================================== */
+.dark {
+  --bg-primary: #0F0F0F;
+  --bg-secondary: #171717;
+  --bg-tertiary: #262626;
+  --text-primary: #F9FAFB;
+  --text-secondary: #D1D5DB;
+  --text-muted: #6B7280;
+  --border-color: #374151;
+  --sidebar-bg: #0F0F0F;
+  --sidebar-border: #262626;
+  --border-light: #262626;
+  --border-default: #374151;
+}
+
+/* Dark mode body transition */
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ==========================================================================
    Brand-Specific Theme Tokens
-   
-   Brand-specific CSS custom properties (e.g. [data-brand="htt"], 
-   [data-brand="frenchies"], etc.) are generated server-side by 
-   css_generator.py and injected into the page via <style> tags.
-   
-   The :root block above provides sensible defaults/fallbacks.
-   If no [data-brand] attribute is present, the :root defaults apply.
-   ========================================================================== */
 
-/* Fallback: ensure [data-brand] selector structure exists for specificity */
+   Brand-specific CSS custom properties (e.g. [data-brand="httbrands"],
+   [data-brand="frenchies"], etc.) are generated server-side by
+   css_generator.py and injected into the page via <style> tags.
+
+   The :root block above provides sensible defaults/fallbacks.
+   ========================================================================== */
 [data-brand] {
   /* Brand-specific variables are injected dynamically.
      This selector ensures proper specificity for overrides.
-     See: app/services/css_generator.py */
+     See: app/core/css_generator.py */
 }
-
-/* ==========================================================================
-   Brand-Specific Themes — Server-Side Injection
-   Brand CSS variables are now generated by app/core/css_generator.py
-   and injected via [data-brand="..."] selectors in base.html.
-   See: config/brands.yaml for brand definitions.
-   ========================================================================== */
 
 /* ==========================================================================
    Tailwind v4 Theme Configuration
@@ -133,7 +149,7 @@
   --color-brand-primary-140: var(--brand-primary-140);
   --color-brand-primary-160: var(--brand-primary-160);
   --color-brand-primary-180: var(--brand-primary-180);
-  
+
   --color-brand-secondary: var(--brand-secondary);
   --color-brand-secondary-5: var(--brand-secondary-5);
   --color-brand-secondary-10: var(--brand-secondary-10);
@@ -144,7 +160,7 @@
   --color-brand-secondary-140: var(--brand-secondary-140);
   --color-brand-secondary-160: var(--brand-secondary-160);
   --color-brand-secondary-180: var(--brand-secondary-180);
-  
+
   --color-brand-accent: var(--brand-accent);
   --color-brand-accent-5: var(--brand-accent-5);
   --color-brand-accent-10: var(--brand-accent-10);
@@ -155,36 +171,25 @@
   --color-brand-accent-140: var(--brand-accent-140);
   --color-brand-accent-160: var(--brand-accent-160);
   --color-brand-accent-180: var(--brand-accent-180);
-  
+
   /* Semantic Colors */
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
-  --color-danger: var(--color-danger);
+  --color-error: var(--color-error);
   --color-info: var(--color-info);
-  
-  /* Gray Scale */
-  --color-gray-5: var(--color-gray-5);
-  --color-gray-10: var(--color-gray-10);
-  --color-gray-50: var(--color-gray-50);
-  --color-gray-100: var(--color-gray-100);
-  --color-gray-110: var(--color-gray-110);
-  --color-gray-130: var(--color-gray-130);
-  --color-gray-140: var(--color-gray-140);
-  --color-gray-160: var(--color-gray-160);
-  --color-gray-180: var(--color-gray-180);
-  
+
   /* Text Colors */
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-text-on-primary: var(--text-on-primary);
   --color-text-on-secondary: var(--text-on-secondary);
-  
+
   /* Background Colors */
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-tertiary: var(--bg-tertiary);
-  
+
   /* Border Colors */
   --color-border-light: var(--border-light);
   --color-border-default: var(--border-default);
@@ -192,8 +197,44 @@
 }
 
 /* ==========================================================================
+   WCAG Focus Indicators
+   ========================================================================== */
+:focus-visible {
+  outline: 2px solid var(--brand-primary, #500711);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Scrollbar Styles
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary, #F9FAFB);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted, #9CA3AF);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary, #4B5563);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--bg-secondary, #171717);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--text-muted, #6B7280);
+}
+
+/* ==========================================================================
    Utility Classes
-   These provide Tailwind-like utility classes using CSS custom properties
    ========================================================================== */
 
 /* Brand Background Colors */
@@ -231,37 +272,60 @@
 /* Semantic Backgrounds */
 .bg-success { background-color: var(--color-success); }
 .bg-warning { background-color: var(--color-warning); }
-.bg-danger { background-color: var(--color-danger); }
+.bg-danger { background-color: var(--color-error); }
 .bg-info { background-color: var(--color-info); }
 
 /* Semantic Text */
 .text-success { color: var(--color-success); }
 .text-warning { color: var(--color-warning); }
-.text-danger { color: var(--color-danger); }
+.text-danger { color: var(--color-error); }
 .text-info { color: var(--color-info); }
 
-/* Gray Backgrounds */
-.bg-gray-5 { background-color: var(--color-gray-5); }
-.bg-gray-10 { background-color: var(--color-gray-10); }
-.bg-gray-50 { background-color: var(--color-gray-50); }
-.bg-gray-100 { background-color: var(--color-gray-100); }
-.bg-gray-130 { background-color: var(--color-gray-130); }
-.bg-gray-160 { background-color: var(--color-gray-160); }
+/* Surface Backgrounds */
+.bg-surface-primary { background-color: var(--bg-primary); }
+.bg-surface-secondary { background-color: var(--bg-secondary); }
+.bg-surface-tertiary { background-color: var(--bg-tertiary); }
 
-/* Gray Text */
-.text-gray-5 { color: var(--color-gray-5); }
-.text-gray-10 { color: var(--color-gray-10); }
-.text-gray-50 { color: var(--color-gray-50); }
-.text-gray-100 { color: var(--color-gray-100); }
-.text-gray-130 { color: var(--color-gray-130); }
-.text-gray-160 { color: var(--color-gray-160); }
+/* Text Hierarchy */
+.text-primary-theme { color: var(--text-primary); }
+.text-secondary-theme { color: var(--text-secondary); }
+.text-muted-theme { color: var(--text-muted); }
 
 /* ==========================================================================
-   Component Styles
-   Reusable component styles that use CSS custom properties
+   HTT Primary Button (from microsoft-group-management)
    ========================================================================== */
+.btn-htt-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: white;
+  background-color: var(--htt-primary, #500711);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 150ms ease-in-out;
+}
 
-/* Brand Button */
+.btn-htt-primary:hover {
+  background-color: var(--htt-primary-light, #6B1A24);
+}
+
+.btn-htt-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(80, 7, 17, 0.3);
+}
+
+.btn-htt-primary:active {
+  background-color: var(--htt-primary-dark, #3A0509);
+}
+
+/* ==========================================================================
+   Component Styles — Brand Button
+   ========================================================================== */
 .btn-brand {
   display: inline-flex;
   align-items: center;
@@ -273,7 +337,7 @@
   color: var(--text-on-primary);
   background-color: var(--brand-primary-100);
   border: 1px solid transparent;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: all 150ms ease-in-out;
 }
@@ -299,7 +363,7 @@
 
 /* Brand Card */
 .card-brand {
-  background-color: white;
+  background-color: var(--bg-primary);
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-left: 4px solid var(--brand-primary-100);

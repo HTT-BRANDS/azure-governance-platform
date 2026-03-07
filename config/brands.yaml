@@ -1,6 +1,7 @@
 # Azure Governance Platform - Brand Registry
-# Adapted from ~/dev/DNS-Domain-Management/config/brands.yaml
-# Logo paths point to app/static/assets/brands/{key}/logos/
+# Source: ~/dev/microsoft-group-management (hub/frontend/src/index.css + tailwind.config.ts)
+# HTT brand primary: #500711 (burgundy), Font: Inter
+# Logo paths: app/static/assets/brands/{key}/logos/ and icons/
 
 brands:
   httbrands:
@@ -15,27 +16,20 @@ brands:
     logo:
       primary: "/static/assets/brands/httbrands/logos/logo-primary.svg"
       white: "/static/assets/brands/httbrands/logos/logo-white.svg"
-      icon: "/static/assets/brands/httbrands/logos/icon.svg"
-    logoUrl: "https://swg.ayu.mybluehost.me/wp-content/uploads/2025/03/Head-To-Toe-logo_horizontal_maroon-scaled-1.webp"
+      icon: "/static/assets/brands/httbrands/icons/icon.svg"
     colors:
-      primary: "#000000"
-      secondary: "#004a59"
-      accent: "#007cba"
+      primary: "#500711"
+      secondary: "#BB86FC"
+      accent: "#FFC957"
       background: "#FFFFFF"
-      text: "#000000"
-      palette:
-        - "#000000"
-        - "#004a59"
-        - "#005a87"
-        - "#006ba1"
-        - "#007cba"
-      gradient: "linear-gradient(135deg, #000000 0%, #007cba 100%)"
+      text: "#111827"
+      gradient: "linear-gradient(135deg, #500711 0%, #FFC957 100%)"
     typography:
-      headingFont: "Montserrat"
-      bodyFont: "Open Sans"
+      headingFont: "Inter"
+      bodyFont: "Inter"
     designSystem:
-      borderRadius: "4px"
-      shadowStyle: "sharp"
+      borderRadius: "8px"
+      shadowStyle: "soft"
     description: "Parent company for franchise beauty brands"
 
   frenchies:
@@ -55,24 +49,17 @@ brands:
     logo:
       primary: "/static/assets/brands/frenchies/logos/logo-primary.svg"
       white: "/static/assets/brands/frenchies/logos/logo-white.svg"
-      icon: "/static/assets/brands/frenchies/logos/icon.svg"
-    logoUrl: "https://frenchiesnails.com/wp-content/themes/frenchies/img/logo.svg"
+      icon: "/static/assets/brands/frenchies/icons/icon.svg"
     colors:
-      primary: "#000000"
-      secondary: "#004a59"
-      accent: "#007cba"
+      primary: "#2563eb"
+      secondary: "#500711"
+      accent: "#FFC957"
       background: "#FFFFFF"
-      text: "#000000"
-      palette:
-        - "#000000"
-        - "#004a59"
-        - "#005a87"
-        - "#006ba1"
-        - "#007cba"
-      gradient: "linear-gradient(135deg, #000000 0%, #007cba 100%)"
+      text: "#111827"
+      gradient: "linear-gradient(135deg, #2563eb 0%, #FFC957 100%)"
     typography:
-      headingFont: "Mulish"
-      bodyFont: "Spectral"
+      headingFont: "Inter"
+      bodyFont: "Inter"
     designSystem:
       borderRadius: "8px"
       shadowStyle: "soft"
@@ -92,23 +79,19 @@ brands:
     logo:
       primary: "/static/assets/brands/bishops/logos/logo-primary.svg"
       white: "/static/assets/brands/bishops/logos/logo-white.svg"
-      icon: "/static/assets/brands/bishops/logos/icon.svg"
-    logoUrl: "https://bishops.co/wp-content/themes/bishops/img/logo.svg"
+      icon: "/static/assets/brands/bishops/icons/icon.svg"
     colors:
-      primary: "#000000"
-      secondary: "#00d084"
-      accent: "#008754"
+      primary: "#c2410c"
+      secondary: "#500711"
+      accent: "#FFC957"
       background: "#FFFFFF"
-      text: "#000000"
-      palette:
-        - "#000000"
-        - "#00d084"
-      gradient: "linear-gradient(135deg, #000000 0%, #00d084 100%)"
+      text: "#111827"
+      gradient: "linear-gradient(135deg, #c2410c 0%, #FFC957 100%)"
     typography:
-      headingFont: "Montserrat"
-      bodyFont: "Montserrat"
+      headingFont: "Inter"
+      bodyFont: "Inter"
     designSystem:
-      borderRadius: "0px"
+      borderRadius: "4px"
       shadowStyle: "sharp"
     description: "Barbershop and hair color franchise"
 
@@ -128,21 +111,17 @@ brands:
     logo:
       primary: "/static/assets/brands/lashlounge/logos/logo-primary.svg"
       white: "/static/assets/brands/lashlounge/logos/logo-white.svg"
-      icon: "/static/assets/brands/lashlounge/logos/icon.svg"
-    logoUrl: "https://www.thelashlounge.com/wp-content/uploads/2021/04/logo.png"
+      icon: "/static/assets/brands/lashlounge/icons/icon.svg"
     colors:
-      primary: "#000000"
-      secondary: "#00d084"
-      accent: "#008754"
+      primary: "#7c3aed"
+      secondary: "#500711"
+      accent: "#FFC957"
       background: "#FFFFFF"
-      text: "#000000"
-      palette:
-        - "#000000"
-        - "#00d084"
-      gradient: "linear-gradient(135deg, #000000 0%, #00d084 100%)"
+      text: "#111827"
+      gradient: "linear-gradient(135deg, #7c3aed 0%, #FFC957 100%)"
     typography:
-      headingFont: "Playfair Display"
-      bodyFont: "Lato"
+      headingFont: "Inter"
+      bodyFont: "Inter"
     designSystem:
       borderRadius: "12px"
       shadowStyle: "soft"
@@ -160,20 +139,17 @@ brands:
     logo:
       primary: "/static/assets/brands/deltacrown/logos/logo-primary.svg"
       white: "/static/assets/brands/deltacrown/logos/logo-white.svg"
-      icon: "/static/assets/brands/deltacrown/logos/icon.svg"
-    logoUrl: "https://deltacrown.com/logo.svg"
+      icon: "/static/assets/brands/deltacrown/icons/icon.svg"
     colors:
       primary: "#004538"
-      secondary: "#004538"
-      accent: "#004538"
+      secondary: "#500711"
+      accent: "#FFC957"
       background: "#FFFFFF"
-      text: "#004538"
-      palette:
-        - "#004538"
-      gradient: "linear-gradient(135deg, #004538 0%, #004538 100%)"
+      text: "#111827"
+      gradient: "linear-gradient(135deg, #004538 0%, #FFC957 100%)"
     typography:
-      headingFont: "Source Sans 3"
-      bodyFont: "Source Sans 3"
+      headingFont: "Inter"
+      bodyFont: "Inter"
     designSystem:
       borderRadius: "6px"
       shadowStyle: "soft"

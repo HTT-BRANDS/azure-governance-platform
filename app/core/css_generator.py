@@ -1,7 +1,8 @@
 """Server-side CSS custom property generator for brand theming.
 
-Port of ~/dev/DNS-Domain-Management/lib/theme/css-generator.ts to Python.
+Sourced from ~/dev/microsoft-group-management design system.
 Generates CSS variable strings for injection into Jinja2 templates.
+Includes semantic colors, theme tokens, and dark mode CSS generation.
 """
 
 from __future__ import annotations
@@ -11,7 +12,13 @@ from app.core.color_utils import (
     generate_color_variants,
     get_contrasting_text_color,
 )
-from app.core.design_tokens import BrandConfig, BrandConfigFull
+from app.core.design_tokens import (
+    BrandConfig,
+    BrandConfigFull,
+    DARK_THEME_TOKENS,
+    SemanticColors,
+    ThemeTokens,
+)
 
 __all__ = [
     "generate_color_variables",
@@ -21,6 +28,9 @@ __all__ = [
     "generate_scoped_brand_css",
     "generate_all_brands_css",
     "generate_inline_style",
+    "generate_semantic_variables",
+    "generate_theme_variables",
+    "generate_dark_mode_css",
     "SHADOW_PRESETS",
 ]
 
@@ -34,7 +44,7 @@ SHADOW_PRESETS = {
 def generate_color_variables(colors_model: "BrandConfig") -> dict[str, str]:
     """Generate CSS variables for brand colors including shade scales.
 
-    Returns dict of CSS variable name → value, e.g.:
+    Returns dict of CSS variable name -> value, e.g.:
         {"--brand-primary": "#500711", "--brand-primary-5": "#F9E3E6", ...}
     """
     colors = colors_model.colors
@@ -101,12 +111,66 @@ def generate_design_system_variables(brand: BrandConfig) -> dict[str, str]:
     }
 
 
+def generate_semantic_variables(
+    semantic: SemanticColors | None = None,
+) -> dict[str, str]:
+    """Generate CSS variables for semantic colors (success, warning, error, info).
+
+    Uses defaults from microsoft-group-management design system if no
+    SemanticColors instance is provided.
+    """
+    sc = semantic or SemanticColors()
+    return {
+        "--color-success": sc.success,
+        "--color-warning": sc.warning,
+        "--color-error": sc.error,
+        "--color-info": sc.info,
+    }
+
+
+def generate_theme_variables(
+    theme_tokens: ThemeTokens | None = None,
+) -> dict[str, str]:
+    """Generate CSS variables for surface/text theme tokens.
+
+    Uses light-mode defaults from microsoft-group-management if no
+    ThemeTokens instance is provided.
+    """
+    tt = theme_tokens or ThemeTokens()
+    return {
+        "--bg-primary": tt.bg_primary,
+        "--bg-secondary": tt.bg_secondary,
+        "--bg-tertiary": tt.bg_tertiary,
+        "--text-primary": tt.text_primary,
+        "--text-secondary": tt.text_secondary,
+        "--text-muted": tt.text_muted,
+        "--border-color": tt.border_color,
+        "--sidebar-bg": tt.sidebar_bg,
+        "--sidebar-border": tt.sidebar_border,
+    }
+
+
+def generate_dark_mode_css() -> str:
+    """Generate the .dark { ... } CSS block for dark mode overrides.
+
+    Uses DARK_THEME_TOKENS from microsoft-group-management design system.
+    """
+    dark_vars = generate_theme_variables(DARK_THEME_TOKENS)
+    lines = [".dark {"]
+    for name, value in dark_vars.items():
+        lines.append(f"  {name}: {value};")
+    lines.append("}")
+    return "\n".join(lines)
+
+
 def generate_brand_css_variables(brand: BrandConfig) -> dict[str, str]:
-    """Generate ALL CSS variables for a brand (colors + typography + design system)."""
+    """Generate ALL CSS variables for a brand (colors + typography + design system + semantic + theme)."""
     variables: dict[str, str] = {}
     variables.update(generate_color_variables(brand))
     variables.update(generate_typography_variables(brand))
     variables.update(generate_design_system_variables(brand))
+    variables.update(generate_semantic_variables())
+    variables.update(generate_theme_variables())
     return variables
 
 
@@ -116,7 +180,7 @@ def generate_scoped_brand_css(brand_key: str, brand: BrandConfig) -> str:
     Returns:
         CSS string like:
         [data-brand="frenchies"] {
-          --brand-primary: #052B48;
+          --brand-primary: #2563EB;
           ...
         }
     """
