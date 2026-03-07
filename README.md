@@ -16,6 +16,7 @@ A lightweight, cost-effective platform for managing Azure/M365 governance across
 - **Performance Monitoring**: Cache metrics, query performance, sync job analytics
 - **Azure Lighthouse**: Cross-tenant delegation with self-service onboarding
 - **Data Backfill**: Resumable day-by-day with parallel multi-tenant processing
+- **Multi-Brand Design System**: Token-based theming for 5 brands with WCAG AA compliance, server-side CSS generation, and 47+ CSS custom properties per brand
 - **WCAG 2.2 Accessibility**: Skip nav, focus-visible, 44px touch targets
 - **Dark Mode**: System preference detection with manual toggle
 - **App Insights**: Request telemetry with optional OpenCensus exporter
@@ -109,6 +110,7 @@ open http://localhost:8000/docs
 | [Developer Guide](./docs/DEVELOPMENT.md) | Setup and contribution guidelines |
 | [Implementation Guide](./docs/IMPLEMENTATION_GUIDE.md) | Detailed setup instructions |
 | [Common Pitfalls](./docs/COMMON_PITFALLS.md) | Troubleshooting guide |
+| [Design System](./docs/design-system.md) | Multi-brand theming architecture |
 | [Traceability Matrix](./TRACEABILITY_MATRIX.md) | Requirements → Tests mapping |
 
 ### Interactive API Documentation
@@ -128,7 +130,7 @@ azure-governance-platform/
 │   │   │   ├── riverside.py # Riverside compliance endpoints
 │   │   └── services/        # Business logic
 │   │       └── riverside_svc.py
-│   ├── core/                # Config, DB, scheduler
+│   ├── core/                # Config, DB, scheduler, design system
 │   ├── models/              # SQLAlchemy models
 │   │   └── riverside.py     # Riverside models
 │   ├── schemas/             # Pydantic schemas
@@ -338,6 +340,7 @@ For comprehensive Riverside compliance documentation, see:
 - [x] US/AC Traceability Matrix (93 requirements mapped)
 - [x] Full quality gate validation (1,686 tests, 0 failures)
 - [x] Version 1.0.0 production release
+- [x] Multi-brand design system (5 brands, 47+ CSS variables, WCAG AA)
 
 ### In Progress
 

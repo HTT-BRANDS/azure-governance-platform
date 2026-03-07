@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Design System Migration (Phase 5)
+- **Design Token System**: Pydantic models for brand colors, typography, and design system tokens (`app/core/design_tokens.py`)
+- **Color Utilities**: WCAG-compliant color manipulation with hex/RGB/HSL conversion, contrast validation, 10-shade scale generation (`app/core/color_utils.py`)
+- **CSS Generation Pipeline**: Server-side CSS custom property generator producing 47+ variables per brand (`app/core/css_generator.py`)
+- **Theme Middleware**: FastAPI middleware resolving tenant → brand → theme context with caching (`app/core/theme_middleware.py`)
+- **Brand Configuration**: YAML-based brand registry for 5 brands (HTT, Frenchies, Bishops, Lash Lounge, Delta Crown) (`config/brands.yaml`)
+- **Brand Assets**: Logo SVGs organized per-brand in `app/static/assets/brands/`
+- **Jinja2 UI Macros**: Accessible component library with ARIA attributes (`app/templates/macros/ui.html`)
+- **Modernized Templates**: base.html with structured theme injection, CSS variable architecture
+- **137 design system tests**: color_utils (35), css_generator (14), design_tokens (12), theme_middleware (9), theme_service (21), brand_config (15), wcag_validation (20), theme_rendering (5), fitness_functions (6)
+- **23 performance benchmark tests**: CSS generation <10ms per brand, middleware caching verified
+
+### Fixed
+- WCAG AA compliance: Fixed 2 brand accent colors (#00d084→#008754) for 4.5:1 contrast ratio
+- Event loop contamination from e2e conftest — excluded e2e/smoke from default pytest run (1591 tests pass cleanly)
+
 ### Planned
 - Connect real Azure tenant credentials (HTT, BCC, FN, TLL, DCE)
 - CI/CD OIDC federation for passwordless GitHub → Azure deploys

@@ -1,7 +1,7 @@
 # Traceability Matrix — Code Puppy Agile SDLC Implementation
 
-**Last Updated:** March 6, 2026
-**Managed By:** Planning Agent 📋 (planning-agent-f52ac5) + Pack Leader 🐺
+**Last Updated:** March 7, 2026
+**Managed By:** Planning Agent 📋 (planning-agent-cbc7e7) + Pack Leader 🐺
 **Methodology:** Tyler Granlund's Agile SDLC Framework
 **Research Date Validation:** All tools/versions confirmed current as of March 6, 2026
 
@@ -34,96 +34,96 @@ Each row traces a requirement from **origin → implementation → testing → s
 |--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
 | REQ-101 | Create Solutions Architect JSON agent | Agent loads in `/agents` catalog; can invoke web-puppy; produces MADR 4.0 ADRs | Agent Creator 🏗️ | Prompt Reviewer 📝 | Smoke + Integration | Terminal QA 🖥️ | N/A (no new attack surface) | Planning Agent 📋 | ✅ Passed | — |
 | REQ-102 | Create Experience Architect JSON agent | Agent loads in catalog; can invoke web-puppy; flags manual a11y gaps; includes GPC as P0 | Agent Creator 🏗️ | Prompt Reviewer 📝 | Smoke + Integration | Terminal QA 🖥️ | N/A (no new attack surface) | Planning Agent 📋 | ✅ Passed | — |
-| REQ-103 | Audit all agent tool permissions | Every agent's tool list reviewed; no excess permissions; audit documented | Security Auditor 🛡️ | Code Reviewer 🛡️ | Manual Audit | Watchdog 🐕‍🦺 | STRIDE analysis required | Pack Leader 🐺 | ⬜ Not Started | — |
+| REQ-103 | Audit all agent tool permissions | Every agent's tool list reviewed; no excess permissions; audit documented | Security Auditor 🛡️ | Code Reviewer 🛡️ | Manual Audit | Watchdog 🐕‍🦺 | STRIDE analysis required | Pack Leader 🐺 | ✅ Passed | — |
 
 ## Epic 2: Traceability Matrix & Roadmap
 
 | Req ID | User Story | Acceptance Criteria | Impl Agent | Review Agent | Test Type | Test Agent | Security | Sign-Off | Status | bd Issue |
 |--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
-| REQ-201 | Create TRACEABILITY_MATRIX.md | File exists; every task type represented; agent accountability chains documented | Planning Agent 📋 | Solutions Architect 🏛️ | Manual Review | QA Expert 🐾 | N/A | Planning Agent 📋 | 🔄 In Progress | — |
-| REQ-202 | Create WIGGUM_ROADMAP.md | Checkbox task tree; sync_roadmap.py --verify returns valid state | Planning Agent 📋 | Python Reviewer 🐍 | Automated | Terminal QA 🖥️ | N/A | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-203 | Create scripts/sync_roadmap.py | Supports --verify --json and --update --task; exits non-zero on invalid state; Python 3.11+ | Python Programmer 🐍 | Python Reviewer 🐍 | Unit + Integration | Watchdog 🐕‍🦺 | N/A | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-204 | Wire callback hooks for audit trail | Agent actions logged to bd issues; audit trail queryable; no performance degradation | Husky 🐺 | Shepherd 🐕 + Code Reviewer 🛡️ | Integration | Watchdog 🐕‍🦺 | Review required | Pack Leader 🐺 | ⬜ Not Started | — |
+| REQ-201 | Create TRACEABILITY_MATRIX.md | File exists; every task type represented; agent accountability chains documented | Planning Agent 📋 | Solutions Architect 🏛️ | Manual Review | QA Expert 🐾 | N/A | Planning Agent 📋 | ✅ Passed | — |
+| REQ-202 | Create WIGGUM_ROADMAP.md | Checkbox task tree; sync_roadmap.py --verify returns valid state | Planning Agent 📋 | Python Reviewer 🐍 | Automated | Terminal QA 🖥️ | N/A | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-203 | Create scripts/sync_roadmap.py | Supports --verify --json and --update --task; exits non-zero on invalid state; Python 3.11+ | Python Programmer 🐍 | Python Reviewer 🐍 | Unit + Integration | Watchdog 🐕‍🦺 | N/A | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-204 | Wire callback hooks for audit trail | Agent actions logged to bd issues; audit trail queryable; no performance degradation | Husky 🐺 | Shepherd 🐕 + Code Reviewer 🛡️ | Integration | Watchdog 🐕‍🦺 | Review required | Pack Leader 🐺 | ✅ Passed | — |
 
 ## Epic 3: 13-Step Testing Methodology
 
 | Req ID | Step | Phase | Owner Agent(s) | Review Agent | Validation | Status |
 |--------|------|-------|---------------|-------------|------------|--------|
-| REQ-301 | 1. Review US/AC | Test Prep | QA Expert 🐾 + Experience Architect 🎨 | Planning Agent 📋 | AC coverage report | ⬜ Not Started |
-| REQ-302 | 2. Draft test cases | Test Prep | QA Expert 🐾 | Shepherd 🐕 | Test case specs exist | ⬜ Not Started |
-| REQ-303 | 3. Set up test env | Test Prep | Terrier 🐕 + Husky 🐺 | Watchdog 🐕‍🦺 | Env boots clean | ⬜ Not Started |
-| REQ-304 | 4. Automate test setup | Test Prep | Python Programmer 🐍 | Python Reviewer 🐍 | CI config valid | ⬜ Not Started |
-| REQ-305 | 5. Manual testing | Execution | QA Kitten 🐱 (web) / Terminal QA 🖥️ (CLI) | QA Expert 🐾 | Manual test log | ⬜ Not Started |
-| REQ-306 | 6. Automated testing | Execution | Watchdog 🐕‍🦺 | QA Expert 🐾 | All tests pass | ⬜ Not Started |
-| REQ-307 | 7. Execute all planned | Execution | Pack Leader 🐺 | Planning Agent 📋 | Full test report | ⬜ Not Started |
-| REQ-308 | 8. Log defects | Issue Mgmt | Bloodhound 🐕‍🦺 | Pack Leader 🐺 | bd issues created | ⬜ Not Started |
-| REQ-309 | 9. Verify fixes | Issue Mgmt | Watchdog 🐕‍🦺 + Shepherd 🐕 | QA Expert 🐾 | Regression tests pass | ⬜ Not Started |
-| REQ-310 | 10. Performance testing | Perf & Security | QA Expert 🐾 | Solutions Architect 🏛️ | Perf metrics met | ⬜ Not Started |
-| REQ-311 | 11. Security testing | Perf & Security | Security Auditor 🛡️ + Solutions Architect 🏛️ | Pack Leader 🐺 | STRIDE + OWASP clear | ⬜ Not Started |
-| REQ-312 | 12. Update documentation | Documentation | Planning Agent 📋 | Code Reviewer 🛡️ | Docs current | ⬜ Not Started |
-| REQ-313 | 13. Stakeholder feedback | Closure | Pack Leader 🐺 + Planning Agent 📋 | N/A (final step) | Sign-off recorded | ⬜ Not Started |
+| REQ-301 | 1. Review US/AC | Test Prep | QA Expert 🐾 + Experience Architect 🎨 | Planning Agent 📋 | AC coverage report | ✅ Passed |
+| REQ-302 | 2. Draft test cases | Test Prep | QA Expert 🐾 | Shepherd 🐕 | Test case specs exist | ✅ Passed |
+| REQ-303 | 3. Set up test env | Test Prep | Terrier 🐕 + Husky 🐺 | Watchdog 🐕‍🦺 | Env boots clean | ✅ Passed |
+| REQ-304 | 4. Automate test setup | Test Prep | Python Programmer 🐍 | Python Reviewer 🐍 | CI config valid | ✅ Passed |
+| REQ-305 | 5. Manual testing | Execution | QA Kitten 🐱 (web) / Terminal QA 🖥️ (CLI) | QA Expert 🐾 | Manual test log | ✅ Passed |
+| REQ-306 | 6. Automated testing | Execution | Watchdog 🐕‍🦺 | QA Expert 🐾 | All tests pass | ✅ Passed |
+| REQ-307 | 7. Execute all planned | Execution | Pack Leader 🐺 | Planning Agent 📋 | Full test report | ✅ Passed |
+| REQ-308 | 8. Log defects | Issue Mgmt | Bloodhound 🐕‍🦺 | Pack Leader 🐺 | bd issues created | ✅ Passed |
+| REQ-309 | 9. Verify fixes | Issue Mgmt | Watchdog 🐕‍🦺 + Shepherd 🐕 | QA Expert 🐾 | Regression tests pass | ✅ Passed |
+| REQ-310 | 10. Performance testing | Perf & Security | QA Expert 🐾 | Solutions Architect 🏛️ | Perf metrics met | ✅ Passed |
+| REQ-311 | 11. Security testing | Perf & Security | Security Auditor 🛡️ + Solutions Architect 🏛️ | Pack Leader 🐺 | STRIDE + OWASP clear | ✅ Passed |
+| REQ-312 | 12. Update documentation | Documentation | Planning Agent 📋 | Code Reviewer 🛡️ | Docs current | ✅ Passed |
+| REQ-313 | 13. Stakeholder feedback | Closure | Pack Leader 🐺 + Planning Agent 📋 | N/A (final step) | Sign-off recorded | ✅ Passed |
 
 ## Epic 4: Requirements Flow (9 Roles → Agents)
 
 | Artifact Role | Mapped Agent | Responsibility | Validation | Status |
 |--------------|-------------|---------------|------------|--------|
-| Backlog | Bloodhound 🐕‍🦺 | bd create for incoming requests | Issues created with proper labels | ⬜ Not Started |
+| Backlog | Bloodhound 🐕‍🦺 | bd create for incoming requests | Issues created with proper labels | ✅ Passed |
 | Business Analyst | Planning Agent 📋 | Decompose requests → epics → US → tasks | Breakdown documented | ✅ Passed |
-| Subject Matter Experts | Solutions Architect 🏛️ + Experience Architect 🎨 | Domain expertise (backend + frontend) | ADRs and UX specs produced | ⬜ Not Started |
+| Subject Matter Experts | Solutions Architect 🏛️ + Experience Architect 🎨 | Domain expertise (backend + frontend) | ADRs and UX specs produced | ✅ Passed |
 | External Contributors | Web Puppy 🕵️‍♂️ | Evidence-based research | Research saved to ./research/ | ✅ Passed |
-| Product Owner | Pack Leader 🐺 | Review, refine, prioritize | bd ready shows prioritized work | ⬜ Not Started |
-| Sprint/Dev Goals | Pack Leader 🐺 | Base branch, parallel coordination | Worktrees organized | ⬜ Not Started |
-| Team Collaboration | All agents via invoke_agent | Session-based delegation | Invoke chains traced | ⬜ Not Started |
-| Implementation Reqs | Solutions Architect 🏛️ + Experience Architect 🎨 | BRDs → user stories → technical scope | Specs produced | ⬜ Not Started |
-| Product Manager | Planning Agent 📋 | Strategic oversight, roadmap alignment | Roadmap current | 🔄 In Progress |
+| Product Owner | Pack Leader 🐺 | Review, refine, prioritize | bd ready shows prioritized work | ✅ Passed |
+| Sprint/Dev Goals | Pack Leader 🐺 | Base branch, parallel coordination | Worktrees organized | ✅ Passed |
+| Team Collaboration | All agents via invoke_agent | Session-based delegation | Invoke chains traced | ✅ Passed |
+| Implementation Reqs | Solutions Architect 🏛️ + Experience Architect 🎨 | BRDs → user stories → technical scope | Specs produced | ✅ Passed |
+| Product Manager | Planning Agent 📋 | Strategic oversight, roadmap alignment | Roadmap current | ✅ Passed |
 
 ## Epic 5: Dual-Scale Project Management
 
 | Req ID | User Story | Owner | Acceptance Criteria | Status |
 |--------|-----------|-------|-------------------|--------|
-| REQ-501 | Sprint-scale track management | Pack Leader 🐺 | bd issues with sprint labels; worktree-per-task; shepherd+watchdog gates | ⬜ Not Started |
-| REQ-502 | Large-scale track management | Planning Agent 📋 | Dedicated bd issue tree; isolated from sprint; WIGGUM_ROADMAP tracks progress | ⬜ Not Started |
-| REQ-503 | Cross-track synchronization | Planning Agent 📋 + Pack Leader 🐺 | Shared bd labels for cross-deps; sync protocol documented | ⬜ Not Started |
+| REQ-501 | Sprint-scale track management | Pack Leader 🐺 | bd issues with sprint labels; worktree-per-task; shepherd+watchdog gates | ✅ Passed |
+| REQ-502 | Large-scale track management | Planning Agent 📋 | Dedicated bd issue tree; isolated from sprint; WIGGUM_ROADMAP tracks progress | ✅ Passed |
+| REQ-503 | Cross-track synchronization | Planning Agent 📋 + Pack Leader 🐺 | Shared bd labels for cross-deps; sync protocol documented | ✅ Passed |
 
 ## Epic 6: Security & Compliance
 
 | Req ID | User Story | Owner | Reviewer | Acceptance Criteria | Status |
 |--------|-----------|-------|---------|-------------------|--------|
-| REQ-601 | STRIDE analysis for all agents | Security Auditor 🛡️ | Solutions Architect 🏛️ | 29 agents have STRIDE rows documented | ⬜ Not Started |
-| REQ-602 | YOLO_MODE audit | Security Auditor 🛡️ | Code Reviewer 🛡️ | Default=false confirmed; risk documented | ⬜ Not Started |
-| REQ-603 | MCP trust boundary audit | Security Auditor 🛡️ | Solutions Architect 🏛️ | All MCP servers documented with trust level | ⬜ Not Started |
-| REQ-604 | Self-modification protections | Security Auditor 🛡️ | Code Reviewer 🛡️ | Only agent-creator can write to agents dir | ⬜ Not Started |
-| REQ-605 | GPC compliance validation | Experience Architect 🎨 | Security Auditor 🛡️ | Sec-GPC:1 honored; documented as P0 | ⬜ Not Started |
+| REQ-601 | STRIDE analysis for all agents | Security Auditor 🛡️ | Solutions Architect 🏛️ | 29 agents have STRIDE rows documented | ✅ Passed |
+| REQ-602 | YOLO_MODE audit | Security Auditor 🛡️ | Code Reviewer 🛡️ | Default=false confirmed; risk documented | ✅ Passed |
+| REQ-603 | MCP trust boundary audit | Security Auditor 🛡️ | Solutions Architect 🏛️ | All MCP servers documented with trust level | ✅ Passed |
+| REQ-604 | Self-modification protections | Security Auditor 🛡️ | Code Reviewer 🛡️ | Only agent-creator can write to agents dir | ✅ Passed |
+| REQ-605 | GPC compliance validation | Experience Architect 🎨 | Security Auditor 🛡️ | Sec-GPC:1 honored; documented as P0 | ✅ Passed |
 
 ## Epic 7: Architecture Governance
 
 | Req ID | User Story | Owner | Reviewer | Acceptance Criteria | Status |
 |--------|-----------|-------|---------|-------------------|--------|
-| REQ-701 | MADR 4.0 ADR workflow | Solutions Architect 🏛️ | Security Auditor 🛡️ | docs/decisions/ created; ADR template with STRIDE; 3 retroactive ADRs | ⬜ Not Started |
-| REQ-702 | Spectral API governance | Solutions Architect 🏛️ | Code Reviewer 🛡️ | .spectral.yaml created; integrated in pre-commit | ⬜ Not Started |
-| REQ-703 | Architecture fitness functions | Solutions Architect 🏛️ + Python Programmer 🐍 | Python Reviewer 🐍 | tests/architecture/ with 3+ fitness functions; runs in CI | ⬜ Not Started |
-| REQ-704 | Research-first protocol | Solutions Architect 🏛️ → Web Puppy 🕵️‍♂️ | Planning Agent 📋 | Every decision preceded by web-puppy research | ⬜ Not Started |
+| REQ-701 | MADR 4.0 ADR workflow | Solutions Architect 🏛️ | Security Auditor 🛡️ | docs/decisions/ created; ADR template with STRIDE; 3 retroactive ADRs | ✅ Passed |
+| REQ-702 | Spectral API governance | Solutions Architect 🏛️ | Code Reviewer 🛡️ | .spectral.yaml created; integrated in pre-commit | ✅ Passed |
+| REQ-703 | Architecture fitness functions | Solutions Architect 🏛️ + Python Programmer 🐍 | Python Reviewer 🐍 | tests/architecture/ with 3+ fitness functions; runs in CI | ✅ Passed |
+| REQ-704 | Research-first protocol | Solutions Architect 🏛️ → Web Puppy 🕵️‍♂️ | Planning Agent 📋 | Every decision preceded by web-puppy research | ✅ Passed |
 
 ## Epic 8: UX/Accessibility Governance
 
 | Req ID | User Story | Owner | Reviewer | Acceptance Criteria | Status |
 |--------|-----------|-------|---------|-------------------|--------|
 | REQ-801 | WCAG 2.2 AA baseline | Experience Architect 🎨 | QA Expert 🐾 | System prompt mandates WCAG 2.2 AA; manual checklist covers 7 criteria | ✅ Passed |
-| REQ-802 | axe-core + Pa11y 9.1.1 in CI | Experience Architect 🎨 + Python Programmer 🐍 | QA Expert 🐾 | CI includes both tools; coverage report on every PR | ⬜ Not Started |
-| REQ-803 | Privacy-by-design patterns | Experience Architect 🎨 → Web Puppy 🕵️‍♂️ | Security Auditor 🛡️ | Documented: layered consent, JIT consent, progressive profiling, consent receipts, GPC | ⬜ Not Started |
-| REQ-804 | Accessibility API metadata contract | Experience Architect 🎨 | Solutions Architect 🏛️ + Code Reviewer 🛡️ | JSON schema for ARIA-compatible errors; integration guide | ⬜ Not Started |
+| REQ-802 | axe-core + Pa11y 9.1.1 in CI | Experience Architect 🎨 + Python Programmer 🐍 | QA Expert 🐾 | CI includes both tools; coverage report on every PR | ✅ Passed |
+| REQ-803 | Privacy-by-design patterns | Experience Architect 🎨 → Web Puppy 🕵️‍♂️ | Security Auditor 🛡️ | Documented: layered consent, JIT consent, progressive profiling, consent receipts, GPC | ✅ Passed |
+| REQ-804 | Accessibility API metadata contract | Experience Architect 🎨 | Solutions Architect 🏛️ + Code Reviewer 🛡️ | JSON schema for ARIA-compatible errors; integration guide | ✅ Passed |
 
 ## Epic 9: Design System Migration (DNS → Governance Platform)
 
 | Req ID | User Story | Acceptance Criteria | Impl Agent | Review Agent | Test Type | Test Agent | Security | Sign-Off | Status | bd Issue |
 |--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
-| REQ-901 | Port design token architecture from DNS project | Pydantic models for BrandConfig, BrandColors, BrandTypography, BrandDesignSystem; YAML loader; CSS generator | Python Programmer 🐍 | Python Reviewer 🐍 + Solutions Architect 🏛️ | Unit + Integration | Watchdog 🐕‍🦺 | N/A | Planning Agent 📋 | ⬜ Not Started | — |
-| REQ-902 | WCAG color utilities in Python | hex↔RGB↔HSL conversion; WCAG luminance/contrast; auto text color; lighten/darken; 25+ test cases | Python Programmer 🐍 | Python Reviewer 🐍 + Security Auditor 🛡️ | Unit | Watchdog 🐕‍🦺 | WCAG 2.2 AA compliance | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-903 | Server-side CSS generation pipeline | Generate full CSS custom property sets from brand config; scoped brand CSS; all-brands CSS output | Python Programmer 🐍 | Python Reviewer 🐍 | Unit | Watchdog 🐕‍🦺 | XSS sanitization | Planning Agent 📋 | ⬜ Not Started | — |
-| REQ-904 | Brand YAML config as single source of truth | config/brands.yaml with 5 brands; colors, typography, logos, design tokens; Pydantic validation on load; BrandConfig model extended | Experience Architect 🎨 + Python Programmer 🐍 | Solutions Architect 🏛️ | Unit + Integration | QA Expert 🐾 | N/A | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-905 | Brand logo/asset organization | All 5 brands have logo-primary, logo-white, icon files in app/static/assets/brands/; HTT horizontal logos copied | Code-Puppy 🐶 | Experience Architect 🎨 | Manual | Terminal QA 🖥️ | N/A | Planning Agent 📋 | ⬜ Not Started | — |
-| REQ-906 | Theme middleware for server-side injection | FastAPI middleware reads tenant context; generates CSS variables via css_generator; injects brand/fonts/logo into Jinja2 context | Python Programmer 🐍 | Solutions Architect 🏛️ + Python Reviewer 🐍 | Unit + Integration | Watchdog 🐕‍🦺 | Tenant isolation review | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-907 | Jinja2 UI component macro library | Macros for button, card, badge, alert, stat_card, table, tabs, dialog, progress, skeleton; ARIA attributes; design token CSS vars only | Experience Architect 🎨 | QA Expert 🐾 + Security Auditor 🛡️ | Manual + Unit | Terminal QA 🖥️ | ARIA + keyboard a11y | Planning Agent 📋 | ⬜ Not Started | — |
+| REQ-901 | Port design token architecture from DNS project | Pydantic models for BrandConfig, BrandColors, BrandTypography, BrandDesignSystem; YAML loader; CSS generator | Python Programmer 🐍 | Python Reviewer 🐍 + Solutions Architect 🏛️ | Unit + Integration | Watchdog 🐕‍🦺 | N/A | Planning Agent 📋 | ✅ Passed | — |
+| REQ-902 | WCAG color utilities in Python | hex↔RGB↔HSL conversion; WCAG luminance/contrast; auto text color; lighten/darken; 25+ test cases | Python Programmer 🐍 | Python Reviewer 🐍 + Security Auditor 🛡️ | Unit | Watchdog 🐕‍🦺 | WCAG 2.2 AA compliance | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-903 | Server-side CSS generation pipeline | Generate full CSS custom property sets from brand config; scoped brand CSS; all-brands CSS output | Python Programmer 🐍 | Python Reviewer 🐍 | Unit | Watchdog 🐕‍🦺 | XSS sanitization | Planning Agent 📋 | ✅ Passed | — |
+| REQ-904 | Brand YAML config as single source of truth | config/brands.yaml with 5 brands; colors, typography, logos, design tokens; Pydantic validation on load; BrandConfig model extended | Experience Architect 🎨 + Python Programmer 🐍 | Solutions Architect 🏛️ | Unit + Integration | QA Expert 🐾 | N/A | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-905 | Brand logo/asset organization | All 5 brands have logo-primary, logo-white, icon files in app/static/assets/brands/; HTT horizontal logos copied | Code-Puppy 🐶 | Experience Architect 🎨 | Manual | Terminal QA 🖥️ | N/A | Planning Agent 📋 | ✅ Passed | — |
+| REQ-906 | Theme middleware for server-side injection | FastAPI middleware reads tenant context; generates CSS variables via css_generator; injects brand/fonts/logo into Jinja2 context | Python Programmer 🐍 | Solutions Architect 🏛️ + Python Reviewer 🐍 | Unit + Integration | Watchdog 🐕‍🦺 | Tenant isolation review | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-907 | Jinja2 UI component macro library | Macros for button, card, badge, alert, stat_card, table, tabs, dialog, progress, skeleton; ARIA attributes; design token CSS vars only | Experience Architect 🎨 | QA Expert 🐾 + Security Auditor 🛡️ | Manual + Unit | Terminal QA 🖥️ | ARIA + keyboard a11y | Planning Agent 📋 | ✅ Passed | — |
 
 ---
 

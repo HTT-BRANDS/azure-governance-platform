@@ -115,6 +115,73 @@ app/
 
 ---
 
+## Design System Architecture
+
+The platform implements a **token-based multi-brand design system** supporting 5 franchise brands with WCAG AA compliance and server-side CSS generation.
+
+### Pipeline
+
+```
+config/brands.yaml             Source of truth — 5 brand definitions
+       │
+       ▼
+app/core/design_tokens.py      Pydantic validation → BrandRegistry
+       │
+       ▼
+app/core/color_utils.py        WCAG color math, 10-shade scales
+       │
+       ▼
+app/core/css_generator.py      47+ CSS custom properties per brand
+       │
+       ▼
+app/core/theme_middleware.py   FastAPI middleware: tenant → brand → ThemeContext
+       │
+       ▼
+app/templates/base.html        Inline style + <style> block injection
+       │
+       ▼
+app/templates/macros/ui.html   ARIA-compliant UI component macros
+```
+
+### Key Components
+
+| Component | File | Responsibility |
+|-----------|------|---------------|
+| Design Tokens | `app/core/design_tokens.py` | Pydantic models (BrandConfig, BrandColors, BrandTypography, BrandDesignSystem), YAML loader, module-level cache |
+| Color Utilities | `app/core/color_utils.py` | hex/RGB/HSL conversion, WCAG luminance + contrast ratio, shade scale generation, auto text color |
+| CSS Generator | `app/core/css_generator.py` | Generates `--brand-*` CSS custom properties, scoped `[data-brand]` selectors, inline style strings |
+| Theme Middleware | `app/core/theme_middleware.py` | Starlette middleware resolving tenant code → brand key → ThemeContext with in-memory caching |
+| UI Macros | `app/templates/macros/ui.html` | 10 Jinja2 macros (button, card, badge, alert, stat_card, table, tabs, dialog, progress, skeleton) with ARIA attributes |
+
+### Brand Resolution Flow
+
+```
+HTTP Request
+    │
+    ├─ ?brand=frenchies query param     → brand key
+    ├─ X-Brand-Key header               → brand key
+    ├─ X-Tenant-Code header → mapping   → brand key
+    ├─ request.state.tenant_code        → brand key
+    └─ fallback                         → "httbrands" (default)
+    │
+    ▼
+ThemeContext (cached per brand_key)
+    ├─ css_variables: dict[str, str]    47+ variables
+    ├─ inline_style: str                for <html style="...">
+    ├─ google_fonts_url: str            preconnect + display=swap
+    └─ brand_config: BrandConfigFull    full Pydantic model
+```
+
+### Performance
+
+- **CSS generation**: < 10ms per brand (benchmark-validated)
+- **Middleware overhead**: < 0.5ms after cache warmup
+- **Cache strategy**: In-memory dict, O(1) lookup after first request
+
+For full design system documentation, see [docs/design-system.md](./docs/design-system.md).
+
+---
+
 ## Data Flow
 
 ### Sync Flow (Background)
