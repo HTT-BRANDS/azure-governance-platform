@@ -1,7 +1,7 @@
 # WIGGUM ROADMAP — Code Puppy Agile SDLC Implementation
 
 **Single Source of Truth for the `/wiggum ralph` Protocol**
-**Managed By:** Planning Agent 📋 (planning-agent-cbc7e7) + Pack Leader 🐺
+**Managed By:** Planning Agent 📋 (planning-agent-fde434) + Pack Leader 🐺
 **Created:** March 6, 2026
 
 ---
@@ -354,6 +354,182 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 
 ---
 
+## Phase 6: Cleanup & Consolidation
+
+### 6.1 Documentation & Artifact Cleanup
+- [x] 6.1.1 Relocate compass_artifact research doc from project root (Code-Puppy 🐶)
+  - Action: `mv compass_artifact_wf-34ef2561-5cba-460c-90f6-358f0553d17c_text_markdown.md research/code-puppy-sdlc-analysis.md`
+  - Validation: `test ! -f compass_artifact_wf-*.md && test -f research/code-puppy-sdlc-analysis.md`
+  - Signed off by: Planning Agent 📋
+
+- [ ] 6.1.2 Update stale agent IDs in all documentation (Code-Puppy 🐶)
+  - Files: WIGGUM_ROADMAP.md, TRACEABILITY_MATRIX.md, docs/design-system.md
+  - Action: Replace planning-agent-cbc7e7 with planning-agent-fde434
+  - Validation: `grep -r "planning-agent-cbc7e7" . | wc -l` returns 0
+  - Signed off by: Planning Agent 📋
+
+- [ ] 6.1.3 Update pyproject.toml development status classifier (Code-Puppy 🐶)
+  - File: pyproject.toml
+  - Action: Change Development Status 3 - Alpha to 4 - Beta
+  - Validation: `grep "Development Status :: 4 - Beta" pyproject.toml`
+  - Signed off by: Planning Agent 📋
+
+- [ ] 6.1.4 Cut CHANGELOG v1.1.0 release for design system work (Code-Puppy 🐶)
+  - File: CHANGELOG.md
+  - Action: Move Unreleased design system items to v1.1.0 section
+  - Validation: `grep "\[1.1.0\]" CHANGELOG.md`
+  - Signed off by: Planning Agent 📋
+
+- [ ] 6.1.5 Clean up SQLite WAL orphans in data directory (Code-Puppy 🐶)
+  - Action: Remove data/governance.db-shm and data/governance.db-wal if no .db file exists
+  - Validation: `ls data/ | grep -v sp-audit` shows no orphan files
+  - Signed off by: Planning Agent 📋
+
+- [ ] 6.1.6 Archive outdated PRE_STAGING_QA report (Code-Puppy 🐶)
+  - Action: `mv docs/PRE_STAGING_QA.md docs/archive/PRE_STAGING_QA.md`
+  - Validation: `test -f docs/archive/PRE_STAGING_QA.md && test ! -f docs/PRE_STAGING_QA.md`
+  - Signed off by: Planning Agent 📋
+
+- [ ] 6.1.7 Rewrite SESSION_HANDOFF.md for production readiness phase (Planning Agent 📋)
+  - File: SESSION_HANDOFF.md
+  - Action: Update objective, agent ID, current state, and next steps for Phase 6-7
+  - Validation: `grep "planning-agent-fde434" SESSION_HANDOFF.md`
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 6.1.8 Add Epic 10 to TRACEABILITY_MATRIX.md (Planning Agent 📋)
+  - File: TRACEABILITY_MATRIX.md
+  - Action: Add Production Readiness epic with REQ-1001 through REQ-1015
+  - Validation: `grep "REQ-1015" TRACEABILITY_MATRIX.md`
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 6.1.9 Run full test suite to establish Phase 6 baseline (Watchdog 🐕‍🦺)
+  - Command: `uv run pytest tests/ -q --ignore=tests/e2e --ignore=tests/smoke`
+  - Validation: Exit code 0 with all tests passing
+  - Signed off by: Planning Agent 📋
+
+- [ ] 6.1.10 Commit and push Phase 6 cleanup (Code-Puppy 🐶)
+  - Command: `git add -A && git commit -m "phase 6: cleanup and consolidation" && git push`
+  - Validation: `git status` shows clean working tree
+  - Signed off by: Pack Leader 🐺
+
+---
+
+## Phase 7: Production Hardening
+
+### 7.1 Security Hardening
+- [ ] 7.1.1 Enforce JWT_SECRET_KEY in production mode (Python Programmer 🐍)
+  - Files: app/core/config.py, .env.example
+  - Validation: App refuses to start in ENVIRONMENT=production without explicit JWT_SECRET_KEY
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 7.1.2 Verify Redis-backed token blacklist for production (Python Programmer 🐍)
+  - Files: app/core/token_blacklist.py, pyproject.toml
+  - Validation: `uv run pytest tests/unit/test_token_blacklist.py -v` passes
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 7.1.3 Harden CORS origins for production (Python Programmer 🐍)
+  - Files: app/main.py, app/core/config.py
+  - Validation: App rejects wildcard CORS in production mode
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Planning Agent 📋
+
+- [ ] 7.1.4 Tune rate limiting for production traffic (Python Programmer 🐍)
+  - Files: app/core/rate_limit.py, app/core/config.py
+  - Validation: `uv run pytest tests/unit/test_rate_limit.py -v` passes
+  - Reviewed by: Solutions Architect 🏛️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 7.1.5 Run production security audit (Security Auditor 🛡️)
+  - Output: docs/security/production-audit.md
+  - Validation: No critical or high findings remain open
+  - Signed off by: Pack Leader 🐺 + Planning Agent 📋
+
+### 7.2 Azure Integration
+- [ ] 7.2.1 Document Azure AD app registration for production (Python Programmer 🐍)
+  - Files: scripts/setup-app-registration-manual.md, docs/DEPLOYMENT.md
+  - Validation: Production redirect URIs and group mappings documented
+  - Signed off by: Security Auditor 🛡️
+
+- [ ] 7.2.2 Wire Key Vault credential retrieval for all tenants (Python Programmer 🐍)
+  - Files: app/core/config.py, app/core/tenants_config.py
+  - Validation: Key Vault integration code exists with fallback to env vars
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 7.2.3 Replace backfill placeholder data with real Azure API calls (Python Programmer 🐍)
+  - Files: app/services/backfill_service.py, app/api/services/identity_service.py
+  - Validation: `grep -r "placeholder" app/ | wc -l` returns 0
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 7.2.4 Create admin user setup script for production (Python Programmer 🐍)
+  - File: scripts/setup_admin.py
+  - Validation: `uv run python scripts/setup_admin.py --help` shows usage
+  - Signed off by: Planning Agent 📋
+
+### 7.3 Staging Deployment
+- [ ] 7.3.1 Deploy staging infrastructure via Bicep (Code-Puppy 🐶)
+  - Files: infrastructure/parameters.staging.json, infrastructure/deploy.sh
+  - Validation: Staging deployment documented in docs/STAGING_DEPLOYMENT_CHECKLIST.md
+  - Signed off by: Solutions Architect 🏛️
+
+- [ ] 7.3.2 Configure staging secrets and push container image (Code-Puppy 🐶)
+  - Files: .env.production, docker-compose.prod.yml
+  - Validation: Staging configuration documented with all required env vars
+  - Signed off by: Security Auditor 🛡️
+
+- [ ] 7.3.3 Run staging smoke tests (QA Expert 🐾)
+  - File: scripts/smoke_test.py
+  - Validation: Smoke test script supports --url parameter for staging
+  - Signed off by: Watchdog 🐕‍🦺
+
+- [ ] 7.3.4 Configure CI/CD OIDC federation (Code-Puppy 🐶)
+  - Files: infrastructure/github-oidc.bicep, scripts/gh-oidc-setup.sh
+  - Validation: OIDC setup documented with step-by-step instructions
+  - Signed off by: Security Auditor 🛡️
+
+### 7.4 Database and Migrations
+- [ ] 7.4.1 Verify all Alembic migrations are current (Python Programmer 🐍)
+  - Command: `uv run alembic upgrade head`
+  - Validation: No pending migrations and schema matches models
+  - Signed off by: Planning Agent 📋
+
+- [ ] 7.4.2 Create missing Alembic migrations for model drift (Python Programmer 🐍)
+  - Files: alembic/versions/
+  - Validation: `uv run alembic upgrade head` is idempotent
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
+### 7.5 Final Validation and Release
+- [ ] 7.5.1 Run full test suite for production validation (Watchdog 🐕‍🦺)
+  - Command: `uv run pytest tests/ -q --ignore=tests/e2e --ignore=tests/smoke`
+  - Validation: Exit code 0 with zero failures
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 7.5.2 Run linting and type checking (Watchdog 🐕‍🦺)
+  - Command: `uv run ruff check .`
+  - Validation: Zero errors reported
+  - Signed off by: Planning Agent 📋
+
+- [ ] 7.5.3 Update all documentation for production state (Planning Agent 📋)
+  - Files: README.md, CHANGELOG.md, SESSION_HANDOFF.md, docs/DEPLOYMENT.md
+  - Validation: README In Progress section cleared; staging URL documented
+  - Signed off by: Code Reviewer 🛡️
+
+- [ ] 7.5.4 Final security review of production config (Security Auditor 🛡️)
+  - File: SECURITY_IMPLEMENTATION.md
+  - Validation: Production Checklist in SECURITY_IMPLEMENTATION.md all checked
+  - Signed off by: Pack Leader 🐺 + Planning Agent 📋
+
+- [ ] 7.5.5 Tag release and push to production (Pack Leader 🐺)
+  - Command: `git add -A && git commit -m "v1.2.0: production ready" && git tag v1.2.0 && git push && git push --tags`
+  - Validation: `git status` shows clean tree and tag v1.2.0 exists
+  - Signed off by: Pack Leader 🐺 + Planning Agent 📋
+
+---
+
 ## Progress Summary
 
 | Phase | Total Tasks | Completed | Remaining | Status |
@@ -363,7 +539,9 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
-| **TOTAL** | **56** | **56** | **0** | **✅ Complete** |
+| Phase 6: Cleanup & Consolidation | 10 | 1 | 9 | 🔄 In Progress |
+| Phase 7: Production Hardening | 20 | 0 | 20 | ⬜ Not Started |
+| **TOTAL** | **86** | **57** | **29** | **🔄 In Progress** |
 
 ---
 

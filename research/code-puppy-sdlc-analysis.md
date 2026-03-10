@@ -176,7 +176,7 @@ Plus **39+ additional providers** with OpenAI-compatible APIs via the models.dev
 |---|---|---|
 | `DBOS_CONDUCTOR_KEY` | None | Connects to DBOS Management Console (register app `dbos-code-puppy`) |
 | `DBOS_LOG_LEVEL` | ERROR | CRITICAL/ERROR/WARNING/INFO/DEBUG |
-| `DBOS_SYSTEM_DATABASE_URL` | `dbos_store.sqlite` | SQLite or PostgreSQL (e.g., `postgresql://postgres:dbos@localhost:5432/postgres`) |
+| `DBOS_SYSTEM_DATABASE_URL` | `dbos_store.sqlite` | SQLite or PostgreSQL (e.g., `postgresql://postgres:dbos@localhost:5432/postgres`) | <!-- pragma: allowlist secret -->
 | `DBOS_APP_VERSION` | version + Unix timestamp ms | App version for workflow recovery |
 
 ### Runtime configuration
