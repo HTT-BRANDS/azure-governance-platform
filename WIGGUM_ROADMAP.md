@@ -380,7 +380,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: `grep "\[1.1.0\]" CHANGELOG.md`
   - Signed off by: Planning Agent 📋
 
-- [ ] 6.1.5 Clean up SQLite WAL orphans in data directory (Code-Puppy 🐶)
+- [x] 6.1.5 Clean up SQLite WAL orphans in data directory (Code-Puppy 🐶)
   - Action: Remove data/governance.db-shm and data/governance.db-wal if no .db file exists
   - Validation: `ls data/ | grep -v sp-audit` shows no orphan files
   - Signed off by: Planning Agent 📋
@@ -539,9 +539,9 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
-| Phase 6: Cleanup & Consolidation | 10 | 4 | 6 | 🔄 In Progress |
+| Phase 6: Cleanup & Consolidation | 10 | 5 | 5 | 🔄 In Progress |
 | Phase 7: Production Hardening | 20 | 0 | 20 | ⬜ Not Started |
-| **TOTAL** | **86** | **60** | **26** | **🔄 In Progress** |
+| **TOTAL** | **86** | **61** | **25** | **🔄 In Progress** |
 
 ---
 
