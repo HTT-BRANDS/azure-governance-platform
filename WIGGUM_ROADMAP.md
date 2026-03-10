@@ -402,7 +402,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: `grep "REQ-1015" TRACEABILITY_MATRIX.md`
   - Signed off by: Pack Leader 🐺
 
-- [ ] 6.1.9 Run full test suite to establish Phase 6 baseline (Watchdog 🐕‍🦺)
+- [x] 6.1.9 Run full test suite to establish Phase 6 baseline (Watchdog 🐕‍🦺)
   - Command: `uv run pytest tests/ -q --ignore=tests/e2e --ignore=tests/smoke`
   - Validation: Exit code 0 with all tests passing
   - Signed off by: Planning Agent 📋
@@ -539,9 +539,9 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
-| Phase 6: Cleanup & Consolidation | 10 | 8 | 2 | 🔄 In Progress |
+| Phase 6: Cleanup & Consolidation | 10 | 9 | 1 | 🔄 In Progress |
 | Phase 7: Production Hardening | 20 | 0 | 20 | ⬜ Not Started |
-| **TOTAL** | **86** | **64** | **22** | **🔄 In Progress** |
+| **TOTAL** | **86** | **65** | **21** | **🔄 In Progress** |
 
 ---
 
