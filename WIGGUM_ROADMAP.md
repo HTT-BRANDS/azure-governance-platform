@@ -496,7 +496,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: No pending migrations and schema matches models
   - Signed off by: Planning Agent 📋
 
-- [ ] 7.4.2 Create missing Alembic migrations for model drift (Python Programmer 🐍)
+- [x] 7.4.2 Create missing Alembic migrations for model drift (Python Programmer 🐍)
   - Files: alembic/versions/
   - Validation: `uv run alembic upgrade head` is idempotent
   - Reviewed by: Python Reviewer 🐍
@@ -540,8 +540,8 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
-| Phase 7: Production Hardening | 20 | 14 | 6 | 🔄 In Progress |
-| **TOTAL** | **86** | **80** | **6** | **🔄 In Progress** |
+| Phase 7: Production Hardening | 20 | 15 | 5 | 🔄 In Progress |
+| **TOTAL** | **86** | **81** | **5** | **🔄 In Progress** |
 
 ---
 
