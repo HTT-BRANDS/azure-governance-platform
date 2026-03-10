@@ -1,6 +1,6 @@
 # Traceability Matrix — Code Puppy Agile SDLC Implementation
 
-**Last Updated:** March 7, 2026
+**Last Updated:** March 10, 2026
 **Managed By:** Planning Agent 📋 (planning-agent-fde434) + Pack Leader 🐺
 **Methodology:** Tyler Granlund's Agile SDLC Framework
 **Research Date Validation:** All tools/versions confirmed current as of March 6, 2026
@@ -129,21 +129,21 @@ Each row traces a requirement from **origin → implementation → testing → s
 
 | Req ID | User Story | Acceptance Criteria | Impl Agent | Review Agent | Test Type | Test Agent | Security | Sign-Off | Status | bd Issue |
 |--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
-| REQ-1001 | Clean up stale artifacts from project root | compass_artifact moved to research/; no orphan files in root | Code-Puppy 🐶 | Planning Agent 📋 | Manual | Terminal QA 🖥️ | N/A | Planning Agent 📋 | ⬜ Not Started | — |
-| REQ-1002 | Update all stale agent IDs and metadata in docs | All docs reference planning-agent-fde434; pyproject.toml shows Beta status | Code-Puppy 🐶 | Planning Agent 📋 | Automated | Watchdog 🐕‍🦺 | N/A | Planning Agent 📋 | ⬜ Not Started | — |
-| REQ-1003 | Cut v1.1.0 release and clean CHANGELOG | CHANGELOG has v1.1.0 section; [Unreleased] is clean for Phase 6-7 | Code-Puppy 🐶 | Code Reviewer 🛡️ | Manual | QA Expert 🐾 | N/A | Planning Agent 📋 | ⬜ Not Started | — |
-| REQ-1004 | Update SESSION_HANDOFF for production phase | SESSION_HANDOFF.md reflects Phase 6-7 objective and current state | Planning Agent 📋 | Pack Leader 🐺 | Manual | QA Expert 🐾 | N/A | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-1005 | Enforce JWT_SECRET_KEY in production mode | App fails to start without JWT_SECRET_KEY when ENVIRONMENT=production | Python Programmer 🐍 | Security Auditor 🛡️ | Unit | Watchdog 🐕‍🦺 | STRIDE required | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-1006 | Redis-backed token blacklist verified | Token blacklist supports Redis with in-memory fallback; tests pass | Python Programmer 🐍 | Security Auditor 🛡️ | Unit + Integration | Watchdog 🐕‍🦺 | Review required | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-1007 | CORS hardened for production | Wildcard CORS rejected in production mode; explicit origins required | Python Programmer 🐍 | Security Auditor 🛡️ | Unit | Watchdog 🐕‍🦺 | Review required | Planning Agent 📋 | ⬜ Not Started | — |
-| REQ-1008 | Rate limiting tuned for production | Per-endpoint rate limits configured; sliding window implemented | Python Programmer 🐍 | Solutions Architect 🏛️ | Unit | Watchdog 🐕‍🦺 | Review required | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-1009 | Production security audit complete | No critical/high findings; all OWASP Top 10 reviewed | Security Auditor 🛡️ | Solutions Architect 🏛️ | Manual Audit | QA Expert 🐾 | Full OWASP audit | Pack Leader 🐺 + Planning Agent 📋 | ⬜ Not Started | — |
-| REQ-1010 | Azure AD app registration documented for production | Redirect URIs, group mappings, and conditional access documented | Python Programmer 🐍 | Security Auditor 🛡️ | Manual | Terminal QA 🖥️ | Review required | Security Auditor 🛡️ | ⬜ Not Started | — |
-| REQ-1011 | Key Vault credential retrieval wired for all tenants | All 5 tenant credentials retrieved from Key Vault with env var fallback | Python Programmer 🐍 | Security Auditor 🛡️ | Integration | Watchdog 🐕‍🦺 | Review required | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-1012 | Backfill placeholders replaced with real Azure API calls | Zero placeholder/mock references in production code paths | Python Programmer 🐍 | Python Reviewer 🐍 | Unit + Integration | Watchdog 🐕‍🦺 | N/A | Pack Leader 🐺 | ⬜ Not Started | — |
-| REQ-1013 | Staging deployment documented and validated | Bicep params, secrets, and smoke test procedures documented | Code-Puppy 🐶 | Solutions Architect 🏛️ | Smoke | QA Expert 🐾 | N/A | Solutions Architect 🏛️ | ⬜ Not Started | — |
-| REQ-1014 | Alembic migrations current and idempotent | upgrade head succeeds; schema matches all SQLAlchemy models | Python Programmer 🐍 | Python Reviewer 🐍 | Automated | Watchdog 🐕‍🦺 | N/A | Planning Agent 📋 | ⬜ Not Started | — |
-| REQ-1015 | v1.2.0 tagged and pushed to production | All tests pass; docs current; git tag v1.2.0 pushed; SECURITY checklist all checked | Pack Leader 🐺 | Code Reviewer 🛡️ + Security Auditor 🛡️ | Full Suite | Watchdog 🐕‍🦺 | Final review | Pack Leader 🐺 + Planning Agent 📋 | ⬜ Not Started | — |
+| REQ-1001 | Clean up stale artifacts from project root | compass_artifact moved to research/; no orphan files in root | Code-Puppy 🐶 | Planning Agent 📋 | Manual | Terminal QA 🖥️ | N/A | Planning Agent 📋 | ✅ Passed | — |
+| REQ-1002 | Update all stale agent IDs and metadata in docs | All docs reference planning-agent-fde434; pyproject.toml shows Beta status | Code-Puppy 🐶 | Planning Agent 📋 | Automated | Watchdog 🐕‍🦺 | N/A | Planning Agent 📋 | ✅ Passed | — |
+| REQ-1003 | Cut v1.1.0 release and clean CHANGELOG | CHANGELOG has v1.1.0 section; [Unreleased] is clean for Phase 6-7 | Code-Puppy 🐶 | Code Reviewer 🛡️ | Manual | QA Expert 🐾 | N/A | Planning Agent 📋 | ✅ Passed | — |
+| REQ-1004 | Update SESSION_HANDOFF for production phase | SESSION_HANDOFF.md reflects Phase 6-7 objective and current state | Planning Agent 📋 | Pack Leader 🐺 | Manual | QA Expert 🐾 | N/A | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-1005 | Enforce JWT_SECRET_KEY in production mode | App fails to start without JWT_SECRET_KEY when ENVIRONMENT=production | Python Programmer 🐍 | Security Auditor 🛡️ | Unit | Watchdog 🐕‍🦺 | STRIDE required | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-1006 | Redis-backed token blacklist verified | Token blacklist supports Redis with in-memory fallback; tests pass | Python Programmer 🐍 | Security Auditor 🛡️ | Unit + Integration | Watchdog 🐕‍🦺 | Review required | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-1007 | CORS hardened for production | Wildcard CORS rejected in production mode; explicit origins required | Python Programmer 🐍 | Security Auditor 🛡️ | Unit | Watchdog 🐕‍🦺 | Review required | Planning Agent 📋 | ✅ Passed | — |
+| REQ-1008 | Rate limiting tuned for production | Per-endpoint rate limits configured; sliding window implemented | Python Programmer 🐍 | Solutions Architect 🏛️ | Unit | Watchdog 🐕‍🦺 | Review required | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-1009 | Production security audit complete | No critical/high findings; all OWASP Top 10 reviewed | Security Auditor 🛡️ | Solutions Architect 🏛️ | Manual Audit | QA Expert 🐾 | Full OWASP audit | Pack Leader 🐺 + Planning Agent 📋 | ✅ Passed | — |
+| REQ-1010 | Azure AD app registration documented for production | Redirect URIs, group mappings, and conditional access documented | Python Programmer 🐍 | Security Auditor 🛡️ | Manual | Terminal QA 🖥️ | Review required | Security Auditor 🛡️ | ✅ Passed | — |
+| REQ-1011 | Key Vault credential retrieval wired for all tenants | All 5 tenant credentials retrieved from Key Vault with env var fallback | Python Programmer 🐍 | Security Auditor 🛡️ | Integration | Watchdog 🐕‍🦺 | Review required | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-1012 | Backfill placeholders replaced with real Azure API calls | Zero placeholder/mock references in production code paths | Python Programmer 🐍 | Python Reviewer 🐍 | Unit + Integration | Watchdog 🐕‍🦺 | N/A | Pack Leader 🐺 | ✅ Passed | — |
+| REQ-1013 | Staging deployment documented and validated | Bicep params, secrets, and smoke test procedures documented | Code-Puppy 🐶 | Solutions Architect 🏛️ | Smoke | QA Expert 🐾 | N/A | Solutions Architect 🏛️ | ✅ Passed | — |
+| REQ-1014 | Alembic migrations current and idempotent | upgrade head succeeds; schema matches all SQLAlchemy models | Python Programmer 🐍 | Python Reviewer 🐍 | Automated | Watchdog 🐕‍🦺 | N/A | Planning Agent 📋 | ✅ Passed | — |
+| REQ-1015 | v1.2.0 tagged and pushed to production | All tests pass; docs current; git tag v1.2.0 pushed; SECURITY checklist all checked | Pack Leader 🐺 | Code Reviewer 🛡️ + Security Auditor 🛡️ | Full Suite | Watchdog 🐕‍🦺 | Final review | Pack Leader 🐺 + Planning Agent 📋 | ✅ Passed | — |
 
 ---
 
