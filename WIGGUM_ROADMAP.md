@@ -423,7 +423,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Reviewed by: Security Auditor 🛡️
   - Signed off by: Pack Leader 🐺
 
-- [ ] 7.1.2 Verify Redis-backed token blacklist for production (Python Programmer 🐍)
+- [x] 7.1.2 Verify Redis-backed token blacklist for production (Python Programmer 🐍)
   - Files: app/core/token_blacklist.py, pyproject.toml
   - Validation: `uv run pytest tests/unit/test_token_blacklist.py -v` passes
   - Reviewed by: Security Auditor 🛡️
@@ -540,8 +540,8 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
-| Phase 7: Production Hardening | 20 | 1 | 19 | 🔄 In Progress |
-| **TOTAL** | **86** | **67** | **19** | **🔄 In Progress** |
+| Phase 7: Production Hardening | 20 | 2 | 18 | 🔄 In Progress |
+| **TOTAL** | **86** | **68** | **18** | **🔄 In Progress** |
 
 ---
 

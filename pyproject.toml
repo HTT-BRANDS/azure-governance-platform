@@ -45,6 +45,8 @@ dependencies = [
     "alembic>=1.18.4",
     "prometheus-fastapi-instrumentator>=7.1.0",
     "pyyaml>=6.0",
+    # Token blacklist & caching (optional but required for production)
+    "redis>=5.0.0",
 ]
 
 [project.optional-dependencies]
