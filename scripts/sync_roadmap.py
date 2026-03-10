@@ -400,7 +400,7 @@ def cmd_status(roadmap: Path, as_json: bool, out: TextIO = sys.stdout) -> int:
         }
         out.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
     else:
-        out.write(f"\n📊 WIGGUM ROADMAP STATUS\n")
+        out.write("\n📊 WIGGUM ROADMAP STATUS\n")
         out.write("=" * 55 + "\n")
         out.write(f"Total tasks:   {total}\n")
         out.write(f"Completed:     {completed}\n")
@@ -419,7 +419,7 @@ def cmd_status(roadmap: Path, as_json: bool, out: TextIO = sys.stdout) -> int:
         # Remaining tasks
         remaining_tasks = [t for t in tasks if not t.completed]
         if remaining_tasks:
-            out.write(f"\n📋 Next up:\n")
+            out.write("\n📋 Next up:\n")
             for t in remaining_tasks[:5]:
                 out.write(f"  [ ] {t.task_id} {t.description} ({t.owner})\n")
             if len(remaining_tasks) > 5:

@@ -44,8 +44,6 @@ import asyncio
 import json
 import logging
 import sys
-from datetime import datetime
-from typing import List, Optional
 
 # Add the parent directory to the path for imports
 sys.path.insert(0, str(__file__).rsplit("/", 2)[0])
@@ -65,7 +63,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def parse_categories(category_args: List[str]) -> Optional[List[CheckCategory]]:
+def parse_categories(category_args: list[str]) -> list[CheckCategory] | None:
     """Parse category arguments into CheckCategory enums."""
     if not category_args:
         return None
@@ -74,8 +72,8 @@ def parse_categories(category_args: List[str]) -> Optional[List[CheckCategory]]:
     for cat_str in category_args:
         try:
             # Handle case-insensitive matching
-            cat_upper = cat_str.upper()
-            category = CheckCategory(cat_lower := cat_str.lower())
+            cat_str.upper()
+            category = CheckCategory(_cat_lower := cat_str.lower())
             categories.append(category)
         except ValueError:
             valid_categories = [c.value for c in CheckCategory]
@@ -185,7 +183,7 @@ async def run_preflight(args: argparse.Namespace) -> PreflightRunner:
     )
 
     # Run checks
-    report = await runner.run_checks(
+    await runner.run_checks(
         categories=categories,
         tenant_ids=args.tenants,
     )

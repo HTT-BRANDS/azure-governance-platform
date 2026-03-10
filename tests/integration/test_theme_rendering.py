@@ -3,9 +3,10 @@
 Updated for microsoft-group-management design system.
 """
 import pytest
-from app.core.design_tokens import load_brands, get_brand
-from app.core.css_generator import generate_brand_css_variables, generate_scoped_brand_css
+
 from app.core.color_utils import get_contrast_ratio
+from app.core.css_generator import generate_brand_css_variables, generate_scoped_brand_css
+from app.core.design_tokens import load_brands
 
 
 @pytest.fixture(autouse=True)

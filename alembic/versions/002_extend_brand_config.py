@@ -12,8 +12,9 @@ init_db), it adds only the missing design-token columns.
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy import inspect
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "002"

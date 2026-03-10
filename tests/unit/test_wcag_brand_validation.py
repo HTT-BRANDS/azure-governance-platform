@@ -6,8 +6,9 @@ Updated for microsoft-group-management design system:
 - Primary colors all pass WCAG AA on white backgrounds.
 """
 import pytest
+
+from app.core.color_utils import get_contrast_ratio
 from app.core.design_tokens import load_brands
-from app.core.color_utils import get_contrast_ratio, validate_wcag_aa
 
 
 @pytest.fixture(autouse=True)

@@ -508,7 +508,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: Exit code 0 with zero failures
   - Signed off by: Pack Leader 🐺
 
-- [ ] 7.5.2 Run linting and type checking (Watchdog 🐕‍🦺)
+- [x] 7.5.2 Run linting and type checking (Watchdog 🐕‍🦺)
   - Command: `uv run ruff check .`
   - Validation: Zero errors reported
   - Signed off by: Planning Agent 📋
@@ -540,8 +540,8 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
-| Phase 7: Production Hardening | 20 | 16 | 4 | 🔄 In Progress |
-| **TOTAL** | **86** | **82** | **4** | **🔄 In Progress** |
+| Phase 7: Production Hardening | 20 | 17 | 3 | 🔄 In Progress |
+| **TOTAL** | **86** | **83** | **3** | **🔄 In Progress** |
 
 ---
 

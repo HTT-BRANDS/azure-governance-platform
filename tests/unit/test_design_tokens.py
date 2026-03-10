@@ -10,20 +10,19 @@ Updated for microsoft-group-management design system:
 """
 
 import pytest
+
 from app.core.design_tokens import (
+    DARK_THEME_TOKENS,
     BrandColors,
     BrandDesignSystem,
     BrandTypography,
-    BrandRegistry,
-    ShadowStyle,
     SemanticColors,
+    ShadowStyle,
     ThemeTokens,
-    DARK_THEME_TOKENS,
-    load_brands,
     get_brand,
     get_google_fonts_url,
+    load_brands,
 )
-
 
 # ---------------------------------------------------------------------------
 # Clear module-level cache before tests
@@ -96,7 +95,7 @@ def test_google_fonts_url():
 
 
 def test_hex_color_validation():
-    with pytest.raises(Exception):
+    with pytest.raises((ValueError, TypeError)):
         BrandColors(primary="invalid", accent="#FFFFFF", background="#FFFFFF", text="#000000")
 
 
@@ -137,7 +136,7 @@ class TestSemanticColors:
         assert sc.success == "#00FF00"
 
     def test_invalid_hex_rejected(self):
-        with pytest.raises(Exception):
+        with pytest.raises((ValueError, TypeError)):
             SemanticColors(success="invalid")
 
 
@@ -198,12 +197,12 @@ class TestTenantColors:
 
 def _make_colors(**overrides):
     """Helper to build a BrandColors with valid defaults, overriding as needed."""
-    defaults = dict(
-        primary="#500711",
-        accent="#FFC957",
-        background="#FFFFFF",
-        text="#111827",
-    )
+    defaults = {
+        "primary": "#500711",
+        "accent": "#FFC957",
+        "background": "#FFFFFF",
+        "text": "#111827",
+    }
     defaults.update(overrides)
     return BrandColors(**defaults)
 

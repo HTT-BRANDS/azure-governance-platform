@@ -14,7 +14,6 @@ import ast
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Set
 
 import pytest
 
@@ -23,7 +22,7 @@ import pytest
 # ============================================================================
 
 
-def get_imports_from_file(file_path: Path) -> Set[str]:
+def get_imports_from_file(file_path: Path) -> set[str]:
     """Extract all imports from a Python file using AST parsing.
 
     Args:
@@ -33,7 +32,7 @@ def get_imports_from_file(file_path: Path) -> Set[str]:
         Set of module names imported by the file
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             tree = ast.parse(f.read(), filename=str(file_path))
     except (SyntaxError, UnicodeDecodeError):
         return set()
@@ -50,7 +49,7 @@ def get_imports_from_file(file_path: Path) -> Set[str]:
     return imports
 
 
-def build_module_dependency_graph(base_path: Path) -> Dict[str, Set[str]]:
+def build_module_dependency_graph(base_path: Path) -> dict[str, set[str]]:
     """Build a dependency graph for all Python modules.
 
     Args:
@@ -84,8 +83,8 @@ def build_module_dependency_graph(base_path: Path) -> Dict[str, Set[str]]:
 
 
 def detect_circular_dependencies(
-    graph: Dict[str, Set[str]], start_module: str, visited: Set[str] = None
-) -> List[str]:
+    graph: dict[str, set[str]], start_module: str, visited: set[str] = None
+) -> list[str]:
     """Detect circular dependencies using DFS.
 
     Args:
@@ -146,7 +145,7 @@ def test_no_circular_imports():
                 cycles_found.append(" -> ".join(cycle))
 
     assert not cycles_found, (
-        f"Circular dependencies detected:\n"
+        "Circular dependencies detected:\n"
         + "\n".join(f"  - {cycle}" for cycle in cycles_found)
     )
 
@@ -180,7 +179,7 @@ def test_agent_least_privilege():
     # Read all agent JSON files
     for agent_file in agents_dir.glob("*.json"):
         try:
-            with open(agent_file, "r") as f:
+            with open(agent_file) as f:
                 agent_config = json.load(f)
 
             agent_name = agent_config.get("name", agent_file.stem)
@@ -206,14 +205,14 @@ def test_agent_least_privilege():
             violations.append(f"{agent_file.name}: Failed to parse - {e}")
 
     # Document baseline metrics
-    print(f"\n📊 Agent Privilege Metrics:")
+    print("\n📊 Agent Privilege Metrics:")
     print(f"  Total agents: {len(list(agents_dir.glob('*.json')))}")
     print(f"  Reviewer agents: {len(reviewer_agents)}")
     print(f"  Unique tools across all agents: {len(all_tools)}")
     print(f"  Tools: {', '.join(sorted(all_tools))}")
 
     assert not violations, (
-        f"Agent privilege violations detected:\n"
+        "Agent privilege violations detected:\n"
         + "\n".join(f"  - {v}" for v in violations)
     )
 
@@ -241,7 +240,7 @@ def test_security_headers_configured():
     if not main_py.exists():
         pytest.skip("app/main.py not found")
 
-    with open(main_py, "r") as f:
+    with open(main_py) as f:
         main_content = f.read()
 
     # Check for security headers middleware
@@ -264,7 +263,7 @@ def test_security_headers_configured():
             missing_headers.append(header)
 
     assert not missing_headers, (
-        f"Missing security headers in app/main.py:\n"
+        "Missing security headers in app/main.py:\n"
         + "\n".join(f"  - {h}" for h in missing_headers)
     )
 
@@ -292,7 +291,7 @@ def test_security_headers_configured():
 # ============================================================================
 
 
-def extract_route_functions(file_path: Path) -> List[Dict[str, any]]:
+def extract_route_functions(file_path: Path) -> list[dict[str, any]]:
     """Extract all FastAPI route functions from a route file.
 
     Args:
@@ -302,7 +301,7 @@ def extract_route_functions(file_path: Path) -> List[Dict[str, any]]:
         List of dictionaries with route information
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             tree = ast.parse(f.read(), filename=str(file_path))
     except (SyntaxError, UnicodeDecodeError):
         return []
@@ -355,7 +354,7 @@ def check_router_level_auth(file_path: Path) -> bool:
         True if router is configured with dependencies=[Depends(get_current_user)]
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         # Look for APIRouter with dependencies parameter
@@ -439,7 +438,7 @@ def test_api_routes_require_auth():
         print("\n✅ All API routes properly secured with authentication")
 
     assert not violations, (
-        f"API routes without authentication:\n"
+        "API routes without authentication:\n"
         + "\n".join(f"  - {v}" for v in violations)
     )
 
@@ -498,7 +497,7 @@ def test_file_size_limit():
             continue
 
         try:
-            with open(py_file, "r", encoding="utf-8") as f:
+            with open(py_file, encoding="utf-8") as f:
                 line_count = sum(1 for _ in f)
 
             rel_path = str(py_file.relative_to(app_path.parent))
@@ -513,7 +512,7 @@ def test_file_size_limit():
                             "excess": line_count - max_lines,
                         }
                     )
-        except (UnicodeDecodeError, IOError):
+        except (OSError, UnicodeDecodeError):
             continue
 
     if violations:
@@ -528,10 +527,7 @@ def test_file_size_limit():
             f"Consider splitting into smaller modules."
         )
 
-        assert False, (
-            f"\n{len(violations)} NEW files exceed {max_lines} line limit. "
-            f"Largest: {violations[0]['file']} ({violations[0]['lines']} lines)"
-        )
+        raise AssertionError(f"\n{len(violations)} NEW files exceed {max_lines} line limit. " f"Largest: {violations[0]['file']} ({violations[0]['lines']} lines)")
     else:
         print(
             f"\n✅ No NEW files exceed {max_lines} lines "

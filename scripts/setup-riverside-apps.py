@@ -37,7 +37,6 @@ Environment Variables:
 
 import argparse
 import json
-import os
 import re
 import secrets
 import string
@@ -46,8 +45,7 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
-
+from typing import Any
 
 # =============================================================================
 # TENANT CONFIGURATION
@@ -180,17 +178,17 @@ def is_valid_uuid(value: str) -> bool:
 
 def run_az_command(args: list[str], capture_output: bool = True, check: bool = True) -> tuple[int, str, str]:
     """Run an Azure CLI command and return results.
-    
+
     Args:
         args: Command arguments (after 'az')
         capture_output: Whether to capture stdout/stderr
         check: Whether to raise exception on non-zero exit
-        
+
     Returns:
         Tuple of (exit_code, stdout, stderr)
     """
     cmd = ["az"] + args
-    
+
     try:
         result = subprocess.run(
             cmd,
@@ -198,20 +196,20 @@ def run_az_command(args: list[str], capture_output: bool = True, check: bool = T
             text=True,
             check=False,
         )
-        
+
         stdout = result.stdout.strip() if result.stdout else ""
         stderr = result.stderr.strip() if result.stderr else ""
-        
+
         if check and result.returncode != 0:
             raise subprocess.CalledProcessError(
                 result.returncode, cmd, output=stdout, stderr=stderr
             )
-            
+
         return result.returncode, stdout, stderr
-    except FileNotFoundError:
+    except FileNotFoundError as err:
         raise RuntimeError(
             "Azure CLI (az) not found. Please install: https://aka.ms/installazurecli"
-        )
+        ) from err
 
 
 def check_az_cli_installed() -> bool:
@@ -272,7 +270,7 @@ def mask_secret(secret: str, visible_chars: int = 4) -> str:
 
 class AppRegistrationManager:
     """Manages Azure AD app registration operations."""
-    
+
     def __init__(self, tenant_config: TenantConfig):
         self.tenant = tenant_config
         self.results: dict[str, Any] = {
@@ -283,14 +281,14 @@ class AppRegistrationManager:
             "client_secrets": [],
             "errors": [],
         }
-    
+
     def switch_to_tenant(self) -> bool:
         """Switch Azure CLI context to the target tenant."""
         print_step(f"Switching to tenant: {self.tenant.name}")
         try:
             run_az_command(["account", "set", "--subscription", self.tenant.tenant_id])
             return True
-        except Exception as e:
+        except Exception:
             # Try login with tenant ID
             print_step(f"Attempting login to tenant {self.tenant.tenant_id}...")
             try:
@@ -302,29 +300,29 @@ class AppRegistrationManager:
             except Exception as login_error:
                 self.results["errors"].append(f"Failed to access tenant: {login_error}")
                 return False
-    
+
     def check_app_exists(self) -> bool:
         """Check if the app registration exists."""
         print_step(f"Checking app registration: {self.tenant.app_id}")
-        
+
         if not is_valid_uuid(self.tenant.app_id):
             self.results["errors"].append(f"Invalid App ID format: {self.tenant.app_id}")
             return False
-        
+
         try:
             _, stdout, _ = run_az_command([
                 "ad", "app", "show",
                 "--id", self.tenant.app_id,
             ])
-            
+
             app_data = json.loads(stdout)
             self.results["exists"] = True
             self.results["enabled"] = app_data.get("signInAudience") is not None
             self.results["app_name"] = app_data.get("displayName", "Unknown")
-            
+
             print_success(f"App found: {self.results['app_name']}")
             return True
-            
+
         except subprocess.CalledProcessError as e:
             if "does not exist" in str(e) or "Not Found" in str(e):
                 self.results["exists"] = False
@@ -338,32 +336,32 @@ class AppRegistrationManager:
             self.results["errors"].append(f"Unexpected error: {e}")
             print_error(f"Unexpected error: {e}")
             return False
-    
+
     def check_required_permissions(self) -> dict[str, bool]:
         """Check which required permissions are granted."""
         print_step("Checking Microsoft Graph permissions...")
-        
+
         permission_status: dict[str, bool] = {}
-        
+
         try:
             _, stdout, _ = run_az_command([
                 "ad", "app", "permission", "list",
                 "--id", self.tenant.app_id,
             ])
-            
+
             permissions = json.loads(stdout)
-            
+
             # Build a set of granted permissions
             granted_perms: set[str] = set()
             for perm in permissions:
                 resource = perm.get("resourceAppId", "")
                 # Microsoft Graph app ID
                 if resource == "00000003-0000-0000-c000-000000000000":
-                    for access in perm.get("resourceAccess", []):
+                    for _access in perm.get("resourceAccess", []):
                         # Note: We'd need to map IDs to names here
                         # For now, we'll check via service principal
                         pass
-            
+
             # Check via service principal for better accuracy
             try:
                 _, sp_stdout, _ = run_az_command([
@@ -371,59 +369,59 @@ class AppRegistrationManager:
                     "--id", self.tenant.app_id,
                 ])
                 sp_data = json.loads(sp_stdout)
-                
+
                 # Get app roles from service principal
                 app_roles = sp_data.get("appRoles", [])
                 for role in app_roles:
                     granted_perms.add(role.get("value", ""))
-                
+
                 # Get oauth2 permissions
                 oauth2_perms = sp_data.get("oauth2Permissions", [])
                 for perm in oauth2_perms:
                     granted_perms.add(perm.get("value", ""))
-                    
+
             except Exception:
                 # Service principal might not exist yet
                 pass
-            
+
             # Check each required permission
             for perm_name, description in MICROSOFT_GRAPH_PERMISSIONS.items():
                 # This is a simplified check - in reality we'd need to query
                 # the specific permission grants via Graph API
                 permission_status[perm_name] = True  # Assume granted for now
                 print_info(f"{perm_name}: {description}")
-            
+
             self.results["permissions"] = permission_status
             return permission_status
-            
+
         except Exception as e:
             self.results["errors"].append(f"Failed to check permissions: {e}")
             print_error(f"Failed to check permissions: {e}")
             return permission_status
-    
+
     def check_admin_consent(self) -> bool:
         """Check if admin consent has been granted."""
         print_step("Checking admin consent status...")
-        
+
         try:
             # Check service principal for admin consent
             _, stdout, _ = run_az_command([
                 "ad", "sp", "show",
                 "--id", self.tenant.app_id,
             ])
-            
-            sp_data = json.loads(stdout)
+
+            json.loads(stdout)
             # If service principal exists, admin consent was likely granted
             consent_granted = True
-            
+
             self.results["admin_consent"] = consent_granted
             if consent_granted:
                 print_success("Admin consent appears to be granted")
             else:
                 print_warning("Admin consent may not be granted")
-            
+
             return consent_granted
-            
+
         except subprocess.CalledProcessError:
             # Service principal doesn't exist - no consent
             self.results["admin_consent"] = False
@@ -432,20 +430,20 @@ class AppRegistrationManager:
         except Exception as e:
             self.results["errors"].append(f"Failed to check consent: {e}")
             return False
-    
+
     def list_client_secrets(self) -> list[dict]:
         """List existing client secrets."""
         print_step("Listing existing client secrets...")
-        
+
         try:
             _, stdout, _ = run_az_command([
                 "ad", "app", "credential", "list",
                 "--id", self.tenant.app_id,
             ])
-            
+
             credentials = json.loads(stdout)
             self.results["client_secrets"] = credentials
-            
+
             if credentials:
                 print_info(f"Found {len(credentials)} credential(s)")
                 for cred in credentials:
@@ -454,31 +452,31 @@ class AppRegistrationManager:
                     print_info(f"  ...{hint} expires: {end_date}")
             else:
                 print_warning("No client secrets found")
-            
+
             return credentials
-            
+
         except Exception as e:
             self.results["errors"].append(f"Failed to list secrets: {e}")
             return []
-    
-    def create_client_secret(self, display_name: str = "Riverside-Governance-Secret") -> Optional[str]:
+
+    def create_client_secret(self, display_name: str = "Riverside-Governance-Secret") -> str | None:
         """Create a new client secret."""
         print_step("Creating new client secret...")
-        
+
         try:
             # Generate expiration date (2 years from now)
             expiry_date = (datetime.utcnow() + timedelta(days=730)).strftime("%Y-%m-%d")
-            
+
             _, stdout, _ = run_az_command([
                 "ad", "app", "credential", "reset",
                 "--id", self.tenant.app_id,
                 "--display-name", display_name,
                 "--end-date", expiry_date,
             ])
-            
+
             result = json.loads(stdout)
             secret_value = result.get("password")
-            
+
             if secret_value:
                 print_success(f"Created client secret (expires: {expiry_date})")
                 print_warning("⚠️  SECRET VALUE WILL ONLY BE SHOWN ONCE!")
@@ -486,26 +484,26 @@ class AppRegistrationManager:
             else:
                 self.results["errors"].append("No secret value returned")
                 return None
-                
+
         except Exception as e:
             self.results["errors"].append(f"Failed to create secret: {e}")
             print_error(f"Failed to create secret: {e}")
             return None
-    
+
     def run_full_check(self) -> dict[str, Any]:
         """Run all checks for this tenant."""
         print_header(f"Checking Tenant: {self.tenant.name}")
-        
+
         if not self.tenant.is_active:
             print_warning("Tenant marked as inactive - skipping")
             return self.results
-        
+
         # Check if app exists
         if self.check_app_exists():
             self.check_required_permissions()
             self.check_admin_consent()
             self.list_client_secrets()
-        
+
         return self.results
 
 
@@ -515,11 +513,11 @@ class AppRegistrationManager:
 
 def generate_env_file(results: dict[str, dict], output_path: str = ".env.azure") -> str:
     """Generate .env file with credentials.
-    
+
     Args:
         results: Dictionary of tenant code to results dict
         output_path: Path for output file
-        
+
     Returns:
         Path to generated file
     """
@@ -533,16 +531,16 @@ def generate_env_file(results: dict[str, dict], output_path: str = ".env.azure")
         "# ============================================",
         "",
     ]
-    
+
     secrets_generated: dict[str, str] = {}
-    
+
     for code, tenant_results in results.items():
         config = RIVERSIDE_TENANTS[code]
-        
+
         lines.append(f"# {config.name}")
         lines.append(f"RIVERSIDE_{code}_TENANT_ID={config.tenant_id}")
         lines.append(f"RIVERSIDE_{code}_CLIENT_ID={config.app_id}")
-        
+
         # Check if we have a new secret
         secret_value = tenant_results.get("new_secret", "")
         if secret_value:
@@ -550,15 +548,15 @@ def generate_env_file(results: dict[str, dict], output_path: str = ".env.azure")
             secrets_generated[code] = mask_secret(secret_value)
         else:
             lines.append(f"# RIVERSIDE_{code}_CLIENT_SECRET=<add-your-secret-here>")
-        
+
         lines.append(f"RIVERSIDE_{code}_ADMIN_UPN={config.admin_upn}")
         lines.append(f"RIVERSIDE_{code}_DOMAINS={','.join(config.domains)}")
-        
+
         # Status flags
         status = "ACTIVE" if tenant_results.get("exists") else "NOT_FOUND"
         lines.append(f"RIVERSIDE_{code}_STATUS={status}")
         lines.append("")
-    
+
     lines.extend([
         "# ============================================",
         "# Microsoft Graph Configuration",
@@ -579,24 +577,24 @@ def generate_env_file(results: dict[str, dict], output_path: str = ".env.azure")
         "",
         "# Required Microsoft Graph Permissions:",
     ])
-    
+
     for perm, desc in MICROSOFT_GRAPH_PERMISSIONS.items():
         lines.append(f"#   - {perm}: {desc}")
-    
+
     lines.extend([
         "",
         "# Required Azure Management Permissions:",
     ])
-    
+
     for perm, desc in AZURE_MANAGEMENT_PERMISSIONS.items():
         lines.append(f"#   - {perm}: {desc}")
-    
+
     lines.append("")
-    
+
     # Write file
     output_path = Path(output_path)
     output_path.write_text("\n".join(lines))
-    
+
     return str(output_path.absolute())
 
 
@@ -607,41 +605,41 @@ def generate_env_file(results: dict[str, dict], output_path: str = ".env.azure")
 def print_summary_table(results: dict[str, dict]) -> None:
     """Print a formatted summary table of all tenants."""
     print_header("Tenant Summary")
-    
+
     # Table header
     print(f"  {'Code':<6} {'App Exists':<12} {'Enabled':<10} {'Consent':<10} {'Secrets':<10} {'Status':<15}")
     print(f"  {'-' * 6} {'-' * 12} {'-' * 10} {'-' * 10} {'-' * 10} {'-' * 15}")
-    
+
     for code in RIVERSIDE_TENANTS:
         if code not in results:
             print(f"  {code:<6} {'N/A':<12} {'N/A':<10} {'N/A':<10} {'N/A':<10} {'NOT CHECKED':<15}")
             continue
-        
+
         tenant_results = results[code]
         exists = "✅ Yes" if tenant_results.get("exists") else "❌ No"
         enabled = "✅ Yes" if tenant_results.get("enabled") else "❌ No"
         consent = "✅ Yes" if tenant_results.get("admin_consent") else "⚠️ Needed"
         secrets = str(len(tenant_results.get("client_secrets", [])))
-        
+
         if tenant_results.get("errors"):
             status = "❌ Errors"
         elif tenant_results.get("exists"):
             status = "✅ Ready"
         else:
             status = "⚠️ Setup Required"
-        
+
         print(f"  {code:<6} {exists:<12} {enabled:<10} {consent:<10} {secrets:<10} {status:<15}")
-    
+
     print()
 
 
 def print_detailed_report(results: dict[str, dict]) -> None:
     """Print a detailed report for each tenant."""
     print_header("Detailed Report")
-    
+
     for code, tenant_results in results.items():
         config = RIVERSIDE_TENANTS[code]
-        
+
         print(f"\n  {code} - {config.name}")
         print(f"  {'-' * 50}")
         print(f"    Tenant ID:   {config.tenant_id}")
@@ -653,13 +651,13 @@ def print_detailed_report(results: dict[str, dict]) -> None:
         print(f"    Enabled:     {'Yes' if tenant_results.get('enabled') else 'No'}")
         print(f"    Admin Consent: {'Granted' if tenant_results.get('admin_consent') else 'Needed'}")
         print(f"    Secrets:     {len(tenant_results.get('client_secrets', []))}")
-        
+
         if tenant_results.get("errors"):
             print()
             print_warning("Errors:")
             for error in tenant_results["errors"]:
                 print(f"      - {error}")
-        
+
         if tenant_results.get("new_secret"):
             print()
             print_success(f"New secret generated: {mask_secret(tenant_results['new_secret'])}")
@@ -681,7 +679,7 @@ Examples:
   python setup-riverside-apps.py --full-setup
         """
     )
-    
+
     parser.add_argument(
         "--check-only",
         action="store_true",
@@ -712,45 +710,45 @@ Examples:
         action="store_true",
         help="Skip Azure login verification"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Default to check-only if no mode specified
     if not any([args.check_only, args.create_secrets, args.full_setup]):
         args.check_only = True
-    
+
     # Print welcome message
     print_header("Riverside Azure Governance Platform - App Setup")
     print("  This script checks and configures Azure AD app registrations")
     print("  across 5 Riverside tenants.")
-    
+
     # Check prerequisites
     print_header("Prerequisites Check")
-    
+
     if not check_az_cli_installed():
         print_error("Azure CLI is required. Install from: https://aka.ms/installazurecli")
         sys.exit(1)
-    
+
     if not args.skip_login_check:
         if not check_az_login():
             print_error("Please login first: az login")
             sys.exit(1)
-    
+
     # Determine which tenants to process
     tenants_to_process = [args.tenant] if args.tenant else list(RIVERSIDE_TENANTS.keys())
-    
+
     print_header(f"Processing {len(tenants_to_process)} Tenant(s)")
-    
+
     # Process each tenant
     all_results: dict[str, dict] = {}
-    
+
     for code in tenants_to_process:
         config = RIVERSIDE_TENANTS[code]
         manager = AppRegistrationManager(config)
-        
+
         # Run checks
         results = manager.run_full_check()
-        
+
         # Create secrets if requested
         if args.create_secrets or args.full_setup:
             if results.get("exists"):
@@ -759,30 +757,30 @@ Examples:
                     results["new_secret"] = secret
             else:
                 print_warning(f"Skipping secret creation for {code} - app not found")
-        
+
         all_results[code] = results
-    
+
     # Generate output files
     print_header("Generating Output Files")
-    
+
     env_path = generate_env_file(all_results, args.output)
     print_success(f"Generated: {env_path}")
-    
+
     # Print summary
     print_summary_table(all_results)
     print_detailed_report(all_results)
-    
+
     # Final status
     print_header("Setup Complete")
-    
+
     total = len(tenants_to_process)
     found = sum(1 for r in all_results.values() if r.get("exists"))
     errors = sum(len(r.get("errors", [])) for r in all_results.values())
-    
+
     print(f"  Tenants processed: {total}")
     print(f"  Apps found: {found}/{total}")
     print(f"  Errors: {errors}")
-    
+
     if errors == 0 and found == total:
         print_success("All checks passed!")
         return 0

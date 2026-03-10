@@ -8,7 +8,7 @@ Includes semantic colors, theme tokens, and dark mode support.
 from __future__ import annotations
 
 import re
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +35,7 @@ _CSS_INJECTION_PATTERNS = [
 _BRANDS_PATH = Path("config/brands.yaml")
 
 
-class ShadowStyle(str, Enum):
+class ShadowStyle(StrEnum):
     """Shadow style preference for brand design system."""
     SOFT = "soft"
     SHARP = "sharp"

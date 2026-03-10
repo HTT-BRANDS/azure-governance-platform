@@ -13,9 +13,8 @@ from app.core.color_utils import (
     get_contrasting_text_color,
 )
 from app.core.design_tokens import (
-    BrandConfig,
-    BrandConfigFull,
     DARK_THEME_TOKENS,
+    BrandConfig,
     SemanticColors,
     ThemeTokens,
 )
@@ -41,7 +40,7 @@ SHADOW_PRESETS = {
 }
 
 
-def generate_color_variables(colors_model: "BrandConfig") -> dict[str, str]:
+def generate_color_variables(colors_model: BrandConfig) -> dict[str, str]:
     """Generate CSS variables for brand colors including shade scales.
 
     Returns dict of CSS variable name -> value, e.g.:

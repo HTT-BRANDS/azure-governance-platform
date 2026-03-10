@@ -2,9 +2,18 @@
 
 Updated for microsoft-group-management design system (Inter font, #500711 primary).
 """
+from dataclasses import FrozenInstanceError
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
-from app.core.theme_middleware import ThemeMiddleware, ThemeContext, get_theme_context, TENANT_CODE_TO_BRAND, DEFAULT_BRAND_KEY
+
+from app.core.theme_middleware import (
+    DEFAULT_BRAND_KEY,
+    TENANT_CODE_TO_BRAND,
+    ThemeContext,
+    ThemeMiddleware,
+    get_theme_context,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -27,9 +36,8 @@ def test_default_brand_key():
 
 
 def test_theme_context_properties():
-    from app.core.design_tokens import get_brand
     from app.core.css_generator import generate_brand_css_variables, generate_inline_style
-    from app.core.design_tokens import get_google_fonts_url
+    from app.core.design_tokens import get_brand, get_google_fonts_url
     brand = get_brand("httbrands")
     ctx = ThemeContext(
         brand_key="httbrands", brand_config=brand,
@@ -41,9 +49,8 @@ def test_theme_context_properties():
 
 
 def test_theme_context_to_template():
-    from app.core.design_tokens import get_brand
     from app.core.css_generator import generate_brand_css_variables, generate_inline_style
-    from app.core.design_tokens import get_google_fonts_url
+    from app.core.design_tokens import get_brand, get_google_fonts_url
     brand = get_brand("frenchies")
     ctx = ThemeContext(
         brand_key="frenchies", brand_config=brand,
@@ -61,16 +68,15 @@ def test_theme_context_to_template():
 
 
 def test_theme_context_frozen():
-    from app.core.design_tokens import get_brand
     from app.core.css_generator import generate_brand_css_variables, generate_inline_style
-    from app.core.design_tokens import get_google_fonts_url
+    from app.core.design_tokens import get_brand, get_google_fonts_url
     brand = get_brand("httbrands")
     ctx = ThemeContext(
         brand_key="httbrands", brand_config=brand,
         css_variables=generate_brand_css_variables(brand),
         inline_style=generate_inline_style(brand),
         google_fonts_url=get_google_fonts_url(brand))
-    with pytest.raises(Exception):
+    with pytest.raises((AttributeError, FrozenInstanceError)):
         ctx.brand_key = "other"
 
 

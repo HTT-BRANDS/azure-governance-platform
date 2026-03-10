@@ -1,6 +1,5 @@
 """Tests for Key Vault integration."""
 
-import pytest
 
 from app.core.keyvault import KeyVaultClient, get_keyvault_client
 

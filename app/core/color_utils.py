@@ -6,7 +6,6 @@ Provides hex/RGB/HSL conversions, WCAG contrast validation, and color variants.
 
 from __future__ import annotations
 
-import math
 import re
 from dataclasses import dataclass
 
@@ -107,11 +106,16 @@ def hsl_to_hex(hsl: HSL) -> str:
         return rgb_to_hex(RGB(v, v, v))
 
     def _hue2rgb(p: float, q: float, t: float) -> float:
-        if t < 0: t += 1
-        if t > 1: t -= 1
-        if t < 1/6: return p + (q - p) * 6 * t
-        if t < 1/2: return q
-        if t < 2/3: return p + (q - p) * (2/3 - t) * 6
+        if t < 0:
+            t += 1
+        if t > 1:
+            t -= 1
+        if t < 1 / 6:
+            return p + (q - p) * 6 * t
+        if t < 1 / 2:
+            return q
+        if t < 2 / 3:
+            return p + (q - p) * (2 / 3 - t) * 6
         return p
 
     q = l * (1 + s) if l < 0.5 else l + s - l * s

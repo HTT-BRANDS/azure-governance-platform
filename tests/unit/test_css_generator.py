@@ -6,28 +6,28 @@ Updated for microsoft-group-management design system:
 - Includes semantic and theme variable generation
 """
 import pytest
+
 from app.core.css_generator import (
-    generate_color_variables,
-    generate_typography_variables,
-    generate_design_system_variables,
+    SHADOW_PRESETS,
     generate_brand_css_variables,
-    generate_scoped_brand_css,
+    generate_color_variables,
+    generate_dark_mode_css,
+    generate_design_system_variables,
     generate_inline_style,
+    generate_scoped_brand_css,
     generate_semantic_variables,
     generate_theme_variables,
-    generate_dark_mode_css,
-    SHADOW_PRESETS,
+    generate_typography_variables,
 )
 from app.core.design_tokens import (
-    BrandConfig,
-    BrandLogo,
-    BrandColors,
-    BrandTypography,
-    BrandDesignSystem,
-    ShadowStyle,
-    SemanticColors,
-    ThemeTokens,
     DARK_THEME_TOKENS,
+    BrandColors,
+    BrandConfig,
+    BrandDesignSystem,
+    BrandLogo,
+    BrandTypography,
+    SemanticColors,
+    ShadowStyle,
 )
 
 

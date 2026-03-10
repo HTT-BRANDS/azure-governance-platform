@@ -10,17 +10,18 @@ Task 5.5.2 — validates:
 Updated for microsoft-group-management design system.
 """
 
-import time
 import statistics
+import time
+
 import pytest
 
 from app.core.css_generator import (
+    generate_all_brands_css,
     generate_brand_css_variables,
     generate_inline_style,
     generate_scoped_brand_css,
-    generate_all_brands_css,
 )
-from app.core.design_tokens import load_brands, get_google_fonts_url
+from app.core.design_tokens import get_google_fonts_url, load_brands
 from app.core.theme_middleware import ThemeContext, ThemeMiddleware
 
 # ---------------------------------------------------------------------------

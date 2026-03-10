@@ -1,13 +1,23 @@
 """Tests for app.core.color_utils — WCAG and color manipulation utilities."""
 
-import pytest
 from app.core.color_utils import (
-    RGB, HSL,
-    hex_to_rgb, rgb_to_hex, hex_to_hsl, hsl_to_hex,
-    get_luminance, get_contrast_ratio, is_color_dark,
-    get_contrasting_text_color, validate_wcag_aa, validate_wcag_aa_large,
-    lighten_color, darken_color, generate_color_variants,
-    hex_to_rgba, generate_10_shade_scale,
+    HSL,
+    RGB,
+    darken_color,
+    generate_10_shade_scale,
+    generate_color_variants,
+    get_contrast_ratio,
+    get_contrasting_text_color,
+    get_luminance,
+    hex_to_hsl,
+    hex_to_rgb,
+    hex_to_rgba,
+    hsl_to_hex,
+    is_color_dark,
+    lighten_color,
+    rgb_to_hex,
+    validate_wcag_aa,
+    validate_wcag_aa_large,
 )
 
 

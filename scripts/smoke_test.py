@@ -51,8 +51,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from collections.abc import Coroutine
+    from collections.abc import Callable, Coroutine
 
 # Try to import httpx
 try:
@@ -124,7 +123,7 @@ class SmokeTestReport:
     def print_summary(self, verbose: bool = False) -> None:
         """Print test summary."""
         print(f"\n{'=' * 60}")
-        print(f"SMOKE TEST RESULTS")
+        print("SMOKE TEST RESULTS")
         print(f"{'=' * 60}")
         print(f"Target URL: {self.url}")
         print(f"Total Duration: {self.total_duration:.3f}s")

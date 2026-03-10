@@ -35,7 +35,7 @@ import json
 import subprocess
 import sys
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, TextIO
 
@@ -355,7 +355,7 @@ def cmd_log(
     files_changed: list[str] = args.files_changed if args.files_changed is not None else detect_git_changes()
 
     entry = AuditEntry(
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         agent=args.agent,
         task_id=args.task,
         action=args.action,

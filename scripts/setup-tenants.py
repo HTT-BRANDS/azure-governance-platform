@@ -31,8 +31,6 @@ import sys
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
-
 
 # =============================================================================
 # EMBEDDED TENANT CONFIGURATION
@@ -145,39 +143,39 @@ def is_valid_email(email: str) -> bool:
 def validate_tenant_config() -> list[str]:
     """Validate all tenant configurations and return list of issues."""
     issues = []
-    
+
     for code, config in RIVERSIDE_TENANTS.items():
         # Skip validation for inactive tenants (e.g., DCE which is setup later)
         if not config.is_active:
             continue
-        
+
         # Check for placeholder values
         if config.tenant_id in ("TBD", "", None):
             issues.append(f"{code}: Tenant ID is not set")
         elif not is_valid_uuid(config.tenant_id):
             issues.append(f"{code}: Tenant ID is not a valid UUID")
-        
+
         if config.app_id in ("TBD", "", None):
             issues.append(f"{code}: App ID is not set")
         elif not is_valid_uuid(config.app_id):
             issues.append(f"{code}: App ID is not a valid UUID")
-        
+
         # Check admin email format
         if not is_valid_email(config.admin_email):
             issues.append(f"{code}: Admin email is invalid: {config.admin_email}")
-        
+
         # Check for at least one domain
         if not config.domains:
             issues.append(f"{code}: No domains configured")
-    
+
     return issues
 
 
 def get_active_tenants() -> dict[str, TenantConfig]:
     """Return only active tenant configurations."""
     return {
-        code: config 
-        for code, config in RIVERSIDE_TENANTS.items() 
+        code: config
+        for code, config in RIVERSIDE_TENANTS.items()
         if config.is_active
     }
 
@@ -191,7 +189,7 @@ class TenantSetupManager:
 
     def __init__(self, database_url: str | None = None):
         """Initialize the setup manager.
-        
+
         Args:
             database_url: Database connection URL. If None, uses env var or default.
         """
@@ -208,7 +206,7 @@ class TenantSetupManager:
 
     def check_configurations(self) -> bool:
         """Validate all tenant configurations.
-        
+
         Returns:
             True if all configurations are valid, False otherwise.
         """
@@ -244,7 +242,7 @@ class TenantSetupManager:
 
     def init_database(self) -> bool:
         """Create tenant entries in the database.
-        
+
         Returns:
             True if initialization successful, False otherwise.
         """
@@ -254,14 +252,14 @@ class TenantSetupManager:
 
         try:
             # Try to import SQLAlchemy and set up database
-            from sqlalchemy import Column, String, DateTime, Boolean, Text, create_engine
+            from sqlalchemy import Boolean, Column, DateTime, String, Text, create_engine
             from sqlalchemy.orm import declarative_base, sessionmaker
-            
+
             Base = declarative_base()
-            
+
             class Tenant(Base):
                 __tablename__ = "tenants"
-                
+
                 id = Column(String(36), primary_key=True)
                 name = Column(String(255), nullable=False)
                 tenant_id = Column(String(36), unique=True, nullable=False)
@@ -272,12 +270,12 @@ class TenantSetupManager:
                 use_lighthouse = Column(Boolean, default=False)
                 created_at = Column(DateTime, default=datetime.utcnow)
                 updated_at = Column(DateTime, default=datetime.utcnow)
-            
+
             engine = create_engine(self.database_url)
             Base.metadata.create_all(engine)
             SessionLocal = sessionmaker(bind=engine)
             session = SessionLocal()
-            
+
             try:
                 for code, config in get_active_tenants().items():
                     # Check if tenant already exists
@@ -330,7 +328,7 @@ class TenantSetupManager:
 
     async def verify_graph_access(self) -> bool:
         """Verify Graph API connectivity for all active tenants.
-        
+
         Returns:
             True if all verifications passed, False otherwise.
         """
@@ -346,9 +344,9 @@ class TenantSetupManager:
                 print(f"      ✅ Tenant ID format valid: {config.tenant_id}")
                 print(f"      ✅ App ID format valid: {config.app_id}")
                 print(f"      ✅ Admin email valid: {config.admin_email}")
-                
+
                 # Show required permissions
-                print(f"      📋 Required Graph Permissions:")
+                print("      📋 Required Graph Permissions:")
                 for perm, desc in GRAPH_PERMISSIONS.items():
                     print(f"         - {perm}: {desc}")
 
@@ -406,7 +404,7 @@ def print_setup_instructions():
     print("\n" + "=" * 60)
     print("📚 MANUAL SETUP INSTRUCTIONS")
     print("=" * 60)
-    
+
     print("""
 For each tenant, you need to:
 
@@ -422,11 +420,11 @@ For each tenant, you need to:
    - Select "Microsoft Graph" > "Application permissions"
    - Add these permissions:
 """)
-    
+
     for perm, desc in GRAPH_PERMISSIONS.items():
         print(f"     • {perm}")
         print(f"       {desc}")
-    
+
     print("""
    - Click "Grant admin consent for [tenant]"
 
@@ -463,7 +461,7 @@ Examples:
   python setup-tenants.py --all            # Run all operations
         """
     )
-    
+
     parser.add_argument(
         "--check",
         action="store_true",

@@ -10,11 +10,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.database import SessionLocal, init_db
-from app.models.tenant import Tenant, Subscription
-from app.models.cost import CostSnapshot
 from app.models.compliance import ComplianceSnapshot, PolicyState
-from app.models.resource import Resource
+from app.models.cost import CostSnapshot
 from app.models.identity import IdentitySnapshot, PrivilegedUser
+from app.models.resource import Resource
+from app.models.tenant import Subscription, Tenant
 
 
 def seed_tenants(db):
@@ -84,7 +84,7 @@ def seed_costs(db, tenants):
     ]
 
     for tenant in tenants:
-        base_cost = random.uniform(500, 3000)
+        random.uniform(500, 3000)
         for day_offset in range(30):
             snapshot_date = date.today() - timedelta(days=day_offset)
             for service in random.sample(services, 5):

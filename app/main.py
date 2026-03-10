@@ -29,13 +29,13 @@ from app.api.routes import (
     sync_router,
     tenants_router,
 )
-from app.core.token_blacklist import get_blacklist_backend, get_blacklist_size
 from app.core.cache import cache_manager
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.rate_limit import rate_limiter
 from app.core.scheduler import init_scheduler
 from app.core.tenant_context import register_template_filters
+from app.core.token_blacklist import get_blacklist_backend, get_blacklist_size
 
 # Initialize Jinja2 templates and register custom filters
 templates = Jinja2Templates(directory="app/templates")
