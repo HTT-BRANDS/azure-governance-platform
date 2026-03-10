@@ -362,7 +362,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: `test ! -f compass_artifact_wf-*.md && test -f research/code-puppy-sdlc-analysis.md`
   - Signed off by: Planning Agent 📋
 
-- [ ] 6.1.2 Update stale agent IDs in all documentation (Code-Puppy 🐶)
+- [x] 6.1.2 Update stale agent IDs in all documentation (Code-Puppy 🐶)
   - Files: WIGGUM_ROADMAP.md, TRACEABILITY_MATRIX.md, docs/design-system.md
   - Action: Replace planning-agent-cbc7e7 with planning-agent-fde434
   - Validation: `grep -r "planning-agent-cbc7e7" . | wc -l` returns 0
@@ -539,9 +539,9 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
-| Phase 6: Cleanup & Consolidation | 10 | 1 | 9 | 🔄 In Progress |
+| Phase 6: Cleanup & Consolidation | 10 | 2 | 8 | 🔄 In Progress |
 | Phase 7: Production Hardening | 20 | 0 | 20 | ⬜ Not Started |
-| **TOTAL** | **86** | **57** | **29** | **🔄 In Progress** |
+| **TOTAL** | **86** | **58** | **28** | **🔄 In Progress** |
 
 ---
 
