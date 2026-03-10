@@ -452,7 +452,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: Production redirect URIs and group mappings documented
   - Signed off by: Security Auditor 🛡️
 
-- [ ] 7.2.2 Wire Key Vault credential retrieval for all tenants (Python Programmer 🐍)
+- [x] 7.2.2 Wire Key Vault credential retrieval for all tenants (Python Programmer 🐍)
   - Files: app/core/config.py, app/core/tenants_config.py
   - Validation: Key Vault integration code exists with fallback to env vars
   - Reviewed by: Security Auditor 🛡️
@@ -540,8 +540,8 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
-| Phase 7: Production Hardening | 20 | 6 | 14 | 🔄 In Progress |
-| **TOTAL** | **86** | **72** | **14** | **🔄 In Progress** |
+| Phase 7: Production Hardening | 20 | 7 | 13 | 🔄 In Progress |
+| **TOTAL** | **86** | **73** | **13** | **🔄 In Progress** |
 
 ---
 
