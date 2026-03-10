@@ -154,7 +154,10 @@ class TestGraphClientCredentialConfig:
 
     def test_credential_uses_connection_timeout(self):
         """Verify ClientSecretCredential is created with connection_timeout=10."""
-        with patch('app.api.services.graph_client.ClientSecretCredential') as mock_csc:
+        with patch('app.api.services.graph_client.ClientSecretCredential') as mock_csc,              patch('app.api.services.azure_client.AzureClientManager') as mock_mgr:
+            mock_mgr.return_value._resolve_credentials.return_value = (
+                "test-client-id", "test-client-secret", None
+            )
             client = self.GraphClient("test-tenant-id")
             client._get_credential()
 
@@ -167,7 +170,10 @@ class TestGraphClientCredentialConfig:
 
     def test_credential_is_cached(self):
         """Verify credential is created once and reused."""
-        with patch('app.api.services.graph_client.ClientSecretCredential') as mock_csc:
+        with patch('app.api.services.graph_client.ClientSecretCredential') as mock_csc,              patch('app.api.services.azure_client.AzureClientManager') as mock_mgr:
+            mock_mgr.return_value._resolve_credentials.return_value = (
+                "test-client-id", "test-client-secret", None
+            )
             client = self.GraphClient("test-tenant-id")
             cred1 = client._get_credential()
             cred2 = client._get_credential()
@@ -385,12 +391,19 @@ class TestAzureClientConnectionTimeout:
             mock_settings.key_vault_url = None
 
             # Mock the tenant lookup
-            mock_session = MagicMock()
             mock_tenant = MagicMock()
             mock_tenant.use_lighthouse = True
             mock_tenant.client_id = None
-            mock_session.query.return_value.filter.return_value.first.return_value = mock_tenant
-            mock_db.return_value = mock_session
+            mock_tenant.client_secret_ref = None
+            # SessionLocal() is used as context manager: with SessionLocal() as db:
+            mock_db.return_value.__enter__ = MagicMock(return_value=MagicMock(
+                query=MagicMock(return_value=MagicMock(
+                    filter=MagicMock(return_value=MagicMock(
+                        first=MagicMock(return_value=mock_tenant)
+                    ))
+                ))
+            ))
+            mock_db.return_value.__exit__ = MagicMock(return_value=False)
 
             from app.api.services.azure_client import AzureClientManager
             manager = AzureClientManager()

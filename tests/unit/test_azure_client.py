@@ -107,7 +107,7 @@ class TestCredentialResolution:
         manager = AzureClientManager()
         tenant_id = "tenant-123"
 
-        with pytest.raises(ValueError, match="azure_client_id"):
+        with pytest.raises(ValueError, match="Could not resolve credentials"):
             manager._resolve_credentials(tenant_id)
 
     def test_tenant_with_use_lighthouse_flag(self):
@@ -507,7 +507,8 @@ class TestClientCreation:
 
             mock_cost_client.assert_called_once()
             args = mock_cost_client.call_args[0]
-            assert args[1] == "sub-456"
+            # CostManagementClient only takes credential, not subscription_id
+            assert len(args) == 1
 
     def test_get_policy_client(self):
         """Test creating PolicyInsightsClient for a tenant."""
@@ -750,7 +751,7 @@ class TestErrorHandling:
 
         manager = AzureClientManager()
 
-        with pytest.raises(ValueError, match="azure_client_id"):
+        with pytest.raises(ValueError, match="Could not resolve credentials"):
             manager.get_credential("tenant-123")
 
     def test_tenant_db_lookup_failure_handled(self):

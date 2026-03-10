@@ -21,7 +21,15 @@ SECURITY FEATURES:
 """
 
 import logging
+import os
 import time
+
+from dotenv import load_dotenv
+
+# Load .env into os.environ so per-tenant secrets are accessible.
+# In production, secrets come from Key Vault; locally, from .env file.
+_env_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
+load_dotenv(os.path.normpath(_env_path))
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -163,7 +171,13 @@ class AzureClientManager:
     ) -> str | None:
         """Fetch a secret from Key Vault with TTL-based caching.
 
+        Resolution order:
+        1. Environment variable: RIVERSIDE_{CODE}_CLIENT_SECRET (local dev)
+        2. In-memory cache (TTL-based)
+        3. Azure Key Vault
+
         SECURITY: Secrets are cached for 5 minutes to balance performance and security.
+        Env-var fallback is only for local development where Key Vault is unreachable.
 
         Args:
             secret_name: Name of the secret in Key Vault
@@ -172,6 +186,14 @@ class AzureClientManager:
         Returns:
             Secret value or None if not found/error
         """
+        # Check environment variables first (local dev fallback)
+        # Maps secret names like "fn-client-secret" → "RIVERSIDE_FN_CLIENT_SECRET"
+        env_key = "RIVERSIDE_" + secret_name.replace("-", "_").upper()
+        env_value = os.getenv(env_key)
+        if env_value:
+            logger.debug(f"Using env var {env_key} for secret '{secret_name}'")
+            return env_value
+
         cache_key = f"{tenant_id}:{secret_name}"
         now = time.time()
 
@@ -209,10 +231,11 @@ class AzureClientManager:
         """Resolve client_id and client_secret for a tenant.
 
         Resolution order:
-        1. If no Key Vault URL: Use settings.azure_* (Lighthouse mode)
+        1. Per-tenant DB record with client_id + client_secret_ref (env-var or Key Vault)
         2. If tenant.use_lighthouse=True: Use settings.azure_*
-        3. If tenant has client_id + client_secret_ref: Use custom values from Key Vault
-        4. Otherwise: Fetch {tenant-id}-client-id and {tenant-id}-client-secret from Key Vault
+        3. If no Key Vault URL: Use settings.azure_* (Lighthouse mode)
+        4. Fetch {tenant-id}-client-id and {tenant-id}-client-secret from Key Vault
+        5. Fallback to settings.azure_*
 
         Args:
             tenant_id: The Azure tenant ID
@@ -223,22 +246,26 @@ class AzureClientManager:
         Raises:
             ValueError: If credentials cannot be resolved
         """
-        # Check if Key Vault is configured
-        if not settings.key_vault_url or not KEYVAULT_AVAILABLE:
-            # Lighthouse mode - use settings credentials
-            if not settings.azure_client_id or not settings.azure_client_secret:
-                raise ValueError(
-                    f"No Key Vault configured and settings.azure_client_id/"
-                    f"azure_client_secret are not set for tenant {tenant_id}"
-                )
-            return (
-                str(settings.azure_client_id),
-                str(settings.azure_client_secret),
-                None,
-            )
-
-        # Key Vault mode - fetch tenant to determine credential mode
+        # Always try to look up the tenant from DB first — it may have
+        # per-tenant credentials resolvable via env vars even without Key Vault.
         tenant = self._get_tenant_from_db(tenant_id)
+
+        # Try custom client_id + client_secret_ref (env var → KV → fail)
+        if tenant and tenant.client_id and tenant.client_secret_ref:
+            client_secret = self._fetch_key_vault_secret(
+                tenant.client_secret_ref, tenant_id
+            )
+            if client_secret:
+                logger.debug(
+                    f"Using custom app registration for tenant {tenant_id} "
+                    f"(client_id: {tenant.client_id[:8]}...)"
+                )
+                return (tenant.client_id, client_secret, tenant)
+            else:
+                logger.warning(
+                    f"Failed to resolve client_secret_ref '{tenant.client_secret_ref}' "
+                    f"for tenant {tenant_id}, trying fallbacks"
+                )
 
         if tenant and tenant.use_lighthouse:
             # Tenant explicitly wants Lighthouse mode
@@ -253,23 +280,6 @@ class AzureClientManager:
                 str(settings.azure_client_secret),
                 tenant,
             )
-
-        # Try custom client_id + client_secret_ref first
-        if tenant and tenant.client_id and tenant.client_secret_ref:
-            client_secret = self._fetch_key_vault_secret(
-                tenant.client_secret_ref, tenant_id
-            )
-            if client_secret:
-                logger.debug(
-                    f"Using custom app registration for tenant {tenant_id} "
-                    f"(client_id: {tenant.client_id[:8]}...)"
-                )
-                return (tenant.client_id, client_secret, tenant)
-            else:
-                logger.warning(
-                    f"Failed to fetch client_secret_ref '{tenant.client_secret_ref}' "
-                    f"for tenant {tenant_id}, falling back to default"
-                )
 
         # Fetch standard Key Vault secrets
         client_id = self._fetch_key_vault_secret(f"{tenant_id}-client-id", tenant_id)

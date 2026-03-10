@@ -25,9 +25,8 @@ class TestCostSync:
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
 
         # Mock cost query result
-        mock_result = MagicMock()
-        mock_result.properties = MagicMock()
-        mock_result.properties.rows = [
+        mock_result = MagicMock(spec=[])
+        mock_result.rows = [
             [10.50, 20240115, "USD", "rg-test", "Storage"],
             [25.00, 20240115, "USD", "rg-test", "Compute"],
         ]
@@ -61,9 +60,8 @@ class TestCostSync:
         # Setup - no rows returned
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
 
-        mock_result = MagicMock()
-        mock_result.properties = MagicMock()
-        mock_result.properties.rows = []
+        mock_result = MagicMock(spec=[])
+        mock_result.rows = []
 
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()
@@ -179,9 +177,8 @@ class TestCostSync:
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
 
-        mock_result = MagicMock()
-        mock_result.properties = MagicMock()
-        mock_result.properties.rows = [[10.50, 20240115, "USD", "rg-test", "Storage"]]
+        mock_result = MagicMock(spec=[])
+        mock_result.rows = [[10.50, 20240115, "USD", "rg-test", "Storage"]]
 
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()
@@ -208,9 +205,8 @@ class TestCostSync:
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
 
-        mock_result = MagicMock()
-        mock_result.properties = MagicMock()
-        mock_result.properties.rows = [
+        mock_result = MagicMock(spec=[])
+        mock_result.rows = [
             [10.50, 20240115, "USD", "rg-test", "Storage"],
             [0.0, 20240115, "USD", "rg-test", "Network"],  # Should be skipped
             [0.00, 20240115, "USD", "rg-test", "DNS"],  # Should be skipped
@@ -240,9 +236,8 @@ class TestCostSync:
         # Setup
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
 
-        mock_result = MagicMock()
-        mock_result.properties = MagicMock()
-        mock_result.properties.rows = [
+        mock_result = MagicMock(spec=[])
+        mock_result.rows = [
             [10.50, 20240115, "USD", "rg-test", "Storage"],
             [],  # Malformed row
             [25.00, 20240115],  # Missing columns
@@ -284,9 +279,8 @@ class TestCostSync:
 
         mock_azure_client_manager["costs"].list_subscriptions.return_value = [mock_subscription]
 
-        mock_result = MagicMock()
-        mock_result.properties = MagicMock()
-        mock_result.properties.rows = [[10.50, 20240115, "USD", "rg-test", "Storage"]]
+        mock_result = MagicMock(spec=[])
+        mock_result.rows = [[10.50, 20240115, "USD", "rg-test", "Storage"]]
 
         mock_cost_client = MagicMock()
         mock_cost_client.query = MagicMock()

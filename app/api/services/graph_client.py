@@ -149,12 +149,20 @@ class GraphClient:
         self._credential: ClientSecretCredential | None = None
 
     def _get_credential(self) -> ClientSecretCredential:
-        """Get or create credential."""
+        """Get or create credential using per-tenant resolution.
+
+        Uses AzureClientManager to resolve the correct client_id
+        and client_secret for this tenant (env var → Key Vault → settings fallback).
+        """
         if not self._credential:
+            from app.api.services.azure_client import AzureClientManager
+
+            manager = AzureClientManager()
+            client_id, client_secret, _ = manager._resolve_credentials(self.tenant_id)
             self._credential = ClientSecretCredential(
                 tenant_id=self.tenant_id,
-                client_id=settings.azure_client_id,
-                client_secret=settings.azure_client_secret,
+                client_id=client_id,
+                client_secret=client_secret,
                 connection_timeout=10,
             )
         return self._credential
@@ -197,40 +205,70 @@ class GraphClient:
     @circuit_breaker(GRAPH_API_BREAKER)
     @retry_with_backoff(GRAPH_API_POLICY)
     async def get_users(self, top: int = 999) -> list[dict]:
-        """Get all users in the tenant."""
-        users = []
+        """Get all users in the tenant.
+
+        Note: signInActivity requires AuditLog.Read.All — if the app
+        registration lacks that permission, we gracefully retry without it.
+        """
+        users: list[dict] = []
         endpoint = "/users"
+        base_fields = "id,displayName,userPrincipalName,userType,accountEnabled,createdDateTime"
         params = {
             "$top": top,
-            "$select": "id,displayName,userPrincipalName,userType,"
-                       "accountEnabled,createdDateTime,signInActivity",
+            "$select": f"{base_fields},signInActivity",
         }
 
-        while endpoint:
+        try:
             data = await self._request("GET", endpoint, params)
-            users.extend(data.get("value", []))
-
-            # Handle pagination
-            next_link = data.get("@odata.nextLink")
-            if next_link:
-                endpoint = next_link.replace(GRAPH_API_BASE, "")
-                params = None
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 403:
+                # signInActivity requires AuditLog.Read.All — degrade gracefully
+                logger.warning(
+                    f"signInActivity requires AuditLog.Read.All for tenant "
+                    f"{self.tenant_id[:8]}..., retrying without it"
+                )
+                params["$select"] = base_fields
+                data = await self._request("GET", endpoint, params)
             else:
-                endpoint = None
+                raise
+
+        users.extend(data.get("value", []))
+
+        # Handle pagination
+        next_link = data.get("@odata.nextLink")
+        while next_link:
+            endpoint = next_link.replace(GRAPH_API_BASE, "")
+            data = await self._request("GET", endpoint)
+            users.extend(data.get("value", []))
+            next_link = data.get("@odata.nextLink")
 
         return users
 
     @circuit_breaker(GRAPH_API_BREAKER)
     @retry_with_backoff(GRAPH_API_POLICY)
     async def get_guest_users(self) -> list[dict]:
-        """Get all guest users."""
+        """Get all guest users.
+
+        Note: signInActivity requires AuditLog.Read.All — degrades gracefully.
+        """
         endpoint = "/users"
+        base_fields = "id,displayName,userPrincipalName,createdDateTime,externalUserState"
         params = {
             "$filter": "userType eq 'Guest'",
-            "$select": "id,displayName,userPrincipalName,createdDateTime,"
-                       "signInActivity,externalUserState",
+            "$select": f"{base_fields},signInActivity",
         }
-        data = await self._request("GET", endpoint, params)
+        try:
+            data = await self._request("GET", endpoint, params)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 403:
+                logger.warning(
+                    f"signInActivity requires AuditLog.Read.All for tenant "
+                    f"{self.tenant_id[:8]}... (guest query), retrying without it"
+                )
+                params["$select"] = base_fields
+                data = await self._request("GET", endpoint, params)
+            else:
+                raise
         return data.get("value", [])
 
     @circuit_breaker(GRAPH_API_BREAKER)
@@ -681,7 +719,7 @@ class GraphClient:
     async def get_mfa_status(self) -> dict:
         """Get MFA registration status."""
         # This requires Reports.Read.All permission
-        endpoint = "/reports/credentialUserRegistrationDetails"
+        endpoint = "/reports/authenticationMethods/userRegistrationDetails"
         data = await self._request("GET", endpoint)
         return data
 
@@ -849,7 +887,7 @@ class GraphClient:
         Returns:
             List of user MFA registration details
         """
-        endpoint = "/reports/credentialUserRegistrationDetails"
+        endpoint = "/reports/authenticationMethods/userRegistrationDetails"
         params: dict[str, Any] = {}
         if filter_param:
             params["$filter"] = filter_param
@@ -879,7 +917,7 @@ class GraphClient:
         import asyncio
 
         all_registrations: list[dict] = []
-        endpoint = "/reports/credentialUserRegistrationDetails"
+        endpoint = "/reports/authenticationMethods/userRegistrationDetails"
         params: dict[str, Any] = {"$top": min(batch_size, 999)}
         if filter_param:
             params["$filter"] = filter_param
