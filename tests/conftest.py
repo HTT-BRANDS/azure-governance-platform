@@ -1,11 +1,17 @@
 """Test configuration and fixtures."""
 
+import uuid
+from unittest.mock import MagicMock
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.auth import User, get_current_user
+from app.core.authorization import TenantAuthorization, get_tenant_authorization
 from app.core.database import Base, get_db
+from app.models.tenant import Tenant
 
 # Test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -46,4 +52,74 @@ def client(db_session):
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
+    app.dependency_overrides.clear()
+
+
+# ============================================================================
+# Authenticated client fixtures
+# ============================================================================
+
+_TEST_TENANT_ID = "test-tenant-123"
+
+
+@pytest.fixture(scope="function")
+def mock_user():
+    """Mock authenticated user with admin access."""
+    return User(
+        id="user-123",
+        email="test@example.com",
+        name="Test User",
+        roles=["admin"],
+        tenant_ids=[_TEST_TENANT_ID],
+        is_active=True,
+        auth_provider="internal",
+    )
+
+
+@pytest.fixture(scope="function")
+def mock_authz():
+    """Mock TenantAuthorization that grants access to the test tenant."""
+    authz = MagicMock(spec=TenantAuthorization)
+    authz.accessible_tenant_ids = [_TEST_TENANT_ID]
+    authz.ensure_at_least_one_tenant = MagicMock()
+    authz.filter_tenant_ids = MagicMock(return_value=[_TEST_TENANT_ID])
+    authz.validate_access = MagicMock()
+    return authz
+
+
+@pytest.fixture(scope="function")
+def authed_client(db_session, mock_user, mock_authz):
+    """Test client with database AND auth overrides.
+
+    Use this for testing authenticated endpoints — bypasses JWT validation
+    and tenant authorization so you can focus on business logic.
+    """
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    # Seed a tenant — use same string for id and tenant_id so FK refs
+    # and authz checks (which compare against tenant_id) both work.
+    tenant = Tenant(
+        id=_TEST_TENANT_ID,
+        tenant_id=_TEST_TENANT_ID,
+        name="Test Tenant",
+        is_active=True,
+    )
+    db_session.add(tenant)
+    db_session.commit()
+
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    app.dependency_overrides[get_tenant_authorization] = lambda: mock_authz
+
+    with TestClient(app) as test_client:
+        yield test_client
+
     app.dependency_overrides.clear()

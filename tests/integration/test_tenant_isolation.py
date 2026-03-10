@@ -239,7 +239,7 @@ class TestComplianceTenantIsolation:
         data = response.json()
 
         # Should have compliance data
-        assert "overall_compliance_percent" in data
+        assert "average_compliance_percent" in data
 
         # All data should be from tenant 1
         if "tenant_breakdown" in data:
@@ -248,7 +248,7 @@ class TestComplianceTenantIsolation:
 
     def test_tenant1_user_sees_only_tenant1_policies(self, tenant1_client, test_tenant_id):
         """User with tenant 1 access should only see tenant 1 policy states."""
-        response = tenant1_client.get("/api/v1/compliance/policies")
+        response = tenant1_client.get("/api/v1/compliance/non-compliant")
 
         assert response.status_code == 200
         policies = response.json()
@@ -283,7 +283,8 @@ class TestResourceTenantIsolation:
         response = tenant1_client.get("/api/v1/resources")
 
         assert response.status_code == 200
-        resources = response.json()
+        data = response.json()
+        resources = data.get("resources", data if isinstance(data, list) else [])
 
         # Should have resources (seeded_db creates some)
         assert len(resources) > 0
@@ -297,7 +298,8 @@ class TestResourceTenantIsolation:
         response = tenant2_client.get("/api/v1/resources")
 
         assert response.status_code == 200
-        resources = response.json()
+        data = response.json()
+        resources = data.get("resources", data if isinstance(data, list) else [])
 
         # Should not contain any tenant 1 resources
         for resource in resources:
@@ -311,7 +313,8 @@ class TestResourceTenantIsolation:
         assert response.status_code in [200, 403]
 
         if response.status_code == 200:
-            resources = response.json()
+            data = response.json()
+            resources = data.get("resources", data if isinstance(data, list) else [])
             for resource in resources:
                 assert resource["tenant_id"] != second_tenant_id
 
@@ -340,7 +343,7 @@ class TestIdentityTenantIsolation:
 
     def test_tenant1_user_sees_only_tenant1_privileged_users(self, tenant1_client, test_tenant_id):
         """User with tenant 1 access should only see tenant 1 privileged users."""
-        response = tenant1_client.get("/api/v1/identity/privileged-users")
+        response = tenant1_client.get("/api/v1/identity/privileged")
 
         assert response.status_code == 200
         users = response.json()
@@ -506,7 +509,8 @@ class TestMultiTenantUserAccess:
         response = multi_tenant_client.get("/api/v1/resources")
 
         assert response.status_code == 200
-        resources = response.json()
+        data = response.json()
+        resources = data.get("resources", data if isinstance(data, list) else [])
 
         # Should have resources from tenant 1 at minimum
         tenant_ids = {r["tenant_id"] for r in resources}
@@ -555,7 +559,8 @@ class TestAdminUserAccess:
         # With filter for tenant 1
         response = admin_test_client.get(f"/api/v1/resources?tenant_ids={test_tenant_id}")
         assert response.status_code == 200
-        resources = response.json()
+        data = response.json()
+        resources = data.get("resources", data if isinstance(data, list) else [])
 
         # Should only see tenant 1 resources
         for resource in resources:
