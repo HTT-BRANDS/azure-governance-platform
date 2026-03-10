@@ -11,13 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Connect real Azure tenant credentials (HTT, BCC, FN, TLL, DCE)
-- CI/CD OIDC federation for passwordless GitHub → Azure deploys
 - Staging environment deployment
 - Replace backfill fetch_data() placeholders with real Azure API calls
-- Token blacklist (Redis) for production JWT revocation
-- Rate limiting for production traffic
 - Custom compliance frameworks
 - Teams bot integration
+
+---
+
+## [1.2.0] - 2026-03-09
+
+### Added
+- Production security hardening (JWT enforcement, CORS validation)
+- Azure Key Vault integration with env var fallback
+- Redis-backed token blacklist for JWT revocation
+- Admin user setup script (scripts/setup_admin.py)
+- Production security audit (docs/security/production-audit.md)
+- CI/CD OIDC federation setup (scripts/gh-oidc-setup.sh)
+- Staging deployment checklist (docs/STAGING_DEPLOYMENT_CHECKLIST.md)
+
+### Changed
+- Development status upgraded from Alpha to Beta
+- Removed all placeholder references from application code
+- Rate limiting tuned for production traffic
+
+### Fixed
+- Alembic migration 002 now handles fresh database creation
+- 266 ruff linting errors resolved
 
 ---
 

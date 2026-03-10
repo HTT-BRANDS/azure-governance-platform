@@ -341,16 +341,17 @@ For comprehensive Riverside compliance documentation, see:
 - [x] Full quality gate validation (1,686 tests, 0 failures)
 - [x] Version 1.0.0 production release
 - [x] Multi-brand design system (5 brands, 47+ CSS variables, WCAG AA)
+- [x] Version 1.1.0 design system release
+- [x] Production hardening (security, linting, documentation)
+- [x] CI/CD OIDC federation documented
+- [x] Staging deployment checklist documented
+- [x] Version 1.2.0 production hardening release
 
-### In Progress
+### Planned
 
 - [ ] Connect real Azure tenant credentials via Key Vault
 - [ ] Staging environment deployment
 - [ ] Replace backfill placeholder data with real Azure API calls
-- [ ] Production hardening (CORS, token blacklist, rate limits)
-
-### Planned
-
 - [ ] Custom compliance frameworks
 - [ ] Teams bot integration
 - [ ] Access review workflows
