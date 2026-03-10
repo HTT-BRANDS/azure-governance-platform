@@ -12,6 +12,8 @@ import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+pytestmark = pytest.mark.xfail(reason="Auth mocking incomplete (401s)", strict=False)
 from fastapi.testclient import TestClient
 
 from app.core.auth import User
@@ -21,7 +23,6 @@ from app.models.tenant import Tenant
 from app.schemas.compliance import ComplianceScore, ComplianceSummary, PolicyStatus
 
 # Mark all tests as xfail due to authentication issues in test setup
-pytestmark = pytest.mark.xfail(reason="Authentication mocking not working correctly (401 errors)")
 
 
 @pytest.fixture
