@@ -368,7 +368,7 @@ python scripts/sync_roadmap.py --update --task 1.1.1
   - Validation: `grep -r "planning-agent-cbc7e7" . | wc -l` returns 0
   - Signed off by: Planning Agent 📋
 
-- [ ] 6.1.3 Update pyproject.toml development status classifier (Code-Puppy 🐶)
+- [x] 6.1.3 Update pyproject.toml development status classifier (Code-Puppy 🐶)
   - File: pyproject.toml
   - Action: Change Development Status 3 - Alpha to 4 - Beta
   - Validation: `grep "Development Status :: 4 - Beta" pyproject.toml`
@@ -539,9 +539,9 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 | Phase 3: Process | 7 | 7 | 0 | ✅ Complete |
 | Phase 4: Validation | 5 | 5 | 0 | ✅ Complete |
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
-| Phase 6: Cleanup & Consolidation | 10 | 2 | 8 | 🔄 In Progress |
+| Phase 6: Cleanup & Consolidation | 10 | 3 | 7 | 🔄 In Progress |
 | Phase 7: Production Hardening | 20 | 0 | 20 | ⬜ Not Started |
-| **TOTAL** | **86** | **58** | **28** | **🔄 In Progress** |
+| **TOTAL** | **86** | **59** | **27** | **🔄 In Progress** |
 
 ---
 
