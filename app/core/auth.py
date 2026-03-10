@@ -342,7 +342,13 @@ azure_ad_validator = AzureADTokenValidator()
 jwt_manager = JWTTokenManager()
 
 # Token blacklist (Redis-backed with in-memory fallback)
-from app.core.token_blacklist import (  # noqa: E402
+# Re-exported for use by app.api.routes.auth and other modules
+from app.core.token_blacklist import (  # noqa: E402, F401
+    TokenBlacklist,
+    _token_blacklist,
+    blacklist_token,
+    get_blacklist_backend,
+    get_blacklist_size,
     is_token_blacklisted,
 )
 
