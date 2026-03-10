@@ -23,6 +23,7 @@ from app.api.routes import (
     identity_router,
     monitoring_router,
     onboarding_router,
+    pages_router,
     preflight_router,
     recommendations_router,
     resources_router,
@@ -221,6 +222,7 @@ app.include_router(riverside_router)
 app.include_router(bulk_router)
 app.include_router(dmarc_router)
 app.include_router(exports_router)
+app.include_router(pages_router)
 app.include_router(preflight_router)
 app.include_router(monitoring_router)
 app.include_router(recommendations_router)

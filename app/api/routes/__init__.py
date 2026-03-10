@@ -10,6 +10,7 @@ from app.api.routes.exports import router as exports_router
 from app.api.routes.identity import router as identity_router
 from app.api.routes.monitoring import router as monitoring_router
 from app.api.routes.onboarding import router as onboarding_router
+from app.api.routes.pages import router as pages_router
 from app.api.routes.preflight import router as preflight_router
 from app.api.routes.recommendations import router as recommendations_router
 from app.api.routes.resources import router as resources_router
@@ -29,6 +30,7 @@ __all__ = [
     "identity_router",
     "monitoring_router",
     "onboarding_router",
+    "pages_router",
     "preflight_router",
     "recommendations_router",
     "resources_router",

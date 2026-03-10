@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Cost Management{% endblock %}
+
+{% block nav_costs %}bg-brand-primary-110{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <!-- Header -->
+    <div class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Cost Management</h1>
+                    <p class="mt-1 text-sm text-gray-500">Azure spend across all managed tenants</p>
+                </div>
+                <button onclick="loadAllData()"
+                        class="inline-flex items-center px-4 py-2 bg-wm-blue-100 text-white text-sm font-medium rounded-lg hover:bg-wm-blue-110 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Total Spend</div>
+                <div class="mt-2 text-3xl font-bold text-gray-900" id="total-cost">--</div>
+                <div class="mt-1 text-sm" id="cost-change">--</div>
+            </div>
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Tenants</div>
+                <div class="mt-2 text-3xl font-bold text-gray-900" id="tenant-count">--</div>
+                <div class="mt-1 text-sm text-gray-500">Managed accounts</div>
+            </div>
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Subscriptions</div>
+                <div class="mt-2 text-3xl font-bold text-gray-900" id="subscription-count">--</div>
+                <div class="mt-1 text-sm text-gray-500">Active billing</div>
+            </div>
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Anomalies</div>
+                <div class="mt-2 text-3xl font-bold text-gray-900" id="anomaly-count">--</div>
+                <div class="mt-1 text-sm text-gray-500">Unacknowledged</div>
+            </div>
+        </div>
+
+        <!-- Cost by Tenant -->
+        <div class="bg-white rounded-xl shadow mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Cost by Tenant</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscriptions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="tenant-costs-table">
+                        <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top Services -->
+        <div class="bg-white rounded-xl shadow mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Top Services by Spend</h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4" id="top-services">
+                    <div class="text-center text-gray-500">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anomalies -->
+        <div class="bg-white rounded-xl shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Cost Anomalies</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="anomalies-table">
+                        <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.state.csp_nonce }}">
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+}
+
+async function fetchJSON(url) {
+    const resp = await fetch(url, { credentials: 'same-origin' });
+    if (!resp.ok) return null;
+    return resp.json();
+}
+
+async function loadAllData() {
+    const [summary, tenantCosts, anomalies] = await Promise.all([
+        fetchJSON('/api/v1/costs/summary'),
+        fetchJSON('/api/v1/costs/by-tenant'),
+        fetchJSON('/api/v1/costs/anomalies'),
+    ]);
+
+    if (summary) {
+        document.getElementById('total-cost').textContent = formatCurrency(summary.total_cost);
+        document.getElementById('tenant-count').textContent = summary.tenant_count;
+        document.getElementById('subscription-count').textContent = summary.subscription_count;
+
+        const changeEl = document.getElementById('cost-change');
+        if (summary.cost_change_percent !== null) {
+            const pct = summary.cost_change_percent.toFixed(1);
+            const isUp = summary.cost_change_percent > 0;
+            changeEl.textContent = `${isUp ? '↑' : '↓'} ${Math.abs(pct)}% vs prior period`;
+            changeEl.className = `mt-1 text-sm ${isUp ? 'text-red-600' : 'text-green-600'}`;
+        } else {
+            changeEl.textContent = 'No prior period data';
+            changeEl.className = 'mt-1 text-sm text-gray-500';
+        }
+
+        const servicesEl = document.getElementById('top-services');
+        if (summary.top_services && summary.top_services.length > 0) {
+            servicesEl.innerHTML = summary.top_services.map(s => `
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">${s.service_name}</span>
+                            <span class="text-sm text-gray-500">${formatCurrency(s.cost)} (${s.percentage_of_total.toFixed(1)}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-wm-blue-100 h-2 rounded-full" style="width: ${Math.min(s.percentage_of_total, 100)}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            servicesEl.innerHTML = '<div class="text-center text-gray-500">No service data available</div>';
+        }
+    }
+
+    const tenantTable = document.getElementById('tenant-costs-table');
+    if (tenantCosts && tenantCosts.length > 0) {
+        tenantTable.innerHTML = tenantCosts.map(t => `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${t.tenant_name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(t.total_cost)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${t.subscription_costs ? t.subscription_costs.length : 0}</td>
+            </tr>
+        `).join('');
+    } else {
+        tenantTable.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No tenant cost data available. Run a cost sync first.</td></tr>';
+    }
+
+    const anomalyTable = document.getElementById('anomalies-table');
+    if (anomalies && anomalies.length > 0) {
+        document.getElementById('anomaly-count').textContent = anomalies.filter(a => !a.is_acknowledged).length;
+        anomalyTable.innerHTML = anomalies.map(a => `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${a.tenant_name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${a.anomaly_type}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(a.expected_cost)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(a.actual_cost)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm ${a.percentage_change > 0 ? 'text-red-600' : 'text-green-600'}">${a.percentage_change > 0 ? '+' : ''}${a.percentage_change.toFixed(1)}%</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${a.is_acknowledged ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'}">
+                        ${a.is_acknowledged ? 'Acknowledged' : 'Open'}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    } else {
+        document.getElementById('anomaly-count').textContent = '0';
+        anomalyTable.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No anomalies detected</td></tr>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadAllData);
+</script>
+{% endblock %}

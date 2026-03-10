@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Identity &amp; Access{% endblock %}
+
+{% block nav_identity %}bg-brand-primary-110{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <!-- Header -->
+    <div class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Identity &amp; Access</h1>
+                    <p class="mt-1 text-sm text-gray-500">Entra ID users, guest accounts &amp; privileged access</p>
+                </div>
+                <button onclick="loadAllData()"
+                        class="inline-flex items-center px-4 py-2 bg-wm-blue-100 text-white text-sm font-medium rounded-lg hover:bg-wm-blue-110 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Total Users</div>
+                <div class="mt-2 text-3xl font-bold text-gray-900" id="total-users">--</div>
+                <div class="mt-1 text-sm text-gray-500">Across all tenants</div>
+            </div>
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Guest Users</div>
+                <div class="mt-2 text-3xl font-bold text-yellow-600" id="guest-count">--</div>
+                <div class="mt-1 text-sm text-gray-500">External identities</div>
+            </div>
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Stale Accounts</div>
+                <div class="mt-2 text-3xl font-bold text-red-600" id="stale-count">--</div>
+                <div class="mt-1 text-sm text-gray-500">No recent sign-in</div>
+            </div>
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Privileged Users</div>
+                <div class="mt-2 text-3xl font-bold text-purple-600" id="privileged-count">--</div>
+                <div class="mt-1 text-sm text-gray-500">Admin role holders</div>
+            </div>
+        </div>
+
+        <!-- Privileged Users -->
+        <div class="bg-white rounded-xl shadow mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Privileged Users</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UPN</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roles</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="privileged-table">
+                        <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Guest Users -->
+            <div class="bg-white rounded-xl shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Guest Users</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="guests-table">
+                            <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Stale Accounts -->
+            <div class="bg-white rounded-xl shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Stale Accounts</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Sign-in</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="stale-table">
+                            <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.state.csp_nonce }}">
+async function fetchJSON(url) {
+    const resp = await fetch(url, { credentials: 'same-origin' });
+    if (!resp.ok) return null;
+    return resp.json();
+}
+
+async function loadAllData() {
+    const [summary, privileged, guests, stale] = await Promise.all([
+        fetchJSON('/api/v1/identity/summary'),
+        fetchJSON('/api/v1/identity/privileged'),
+        fetchJSON('/api/v1/identity/guests'),
+        fetchJSON('/api/v1/identity/stale'),
+    ]);
+
+    if (summary) {
+        document.getElementById('total-users').textContent = summary.total_users ?? 0;
+        document.getElementById('guest-count').textContent = summary.guest_users ?? summary.guest_count ?? 0;
+        document.getElementById('stale-count').textContent = summary.stale_accounts ?? summary.stale_count ?? 0;
+        document.getElementById('privileged-count').textContent = summary.privileged_users ?? summary.privileged_count ?? 0;
+    }
+
+    const privTable = document.getElementById('privileged-table');
+    if (privileged && privileged.length > 0) {
+        privTable.innerHTML = privileged.slice(0, 50).map(u => `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${u.display_name || '--'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${u.user_principal_name || u.email || '--'}</td>
+                <td class="px-6 py-4 text-sm text-gray-700">${(u.roles || []).join(', ') || '--'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.tenant_name || u.tenant_id || '--'}</td>
+            </tr>
+        `).join('');
+    } else {
+        privTable.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No privileged users found. Run an identity sync first.</td></tr>';
+    }
+
+    const guestTable = document.getElementById('guests-table');
+    if (guests && guests.length > 0) {
+        guestTable.innerHTML = guests.slice(0, 25).map(u => `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${u.display_name || '--'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${u.email || u.user_principal_name || '--'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.tenant_name || u.tenant_id || '--'}</td>
+            </tr>
+        `).join('');
+    } else {
+        guestTable.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No guest users found</td></tr>';
+    }
+
+    const staleTable = document.getElementById('stale-table');
+    if (stale && stale.length > 0) {
+        staleTable.innerHTML = stale.slice(0, 25).map(u => `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${u.display_name || '--'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.last_sign_in || u.last_sign_in_date || 'Never'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.tenant_name || u.tenant_id || '--'}</td>
+            </tr>
+        `).join('');
+    } else {
+        staleTable.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No stale accounts found</td></tr>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadAllData);
+</script>
+{% endblock %}
