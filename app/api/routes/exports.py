@@ -69,10 +69,10 @@ async def export_costs(
 
     # Get cost trends for the period
     service = CostService(db)
-    trends = service.get_cost_trends(days=(end_date - start_date).days)
+    trends = await service.get_cost_trends(days=(end_date - start_date).days)
 
     # Get cost by tenant (filtered by access)
-    costs_by_tenant = service.get_costs_by_tenant(period_days=(end_date - start_date).days)
+    costs_by_tenant = await service.get_costs_by_tenant(period_days=(end_date - start_date).days)
 
     # Build export data
     export_data = []
@@ -129,7 +129,7 @@ async def export_resources(
     filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
 
     service = ResourceService(db)
-    inventory = service.get_resource_inventory(
+    inventory = await service.get_resource_inventory(
         tenant_id=filtered_tenant_ids[0] if filtered_tenant_ids and len(filtered_tenant_ids) == 1 else None,
         resource_type=resource_type,
         limit=1000,
@@ -191,7 +191,7 @@ async def export_compliance(
     service = ComplianceService(db)
 
     # Get compliance summary
-    summary = service.get_compliance_summary()
+    summary = await service.get_compliance_summary()
 
     # Get non-compliant policies if requested
     non_compliant = []
