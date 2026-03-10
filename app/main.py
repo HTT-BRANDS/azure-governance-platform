@@ -368,10 +368,34 @@ async def get_system_status():
 
 
 @app.get("/")
-async def root():
-    """Root endpoint - redirect to dashboard."""
+async def root(request: Request):
+    """Root endpoint - redirect to dashboard or login."""
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/dashboard")
+
+    # Check if user has a token (cookie or header)
+    has_token = (
+        request.cookies.get("access_token")
+        or (request.headers.get("Authorization", "").startswith("Bearer "))
+    )
+    if has_token:
+        return RedirectResponse(url="/dashboard")
+    return RedirectResponse(url="/login")
+
+
+@app.exception_handler(401)
+async def unauthorized_redirect(request: Request, exc):
+    """Redirect browser requests to login page on 401."""
+    from fastapi.responses import RedirectResponse
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return RedirectResponse(url="/login", status_code=302)
+    # Preserve the original error detail from the HTTPException
+    detail = getattr(exc, "detail", "Could not validate credentials")
+    return JSONResponse(
+        status_code=401,
+        content={"detail": detail},
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 @app.exception_handler(Exception)

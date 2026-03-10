@@ -385,6 +385,10 @@ async def get_current_user(
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header[7:]
 
+    # Fall back to cookie-based auth (for browser page navigations)
+    if not token:
+        token = request.cookies.get("access_token")
+
     if not token:
         raise credentials_exception
 

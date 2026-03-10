@@ -52,10 +52,10 @@ async def _get_dashboard_data(
     resource_svc = ResourceService(db)
     identity_svc = IdentityService(db)
 
-    cost_summary = cost_svc.get_cost_summary()
-    compliance_summary = compliance_svc.get_compliance_summary()
-    resource_inventory = resource_svc.get_resource_inventory(limit=10)
-    identity_summary = identity_svc.get_identity_summary()
+    cost_summary = await cost_svc.get_cost_summary()
+    compliance_summary = await compliance_svc.get_compliance_summary()
+    resource_inventory = await resource_svc.get_resource_inventory(limit=10)
+    identity_summary = await identity_svc.get_identity_summary()
 
     # Apply tenant isolation to resources
     accessible_tenants = authz.accessible_tenant_ids

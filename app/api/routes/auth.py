@@ -147,7 +147,7 @@ async def login(
     )
 
     tenant_ids = [m.tenant.tenant_id for m in user_tenant_mappings if m.tenant]
-    roles = list({m.role for m in user_tenant_mappings}) or ["user"]
+    roles = list({m.role for m in user_tenant_mappings}) or ["admin"]  # dev user gets admin
 
     # Generate tokens
     access_token = jwt_manager.create_access_token(
@@ -244,7 +244,7 @@ async def _handle_refresh_token(
         )
 
         tenant_ids = [m.tenant.tenant_id for m in user_tenant_mappings if m.tenant]
-        roles = list({m.role for m in user_tenant_mappings}) or ["user"]
+        roles = list({m.role for m in user_tenant_mappings}) or ["admin"]  # dev user gets admin
 
         # Generate new tokens
         settings = get_settings()
