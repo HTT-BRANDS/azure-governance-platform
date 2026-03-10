@@ -201,3 +201,50 @@ Each row traces a requirement from **origin → implementation → testing → s
 ---
 
 *This matrix is the single source of truth for requirement-to-agent accountability. Updated by Planning Agent 📋 and Pack Leader 🐺.*
+
+---
+
+## UAT Verification Log (2026-03-10)
+
+**Executed by:** Code-Puppy 🐶 (`code-puppy-3c0684`)  
+**Full report:** [UAT_REPORT.md](UAT_REPORT.md)
+
+### Test Execution Summary
+
+| Metric | Value |
+|--------|-------|
+| Total Tests | 2,064 collected / 1,764 executed |
+| Pass Rate | 100% (1,764/1,764) |
+| Skipped | 2 |
+| Xfailed | 230 (expected failures for unimplemented Azure integrations) |
+| Xpassed | 68 (features ahead of schedule) |
+| Execution Time | 83.33s |
+
+### Per-Epic Verification Status
+
+| Epic | Reqs | All Pass? | Verified By |
+|------|------|-----------|-------------|
+| Epic 1: Agent Catalog | REQ-101..103 | ✅ | Planning Agent 📋 + Security Auditor 🛡️ |
+| Epic 2: Traceability | REQ-201..204 | ✅ | Code-Puppy 🐶 + Watchdog 🐕‍🦺 |
+| Epic 3: 13-Step Testing | REQ-301..313 | ✅ (313 pending Tyler) | Code-Puppy 🐶 |
+| Epic 4: Requirements Flow | All roles | ✅ | Code-Puppy 🐶 |
+| Epic 5: Dual-Scale PM | REQ-501..503 | ✅ | Pack Leader 🐺 + Planning Agent 📋 |
+| Epic 6: Security | REQ-601..605 | ✅ | Code-Puppy 🐶 + Security Auditor 🛡️ |
+| Epic 7: Architecture | REQ-701..704 | ✅ | Code-Puppy 🐶 + Solutions Architect 🏛️ |
+| Epic 8: Accessibility | REQ-801..804 | ✅ | Code-Puppy 🐶 |
+| Epic 9: Design System | REQ-901..907 | ✅ | Code-Puppy 🐶 |
+| Epic 10: Production | REQ-1001..1015 | ✅ | Code-Puppy 🐶 |
+
+### Bugs Found & Fixed During UAT
+
+| Bug | Severity | Fixed? | Test Coverage |
+|-----|----------|--------|---------------|
+| wm-* colors not in Tailwind @theme | 🔴 High | ✅ | `test_compiled_css_has_wm_colors` |
+| 4 missing HTMX component templates | 🔴 High | ✅ | `test_component_templates_exist` |
+| tenant-sync-status missing authz | 🔴 High | ✅ | `test_partial_returns_200[tenant-sync-status]` |
+| 4 missing awaits on async calls | 🔴 High | ✅ | `test_partial_returns_200[cost/compliance/resource/identity]` |
+| hx-boost URL hijacking | 🟡 Medium | ✅ | `test_base_template_no_body_boost` |
+| CSP missing cdn.jsdelivr.net | 🟢 Low | ✅ | `test_csp_allows_required_cdn_sources` |
+| Jinja2 include syntax error | 🔴 High | ✅ | `test_partial_returns_200[tenant-sync-status]` |
+| Tenant.code AttributeError | 🔴 High | ✅ | `test_partial_returns_200[riverside-badge]` |
+
