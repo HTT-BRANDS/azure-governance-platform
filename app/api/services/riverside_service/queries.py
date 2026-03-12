@@ -3,8 +3,8 @@
 from datetime import date, datetime
 
 from app.api.services.riverside_service.constants import (
+    ALL_TENANTS,
     RIVERSIDE_DEADLINE,
-    RIVERSIDE_TENANTS,
 )
 from app.api.services.riverside_service.models import (
     GapAnalysis,
@@ -24,14 +24,22 @@ def _resolve_tenant_code(tenant) -> str:
     """Resolve the short code for a Tenant model.
 
     The Tenant SQLAlchemy model doesn't have a .code column.
-    We match by tenant name against the known RIVERSIDE_TENANTS config
-    (a {code: display_name} dict).
+    We match by tenant name against the known ALL_TENANTS config
+    (a {CODE: display_name} dict with uppercase keys).
+
+    Returns:
+        Uppercase brand code (e.g. "HTT", "BCC").
     """
-    # RIVERSIDE_TENANTS is {code: name}. Reverse-lookup by name.
-    for code, name in RIVERSIDE_TENANTS.items():
+    # ALL_TENANTS is {CODE: name}. Reverse-lookup by exact name match.
+    for code, name in ALL_TENANTS.items():
         if name == tenant.name:
             return code.upper()
-    # Fallback: use first 4 chars of tenant_id
+    # Fallback: check if any code appears in the tenant name
+    tenant_name_upper = tenant.name.upper() if tenant.name else ""
+    for code in ALL_TENANTS:
+        if code.upper() in tenant_name_upper:
+            return code.upper()
+    # Final fallback: use first 4 chars of tenant_id
     return tenant.tenant_id[:4].upper()
 
 
@@ -78,12 +86,12 @@ def get_riverside_summary(db) -> dict:
         reqs_total = compliance.requirements_total if compliance else 0
         gaps = compliance.critical_gaps_count if compliance else 0
 
-        tenant_code = _resolve_tenant_code(tenant).lower()
-        tenant_name = RIVERSIDE_TENANTS.get(tenant_code.upper(), tenant.name)
+        tenant_code = _resolve_tenant_code(tenant)
+        tenant_name = ALL_TENANTS.get(tenant_code, tenant.name)
 
         tenant_summaries.append({
             "tenant_id": tenant.tenant_id,
-            "tenant_code": tenant_code.upper(),
+            "tenant_code": tenant_code,
             "tenant_name": tenant_name,
             "maturity_score": maturity_score,
             "mfa_coverage": mfa_coverage,
@@ -195,12 +203,12 @@ def get_mfa_status(db) -> dict:
             total_admin_accounts += mfa.admin_accounts_total
             total_admin_mfa += mfa.admin_accounts_mfa
 
-            tenant_code = _resolve_tenant_code(tenant).lower()
-            tenant_name = RIVERSIDE_TENANTS.get(tenant_code, tenant.name)
+            tenant_code = _resolve_tenant_code(tenant)
+            tenant_name = ALL_TENANTS.get(tenant_code, tenant.name)
 
             tenant_mfa.append({
                 "tenant_id": tenant.tenant_id,
-                "tenant_code": tenant_code.upper(),
+                "tenant_code": tenant_code,
                 "tenant_name": tenant_name,
                 "total_users": mfa.total_users,
                 "mfa_enrolled": mfa.mfa_enrolled_users,
@@ -255,8 +263,8 @@ def get_maturity_scores(db) -> dict:
         ).order_by(RiversideCompliance.updated_at.desc()).first()
 
         if compliance:
-            tenant_code = _resolve_tenant_code(tenant).lower()
-            tenant_name = RIVERSIDE_TENANTS.get(tenant_code, tenant.name)
+            tenant_code = _resolve_tenant_code(tenant)
+            tenant_name = ALL_TENANTS.get(tenant_code, tenant.name)
 
             # Calculate domain scores based on requirements
             iam_reqs = db.query(RiversideRequirement).filter(
@@ -290,7 +298,7 @@ def get_maturity_scores(db) -> dict:
 
             tenant_scores.append({
                 "tenant_id": tenant.tenant_id,
-                "tenant_code": tenant_code.upper(),
+                "tenant_code": tenant_code,
                 "tenant_name": tenant_name,
                 "overall_maturity": compliance.overall_maturity_score,
                 "target_maturity": compliance.target_maturity_score,

@@ -63,18 +63,19 @@ MFA_THRESHOLD_PERCENTAGES = {
     "Leading": 95,
 }
 
-# Service Tenant configurations
+# Service Tenant configurations — keys are UPPERCASE brand codes,
+# values must match Tenant.name exactly in the database.
 RIVERSIDE_TENANTS = {
-    "htt": "Health Technology Trust",
-    "bcc": "Bio-Care Corporation",
-    "fn": "Future Nations",
-    "tll": "Tech Lab Logistics",
+    "HTT": "Head-To-Toe (HTT)",
+    "BCC": "Bishops (BCC)",
+    "FN": "Frenchies (FN)",
+    "TLL": "Lash Lounge (TLL)",
 }
 
 # Include DCE for tracking but it's not a Riverside compliance tenant
 ALL_TENANTS = {
     **RIVERSIDE_TENANTS,
-    "dce": "Digital Cloud Enterprises",
+    "DCE": "Delta Crown (DCE)",
 }
 
 # Admin role IDs for tracking
