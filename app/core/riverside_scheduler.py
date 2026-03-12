@@ -205,7 +205,7 @@ async def check_requirement_deadlines(
         requirements = (
             db.query(RiversideRequirement)
             .filter(
-                RiversideRequirement.status != RequirementStatus.COMPLETED,
+                RiversideRequirement.status != RequirementStatus.COMPLETED.value,
                 RiversideRequirement.due_date.isnot(None),
             )
             .all()

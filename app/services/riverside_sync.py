@@ -258,9 +258,11 @@ async def sync_all_tenants(
             monitoring.complete_sync_job(
                 log_id=log_id,
                 status=status,
-                items_processed=progress.completed + progress.failed,
-                items_failed=progress.failed,
-                message=f"Batch sync completed: {progress.completed} succeeded, {progress.failed} failed",
+                error_message=None,
+                final_records={
+                    "records_processed": progress.completed + progress.failed,
+                    "errors_count": progress.failed,
+                },
             )
 
             return {
@@ -276,9 +278,11 @@ async def sync_all_tenants(
             monitoring.complete_sync_job(
                 log_id=log_id,
                 status="failed",
-                items_processed=progress.completed + progress.failed,
-                items_failed=progress.failed + 1,
-                message=f"Batch sync error: {e!s}",
+                error_message=f"Batch sync error: {e!s}",
+                final_records={
+                    "records_processed": progress.completed + progress.failed,
+                    "errors_count": progress.failed + 1,
+                },
             )
             raise
 
@@ -838,7 +842,7 @@ async def sync_maturity_scores(
                 session.query(RiversideRequirement)
                 .filter(
                     RiversideRequirement.tenant_id == tenant_id,
-                    RiversideRequirement.status == RequirementStatus.COMPLETED,
+                    RiversideRequirement.status == RequirementStatus.COMPLETED.value,
                 )
                 .count()
             )
@@ -871,8 +875,8 @@ async def sync_maturity_scores(
                 session.query(RiversideRequirement)
                 .filter(
                     RiversideRequirement.tenant_id == tenant_id,
-                    RiversideRequirement.status != RequirementStatus.COMPLETED,
-                    RiversideRequirement.priority == RequirementPriority.P0,
+                    RiversideRequirement.status != RequirementStatus.COMPLETED.value,
+                    RiversideRequirement.priority == RequirementPriority.P0.value,
                 )
                 .count()
             )
