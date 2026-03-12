@@ -72,15 +72,28 @@ async def lifespan(app: FastAPI):
     await cache_manager.initialize()
     logger.info("Cache initialized")
 
-    # Initialize and start scheduler
+    # Initialize and start data sync scheduler
     scheduler = init_scheduler()
     scheduler.start()
     logger.info("Background scheduler started")
+
+    # Initialize Riverside compliance monitoring scheduler
+    # Lazy import to avoid circular dependency at module level
+    riverside_sched = None
+    try:
+        from app.core.riverside_scheduler import init_riverside_scheduler
+        riverside_sched = init_riverside_scheduler()
+        riverside_sched.start()
+        logger.info("Riverside compliance scheduler started")
+    except Exception:
+        logger.exception("Failed to start Riverside compliance scheduler — continuing without it")
 
     yield
 
     # Shutdown
     logger.info("Shutting down...")
+    if riverside_sched is not None:
+        riverside_sched.shutdown()
     scheduler.shutdown()
 
 
