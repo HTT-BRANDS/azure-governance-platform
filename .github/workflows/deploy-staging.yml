@@ -71,7 +71,9 @@ jobs:
             uv-${{ runner.os }}-
       
       - name: Install dependencies
-        run: uv pip install --system --refresh -e ".[dev]"
+        run: |
+          uv pip install --system --refresh -e .
+          uv pip install --system --refresh --group dev
       
       - name: Run Ruff linting
         run: ruff check .
