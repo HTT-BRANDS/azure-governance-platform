@@ -81,11 +81,10 @@ RIVERSIDE_TENANT_IDS=0c0e35dc-188a-4eb3-b8ba-61752154b407,...
 
 ## 🔍 Likely Root Causes
 
-### 1. Missing `/home/data/` Directory (MOST LIKELY)
-- App expects `DATABASE_URL=sqlite:///./data/governance.db`
-- Container may not have `/home/data/` directory
-- App crashes on startup trying to initialize database
-- **Fix**: Create directory in Portal Kudu
+### 1. ~~Missing `/home/data/` Directory~~ → **ROOT CAUSE FOUND: Missing `config/`, `alembic/`, `alembic.ini` in Dockerfile**
+- The production Dockerfile Stage 2 was not copying `config/brands.yaml`, `alembic/`, or `alembic.ini`
+- `app/core/design_tokens.py` loads `config/brands.yaml` at startup — missing file = instant crash
+- **Fixed**: Added COPY directives for `config/`, `alembic/`, and `alembic.ini` to Dockerfile Stage 2
 
 ### 2. Application Startup Crash
 - Python import error

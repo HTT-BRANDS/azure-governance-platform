@@ -96,6 +96,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --chown=${APP_USER}:${APP_GROUP} app/ ./app/
 COPY --chown=${APP_USER}:${APP_GROUP} scripts/ ./scripts/
 COPY --chown=${APP_USER}:${APP_GROUP} README.md ./
+COPY --chown=${APP_USER}:${APP_GROUP} config/ ./config/
+COPY --chown=${APP_USER}:${APP_GROUP} alembic/ ./alembic/
+COPY --chown=${APP_USER}:${APP_GROUP} alembic.ini ./
 
 # Create necessary directories
 RUN mkdir -p /home/data /home/logs /tmp && \
