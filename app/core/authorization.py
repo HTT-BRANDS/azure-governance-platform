@@ -57,7 +57,13 @@ def get_user_tenants(
         query = db.query(Tenant).filter(Tenant.tenant_id.in_(user.tenant_ids))
         if not include_inactive:
             query = query.filter(Tenant.is_active == True)  # noqa: E712
-        return query.all()
+        tenants = query.all()
+        logger.info(
+            f"get_user_tenants: user={user.id}, "
+            f"token_tenant_ids={user.tenant_ids}, "
+            f"found_tenants={[t.tenant_id for t in tenants]}"
+        )
+        return tenants
 
     # Otherwise, check UserTenant mappings
     query = (
@@ -72,7 +78,12 @@ def get_user_tenants(
             UserTenant.is_active == True,  # noqa: E712
         )
 
-    return query.all()
+    tenants = query.all()
+    logger.info(
+        f"get_user_tenants (UserTenant path): user={user.id}, "
+        f"found_tenants={[t.tenant_id for t in tenants]}"
+    )
+    return tenants
 
 
 def get_user_tenant_ids(

@@ -5,6 +5,7 @@ Supports both internal JWT tokens and Azure AD OAuth2 integration.
 """
 
 import logging
+import os
 from datetime import datetime
 from typing import Any
 
@@ -24,7 +25,7 @@ from app.core.auth import (
 )
 from app.core.config import get_settings
 from app.core.database import get_db
-from app.models.tenant import UserTenant
+from app.models.tenant import Tenant, UserTenant
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
@@ -432,12 +433,39 @@ async def azure_oauth_callback(
     # Create or update user tenant mappings based on Azure AD groups/tid
     resolved_tenant_ids = await _sync_user_tenant_mappings(db, validated)
 
+    logger.info(
+        f"Azure AD callback: user={validated.sub}, "
+        f"email={validated.email}, "
+        f"azure_tid={validated.azure_tenant_id}, "
+        f"group_tenant_ids={validated.tenant_ids}, "
+        f"resolved_tenant_ids={resolved_tenant_ids}"
+    )
+
+    # Check if user should have admin role (from environment config)
+    admin_emails_str = os.environ.get("ADMIN_EMAILS", "")
+    admin_emails = [e.strip().lower() for e in admin_emails_str.split(",") if e.strip()]
+
+    roles = validated.roles
+    if validated.email and validated.email.lower() in admin_emails:
+        if "admin" not in roles:
+            roles = list(set(roles + ["admin"]))
+            logger.info(f"Granting admin role to {validated.email} (in ADMIN_EMAILS)")
+
+    # If no tenants resolved, grant access to ALL tenants for admin users
+    if not resolved_tenant_ids and "admin" in roles:
+        all_tenants = db.query(Tenant).filter(Tenant.is_active == True).all()  # noqa: E712
+        resolved_tenant_ids = [t.tenant_id for t in all_tenants]
+        logger.info(
+            f"Admin user with no tenant mappings, granting access to all "
+            f"{len(resolved_tenant_ids)} tenants"
+        )
+
     # Create internal tokens — use resolved tenant IDs (includes tid fallback)
     access_token = jwt_manager.create_access_token(
         user_id=validated.sub,
         email=validated.email,
         name=validated.name,
-        roles=validated.roles,
+        roles=roles,
         tenant_ids=resolved_tenant_ids,
     )
 
