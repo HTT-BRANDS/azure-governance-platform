@@ -2,7 +2,7 @@
 
 **Last Updated:** March 2026
 **Version:** 1.2.0
-**Agent:** Planning Agent 📋 (planning-agent-679a3d) — documentation cleanup
+**Agent:** Planning Agent 📋 (planning-agent-d273c1) — requirements audit & staging fix
 
 ---
 
@@ -33,7 +33,7 @@
 - **Git**: v1.2.0 tagged and pushed
 
 ### Branch & Git
-- **Branch**: `feature/agile-sdlc`
+- **Branch**: `main`
 - **Tag**: `v1.2.0`
 - **Status**: Clean, up to date with origin
 
@@ -41,14 +41,25 @@
 
 ## 🚀 Next Steps (Post v1.2.0)
 
-1. ~~Merge `feature/agile-sdlc` to `main`~~ — Verify branch state
-2. Execute staging deployment using docs/STAGING_DEPLOYMENT_CHECKLIST.md
-3. Configure Azure AD app registration using scripts/setup-app-registration-manual.md
-4. Create admin user using scripts/setup_admin.py
-5. Run staging smoke tests using scripts/smoke_test.py --url <staging-url>
-6. Connect real Azure tenant credentials (HTT, BCC, FN, TLL, DCE) via Key Vault
+1. ~~Merge `feature/agile-sdlc` to `main`~~ — Done
+2. ~~Execute staging deployment~~ — Infrastructure deployed, Dockerfile fixed (missing config/ dir)
+3. **Rebuild ACR image**: `az acr build --registry acrgovstaging19859 --image azure-governance-platform:staging .`
+4. **Verify staging startup**: `curl https://app-governance-staging-xnczpwyv.azurewebsites.net/health`
+5. **Fix TLL tenant**: Add `UserAuthenticationMethod.Read.All` permission + admin consent
+6. **Run staging sync**: Trigger sync for all 5 tenants, verify dashboards
+7. Configure Azure AD app registration using scripts/setup-app-registration-manual.md
+8. Create admin user using scripts/setup_admin.py
 
 ---
+
+### Requirements Audit (March 2026)
+Performed by planning-agent-d273c1:
+- [x] Dockerfile fixed — missing config/, alembic/, alembic.ini COPY commands (staging 503 root cause)
+- [x] HANDOFF.md consolidated — removed duplicate sections
+- [x] CHANGELOG.md updated — Unreleased section reflects actual staging progress
+- [x] SESSION_HANDOFF.md updated — stale agent ID and branch references fixed
+- [x] STAGING_DEPLOYMENT.md updated — root cause documented
+- [x] RC-xxx traceability added to TRACEABILITY_MATRIX.md (in progress)
 
 ## ✅ Session History
 
