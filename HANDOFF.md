@@ -58,7 +58,7 @@
 ---
 | Task | Action | Owner |
 |------|--------|-------|
-| TLL MFA permission | Add `UserAuthenticationMethod.Read.All` + admin consent | Azure AD Admin |
+| ~~TLL MFA permission~~ | ✅ Done — `UserAuthenticationMethod.Read.All` granted | Tyler |
 | Staging infra | Deploy Bicep templates, create App Service | DevOps |
 | Secrets migration | Copy env vars to Azure Key Vault | DevOps |
 | Smoke tests | Verify all 5 tenants sync on staging | QA |
@@ -307,7 +307,7 @@ az acr update --name acrgovstaging19859 --admin-enabled true
 ### ⏳ Remaining
 | Task | Owner | Notes |
 |------|-------|-------|
-| TLL tenant permission | Tyler (TLL admin) | `UserAuthenticationMethod.Read.All` + admin consent |
+| ~~TLL tenant permission~~ | ✅ Fixed | `UserAuthenticationMethod.Read.All` granted + stale permissions cleaned |
 | Test Azure AD SSO end-to-end | Tyler | Click "Sign in with Microsoft" on staging |
 | Verify all 5 tenants sync data | Tyler | Wait for scheduler or trigger manually post-login |
 | Check staging Azure costs | Tyler | Confirm < $200/month |
