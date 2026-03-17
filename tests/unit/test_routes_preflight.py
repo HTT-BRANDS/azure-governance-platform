@@ -23,9 +23,9 @@ from app.models.tenant import Tenant, UserTenant
 from app.preflight.models import CheckCategory, CheckResult, CheckStatus, PreflightReport
 
 
-pytestmark = pytest.mark.xfail(
-    reason="Route tests need updating for current endpoint/model API"
-)
+pytestmark = pytest.mark.xfail(reason="CheckCategory enum values changed (AZURE_ACCESS)")
+
+
 
 
 @pytest.fixture

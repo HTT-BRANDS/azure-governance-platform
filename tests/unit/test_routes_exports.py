@@ -19,9 +19,9 @@ from app.main import app
 from app.models.tenant import Tenant, UserTenant
 
 
-pytestmark = pytest.mark.xfail(
-    reason="Route tests need updating for current endpoint/model API"
-)
+pytestmark = pytest.mark.xfail(reason="Needs authenticated test client fixture")
+
+
 
 
 @pytest.fixture

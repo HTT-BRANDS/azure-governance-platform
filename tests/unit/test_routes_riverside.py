@@ -24,10 +24,6 @@ from app.main import app
 from app.models.tenant import Tenant, UserTenant
 
 
-pytestmark = pytest.mark.xfail(
-    reason="Route tests need updating for current endpoint/model API"
-)
-
 
 @pytest.fixture
 def test_db_session(db_session):
@@ -160,6 +156,7 @@ class TestRiversideDashboardPage:
     """Tests for GET /riverside dashboard page."""
 
     @patch("app.api.routes.riverside.get_current_user")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_riverside_dashboard_renders_successfully(
         self, mock_get_user, client_with_db, mock_user
     ):
@@ -193,6 +190,7 @@ class TestRiversideBadgePartial:
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_riverside_badge_returns_critical_gaps_count(
         self,
         mock_service_cls,
@@ -229,6 +227,7 @@ class TestRiversideSummaryEndpoint:
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_summary_returns_executive_overview(
         self,
         mock_service_cls,
@@ -273,6 +272,7 @@ class TestRiversideMFAStatusEndpoint:
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_mfa_status_returns_tenant_mfa_metrics(
         self,
         mock_service_cls,
@@ -311,6 +311,7 @@ class TestRiversideMaturityScoresEndpoint:
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_maturity_scores_returns_domain_grades(
         self,
         mock_service_cls,
@@ -350,6 +351,7 @@ class TestRiversideRequirementsEndpoint:
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_requirements_returns_filtered_list(
         self,
         mock_service_cls,
@@ -378,6 +380,7 @@ class TestRiversideRequirementsEndpoint:
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_requirements_accepts_status_filter(
         self,
         mock_service_cls,
@@ -413,6 +416,7 @@ class TestRiversideGapsEndpoint:
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_gaps_returns_critical_security_gaps(
         self,
         mock_service_cls,
@@ -450,6 +454,7 @@ class TestRiversideSyncEndpoint:
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
     @patch("app.api.routes.riverside.RiversideService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_sync_succeeds_for_admin_users(
         self,
         mock_service_cls,
@@ -477,6 +482,7 @@ class TestRiversideSyncEndpoint:
 
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_sync_forbidden_for_regular_users(self, mock_authz, mock_get_user, client_with_db):
         """Sync endpoint returns 403 for users without admin/operator role."""
         regular_user = User(

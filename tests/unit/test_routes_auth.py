@@ -21,10 +21,6 @@ from app.main import app
 from app.models.tenant import Tenant, UserTenant
 
 
-pytestmark = pytest.mark.xfail(
-    reason="Route tests need updating for current endpoint/model API"
-)
-
 
 @pytest.fixture
 def test_db_session(db_session):
@@ -135,6 +131,7 @@ class TestLoginEndpoint:
         assert "Invalid credentials" in response.json()["detail"]
 
     @patch("app.core.config.get_settings")
+    @pytest.mark.xfail(reason="Test fixture needs updating for current API")
     def test_login_blocked_in_production(self, mock_settings, client_with_db):
         """Login is blocked in production environment."""
         settings = MagicMock()
@@ -151,6 +148,7 @@ class TestLoginEndpoint:
         assert "Azure AD" in response.json()["detail"]
 
     @patch("app.core.config.get_settings")
+    @pytest.mark.xfail(reason="Test fixture needs updating for current API")
     def test_login_fails_with_empty_credentials(self, mock_settings, client_with_db):
         """Login returns 401 with empty credentials."""
         settings = MagicMock()
@@ -229,6 +227,7 @@ class TestRefreshEndpoint:
     """Tests for POST /api/v1/auth/refresh endpoint."""
 
     @patch("app.core.config.get_settings")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_refresh_succeeds_with_valid_token(self, mock_settings, client_with_db):
         """Refresh endpoint returns new tokens with valid refresh token."""
         settings = MagicMock()
@@ -251,6 +250,7 @@ class TestRefreshEndpoint:
         # Verify new tokens are different from the original
         assert data["refresh_token"] != refresh_token
 
+    @pytest.mark.xfail(reason="Test fixture needs updating for current API")
     def test_refresh_fails_with_expired_token(self, client_with_db):
         """Refresh endpoint returns 401 with expired refresh token."""
         # Create an expired refresh token
@@ -267,6 +267,7 @@ class TestRefreshEndpoint:
         assert response.status_code == 401
         assert "Invalid refresh token" in response.json()["detail"]
 
+    @pytest.mark.xfail(reason="Test fixture needs updating for current API")
     def test_refresh_fails_with_invalid_token(self, client_with_db):
         """Refresh endpoint returns 401 with malformed token."""
         response = client_with_db.post(
@@ -300,6 +301,7 @@ class TestMeEndpoint:
     """Tests for GET /api/v1/auth/me endpoint."""
 
     @patch("app.api.routes.auth.get_current_user")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_me_returns_user_info_when_authenticated(
         self, mock_get_user, client_with_db, mock_user
     ):
@@ -339,6 +341,7 @@ class TestMeEndpoint:
         assert response.status_code == 401
 
     @patch("app.api.routes.auth.get_current_user")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_me_includes_accessible_tenants(self, mock_get_user, client_with_db, mock_user):
         """Me endpoint includes accessible tenants in response."""
         mock_get_user.return_value = mock_user
@@ -363,6 +366,7 @@ class TestLogoutEndpoint:
     """Tests for POST /api/v1/auth/logout endpoint."""
 
     @patch("app.api.routes.auth.get_current_user")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_logout_succeeds_when_authenticated(self, mock_get_user, client_with_db, mock_user):
         """Logout endpoint succeeds when authenticated."""
         mock_get_user.return_value = mock_user
@@ -393,6 +397,7 @@ class TestAuthHealthEndpoint:
     """Tests for GET /api/v1/auth/health endpoint."""
 
     @patch("app.core.config.get_settings")
+    @pytest.mark.xfail(reason="Test fixture needs updating for current API")
     def test_health_check_returns_status(self, mock_settings, client_with_db):
         """Health endpoint returns auth system status."""
         settings = MagicMock()

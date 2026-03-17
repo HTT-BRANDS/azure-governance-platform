@@ -72,12 +72,12 @@ def track_requirement_progress(db: Session, requirement_id: int) -> dict:
 
     # Calculate progress percentage based on status
     status_progress_map = {
-        RequirementStatus.NOT_STARTED: 0,
-        RequirementStatus.BLOCKED: 0,
-        RequirementStatus.IN_PROGRESS: 50,
-        RequirementStatus.COMPLETED: 100,
+        RequirementStatus.NOT_STARTED.value: 0,
+        RequirementStatus.BLOCKED.value: 0,
+        RequirementStatus.IN_PROGRESS.value: 50,
+        RequirementStatus.COMPLETED.value: 100,
     }
-    progress_percentage = status_progress_map.get(requirement.status, 0)
+    progress_percentage = status_progress_map.get(_enum_val(requirement.status), 0)
 
     # Calculate days in current status
     today = date.today()
@@ -88,7 +88,7 @@ def track_requirement_progress(db: Session, requirement_id: int) -> dict:
     # Estimate completion based on due date and progress
     estimated_completion = None
     if requirement.due_date:
-        if requirement.status == RequirementStatus.COMPLETED:
+        if _enum_val(requirement.status) == RequirementStatus.COMPLETED.value:
             estimated_completion = requirement.completed_date
         elif progress_percentage > 0 and requirement.due_date >= today:
             estimated_completion = requirement.due_date
@@ -129,9 +129,9 @@ def track_requirement_progress(db: Session, requirement_id: int) -> dict:
 
     # Identify blockers
     blockers: list[str] = []
-    if requirement.status == RequirementStatus.BLOCKED:
+    if _enum_val(requirement.status) == RequirementStatus.BLOCKED.value:
         blockers.append("Requirement explicitly marked as blocked")
-    if days_in_status > 30 and requirement.status != RequirementStatus.COMPLETED:
+    if days_in_status > 30 and _enum_val(requirement.status) != RequirementStatus.COMPLETED.value:
         blockers.append(f"Stalled for {days_in_status} days without progress")
     if requirement.due_date and requirement.due_date < today:
         blockers.append("Past due date")

@@ -24,10 +24,6 @@ from app.main import app
 from app.models.tenant import Tenant, UserTenant
 
 
-pytestmark = pytest.mark.xfail(
-    reason="Route tests need updating for current endpoint/model API"
-)
-
 
 @pytest.fixture
 def test_db_session(db_session):
@@ -187,6 +183,7 @@ class TestMainDashboardPage:
     @patch("app.api.routes.dashboard.ComplianceService")
     @patch("app.api.routes.dashboard.ResourceService")
     @patch("app.api.routes.dashboard.IdentityService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_root_dashboard_renders_successfully(
         self,
         mock_identity,
@@ -241,6 +238,7 @@ class TestDashboardAliasPage:
     @patch("app.api.routes.dashboard.ComplianceService")
     @patch("app.api.routes.dashboard.ResourceService")
     @patch("app.api.routes.dashboard.IdentityService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_dashboard_alias_renders_same_as_root(
         self,
         mock_identity,
@@ -284,6 +282,7 @@ class TestSyncDashboardPage:
     @patch("app.api.routes.dashboard.get_tenant_authorization")
     @patch("app.api.routes.dashboard.MonitoringService")
     @patch("app.api.routes.dashboard.get_user_tenants")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_sync_dashboard_renders_monitoring_data(
         self,
         mock_get_tenants,
@@ -317,6 +316,7 @@ class TestSyncDashboardPage:
     @patch("app.api.routes.dashboard.get_tenant_authorization")
     @patch("app.api.routes.dashboard.MonitoringService")
     @patch("app.api.routes.dashboard.get_user_tenants")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_sync_dashboard_includes_alert_stats(
         self,
         mock_get_tenants,
@@ -354,6 +354,7 @@ class TestDMARCDashboardPage:
     """Tests for GET /dmarc dashboard page."""
 
     @patch("app.api.routes.dashboard.get_current_user")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_dmarc_dashboard_renders_successfully(self, mock_get_user, client_with_db, mock_user):
         """DMARC dashboard page renders for authenticated users."""
         mock_get_user.return_value = mock_user
@@ -383,6 +384,7 @@ class TestCostSummaryCardPartial:
     """Tests for GET /partials/cost-summary-card HTMX partial."""
 
     @patch("app.api.routes.dashboard.CostService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_cost_summary_card_returns_html(self, mock_cost_cls, client_with_db, mock_services):
         """Cost summary card partial returns HTML."""
         mock_cost_cls.return_value = mock_services["cost"]
@@ -393,6 +395,7 @@ class TestCostSummaryCardPartial:
         assert "text/html" in response.headers["content-type"]
 
     @patch("app.api.routes.dashboard.CostService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_cost_summary_card_includes_cost_data(
         self, mock_cost_cls, client_with_db, mock_services
     ):
@@ -415,6 +418,7 @@ class TestComplianceGaugePartial:
     """Tests for GET /partials/compliance-gauge HTMX partial."""
 
     @patch("app.api.routes.dashboard.ComplianceService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_compliance_gauge_returns_html(
         self, mock_compliance_cls, client_with_db, mock_services
     ):
@@ -427,6 +431,7 @@ class TestComplianceGaugePartial:
         assert "text/html" in response.headers["content-type"]
 
     @patch("app.api.routes.dashboard.ComplianceService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_compliance_gauge_includes_score(
         self, mock_compliance_cls, client_with_db, mock_services
     ):
@@ -448,6 +453,7 @@ class TestSyncStatusCardPartial:
     """Tests for GET /partials/sync-status-card HTMX partial."""
 
     @patch("app.api.routes.dashboard.MonitoringService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_sync_status_card_returns_html(
         self, mock_monitoring_cls, client_with_db, mock_services
     ):
@@ -460,6 +466,7 @@ class TestSyncStatusCardPartial:
         assert "text/html" in response.headers["content-type"]
 
     @patch("app.api.routes.dashboard.MonitoringService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_sync_status_card_includes_metrics(
         self, mock_monitoring_cls, client_with_db, mock_services
     ):
@@ -482,6 +489,7 @@ class TestSyncHistoryTablePartial:
     """Tests for GET /partials/sync-history-table HTMX partial."""
 
     @patch("app.api.routes.dashboard.MonitoringService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_sync_history_table_returns_html(
         self, mock_monitoring_cls, client_with_db, mock_services
     ):
@@ -494,6 +502,7 @@ class TestSyncHistoryTablePartial:
         assert "text/html" in response.headers["content-type"]
 
     @patch("app.api.routes.dashboard.MonitoringService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_sync_history_table_accepts_limit_parameter(
         self, mock_monitoring_cls, client_with_db, mock_services
     ):
@@ -508,6 +517,7 @@ class TestSyncHistoryTablePartial:
         )
 
     @patch("app.api.routes.dashboard.MonitoringService")
+    @pytest.mark.xfail(reason="Needs authenticated test client fixture")
     def test_sync_history_table_uses_default_limit(
         self, mock_monitoring_cls, client_with_db, mock_services
     ):

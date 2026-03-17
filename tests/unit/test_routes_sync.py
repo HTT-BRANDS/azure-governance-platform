@@ -25,9 +25,9 @@ from app.models.monitoring import Alert, SyncJobLog
 from app.models.tenant import Tenant, UserTenant
 
 
-pytestmark = pytest.mark.xfail(
-    reason="Route tests need updating for current endpoint/model API"
-)
+pytestmark = pytest.mark.xfail(reason="SyncJobLog fixture uses wrong column types for SQLite")
+
+
 
 
 @pytest.fixture
