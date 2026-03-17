@@ -18,8 +18,10 @@ from app.core.database import get_db
 from app.main import app
 from app.models.tenant import Tenant, UserTenant
 
-# Mark all tests as xfail due to Tenant model schema changes (subscription_id removed)
-pytestmark = pytest.mark.xfail(reason="Tenant model no longer accepts subscription_id parameter")
+
+pytestmark = pytest.mark.xfail(
+    reason="Route tests need updating for current endpoint/model API"
+)
 
 
 @pytest.fixture
@@ -29,7 +31,6 @@ def test_db_session(db_session):
         id=str(uuid.uuid4()),
         tenant_id="exports-tenant-123",
         name="Exports Test Tenant",
-        subscription_id="sub-exports-123",
         is_active=True,
     )
     db_session.add(tenant)
@@ -148,7 +149,6 @@ def test_export_resources_success(client_with_db, mock_user):
             resource_type="Microsoft.Compute/virtualMachines",
             tenant_id="exports-tenant-123",
             tenant_name="Exports Test Tenant",
-            subscription_id="sub-exports-123",
             subscription_name="Production Sub",
             resource_group="rg-prod",
             location="eastus",
@@ -165,7 +165,6 @@ def test_export_resources_success(client_with_db, mock_user):
             resource_type="Microsoft.Sql/servers",
             tenant_id="exports-tenant-123",
             tenant_name="Exports Test Tenant",
-            subscription_id="sub-exports-123",
             subscription_name="Production Sub",
             resource_group="rg-prod",
             location="eastus",
@@ -222,7 +221,6 @@ def test_export_compliance_success(client_with_db, mock_user):
         MagicMock(
             tenant_id="exports-tenant-123",
             tenant_name="Exports Test Tenant",
-            subscription_id="sub-exports-123",
             overall_compliance_percent=85.5,
             secure_score=650,
             compliant_resources=85,
@@ -239,7 +237,6 @@ def test_export_compliance_success(client_with_db, mock_user):
             policy_category="Security",
             compliance_state="NonCompliant",
             non_compliant_count=3,
-            subscription_id="sub-exports-123",
             recommendation="Enable HTTPS-only traffic",
         )
     ]

@@ -20,8 +20,10 @@ from app.core.database import get_db
 from app.main import app
 from app.models.tenant import Tenant, UserTenant
 
-# Mark all tests as xfail due to Tenant model schema changes (subscription_id removed)
-pytestmark = pytest.mark.xfail(reason="Tenant model no longer accepts subscription_id parameter")
+
+pytestmark = pytest.mark.xfail(
+    reason="Route tests need updating for current endpoint/model API"
+)
 
 
 @pytest.fixture
@@ -31,7 +33,6 @@ def test_db_session(db_session):
         id=str(uuid.uuid4()),
         tenant_id="bulk-tenant-123",
         name="Bulk Test Tenant",
-        subscription_id="sub-bulk-123",
         is_active=True,
     )
     db_session.add(tenant)

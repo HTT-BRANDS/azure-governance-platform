@@ -1,13 +1,13 @@
 """Unit tests for TeamsWebhookClient.
 
-Tests for Microsoft Teams webhook integration with message card construction,
+Tests for Microsoft Teams webhook integration with adaptive card construction,
 POST handling, retry logic, and rate limiting.
 
-8 tests covering:
+10 tests covering:
 - TeamsWebhookClient initialization
-- Message card construction
+- Adaptive card construction via module-level helpers
 - Webhook POST (mocked httpx)
-- Retry on failure
+- Error handling
 - Rate limit handling
 """
 
@@ -17,10 +17,14 @@ import httpx
 import pytest
 
 from app.core.notifications import Notification, NotificationChannel, Severity
-from app.services.teams_webhook import TeamsCard, TeamsWebhookClient
-
-# Mark all tests as xfail due to TeamsWebhookClient API changes
-pytestmark = pytest.mark.xfail(reason="TeamsWebhookClient and TeamsCard API has changed")
+from app.services.teams_webhook import (
+    AlertType,
+    TeamsCard,
+    TeamsWebhookClient,
+    create_adaptive_card,
+    create_deadline_alert_card,
+    create_mfa_alert_card,
+)
 
 
 class TestTeamsWebhookClientInit:
@@ -34,71 +38,81 @@ class TestTeamsWebhookClientInit:
         assert client.webhook_url == webhook_url
         assert client.timeout is not None
 
-    def test_init_with_custom_timeout(self):
-        """Test client initialization with custom timeout."""
+    def test_init_default_timeout(self):
+        """Test client initialization has default timeout of 30s."""
         webhook_url = "https://outlook.office.com/webhook/test"
-        client = TeamsWebhookClient(webhook_url=webhook_url, timeout=60)
+        client = TeamsWebhookClient(webhook_url=webhook_url)
 
-        assert client.timeout == 60
+        assert client.timeout == 30.0
 
 
-class TestMessageCardConstruction:
-    """Tests for Teams message card construction."""
+class TestAdaptiveCardConstruction:
+    """Tests for Teams adaptive card construction."""
 
     def test_create_mfa_alert_card(self):
         """Test creating MFA alert card structure."""
-        card = TeamsCard.create_mfa_alert(
-            tenant_name="Test Tenant",
-            current_enrollment=85,
-            target_enrollment=95,
-            days_to_deadline=60,
+        card = create_mfa_alert_card(
+            tenant_id="Test Tenant",
+            user_mfa_pct=85.0,
+            admin_mfa_pct=90.0,
+            unprotected_admins=2,
+            severity=Severity.WARNING,
         )
 
-        assert card["@type"] == "MessageCard"
-        assert "summary" in card
-        assert "sections" in card
-        assert card["themeColor"] is not None
+        assert isinstance(card, TeamsCard)
+        assert card.alert_type == AlertType.MFA_GAP
+        assert card.severity == Severity.WARNING
+        assert "Test Tenant" in card.title
+
+        # Verify adaptive card payload
+        payload = create_adaptive_card(card)
+        assert payload["type"] == "message"
+        assert "attachments" in payload
 
     def test_create_deadline_alert_card(self):
         """Test creating deadline alert card structure."""
-        card = TeamsCard.create_deadline_alert(
-            tenant_name="Test Tenant",
-            days_remaining=30,
-            maturity_score=75,
+        card = create_deadline_alert_card(
+            requirement_id="IAM-001",
+            tenant_id="Test Tenant",
+            title="MFA Enforcement",
+            days_until=30,
+            is_overdue=False,
+            severity=Severity.WARNING,
         )
 
-        assert card["@type"] == "MessageCard"
-        assert "30 days" in card["summary"] or "30 days" in str(card["sections"])
+        assert isinstance(card, TeamsCard)
+        assert card.alert_type == AlertType.DEADLINE
+        assert "30 days" in card.message
 
-    def test_create_generic_alert_card(self):
-        """Test creating generic alert card from notification."""
-        notification = Notification(
-            channel=NotificationChannel.TEAMS,
-            severity=Severity.INFO,
+    def test_create_generic_teams_card(self):
+        """Test creating a generic TeamsCard directly."""
+        card = TeamsCard(
             title="Test Alert",
             message="This is a test alert",
-            tenant_id="test-tenant",
+            severity=Severity.INFO,
+            alert_type=AlertType.COMPLIANCE,
+            facts=[{"title": "Tenant", "value": "test-tenant"}],
         )
 
-        card = TeamsCard.from_notification(notification)
+        payload = create_adaptive_card(card)
+        assert payload["type"] == "message"
+        content = payload["attachments"][0]["content"]
+        assert content["type"] == "AdaptiveCard"
 
-        assert card["@type"] == "MessageCard"
-        assert card["summary"] == "Test Alert"
-        assert any(
-            section.get("text") == "This is a test alert" for section in card.get("sections", [])
+    def test_card_includes_facts_when_provided(self):
+        """Test that cards include facts when provided."""
+        card = create_mfa_alert_card(
+            tenant_id="Test Tenant",
+            user_mfa_pct=85.0,
+            admin_mfa_pct=90.0,
+            unprotected_admins=2,
+            severity=Severity.WARNING,
+            dashboard_url="https://dashboard.example.com",
         )
 
-    def test_card_includes_action_buttons(self):
-        """Test that cards include action buttons."""
-        card = TeamsCard.create_mfa_alert(
-            tenant_name="Test Tenant",
-            current_enrollment=85,
-            target_enrollment=95,
-            days_to_deadline=60,
-        )
-
-        # Should have potentialAction with buttons
-        assert "potentialAction" in card or len(card.get("sections", [])) > 0
+        assert card.facts is not None
+        assert len(card.facts) > 0
+        assert card.actions is not None
 
 
 class TestWebhookPOST:
@@ -110,16 +124,20 @@ class TestWebhookPOST:
         webhook_url = "https://outlook.office.com/webhook/test"
         client = TeamsWebhookClient(webhook_url=webhook_url)
 
-        card = {"@type": "MessageCard", "summary": "Test", "sections": []}
+        card = TeamsCard(
+            title="Test",
+            message="Test message",
+            severity=Severity.INFO,
+            alert_type=AlertType.COMPLIANCE,
+        )
 
-        # Mock httpx.AsyncClient
         with patch("app.services.teams_webhook.httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.text = "1"
+            mock_response.raise_for_status = MagicMock()
             mock_client.post.return_value = mock_response
 
             result = await client.send_card(card)
@@ -134,13 +152,17 @@ class TestWebhookPOST:
         webhook_url = "https://outlook.office.com/webhook/test"
         client = TeamsWebhookClient(webhook_url=webhook_url)
 
-        card = {"@type": "MessageCard", "summary": "Test", "sections": []}
+        card = TeamsCard(
+            title="Test",
+            message="Test message",
+            severity=Severity.INFO,
+            alert_type=AlertType.COMPLIANCE,
+        )
 
-        # Mock httpx.AsyncClient to raise error
         with patch("app.services.teams_webhook.httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
-            mock_client.post.side_effect = httpx.HTTPError("Network error")
+            mock_client.post.side_effect = httpx.ConnectError("Network error")
 
             result = await client.send_card(card)
 
@@ -152,27 +174,26 @@ class TestRetryAndRateLimit:
     """Tests for retry logic and rate limiting."""
 
     @pytest.mark.asyncio
-    async def test_send_notification_with_retry(self):
-        """Test notification sending with retry on failure."""
+    async def test_send_notification_success(self):
+        """Test notification sending via send_notification."""
         webhook_url = "https://outlook.office.com/webhook/test"
         client = TeamsWebhookClient(webhook_url=webhook_url)
 
         notification = Notification(
             channel=NotificationChannel.TEAMS,
-            severity=Severity.HIGH,
+            severity=Severity.ERROR,
             title="Test Alert",
             message="Test message",
             tenant_id="test-tenant",
         )
 
-        # Mock httpx.AsyncClient to succeed
         with patch("app.services.teams_webhook.httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.text = "1"
+            mock_response.raise_for_status = MagicMock()
             mock_client.post.return_value = mock_response
 
             result = await client.send_notification(notification)
@@ -185,19 +206,28 @@ class TestRetryAndRateLimit:
         webhook_url = "https://outlook.office.com/webhook/test"
         client = TeamsWebhookClient(webhook_url=webhook_url)
 
-        card = {"@type": "MessageCard", "summary": "Test", "sections": []}
+        card = TeamsCard(
+            title="Test",
+            message="Test message",
+            severity=Severity.INFO,
+            alert_type=AlertType.COMPLIANCE,
+        )
 
-        # Mock httpx.AsyncClient to return 429
         with patch("app.services.teams_webhook.httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
             mock_response = MagicMock()
             mock_response.status_code = 429
-            mock_response.text = "Rate limit exceeded"
+            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+                "Rate limited",
+                request=MagicMock(),
+                response=mock_response,
+            )
             mock_client.post.return_value = mock_response
 
             result = await client.send_card(card)
 
             # Should handle rate limit gracefully
-            assert result["success"] is False or "retry" in result.get("message", "")
+            assert result["success"] is False
+            assert "429" in result.get("error", "")

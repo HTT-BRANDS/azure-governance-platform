@@ -24,6 +24,16 @@ from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
+
+def _enum_val(v: "Any") -> str:
+    """Extract string value from an enum or pass through if already a string.
+
+    SQLAlchemy may return enum fields as raw strings (e.g. SQLite) or as
+    Python enum instances depending on the dialect. This helper handles both.
+    """
+    return v.value if hasattr(v, "value") and not isinstance(v, str) else str(v)
+
+
 # Constants
 RIVERSIDE_DEADLINE = date(2026, 7, 8)
 TARGET_MATURITY_SCORE = 3.0
@@ -130,9 +140,9 @@ def track_requirement_progress(db: Session, requirement_id: int) -> dict:
         "requirement_id": requirement_id,
         "requirement_identifier": requirement.requirement_id,
         "title": requirement.title,
-        "current_status": requirement.status.value,
-        "category": requirement.category.value,
-        "priority": requirement.priority.value,
+        "current_status": _enum_val(requirement.status),
+        "category": _enum_val(requirement.category),
+        "priority": _enum_val(requirement.priority),
         "progress_percentage": progress_percentage,
         "days_in_current_status": days_in_status,
         "due_date": requirement.due_date.isoformat() if requirement.due_date else None,
@@ -226,7 +236,7 @@ def get_deadline_status(db: Session, days_window: int = 30) -> dict:
             "title": req.title,
             "due_date": req.due_date.isoformat() if req.due_date else None,
             "days_remaining": (req.due_date - today).days if req.due_date else None,
-            "priority": req.priority.value,
+            "priority": _enum_val(req.priority),
             "owner": req.owner,
         }
         for req in at_risk_requirements

@@ -25,9 +25,6 @@ from app.preflight.tenant_checks import (
     check_tenant_connectivity,
 )
 
-# Mark all tests as xfail due to preflight tenant checks implementation changes
-pytestmark = pytest.mark.xfail(reason="Preflight tenant checks API has changed")
-
 
 class TestTenantDiscovery:
     """Tests for tenant discovery from database."""
@@ -105,7 +102,7 @@ class TestConnectivityChecks:
             mock_auth_check.return_value = CheckResult(
                 check_id="auth_check",
                 name="Authentication Check",
-                category=CheckCategory.SECURITY,
+                category=CheckCategory.AZURE_SECURITY,
                 status=CheckStatus.PASS,
                 message="Authentication successful",
                 tenant_id=tenant_id,
@@ -126,7 +123,7 @@ class TestConnectivityChecks:
             mock_auth_check.return_value = CheckResult(
                 check_id="auth_check",
                 name="Authentication Check",
-                category=CheckCategory.SECURITY,
+                category=CheckCategory.AZURE_SECURITY,
                 status=CheckStatus.FAIL,
                 message="Authentication failed",
                 tenant_id=tenant_id,
@@ -146,7 +143,7 @@ class TestErrorResultCreation:
         result = _create_error_result(
             check_id="test_check",
             name="Test Check",
-            category=CheckCategory.SECURITY,
+            category=CheckCategory.AZURE_SECURITY,
             tenant_id="test-tenant",
             message="Check failed due to error",
             error_code="E001",
@@ -155,7 +152,7 @@ class TestErrorResultCreation:
 
         assert result.check_id == "test_check"
         assert result.name == "Test Check"
-        assert result.category == CheckCategory.SECURITY
+        assert result.category == CheckCategory.AZURE_SECURITY
         assert result.status == CheckStatus.FAIL
         assert result.message == "Check failed due to error"
         assert result.details["error_code"] == "E001"
@@ -173,11 +170,13 @@ class TestMultiTenantExecution:
         with patch("app.preflight.tenant_checks._get_active_tenants") as mock_get_tenants:
             mock_tenant1 = MagicMock(spec=Tenant)
             mock_tenant1.id = "tenant1"
-            mock_tenant1.azure_tenant_id = "azure-tenant-1"
+            mock_tenant1.tenant_id = "azure-tenant-1"
+            mock_tenant1.name = "Test Tenant 1"
 
             mock_tenant2 = MagicMock(spec=Tenant)
             mock_tenant2.id = "tenant2"
-            mock_tenant2.azure_tenant_id = "azure-tenant-2"
+            mock_tenant2.tenant_id = "azure-tenant-2"
+            mock_tenant2.name = "Test Tenant 2"
 
             mock_get_tenants.return_value = [mock_tenant1, mock_tenant2]
 
@@ -186,6 +185,8 @@ class TestMultiTenantExecution:
                 mock_run_checks.return_value = [
                     CheckResult(
                         check_id="check1",
+                        name="Check 1",
+                        category=CheckCategory.SYSTEM,
                         status=CheckStatus.PASS,
                         message="Pass",
                     ),
@@ -208,18 +209,24 @@ class TestResultAggregation:
         results = [
             CheckResult(
                 check_id="c1",
+                name="Check 1",
+                category=CheckCategory.SYSTEM,
                 status=CheckStatus.PASS,
                 message="Pass",
                 tenant_id="tenant1",
             ),
             CheckResult(
                 check_id="c2",
+                name="Check 2",
+                category=CheckCategory.SYSTEM,
                 status=CheckStatus.FAIL,
                 message="Fail",
                 tenant_id="tenant1",
             ),
             CheckResult(
                 check_id="c3",
+                name="Check 3",
+                category=CheckCategory.SYSTEM,
                 status=CheckStatus.PASS,
                 message="Pass",
                 tenant_id="tenant2",
