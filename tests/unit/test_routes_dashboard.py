@@ -13,7 +13,7 @@ Tests all dashboard endpoints with FastAPI TestClient:
 
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -85,35 +85,39 @@ def mock_user():
 
 @pytest.fixture
 def mock_services():
-    """Mock all dashboard services."""
+    """Mock all dashboard services.
+
+    NOTE: All service methods are ASYNC (routes use await).
+    """
     services = {}
 
-    # Mock CostService
+    # Mock CostService - async methods
     cost_service = MagicMock()
-    cost_service.get_cost_summary.return_value = MagicMock(
+    cost_service.get_cost_summary = AsyncMock(return_value=MagicMock(
         total_cost=12500.50,
         month_over_month_change=5.5,
         top_spending_resources=[
             {"name": "VM-Prod-01", "cost": 2500.00},
             {"name": "SQL-Prod-01", "cost": 1800.00},
         ],
-    )
+    ))
+    cost_service.get_cost_trends = AsyncMock(return_value=[])
     services["cost"] = cost_service
 
-    # Mock ComplianceService
+    # Mock ComplianceService - async methods
     compliance_service = MagicMock()
-    compliance_service.get_compliance_summary.return_value = MagicMock(
+    compliance_service.get_compliance_summary = AsyncMock(return_value=MagicMock(
         compliance_score=85.5,
         total_policies=50,
         compliant_policies=43,
         non_compliant_policies=7,
         critical_findings=2,
-    )
+    ))
     services["compliance"] = compliance_service
 
-    # Mock ResourceService
+    # Mock ResourceService - async methods
     resource_service = MagicMock()
-    resource_service.get_resource_inventory.return_value = MagicMock(
+    resource_service.get_resource_inventory = AsyncMock(return_value=MagicMock(
         total_resources=350,
         resources=[
             MagicMock(
@@ -129,28 +133,29 @@ def mock_services():
                 tenant_id="dashboard-tenant-123",
             ),
         ],
-    )
+    ))
     services["resource"] = resource_service
 
-    # Mock IdentityService
+    # Mock IdentityService - async methods
     identity_service = MagicMock()
-    identity_service.get_identity_summary.return_value = MagicMock(
+    identity_service.get_identity_summary = AsyncMock(return_value=MagicMock(
         total_users=250,
         active_users=220,
         admin_users=15,
         guest_users=30,
         mfa_enabled_users=180,
         mfa_percentage=72.0,
-    )
+    ))
+    identity_service.get_identity_trends = AsyncMock(return_value=[])
     services["identity"] = identity_service
 
-    # Mock MonitoringService
+    # Mock MonitoringService - async methods
     monitoring_service = MagicMock()
-    monitoring_service.get_overall_status.return_value = {
+    monitoring_service.get_overall_status = AsyncMock(return_value={
         "status": "healthy",
         "success_rate": 95.0,
-    }
-    monitoring_service.get_recent_logs.return_value = [
+    })
+    monitoring_service.get_recent_logs = AsyncMock(return_value=[
         MagicMock(
             id="log-1",
             job_type="costs",
@@ -159,10 +164,11 @@ def mock_services():
             started_at=datetime.utcnow(),
             duration_ms=5000,
         ),
-    ]
-    monitoring_service.get_active_alerts.return_value = []
-    monitoring_service.get_alert_stats.return_value = {"total": 0}
-    monitoring_service.get_metrics.return_value = []
+    ])
+    monitoring_service.get_active_alerts = AsyncMock(return_value=[])
+    monitoring_service.get_alert_stats = AsyncMock(return_value={"total": 0})
+    monitoring_service.get_metrics = AsyncMock(return_value=[])
+    monitoring_service.get_sync_metrics = AsyncMock(return_value={})
     services["monitoring"] = monitoring_service
 
     return services

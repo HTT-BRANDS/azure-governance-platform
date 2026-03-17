@@ -486,6 +486,7 @@ def test_file_size_limit():
         "app/api/routes/auth.py",
         "app/api/services/dmarc_service.py",
         "app/core/cache.py",
+        "app/api/services/budget_service.py",
     }
 
     for py_file in app_path.rglob("*.py"):

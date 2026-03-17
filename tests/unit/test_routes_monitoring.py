@@ -11,7 +11,7 @@ Tests monitoring endpoints:
 
 import uuid
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
