@@ -120,10 +120,13 @@ def mock_recommendations():
 
 
 def test_get_recommendations_success(authed_client, mock_recommendations):
-    """Test successful retrieval of recommendations."""
+    """Test successful retrieval of recommendations.
+
+    NOTE: Service methods are SYNC (routes don't await them).
+    """
     with patch("app.api.routes.recommendations.RecommendationService") as MockService:
         mock_service = MockService.return_value
-        mock_service.get_recommendations.return_value = mock_recommendations
+        mock_service.get_recommendations = MagicMock(return_value=mock_recommendations)
 
         response = authed_client.get("/api/v1/recommendations")
 
@@ -142,7 +145,7 @@ def test_get_recommendations_with_filters(authed_client, mock_recommendations):
 
     with patch("app.api.routes.recommendations.RecommendationService") as MockService:
         mock_service = MockService.return_value
-        mock_service.get_recommendations.return_value = cost_recommendations
+        mock_service.get_recommendations = MagicMock(return_value=cost_recommendations)
 
         response = authed_client.get("/api/v1/recommendations?category=cost_optimization&impact=High")
 
@@ -156,7 +159,10 @@ def test_get_recommendations_with_filters(authed_client, mock_recommendations):
 
 
 def test_get_recommendations_by_category(authed_client):
-    """Test recommendations grouped by category."""
+    """Test recommendations grouped by category.
+
+    NOTE: get_recommendations_by_category is SYNC (route does NOT await it).
+    """
     mock_by_category = [
         MagicMock(
             category=RecommendationCategory.COST_OPTIMIZATION,
@@ -172,7 +178,7 @@ def test_get_recommendations_by_category(authed_client):
 
     with patch("app.api.routes.recommendations.RecommendationService") as MockService:
         mock_service = MockService.return_value
-        mock_service.get_recommendations_by_category.return_value = mock_by_category
+        mock_service.get_recommendations_by_category = MagicMock(return_value=mock_by_category)
 
         response = authed_client.get("/api/v1/recommendations/by-category")
 
@@ -183,7 +189,10 @@ def test_get_recommendations_by_category(authed_client):
 
 
 def test_get_savings_potential(authed_client):
-    """Test total savings potential calculation."""
+    """Test total savings potential calculation.
+
+    NOTE: get_savings_potential is SYNC (route does NOT await it).
+    """
     mock_savings = MagicMock(
         total_monthly_savings=12500.00,
         total_annual_savings=150000.00,
@@ -193,7 +202,7 @@ def test_get_savings_potential(authed_client):
 
     with patch("app.api.routes.recommendations.RecommendationService") as MockService:
         mock_service = MockService.return_value
-        mock_service.get_savings_potential.return_value = mock_savings
+        mock_service.get_savings_potential = MagicMock(return_value=mock_savings)
 
         response = authed_client.get("/api/v1/recommendations/savings-potential")
 
@@ -204,7 +213,10 @@ def test_get_savings_potential(authed_client):
 
 
 def test_get_recommendation_summary(authed_client):
-    """Test recommendation summary statistics."""
+    """Test recommendation summary statistics.
+
+    NOTE: get_recommendation_summary is SYNC (route does NOT await it).
+    """
     mock_summary = [
         MagicMock(
             category=RecommendationCategory.COST_OPTIMIZATION,
@@ -224,7 +236,7 @@ def test_get_recommendation_summary(authed_client):
 
     with patch("app.api.routes.recommendations.RecommendationService") as MockService:
         mock_service = MockService.return_value
-        mock_service.get_recommendation_summary.return_value = mock_summary
+        mock_service.get_recommendation_summary = MagicMock(return_value=mock_summary)
 
         response = authed_client.get("/api/v1/recommendations/summary")
 
@@ -235,7 +247,10 @@ def test_get_recommendation_summary(authed_client):
 
 
 def test_dismiss_recommendation_success(authed_client):
-    """Test successful recommendation dismissal."""
+    """Test successful recommendation dismissal.
+
+    NOTE: dismiss_recommendation is SYNC (route does NOT await it).
+    """
     recommendation_id = 1
     request_data = {"reason": "Not applicable for our use case"}
 
@@ -248,7 +263,7 @@ def test_dismiss_recommendation_success(authed_client):
 
     with patch("app.api.routes.recommendations.RecommendationService") as MockService:
         mock_service = MockService.return_value
-        mock_service.dismiss_recommendation.return_value = mock_response
+        mock_service.dismiss_recommendation = MagicMock(return_value=mock_response)
 
         response = authed_client.post(
             f"/api/v1/recommendations/{recommendation_id}/dismiss",

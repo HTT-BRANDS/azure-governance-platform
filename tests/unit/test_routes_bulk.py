@@ -10,7 +10,7 @@ Tests bulk operation endpoints:
 
 import uuid
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -111,7 +111,10 @@ def mock_viewer_user():
 
 
 def test_bulk_apply_tags_success(authed_client):
-    """Test successful bulk tag application."""
+    """Test successful bulk tag application.
+
+    NOTE: bulk_tag_resources is ASYNC (route uses await).
+    """
     request_data = {
         "resource_ids": ["res-1", "res-2", "res-3"],
         "tags": {"Environment": "Production", "Owner": "DevOps"},
@@ -130,7 +133,7 @@ def test_bulk_apply_tags_success(authed_client):
 
     with patch("app.api.routes.bulk.BulkService") as MockBulkService:
         mock_service = MockBulkService.return_value
-        mock_service.bulk_tag_resources.return_value = mock_response
+        mock_service.bulk_tag_resources = AsyncMock(return_value=mock_response)
 
         response = authed_client.post("/bulk/tags/apply", json=request_data)
 
@@ -156,7 +159,10 @@ def test_bulk_apply_tags_requires_operator_role(client_with_db, mock_viewer_user
 
 
 def test_bulk_remove_tags_success(authed_client):
-    """Test successful bulk tag removal."""
+    """Test successful bulk tag removal.
+
+    NOTE: bulk_remove_tags is ASYNC (route uses await).
+    """
 
     mock_response = {
         "success_count": 2,
@@ -169,7 +175,7 @@ def test_bulk_remove_tags_success(authed_client):
 
     with patch("app.api.routes.bulk.BulkService") as MockBulkService:
         mock_service = MockBulkService.return_value
-        mock_service.bulk_remove_tags.return_value = mock_response
+        mock_service.bulk_remove_tags = AsyncMock(return_value=mock_response)
 
         response = authed_client.post(
             "/bulk/tags/remove",
@@ -199,7 +205,7 @@ def test_bulk_acknowledge_anomalies_success(authed_client):
 
     with patch("app.api.routes.bulk.BulkService") as MockBulkService:
         mock_service = MockBulkService.return_value
-        mock_service.bulk_acknowledge_anomalies.return_value = mock_response
+        mock_service.bulk_acknowledge_anomalies = AsyncMock(return_value=mock_response)
 
         response = authed_client.post("/bulk/anomalies/acknowledge", json=request_data)
 
@@ -224,7 +230,7 @@ def test_bulk_dismiss_recommendations_success(authed_client):
 
     with patch("app.api.routes.bulk.BulkService") as MockBulkService:
         mock_service = MockBulkService.return_value
-        mock_service.bulk_dismiss_recommendations.return_value = mock_response
+        mock_service.bulk_dismiss_recommendations = AsyncMock(return_value=mock_response)
 
         response = authed_client.post("/bulk/recommendations/dismiss", json=request_data)
 
@@ -248,7 +254,7 @@ def test_bulk_review_idle_resources_success(authed_client):
 
     with patch("app.api.routes.bulk.BulkService") as MockBulkService:
         mock_service = MockBulkService.return_value
-        mock_service.bulk_review_idle_resources.return_value = mock_response
+        mock_service.bulk_review_idle_resources = AsyncMock(return_value=mock_response)
 
         response = authed_client.post("/bulk/idle-resources/review", json=request_data)
 
