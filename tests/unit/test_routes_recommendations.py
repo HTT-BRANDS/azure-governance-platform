@@ -22,7 +22,6 @@ from app.main import app
 from app.models.tenant import Tenant, UserTenant
 from app.schemas.recommendation import RecommendationCategory
 
-
 pytestmark = pytest.mark.xfail(reason="Needs authenticated test client fixture")
 
 

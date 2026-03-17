@@ -16,7 +16,6 @@ from app.schemas.riverside.threat import (
     RiversideThreatDataResponse,
 )
 
-
 # ---------------------------------------------------------------------------
 # RiversideThreatDataBase
 # ---------------------------------------------------------------------------

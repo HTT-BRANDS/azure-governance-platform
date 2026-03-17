@@ -7,7 +7,6 @@ phase assignment, and requirement completeness.
 """
 
 from collections import Counter
-from datetime import date
 
 import pytest
 
@@ -21,7 +20,6 @@ from app.api.services.riverside_models import (
     RiversideRequirementCategory,
 )
 from app.api.services.riverside_requirements import REQUIREMENTS
-
 
 # ---------------------------------------------------------------------------
 # Catalog Integrity

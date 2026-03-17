@@ -9,9 +9,6 @@ aggregation, and status enums.
 from datetime import datetime
 from enum import StrEnum
 
-import pytest
-from pydantic import ValidationError
-
 from app.preflight.models import (
     CategorySummary,
     CheckCategory,
@@ -22,7 +19,6 @@ from app.preflight.models import (
     PreflightStatusResponse,
     TenantCheckSummary,
 )
-
 
 # ---------------------------------------------------------------------------
 # CheckStatus enum
@@ -80,13 +76,13 @@ class TestCheckResult:
     """Tests for CheckResult Pydantic model."""
 
     def _make_result(self, status: CheckStatus = CheckStatus.PASS, **kwargs) -> CheckResult:
-        defaults = dict(
-            check_id="test_check",
-            name="Test Check",
-            category=CheckCategory.SYSTEM,
-            status=status,
-            message="All good",
-        )
+        defaults = {
+            "check_id": "test_check",
+            "name": "Test Check",
+            "category": CheckCategory.SYSTEM,
+            "status": status,
+            "message": "All good",
+        }
         defaults.update(kwargs)
         return CheckResult(**defaults)
 

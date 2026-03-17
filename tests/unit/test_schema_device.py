@@ -16,7 +16,6 @@ from app.schemas.riverside.device import (
     RiversideDeviceComplianceResponse,
 )
 
-
 # ---------------------------------------------------------------------------
 # RiversideDeviceComplianceBase
 # ---------------------------------------------------------------------------

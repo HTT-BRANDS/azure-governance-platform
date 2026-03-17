@@ -32,8 +32,8 @@ def _get_real_azure_exceptions():
     if current is not None and not isinstance(current, MagicMock):
         # Module is real — use it directly
         return (
-            getattr(current, "ClientAuthenticationError"),
-            getattr(current, "HttpResponseError"),
+            current.ClientAuthenticationError,
+            current.HttpResponseError,
         )
 
     # Module has been mocked — temporarily remove ALL azure entries and re-import
@@ -45,8 +45,8 @@ def _get_real_azure_exceptions():
     try:
         real_mod = importlib.import_module(key)
         result = (
-            getattr(real_mod, "ClientAuthenticationError"),
-            getattr(real_mod, "HttpResponseError"),
+            real_mod.ClientAuthenticationError,
+            real_mod.HttpResponseError,
         )
     finally:
         # Clean up the fresh imports
@@ -72,8 +72,9 @@ def _ensure_real_retry_internals():
     of real exception classes. This fixture patches them back using the
     SAME class objects we use to create test instances.
     """
-    import app.core.retry as retry_mod
     from sqlalchemy.exc import SQLAlchemyError
+
+    import app.core.retry as retry_mod
 
     orig_non_retryable = retry_mod.NON_RETRYABLE_EXCEPTIONS
     orig_auth = getattr(retry_mod, "ClientAuthenticationError", None)

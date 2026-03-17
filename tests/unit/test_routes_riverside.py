@@ -24,7 +24,6 @@ from app.main import app
 from app.models.tenant import Tenant, UserTenant
 
 
-
 @pytest.fixture
 def test_db_session(db_session):
     """Database session with test data."""

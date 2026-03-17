@@ -7,7 +7,7 @@ Traces: PF-007, PF-008 — Riverside database connectivity, API endpoints,
 scheduler, Azure AD permissions, evidence, and MFA data source checks.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -22,7 +22,6 @@ from app.preflight.riverside_checks import (
     SeverityLevel,
     get_riverside_checks,
 )
-
 
 # ---------------------------------------------------------------------------
 # SeverityLevel

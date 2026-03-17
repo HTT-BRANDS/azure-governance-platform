@@ -22,7 +22,6 @@ from app.main import app
 from app.models.tenant import Tenant, UserTenant
 from app.preflight.models import CheckCategory, CheckResult, CheckStatus, PreflightReport
 
-
 pytestmark = pytest.mark.xfail(reason="CheckCategory enum values changed (AZURE_ACCESS)")
 
 

@@ -19,7 +19,6 @@ from app.schemas.riverside.requirements import (
     RiversideRequirementUpdate,
 )
 
-
 # ---------------------------------------------------------------------------
 # RiversideRequirementBase
 # ---------------------------------------------------------------------------

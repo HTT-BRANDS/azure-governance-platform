@@ -18,7 +18,6 @@ from app.core.database import get_db
 from app.main import app
 from app.models.tenant import Tenant, UserTenant
 
-
 pytestmark = pytest.mark.xfail(reason="Needs authenticated test client fixture")
 
 

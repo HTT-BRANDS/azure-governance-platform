@@ -25,6 +25,7 @@ from app.models.riverside import (
 from app.models.tenant import Tenant
 from tests.fixtures.riverside_fixtures import create_riverside_test_data
 
+
 @pytest.fixture
 def db_with_riverside_data(db_session: Session) -> Session:
     """Database session with complete Riverside test data."""

@@ -9,8 +9,6 @@ and serialization for dashboard and reporting data.
 from dataclasses import asdict, fields
 from datetime import date, datetime
 
-import pytest
-
 from app.api.services.riverside_service.constants import (
     DeadlinePhase,
     MFAStatus,
@@ -32,7 +30,6 @@ from app.api.services.riverside_service.models import (
     TenantRequirementTracker,
     TenantRiversideSummary,
 )
-
 
 # ---------------------------------------------------------------------------
 # RiversideRequirement

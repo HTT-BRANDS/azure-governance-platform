@@ -16,18 +16,17 @@ from app.api.services.riverside_service.constants import (
     ALL_TENANTS,
     CURRENT_MATURITY_SCORE,
     FINANCIAL_RISK,
-    DeadlinePhase,
     MFA_THRESHOLD_PERCENTAGES,
-    MFAStatus,
     RIVERSIDE_DEADLINE,
     RIVERSIDE_SYNC_INTERVAL_HOURS,
     RIVERSIDE_TENANTS,
+    TARGET_MATURITY_SCORE,
+    DeadlinePhase,
+    MFAStatus,
     RequirementLevel,
     RequirementStatus,
     RiversideRequirementCategory,
-    TARGET_MATURITY_SCORE,
 )
-
 
 # ---------------------------------------------------------------------------
 # Scalar Constants

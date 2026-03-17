@@ -8,7 +8,7 @@ MFA gap analysis, and maturity distribution.
 """
 
 from datetime import date, datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.orm import Session
@@ -19,7 +19,6 @@ from app.api.services.riverside_compliance import (
     analyze_mfa_gaps,
     calculate_compliance_summary,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

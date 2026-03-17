@@ -8,23 +8,21 @@ MFA status reporting, maturity score calculations, and gap analysis.
 """
 
 from datetime import date, datetime, timedelta
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy.orm import Session
 
-from app.api.services.riverside_service.constants import ALL_TENANTS, RIVERSIDE_DEADLINE
+from app.api.services.riverside_service.constants import RIVERSIDE_DEADLINE
 from app.api.services.riverside_service.models import GapAnalysis
 from app.api.services.riverside_service.queries import (
     _get_critical_gaps,
     _resolve_tenant_code,
     get_gaps,
-    get_maturity_scores,
     get_mfa_status,
     get_requirements,
     get_riverside_summary,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

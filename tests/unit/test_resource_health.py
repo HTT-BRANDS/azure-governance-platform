@@ -9,15 +9,12 @@ Traces: RM-006 — Resource health aggregation and Lighthouse client health.
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from app.services.lighthouse_client import (
     LighthouseAzureClient,
     LighthouseDelegationError,
     get_lighthouse_client,
     reset_lighthouse_client,
 )
-
 
 # ---------------------------------------------------------------------------
 # LighthouseDelegationError
@@ -69,7 +66,7 @@ class TestLighthouseAzureClientInit:
     @patch("app.services.lighthouse_client.ResilientAzureClient")
     def test_resilience_clients_created(self, mock_resilient, mock_cred):
         """Should create per-API resilient clients."""
-        client = LighthouseAzureClient()
+        _client = LighthouseAzureClient()  # noqa: F841 — side-effect test
         # 4 calls: general + arm + cost + security
         assert mock_resilient.call_count == 4
 

@@ -21,7 +21,6 @@ from app.preflight.mfa_checks import (
 )
 from app.preflight.models import CheckCategory, CheckStatus
 
-
 # ---------------------------------------------------------------------------
 # SeverityLevel
 # ---------------------------------------------------------------------------

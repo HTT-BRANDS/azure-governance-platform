@@ -7,7 +7,7 @@ Traces: PF-003, PF-004 — Azure authentication, subscription,
 Graph API, cost management, policy, resources, security, and RBAC checks.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -29,7 +29,6 @@ from app.preflight.azure_checks import (
     _sanitize_error,
 )
 from app.preflight.models import CheckCategory, CheckStatus
-
 
 # ---------------------------------------------------------------------------
 # Constants
