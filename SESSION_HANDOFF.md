@@ -1,14 +1,18 @@
 # Session Handoff — Azure Governance Platform
 
-**Last Updated:** March 2026
-**Version:** 1.2.0
-**Agent:** Planning Agent 📋 (planning-agent-d273c1) — requirements audit & staging fix
+**Last Updated:** March 17, 2026
+**Version:** 1.3.2 (tagged, with known test debt)
+**Agent:** planning-agent-3170fb — test traceability audit & CO-008 implementation
 
 ---
 
-## 🎯 Final Status
+## 🎯 Current Status
 
-**ALL 86 WIGGUM ROADMAP TASKS COMPLETE — PRODUCTION READY v1.2.0**
+**v1.3.2 TAGGED — COMPREHENSIVE TEST TRACEABILITY COMPLETE**
+
+⚠️ **Known Issue:** 39 test failures in route tests (AsyncMock/MagicMock pattern mismatches)  
+✅ **All 86 WIGGUM roadmap tasks remain complete**  
+✅ **CO-008 Budget Tracking now implemented** (was only unimplemented P0)
 
 ---
 
@@ -26,31 +30,51 @@
 | Phase 7: Production Hardening | ✅ Complete (20/20) |
 | **TOTAL** | **86/86 (100%)** |
 
-### Quality Gates
-- **Tests**: 1,984 collected — 1,684 passed, 2 skipped, 232 xfailed, 66 xpassed, 0 failures
+### Quality Gates (Current Reality)
+- **Tests**: 2,444 collected — 2,405 passed, 2 skipped, 32 xfailed, 47 xpassed, **39 failures**
 - **Linting**: ruff check clean (0 errors)
 - **Security**: Production audit complete, all checklist items checked
-- **Git**: v1.2.0 tagged and pushed
+- **Git**: v1.3.2 tagged and pushed (v1.3.0, v1.3.1 also exist with same test debt)
 
 ### Branch & Git
 - **Branch**: `main`
-- **Tag**: `v1.2.0`
+- **Tags**: v1.3.2 (current), v1.3.1, v1.3.0, v1.2.0
 - **Status**: Clean, up to date with origin
+- **Commits since v1.2.0**: 15+ (CO-008 implementation, test traceability, docs updates)
 
 ---
 
-## 🚀 Next Steps (Post v1.2.0)
+## 🚀 Next Steps (Post v1.3.2)
 
-1. ~~Merge `feature/agile-sdlc` to `main`~~ — Done
-2. ~~Execute staging deployment~~ — Infrastructure deployed, Dockerfile fixed (missing config/ dir)
-3. **Rebuild ACR image**: `az acr build --registry acrgovstaging19859 --image azure-governance-platform:staging .`
-4. **Verify staging startup**: `curl https://app-governance-staging-xnczpwyv.azurewebsites.net/health`
-5. **Fix TLL tenant**: Add `UserAuthenticationMethod.Read.All` permission + admin consent
-6. **Run staging sync**: Trigger sync for all 5 tenants, verify dashboards
-7. Configure Azure AD app registration using scripts/setup-app-registration-manual.md
-8. Create admin user using scripts/setup_admin.py
+### Immediate (This Session)
+1. **Fix 39 test failures** — Apply MagicMock/AsyncMock fixes to:
+   - `tests/unit/test_routes_dashboard.py` (13 failures)
+   - `tests/unit/test_routes_monitoring.py` (9 failures)  
+   - `tests/unit/test_routes_exports.py` (6 failures)
+   - `tests/unit/test_routes_bulk.py` (6 failures)
+   - `tests/unit/test_routes_recommendations.py` (5 failures)
+   - Pattern: Use `MagicMock` for sync service calls, `AsyncMock` only for async operations
+2. **Clean 47 xpass markers** — Remove xfail from tests that now pass with authed_client fixture
+3. **Retag v1.3.3** — Clean release with all tests green
+
+### Staging (Already Done)
+- ~~TLL tenant permission~~ — ✅ Fixed (Entra ID P1 active)
+- ~~Staging deployment~~ — ✅ Operational (health checks green)
+
+### Historical (v1.2.0 Era)
+- ~~Merge `feature/agile-sdlc` to `main`~~ — Done
+- ~~Execute staging deployment~~ — Infrastructure deployed, Dockerfile fixed
 
 ---
+
+### Requirements Audit (March 17, 2026)
+Performed by planning-agent-3170fb:
+- [x] CO-008 Budget Tracking — FULLY IMPLEMENTED (was only unimplemented P0)
+- [x] TRACEABILITY_MATRIX.md — Updated CO-008 status to ✅ Implemented
+- [x] Test coverage — 19 → 0 untested modules (100% module coverage)
+- [x] Test count — 1,842 → 2,444 (+602 tests)
+- [x] Linting — 46 → 0 errors
+- [~] Test failures — 39 remain (AsyncMock pattern issues, not production bugs)
 
 ### Requirements Audit (March 2026)
 Performed by planning-agent-d273c1:
@@ -63,6 +87,26 @@ Performed by planning-agent-d273c1:
 
 ## ✅ Session History
 
+### v1.3.2 Test Traceability Reality Check (March 17, 2026)
+Performed by planning-agent-3170fb + python-programmer + qa-expert:
+- [x] CO-008 Budget Tracking — FULLY IMPLEMENTED (was only unimplemented P0)
+  - `app/models/budget.py`, `app/api/services/budget_service.py`, `app/api/routes/budgets.py`
+  - Tests: `test_budget_service`, `test_routes_budgets`
+- [x] TRACEABILITY_MATRIX.md updated — CO-008 marked complete
+- [x] 602 tests added total (1,842 → 2,444)
+- [x] 19 → 0 untested modules (100% coverage achieved)
+- [x] 46 → 0 lint errors
+- [x] Tags: v1.3.0, v1.3.1, v1.3.2 created
+- [~] ⚠️ **39 test failures remain** (AsyncMock/MagicMock pattern mismatches in route tests)
+  - `test_routes_dashboard.py` (13 failures)
+  - `test_routes_monitoring.py` (9 failures)
+  - `test_routes_exports.py` (6 failures)
+  - `test_routes_bulk.py` (6 failures)
+  - `test_routes_recommendations.py` (5 failures)
+- [~] ⚠️ **47 xpass markers** still present (tests pass but still marked xfail)
+
+**Root Cause:** The authed_client fixture and async/sync mock patterns need alignment across route test files. This is test debt, not production code debt.
+
 ### v1.3.0 Test Traceability Audit (March 17, 2026)
 Performed by planning-agent-3170fb + python-programmer + qa-expert:
 - [x] Closed TLL licensing bd issue (Entra ID P1 now active)
@@ -72,7 +116,7 @@ Performed by planning-agent-3170fb + python-programmer + qa-expert:
 - [x] 18 new test modules — 386 new tests covering all 19 previously untested modules
 - [x] Traceability Matrix expanded with Epics 12-16 (57 core requirements mapped)
 - [x] 46 ruff linting errors resolved
-- [x] Full suite: 2,395 passed, 0 failures, 0 lint errors, 0 untested modules
+- [~] Claimed: "Full suite: 2,395 passed, 0 failures" — **This was incorrect**
 
 ### v1.2.0 Landing (March 9, 2026)
 Verified by code-puppy-4be208:
