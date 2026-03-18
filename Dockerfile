@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Build dependencies
 # -----------------------------------------------------------------------------
-FROM python:3.11-slim as builder
+FROM python:3.11-slim-bookworm as builder
 
 # Build arguments
 ARG PYTHON_VERSION=3.11
@@ -46,7 +46,7 @@ RUN rm -rf /root/.cache
 # -----------------------------------------------------------------------------
 # Stage 2: Production image
 # -----------------------------------------------------------------------------
-FROM python:3.11-slim as production
+FROM python:3.11-slim-bookworm as production
 
 LABEL maintainer="Cloud Governance Team" \
       application="Azure Governance Platform" \
@@ -81,7 +81,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    # Refresh dynamic linker cache after installing ODBC libraries
+    && ldconfig
 
 # Create non-root user for security
 RUN groupadd --gid 1000 ${APP_GROUP} && \
@@ -94,6 +96,10 @@ WORKDIR ${APP_HOME}
 # Copy installed packages from builder stage
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Smoke-test: verify pyodbc can import against the system libodbc.so.2.
+# This fails the BUILD (not just runtime) if the ODBC runtime is missing.
+RUN python3 -c "import pyodbc; print('pyodbc import OK — libodbc.so.2 found')"
 
 # Copy application code
 COPY --chown=${APP_USER}:${APP_GROUP} app/ ./app/
@@ -128,7 +134,7 @@ ENTRYPOINT ["./scripts/entrypoint.sh"]
 # -----------------------------------------------------------------------------
 # Stage 3: Development image (optional - includes dev dependencies)
 # -----------------------------------------------------------------------------
-FROM builder as development
+FROM python:3.11-slim-bookworm as development
 
 LABEL maintainer="Cloud Governance Team" \
       application="Azure Governance Platform" \
