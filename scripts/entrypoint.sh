@@ -43,4 +43,4 @@ exec python -m uvicorn app.main:app \
     --host 0.0.0.0 \
     --port "${PORT}" \
     --workers 1 \
-    --log-level "${LOG_LEVEL:-info}"
+    --log-level "$(echo ${LOG_LEVEL:-info} | tr A-Z a-z)"
