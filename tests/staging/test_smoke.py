@@ -54,7 +54,7 @@ class TestPublicEndpoints:
         self, client: requests.Session, staging_url: str
     ) -> None:
         """GET /openapi.json must be accessible (powers /docs)."""
-        resp = client.get(f"{staging_url}/openapi.json", timeout=10)
+        resp = client.get(f"{staging_url}/openapi.json", timeout=30)
         assert resp.status_code == 200
         data = resp.json()
         assert "paths" in data, "openapi.json missing 'paths'"

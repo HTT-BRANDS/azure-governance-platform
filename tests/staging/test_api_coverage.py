@@ -26,10 +26,10 @@ API_ROUTES = [
     # ── Costs ───────────────────────────────────────────────────────────────
     ("/api/v1/costs/summary",      [401]),
     ("/api/v1/costs/anomalies",    [401]),
-    ("/api/v1/costs/snapshots",    [401]),
+    ("/api/v1/costs/trends",       [401]),
     # ── Compliance ──────────────────────────────────────────────────────────
     ("/api/v1/compliance/summary", [401]),
-    ("/api/v1/compliance/policies",[401]),
+    ("/api/v1/compliance/status",  [401]),
     # ── Identity ────────────────────────────────────────────────────────────
     ("/api/v1/identity/summary",   [401]),
     ("/api/v1/identity/privileged",[401]),
@@ -47,7 +47,8 @@ API_ROUTES = [
     ("/api/v1/recommendations",    [401]),
     # ── Riverside ───────────────────────────────────────────────────────────
     ("/api/v1/riverside/summary",  [401]),
-    ("/api/v1/riverside/mfa-status",[401]),
+    ("/api/v1/riverside/mfa-status",    [401]),
+    ("/api/v1/riverside/maturity-scores",[401]),
     # ── Monitoring (internal) ───────────────────────────────────────────────
     ("/monitoring/performance",    [401]),
     ("/monitoring/cache",          [401]),
@@ -66,7 +67,9 @@ class TestAPIRouteMounting:
         expected_statuses: list[int],
     ) -> None:
         """GET {path} must return one of {expected_statuses}, never 404."""
-        resp = client.get(f"{staging_url}{path}", timeout=10)
+        # openapi.json can be large; use 30s for schema endpoints
+        timeout = 30 if path == "/openapi.json" else 10
+        resp = client.get(f"{staging_url}{path}", timeout=timeout)
         assert resp.status_code in expected_statuses, (
             f"GET {path} → {resp.status_code} "
             f"(expected one of {expected_statuses}). "

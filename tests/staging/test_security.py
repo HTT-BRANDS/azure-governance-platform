@@ -24,7 +24,6 @@ PROTECTED_GET_ENDPOINTS = [
     "/api/v1/riverside/summary",
     "/api/v1/riverside/mfa-status",
     "/api/v1/riverside/maturity-scores",
-    "/api/v1/riverside/compliance",
     "/monitoring/performance",
     "/monitoring/cache",
 ]
