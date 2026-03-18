@@ -107,13 +107,18 @@ class _LazyEngine:
 engine = _LazyEngine()
 
 
-def _make_session():
-    """Create a new SQLAlchemy session bound to the lazy engine."""
-    from sqlalchemy.orm import Session as _Session
-    return _Session(bind=_get_engine())
+# _session_factory is built lazily so _get_engine() is not invoked at
+# module-import time.
+_session_factory = None
 
 
-SessionLocal = _make_session
+def SessionLocal():
+    """Return a new SQLAlchemy Session bound to the real engine."""
+    global _session_factory
+    if _session_factory is None:
+        from sqlalchemy.orm import sessionmaker as _sm
+        _session_factory = _sm(autocommit=False, autoflush=False, bind=_get_engine())
+    return _session_factory()
 
 Base = declarative_base()
 
@@ -164,7 +169,7 @@ def init_db() -> None:
     # Import models to register them with Base
     from app import models  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(_get_engine(), checkfirst=True)
     _create_indexes()
 
 
