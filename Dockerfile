@@ -67,15 +67,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     WEBSITE_HEALTHCHECK_MAXPINGFAILURES=3 \
     WEBSITES_PORT=8000
 
-# Install Microsoft ODBC Driver 18 for SQL Server + runtime deps
+# Install ODBC runtime + Microsoft ODBC Driver 18 for SQL Server
+# NOTE: libodbc2 (libodbc.so.2) must be installed from the standard Debian repo
+#       first; the Microsoft repo provides msodbcsql18 (the actual MSSQL driver).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl gnupg2 apt-transport-https ca-certificates \
+    # ODBC runtime — provides libodbc.so.2 required by pyodbc at startup
+    libodbc2 libodbccr2 unixodbc \
     && curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
        | gpg --dearmor > /usr/share/keyrings/microsoft.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" \
        > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 unixodbc-dev \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
