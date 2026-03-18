@@ -28,8 +28,13 @@ PYEOF
 
 # 2 — Run Alembic incremental migrations
 echo "--- Running Alembic migrations ---"
-python -m alembic upgrade head
-echo "--- Migrations complete ---"
+if python -m alembic upgrade head; then
+    echo "--- Migrations complete ---"
+else
+    echo "WARNING: Alembic migration failed - schema may be stale."
+    echo "         App will attempt to start. Check DB connectivity."
+    echo "         Run 'python -m alembic upgrade head' manually once DB is reachable."
+fi
 
 # 3 — Start the application
 PORT="${PORT:-8000}"
