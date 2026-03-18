@@ -3,12 +3,12 @@
 # Container entrypoint — initialises DB, runs migrations, starts the app.
 #
 # Order matters:
-#   1. init_db  — create_all for the base schema tables (idempotent)
-#   2. alembic upgrade head — apply incremental migrations on top
-#   3. uvicorn  — serve the app
-#
-# Migrations depend on base tables (e.g. brand_configs → tenants FK),
-# so create_all must come first.
+#   1. init_db  — creates the base schema for SQLite (dev/test).
+#                 For MSSQL/PostgreSQL this is a no-op; Alembic owns the DDL.
+#   2. alembic upgrade head — apply incremental migrations (idempotent).
+#                 Migration 001 is safe if the table was pre-created by
+#                 create_all — it checks for existence before creating.
+#   3. uvicorn  — serve the app.
 # =============================================================================
 set -euo pipefail
 

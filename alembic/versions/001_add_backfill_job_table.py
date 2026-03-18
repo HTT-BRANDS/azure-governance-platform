@@ -4,6 +4,9 @@ Revision ID: 001
 Revises:
 Create Date: 2025-01-01 00:00:00.000000
 
+IDEMPOTENT: safe to run against a database where backfill_jobs was created
+by Base.metadata.create_all() before alembic was introduced.  The upgrade()
+function checks for the table's existence before issuing DDL.
 """
 
 from collections.abc import Sequence
@@ -20,7 +23,14 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    """Create backfill_jobs table."""
+    """Create backfill_jobs table (idempotent — skips if already exists)."""
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if "backfill_jobs" in inspector.get_table_names():
+        # Table was pre-created by create_all before alembic was introduced.
+        # Nothing to do — the schema is already correct.
+        return
+
     op.create_table(
         "backfill_jobs",
         sa.Column("id", sa.String(36), primary_key=True),
