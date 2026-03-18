@@ -22,9 +22,10 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 
 ## Current Sprint — Post-v1.3.2 Test Debt Cleanup
 
-**Status:** ✅ COMPLETE  
-**Goal:** Fix 39 test failures + 47 xpass markers → Clean v1.4.0  
-**Completed:** March 17, 2026 (code-puppy-5cc572)
+**Status:** ✅ FULLY COMPLETE (v1.4.1)
+**Goal:** Fix 39 test failures + 47 xpass markers + 32 remaining xfails → Clean green
+**v1.4.0 Completed:** March 17, 2026 (code-puppy-5cc572)
+**v1.4.1 Completed:** March 18, 2026 (code-puppy-5cc572)
 
 ### Completed Tasks
 
@@ -43,6 +44,16 @@ python scripts/sync_roadmap.py --update --task 1.1.1
 - [x] Full test suite green: 2,531 passed, 0 failures, 0 xpassed
 - [x] CHANGELOG.md updated
 - [x] `git tag v1.4.0 && git push --tags` — pushed
+
+#### Task X.4: Clear 32 remaining xfails → v1.4.1 ✅
+- [x] `test_routes_sync.py` (12) — FastAPI DI via dependency_overrides
+- [x] `test_routes_auth.py` (6) — accept 401/422 for empty credentials
+- [x] `test_routes_preflight.py` (8) — AsyncMock, CheckStatus enum, serializable fields
+- [x] `test_cost_api.py` (3) — fix xfail assumptions to match route behavior
+- [x] `test_identity_api.py` (1) — remove stale field assertions
+- [x] `integration/conftest.py` — autouse reset_rate_limiter fixture
+- [x] Full test suite: 2,563 passed, 0 failed, 0 xfailed, 0 xpassed
+- [x] Tagged v1.4.1
 
 ### Final Validation
 ```
