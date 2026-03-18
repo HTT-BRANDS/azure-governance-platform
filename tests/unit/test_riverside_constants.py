@@ -286,9 +286,7 @@ class TestAdminRoleIDs:
         """Each admin role ID should be a valid GUID format."""
         import re
 
-        guid_pattern = re.compile(
-            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-        )
+        guid_pattern = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
         for role_id in ADMIN_ROLE_IDS:
             assert guid_pattern.match(role_id), f"Invalid GUID: {role_id}"
 

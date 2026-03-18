@@ -9,7 +9,6 @@ import os
 import pytest
 import requests
 
-
 DEFAULT_STAGING_URL = "https://app-governance-staging-xnczpwyv.azurewebsites.net"
 
 

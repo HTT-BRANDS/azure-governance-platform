@@ -7,7 +7,6 @@ All assertions expect exactly 401 (not 403, not 200, definitely not 500).
 import pytest
 import requests
 
-
 PROTECTED_GET_ENDPOINTS = [
     "/api/v1/costs/summary",
     "/api/v1/costs/anomalies",
@@ -45,8 +44,7 @@ class TestAuthWall:
         """GET {path} without token must return 401."""
         resp = client.get(f"{staging_url}{path}", timeout=10)
         assert resp.status_code == 401, (
-            f"GET {path} returned {resp.status_code} — expected 401. "
-            "Auth wall may be broken."
+            f"GET {path} returned {resp.status_code} — expected 401. Auth wall may be broken."
         )
 
     @pytest.mark.parametrize("path", PROTECTED_POST_ENDPOINTS)
@@ -55,9 +53,7 @@ class TestAuthWall:
     ) -> None:
         """POST {path} without token must return 401."""
         resp = client.post(f"{staging_url}{path}", json={}, timeout=10)
-        assert resp.status_code == 401, (
-            f"POST {path} returned {resp.status_code} — expected 401."
-        )
+        assert resp.status_code == 401, f"POST {path} returned {resp.status_code} — expected 401."
 
     def test_invalid_bearer_token_rejected(
         self, client: requests.Session, staging_url: str
@@ -68,9 +64,7 @@ class TestAuthWall:
             headers={"Authorization": "Bearer this-is-not-a-real-jwt"},
             timeout=10,
         )
-        assert resp.status_code == 401, (
-            f"Invalid token returned {resp.status_code} — expected 401"
-        )
+        assert resp.status_code == 401, f"Invalid token returned {resp.status_code} — expected 401"
 
     def test_401_includes_www_authenticate_header(
         self, client: requests.Session, staging_url: str
@@ -78,9 +72,7 @@ class TestAuthWall:
         """401 responses must include WWW-Authenticate per RFC 7235."""
         resp = client.get(f"{staging_url}/api/v1/riverside/summary", timeout=10)
         assert resp.status_code == 401
-        assert "WWW-Authenticate" in resp.headers, (
-            "401 response missing WWW-Authenticate header"
-        )
+        assert "WWW-Authenticate" in resp.headers, "401 response missing WWW-Authenticate header"
 
     def test_no_protected_endpoint_returns_500(
         self, client: requests.Session, staging_url: str
@@ -105,9 +97,7 @@ class TestSecurityHeaders:
         self, client: requests.Session, staging_url: str
     ) -> None:
         resp = client.get(f"{staging_url}/health", timeout=10)
-        assert "X-Content-Type-Options" in resp.headers, (
-            "Missing X-Content-Type-Options header"
-        )
+        assert "X-Content-Type-Options" in resp.headers, "Missing X-Content-Type-Options header"
 
     def test_no_server_header_leaking_version(
         self, client: requests.Session, staging_url: str

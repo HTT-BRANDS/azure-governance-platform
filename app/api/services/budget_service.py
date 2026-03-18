@@ -202,7 +202,8 @@ class BudgetService:
                 budget_id=budget_id,
                 notification_type=notification_config.notification_type,
                 config=json.dumps(notification_config.config)
-                if notification_config.config else None,
+                if notification_config.config
+                else None,
                 is_enabled=notification_config.is_enabled,
             )
             self.db.add(notification)
@@ -346,9 +347,7 @@ class BudgetService:
 
         return [self._to_alert_response(alert) for alert in alerts]
 
-    async def acknowledge_alert(
-        self, alert_id: int, user_id: str, note: str | None = None
-    ) -> bool:
+    async def acknowledge_alert(self, alert_id: int, user_id: str, note: str | None = None) -> bool:
         """Acknowledge a budget alert.
 
         Args:
@@ -517,9 +516,7 @@ class BudgetService:
         try:
             # Get subscriptions to sync
             if subscription_ids:
-                subscriptions = [
-                    {"subscription_id": sub_id} for sub_id in subscription_ids
-                ]
+                subscriptions = [{"subscription_id": sub_id} for sub_id in subscription_ids]
             else:
                 subscriptions = await azure_client_manager.list_subscriptions(tenant_id)
 
@@ -536,9 +533,7 @@ class BudgetService:
 
                     for azure_budget in azure_budgets:
                         try:
-                            result = await self._sync_single_budget(
-                                tenant_id, sub_id, azure_budget
-                            )
+                            result = await self._sync_single_budget(tenant_id, sub_id, azure_budget)
                             if result == "created":
                                 total_created += 1
                             elif result == "updated":
@@ -628,11 +623,7 @@ class BudgetService:
         etag = azure_budget.get("etag", "")
 
         # Check if budget exists locally
-        existing = (
-            self.db.query(Budget)
-            .filter(Budget.azure_budget_id == azure_id)
-            .first()
-        )
+        existing = self.db.query(Budget).filter(Budget.azure_budget_id == azure_id).first()
 
         # Extract budget details
         amount = properties.get("amount", 0)
@@ -869,8 +860,7 @@ class BudgetService:
         token = credential.get_token("https://management.azure.com/.default")
 
         url = (
-            f"https://management.azure.com{budget.azure_budget_id}"
-            f"?api-version={BUDGET_API_VERSION}"
+            f"https://management.azure.com{budget.azure_budget_id}?api-version={BUDGET_API_VERSION}"
         )
 
         async with httpx.AsyncClient(timeout=30) as client:
@@ -898,8 +888,7 @@ class BudgetService:
         token = credential.get_token("https://management.azure.com/.default")
 
         url = (
-            f"https://management.azure.com{budget.azure_budget_id}"
-            f"?api-version={BUDGET_API_VERSION}"
+            f"https://management.azure.com{budget.azure_budget_id}?api-version={BUDGET_API_VERSION}"
         )
 
         async with httpx.AsyncClient(timeout=30) as client:
@@ -940,7 +929,7 @@ class BudgetService:
 
         # Get recent alerts (handle lazy loading)
         try:
-            if hasattr(budget.alerts, 'order_by'):
+            if hasattr(budget.alerts, "order_by"):
                 recent_alerts = [
                     self._to_alert_response(a)
                     for a in budget.alerts.order_by(BudgetAlert.triggered_at.desc()).limit(10).all()
@@ -948,6 +937,7 @@ class BudgetService:
             else:
                 # Fallback for detached instances - query directly
                 from sqlalchemy.orm import joinedload
+
                 alerts = (
                     self.db.query(BudgetAlert)
                     .options(joinedload(BudgetAlert.budget))

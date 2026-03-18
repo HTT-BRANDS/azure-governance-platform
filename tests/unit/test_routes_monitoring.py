@@ -101,9 +101,7 @@ def test_get_performance_metrics_success(authed_client):
         },
     }
 
-    with patch(
-        "app.api.routes.monitoring.get_performance_dashboard", return_value=mock_dashboard
-    ):
+    with patch("app.api.routes.monitoring.get_performance_dashboard", return_value=mock_dashboard):
         response = authed_client.get("/monitoring/performance")
 
     assert response.status_code == 200

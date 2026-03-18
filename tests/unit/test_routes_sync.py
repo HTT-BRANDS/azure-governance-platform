@@ -25,6 +25,7 @@ from app.main import app
 from app.models.monitoring import Alert, SyncJobLog
 from app.models.tenant import Tenant, UserTenant
 
+
 @pytest.fixture
 def test_db_session(db_session):
     """Database session with test sync data."""
@@ -206,9 +207,7 @@ class TestTriggerSyncEndpoint:
     """Tests for POST /api/v1/sync/{sync_type} endpoint."""
 
     @patch("app.api.routes.sync.trigger_manual_sync")
-    def test_trigger_sync_starts_manual_job(
-        self, mock_trigger, client_with_db, mock_user
-    ):
+    def test_trigger_sync_starts_manual_job(self, mock_trigger, client_with_db, mock_user):
         """Trigger sync endpoint starts manual sync job."""
         mock_trigger.return_value = True
 
@@ -224,9 +223,7 @@ class TestTriggerSyncEndpoint:
         mock_trigger.assert_called_once_with("costs")
 
     @patch("app.api.routes.sync.trigger_manual_sync")
-    def test_trigger_sync_supports_all_sync_types(
-        self, mock_trigger, client_with_db, mock_user
-    ):
+    def test_trigger_sync_supports_all_sync_types(self, mock_trigger, client_with_db, mock_user):
         """Trigger sync supports all valid sync types."""
         mock_trigger.return_value = True
 
@@ -238,9 +235,7 @@ class TestTriggerSyncEndpoint:
             )
             assert response.status_code == 200
 
-    def test_trigger_sync_returns_422_for_invalid_type(
-        self, client_with_db, mock_user
-    ):
+    def test_trigger_sync_returns_422_for_invalid_type(self, client_with_db, mock_user):
         """Trigger sync returns 422 for invalid sync type.
 
         FastAPI validates the SyncType enum path param before the route handler
@@ -261,9 +256,7 @@ class TestSyncStatusEndpoint:
     """Tests for GET /api/v1/sync/status endpoint."""
 
     @patch("app.api.routes.sync.get_scheduler")
-    def test_status_returns_job_schedule(
-        self, mock_scheduler, client_with_db, mock_user
-    ):
+    def test_status_returns_job_schedule(self, mock_scheduler, client_with_db, mock_user):
         """Status endpoint returns scheduled job information."""
 
         mock_job = MagicMock()
@@ -529,6 +522,7 @@ class TestSyncStatusPartialEndpoint:
     ):
         """Sync status partial returns HTML for HTMX rendering."""
         from fastapi.responses import HTMLResponse
+
         mock_service_cls.return_value = mock_monitoring_service
         mock_templates.TemplateResponse.return_value = HTMLResponse(
             content="<div>sync status</div>", status_code=200

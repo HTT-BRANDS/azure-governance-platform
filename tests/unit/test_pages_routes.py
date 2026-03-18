@@ -6,7 +6,6 @@ Traces: UI-001 — Page route registration and template rendering
 for Costs, Compliance, Resources, and Identity sections.
 """
 
-
 from app.api.routes.pages import router
 
 

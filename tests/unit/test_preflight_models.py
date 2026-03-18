@@ -148,27 +148,42 @@ class TestPreflightReport:
 
     def _pass_result(self) -> CheckResult:
         return CheckResult(
-            check_id="c1", name="C1", category=CheckCategory.SYSTEM,
-            status=CheckStatus.PASS, message="ok", duration_ms=10.0,
+            check_id="c1",
+            name="C1",
+            category=CheckCategory.SYSTEM,
+            status=CheckStatus.PASS,
+            message="ok",
+            duration_ms=10.0,
         )
 
     def _fail_result(self) -> CheckResult:
         return CheckResult(
-            check_id="c2", name="C2", category=CheckCategory.DATABASE,
-            status=CheckStatus.FAIL, message="bad", duration_ms=20.0,
+            check_id="c2",
+            name="C2",
+            category=CheckCategory.DATABASE,
+            status=CheckStatus.FAIL,
+            message="bad",
+            duration_ms=20.0,
             recommendations=["Fix the database"],
         )
 
     def _warning_result(self) -> CheckResult:
         return CheckResult(
-            check_id="c3", name="C3", category=CheckCategory.SYSTEM,
-            status=CheckStatus.WARNING, message="hmm", duration_ms=5.0,
+            check_id="c3",
+            name="C3",
+            category=CheckCategory.SYSTEM,
+            status=CheckStatus.WARNING,
+            message="hmm",
+            duration_ms=5.0,
         )
 
     def _skipped_result(self) -> CheckResult:
         return CheckResult(
-            check_id="c4", name="C4", category=CheckCategory.AZURE_AUTH,
-            status=CheckStatus.SKIPPED, message="skipped",
+            check_id="c4",
+            name="C4",
+            category=CheckCategory.AZURE_AUTH,
+            status=CheckStatus.SKIPPED,
+            message="skipped",
         )
 
     def test_empty_report(self):
@@ -182,10 +197,14 @@ class TestPreflightReport:
         assert report.has_warnings is False
 
     def test_counts(self):
-        report = self._make_report([
-            self._pass_result(), self._fail_result(),
-            self._warning_result(), self._skipped_result(),
-        ])
+        report = self._make_report(
+            [
+                self._pass_result(),
+                self._fail_result(),
+                self._warning_result(),
+                self._skipped_result(),
+            ]
+        )
         assert report.passed_count == 1
         assert report.failed_count == 1
         assert report.warning_count == 1
@@ -206,9 +225,13 @@ class TestPreflightReport:
         assert report.has_warnings is True
 
     def test_get_results_by_category(self):
-        report = self._make_report([
-            self._pass_result(), self._fail_result(), self._warning_result(),
-        ])
+        report = self._make_report(
+            [
+                self._pass_result(),
+                self._fail_result(),
+                self._warning_result(),
+            ]
+        )
         system_results = report.get_results_by_category(CheckCategory.SYSTEM)
         assert len(system_results) == 2
 

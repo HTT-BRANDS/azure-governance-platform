@@ -66,11 +66,16 @@ class TestMonitoringServiceAlerts:
         mock_db.commit.assert_called_once()
         assert result.id == 1
 
+    @patch("app.api.services.monitoring_service.asyncio.get_running_loop")
     @patch("app.api.services.monitoring_service.MonitoringService.send_alert_notification")
-    def test_create_alert_with_details(self, mock_send_notif, monitoring_service, mock_db):
+    def test_create_alert_with_details(
+        self, mock_send_notif, mock_get_loop, monitoring_service, mock_db
+    ):
         """Test create_alert serializes details dict to JSON."""
         # Setup
         details = {"error_code": 500, "retry_count": 3}
+        # Close the coroutine immediately so it doesn't generate RuntimeWarning
+        mock_get_loop.return_value.create_task.side_effect = lambda coro: coro.close()
         mock_send_notif.return_value = AsyncMock()  # Mock async notification
 
         def mock_add(obj):
@@ -97,13 +102,17 @@ class TestMonitoringServiceAlerts:
         mock_db.commit.assert_called_once()
         mock_send_notif.assert_called_once()  # Notification sent for error severity
 
+    @patch("app.api.services.monitoring_service.asyncio.get_running_loop")
     @patch("app.api.services.monitoring_service.MonitoringService.send_alert_notification")
     def test_create_alert_triggers_notification_for_critical(
-        self, mock_send_notif, monitoring_service, mock_db
+        self, mock_send_notif, mock_get_loop, monitoring_service, mock_db
     ):
         """Test create_alert sends notification for error/critical severity."""
 
         # Setup
+        # Close the coroutine immediately so it doesn't generate RuntimeWarning
+        mock_get_loop.return_value.create_task.side_effect = lambda coro: coro.close()
+
         def mock_add(obj):
             obj.id = 3
             obj.severity = "error"

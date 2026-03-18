@@ -108,8 +108,10 @@ class TestCheckExecution:
         registered = dict(runner._checks)
 
         # Mock tenant fetching and get_all_checks (which would overwrite our mocks)
-        with patch.object(runner, "_get_tenants_to_check") as mock_get_tenants, \
-             patch("app.preflight.runner.get_all_checks", return_value=registered):
+        with (
+            patch.object(runner, "_get_tenants_to_check") as mock_get_tenants,
+            patch("app.preflight.runner.get_all_checks", return_value=registered),
+        ):
             mock_tenant = MagicMock()
             mock_tenant.id = "test-tenant"
             mock_tenant.tenant_id = "test-tenant-azure-id"
@@ -159,8 +161,10 @@ class TestCheckExecution:
 
         registered = dict(runner._checks)
 
-        with patch.object(runner, "_get_tenants_to_check") as mock_get_tenants, \
-             patch("app.preflight.runner.get_all_checks", return_value=registered):
+        with (
+            patch.object(runner, "_get_tenants_to_check") as mock_get_tenants,
+            patch("app.preflight.runner.get_all_checks", return_value=registered),
+        ):
             mock_tenant = MagicMock()
             mock_tenant.id = "test-tenant"
             mock_tenant.tenant_id = "test-tenant-azure-id"
@@ -179,24 +183,39 @@ class TestResultAggregation:
         """Test aggregation of check results by status."""
         results = [
             CheckResult(
-                check_id="c1", name="C1", category=CheckCategory.SYSTEM,
-                status=CheckStatus.PASS, message="Pass",
+                check_id="c1",
+                name="C1",
+                category=CheckCategory.SYSTEM,
+                status=CheckStatus.PASS,
+                message="Pass",
             ),
             CheckResult(
-                check_id="c2", name="C2", category=CheckCategory.SYSTEM,
-                status=CheckStatus.PASS, message="Pass",
+                check_id="c2",
+                name="C2",
+                category=CheckCategory.SYSTEM,
+                status=CheckStatus.PASS,
+                message="Pass",
             ),
             CheckResult(
-                check_id="c3", name="C3", category=CheckCategory.SYSTEM,
-                status=CheckStatus.FAIL, message="Fail",
+                check_id="c3",
+                name="C3",
+                category=CheckCategory.SYSTEM,
+                status=CheckStatus.FAIL,
+                message="Fail",
             ),
             CheckResult(
-                check_id="c4", name="C4", category=CheckCategory.SYSTEM,
-                status=CheckStatus.WARNING, message="Warn",
+                check_id="c4",
+                name="C4",
+                category=CheckCategory.SYSTEM,
+                status=CheckStatus.WARNING,
+                message="Warn",
             ),
             CheckResult(
-                check_id="c5", name="C5", category=CheckCategory.SYSTEM,
-                status=CheckStatus.SKIPPED, message="Skip",
+                check_id="c5",
+                name="C5",
+                category=CheckCategory.SYSTEM,
+                status=CheckStatus.SKIPPED,
+                message="Skip",
             ),
         ]
 
@@ -239,8 +258,10 @@ class TestParallelExecution:
 
         registered = dict(runner._checks)
 
-        with patch.object(runner, "_get_tenants_to_check") as mock_get_tenants, \
-             patch("app.preflight.runner.get_all_checks", return_value=registered):
+        with (
+            patch.object(runner, "_get_tenants_to_check") as mock_get_tenants,
+            patch("app.preflight.runner.get_all_checks", return_value=registered),
+        ):
             mock_tenant = MagicMock()
             mock_tenant.id = "test-tenant"
             mock_tenant.tenant_id = "test-tenant-azure-id"
@@ -276,12 +297,18 @@ class TestReportGeneration:
         """Test that generated report contains summary."""
         results = [
             CheckResult(
-                check_id="c1", name="C1", category=CheckCategory.SYSTEM,
-                status=CheckStatus.PASS, message="Pass",
+                check_id="c1",
+                name="C1",
+                category=CheckCategory.SYSTEM,
+                status=CheckStatus.PASS,
+                message="Pass",
             ),
             CheckResult(
-                check_id="c2", name="C2", category=CheckCategory.SYSTEM,
-                status=CheckStatus.FAIL, message="Fail",
+                check_id="c2",
+                name="C2",
+                category=CheckCategory.SYSTEM,
+                status=CheckStatus.FAIL,
+                message="Fail",
             ),
         ]
 

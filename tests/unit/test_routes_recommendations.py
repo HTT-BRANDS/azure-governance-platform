@@ -167,7 +167,9 @@ def test_get_recommendations_success(authed_client, mock_recommendations):
 
 def test_get_recommendations_with_filters(authed_client, mock_recommendations):
     """Test recommendations with category and impact filters."""
-    cost_recs = [r for r in mock_recommendations if r.category == RecommendationCategory.COST_OPTIMIZATION]
+    cost_recs = [
+        r for r in mock_recommendations if r.category == RecommendationCategory.COST_OPTIMIZATION
+    ]
 
     with patch("app.api.routes.recommendations.RecommendationService") as MockService:
         mock_service = MockService.return_value

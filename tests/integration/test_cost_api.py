@@ -16,7 +16,6 @@ Covered endpoints:
 - POST /api/v1/costs/anomalies/bulk-acknowledge
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.models.cost import CostAnomaly

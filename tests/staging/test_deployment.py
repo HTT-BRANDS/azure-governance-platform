@@ -9,7 +9,6 @@ import re
 import pytest
 import requests
 
-
 # Minimum acceptable version — increment this when we cut releases.
 # Anything below this means staging hasn't been updated in a while.
 MINIMUM_VERSION = (1, 4, 0)
@@ -62,14 +61,10 @@ class TestStartupHealth:
         for i in range(5):
             resp = client.get(f"{staging_url}/health", timeout=10)
             if resp.status_code != 200:
-                failures.append(f"Check {i+1}: HTTP {resp.status_code}")
-        assert not failures, (
-            f"Health check unstable — {len(failures)}/5 checks failed: {failures}"
-        )
+                failures.append(f"Check {i + 1}: HTTP {resp.status_code}")
+        assert not failures, f"Health check unstable — {len(failures)}/5 checks failed: {failures}"
 
-    def test_api_v1_status_reachable(
-        self, client: requests.Session, staging_url: str
-    ) -> None:
+    def test_api_v1_status_reachable(self, client: requests.Session, staging_url: str) -> None:
         """GET /api/v1/status must exist (not 404).
 
         404 here means the API v1 prefix isn't mounted at all.
@@ -77,8 +72,7 @@ class TestStartupHealth:
         resp = client.get(f"{staging_url}/api/v1/status", timeout=10)
         # 401 = mounted + auth working, 200 = public status endpoint
         assert resp.status_code in (200, 401), (
-            f"/api/v1/status returned {resp.status_code} — "
-            "404 means the API router isn't mounted."
+            f"/api/v1/status returned {resp.status_code} — 404 means the API router isn't mounted."
         )
 
 

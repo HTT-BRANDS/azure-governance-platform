@@ -343,9 +343,7 @@ class TestUpdateBudgetEndpoint:
 
     def test_update_budget_not_found(self, authed_client):
         """Update budget returns 404 for non-existent budget."""
-        response = authed_client.patch(
-            "/api/v1/budgets/non-existent", json={"name": "Updated"}
-        )
+        response = authed_client.patch("/api/v1/budgets/non-existent", json={"name": "Updated"})
         assert response.status_code == 404
 
 

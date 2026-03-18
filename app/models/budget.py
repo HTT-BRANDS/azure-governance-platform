@@ -334,9 +334,7 @@ class BudgetSyncResult(Base):
     duration_seconds: Mapped[float | None] = Column(Float)
 
     def __repr__(self) -> str:
-        return (
-            f"<BudgetSyncResult {self.status}: {self.budgets_synced} budgets in {self.duration_seconds}s>"
-        )
+        return f"<BudgetSyncResult {self.status}: {self.budgets_synced} budgets in {self.duration_seconds}s>"
 
     def complete(self, status: str) -> None:
         """Mark sync as complete with status."""

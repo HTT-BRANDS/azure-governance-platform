@@ -4,7 +4,6 @@ These are the first tests that should pass after any deployment.
 If any of these fail the deployment is broken.
 """
 
-import pytest
 import requests
 
 
@@ -50,9 +49,7 @@ class TestPublicEndpoints:
         data = resp.json()
         assert "jwt_configured" in data, f"Missing jwt_configured in: {data}"
 
-    def test_openapi_schema_is_public(
-        self, client: requests.Session, staging_url: str
-    ) -> None:
+    def test_openapi_schema_is_public(self, client: requests.Session, staging_url: str) -> None:
         """GET /openapi.json must be accessible (powers /docs)."""
         resp = client.get(f"{staging_url}/openapi.json", timeout=30)
         assert resp.status_code == 200
@@ -78,9 +75,7 @@ class TestPublicEndpoints:
 class TestResponseShape:
     """Health response must have the right JSON shape."""
 
-    def test_health_response_is_json(
-        self, client: requests.Session, staging_url: str
-    ) -> None:
+    def test_health_response_is_json(self, client: requests.Session, staging_url: str) -> None:
         resp = client.get(f"{staging_url}/health", timeout=10)
         assert resp.headers.get("content-type", "").startswith("application/json")
 

@@ -28,6 +28,7 @@ from app.models.tenant import Tenant, UserTenant
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _html(body: str = "dashboard sync dmarc") -> HTMLResponse:
     """Return a minimal HTMLResponse for template mock."""
     return HTMLResponse(content=f"<html><body>{body}</body></html>")
@@ -36,6 +37,7 @@ def _html(body: str = "dashboard sync dmarc") -> HTMLResponse:
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def test_db_session(db_session):
@@ -106,78 +108,90 @@ def mock_services():
 
     # Mock CostService - async methods
     cost_service = MagicMock()
-    cost_service.get_cost_summary = AsyncMock(return_value=MagicMock(
-        total_cost=12500.50,
-        month_over_month_change=5.5,
-        top_spending_resources=[
-            {"name": "VM-Prod-01", "cost": 2500.00},
-            {"name": "SQL-Prod-01", "cost": 1800.00},
-        ],
-    ))
+    cost_service.get_cost_summary = AsyncMock(
+        return_value=MagicMock(
+            total_cost=12500.50,
+            month_over_month_change=5.5,
+            top_spending_resources=[
+                {"name": "VM-Prod-01", "cost": 2500.00},
+                {"name": "SQL-Prod-01", "cost": 1800.00},
+            ],
+        )
+    )
     cost_service.get_cost_trends = AsyncMock(return_value=[])
     services["cost"] = cost_service
 
     # Mock ComplianceService - async methods
     compliance_service = MagicMock()
-    compliance_service.get_compliance_summary = AsyncMock(return_value=MagicMock(
-        compliance_score=85.5,
-        total_policies=50,
-        compliant_policies=43,
-        non_compliant_policies=7,
-        critical_findings=2,
-    ))
+    compliance_service.get_compliance_summary = AsyncMock(
+        return_value=MagicMock(
+            compliance_score=85.5,
+            total_policies=50,
+            compliant_policies=43,
+            non_compliant_policies=7,
+            critical_findings=2,
+        )
+    )
     services["compliance"] = compliance_service
 
     # Mock ResourceService - async methods
     resource_service = MagicMock()
-    resource_service.get_resource_inventory = AsyncMock(return_value=MagicMock(
-        total_resources=350,
-        resources=[
-            MagicMock(
-                id="res-1",
-                name="Resource 1",
-                type="Microsoft.Compute/virtualMachines",
-                tenant_id="dashboard-tenant-123",
-            ),
-            MagicMock(
-                id="res-2",
-                name="Resource 2",
-                type="Microsoft.Storage/storageAccounts",
-                tenant_id="dashboard-tenant-123",
-            ),
-        ],
-    ))
+    resource_service.get_resource_inventory = AsyncMock(
+        return_value=MagicMock(
+            total_resources=350,
+            resources=[
+                MagicMock(
+                    id="res-1",
+                    name="Resource 1",
+                    type="Microsoft.Compute/virtualMachines",
+                    tenant_id="dashboard-tenant-123",
+                ),
+                MagicMock(
+                    id="res-2",
+                    name="Resource 2",
+                    type="Microsoft.Storage/storageAccounts",
+                    tenant_id="dashboard-tenant-123",
+                ),
+            ],
+        )
+    )
     services["resource"] = resource_service
 
     # Mock IdentityService - async methods
     identity_service = MagicMock()
-    identity_service.get_identity_summary = AsyncMock(return_value=MagicMock(
-        total_users=250,
-        active_users=220,
-        admin_users=15,
-        guest_users=30,
-        mfa_enabled_users=180,
-        mfa_percentage=72.0,
-    ))
+    identity_service.get_identity_summary = AsyncMock(
+        return_value=MagicMock(
+            total_users=250,
+            active_users=220,
+            admin_users=15,
+            guest_users=30,
+            mfa_enabled_users=180,
+            mfa_percentage=72.0,
+        )
+    )
     identity_service.get_identity_trends = AsyncMock(return_value=[])
     services["identity"] = identity_service
 
     # Mock MonitoringService — SYNC methods (the sync dashboard doesn't await)
     monitoring_service = MagicMock()
-    monitoring_service.get_overall_status = MagicMock(return_value={
-        "status": "healthy",
-        "success_rate": 95.0,
-    })
-    monitoring_service.get_recent_logs = MagicMock(return_value=[
-        MagicMock(
-            id="log-1",
-            job_type="costs",
-            tenant_id="dashboard-tenant-123",
-            status="completed",
-            started_at=datetime.utcnow(),
-            duration_ms=5000,
-        ),
-    ])
+    monitoring_service.get_overall_status = MagicMock(
+        return_value={
+            "status": "healthy",
+            "success_rate": 95.0,
+        }
+    )
+    monitoring_service.get_recent_logs = MagicMock(
+        return_value=[
+            MagicMock(
+                id="log-1",
+                job_type="costs",
+                tenant_id="dashboard-tenant-123",
+                status="completed",
+                started_at=datetime.utcnow(),
+                duration_ms=5000,
+            ),
+        ]
+    )
     monitoring_service.get_active_alerts = MagicMock(return_value=[])
     monitoring_service.get_alert_stats = MagicMock(return_value={"total": 0})
     monitoring_service.get_metrics = MagicMock(return_value=[])

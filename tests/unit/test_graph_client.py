@@ -266,9 +266,7 @@ class TestGraphClientCredential:
     def test_get_credential_creates_once(self, mock_csc):
         """Should create credential once and cache it."""
         # AzureClientManager is imported lazily inside _get_credential
-        with patch(
-            "app.api.services.azure_client.AzureClientManager"
-        ) as mock_mgr_cls:
+        with patch("app.api.services.azure_client.AzureClientManager") as mock_mgr_cls:
             mock_mgr_cls.return_value._resolve_credentials.return_value = (
                 "client-id",
                 "client-secret",
@@ -350,12 +348,14 @@ class TestGraphClientGetUsers:
     async def test_returns_user_list(self):
         """Should return list of user dicts."""
         client = GraphClient(tenant_id="t-001")
-        client._request = AsyncMock(return_value={
-            "value": [
-                {"id": "u1", "displayName": "User 1"},
-                {"id": "u2", "displayName": "User 2"},
-            ]
-        })
+        client._request = AsyncMock(
+            return_value={
+                "value": [
+                    {"id": "u1", "displayName": "User 1"},
+                    {"id": "u2", "displayName": "User 2"},
+                ]
+            }
+        )
 
         users = await client.get_users()
         assert len(users) == 2
@@ -365,15 +365,17 @@ class TestGraphClientGetUsers:
     async def test_handles_pagination(self):
         """Should follow @odata.nextLink for pagination."""
         client = GraphClient(tenant_id="t-001")
-        client._request = AsyncMock(side_effect=[
-            {
-                "value": [{"id": "u1"}],
-                "@odata.nextLink": f"{GRAPH_API_BASE}/users?skip=1",
-            },
-            {
-                "value": [{"id": "u2"}],
-            },
-        ])
+        client._request = AsyncMock(
+            side_effect=[
+                {
+                    "value": [{"id": "u1"}],
+                    "@odata.nextLink": f"{GRAPH_API_BASE}/users?skip=1",
+                },
+                {
+                    "value": [{"id": "u2"}],
+                },
+            ]
+        )
 
         users = await client.get_users()
         assert len(users) == 2
@@ -392,9 +394,7 @@ class TestGraphClientGetUsers:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                raise httpx.HTTPStatusError(
-                    "Forbidden", request=MagicMock(), response=mock_403
-                )
+                raise httpx.HTTPStatusError("Forbidden", request=MagicMock(), response=mock_403)
             return {"value": [{"id": "u1"}]}
 
         client._request = mock_request
@@ -415,12 +415,14 @@ class TestGraphClientGetDirectoryRoles:
     async def test_returns_roles(self):
         """Should return list of role dicts."""
         client = GraphClient(tenant_id="t-001")
-        client._request = AsyncMock(return_value={
-            "value": [
-                {"id": "r1", "displayName": "Global Administrator"},
-                {"id": "r2", "displayName": "Security Reader"},
-            ]
-        })
+        client._request = AsyncMock(
+            return_value={
+                "value": [
+                    {"id": "r1", "displayName": "Global Administrator"},
+                    {"id": "r2", "displayName": "Security Reader"},
+                ]
+            }
+        )
 
         roles = await client.get_directory_roles()
         assert len(roles) == 2

@@ -67,6 +67,16 @@ def auth_cookies(auth_token):
     return {"access_token": auth_token}
 
 
+@pytest.fixture()
+def auth_client(client, auth_cookies):
+    """TestClient with auth cookies pre-set on the session (avoids per-request cookie deprecation)."""
+    for name, value in auth_cookies.items():
+        client.cookies.set(name, value)
+    yield client
+    for name in auth_cookies:
+        client.cookies.delete(name)
+
+
 # ============================================================================
 # 1. Template Integrity (REQ-907)
 # ============================================================================
@@ -142,9 +152,9 @@ class TestPageRoutes:
         assert "text/html" in response.headers["content-type"]
 
     @pytest.mark.parametrize("path", AUTH_PAGES)
-    def test_auth_pages_with_cookie(self, client, auth_cookies, path):
+    def test_auth_pages_with_cookie(self, auth_client, path):
         """Auth pages are accessible with cookie."""
-        response = client.get(path, cookies=auth_cookies)
+        response = auth_client.get(path)
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
 
@@ -165,9 +175,9 @@ class TestPageRoutes:
         # or returns 401 if Accept header doesn't indicate browser
         assert response.status_code in (302, 307, 401)
 
-    def test_root_redirects_to_dashboard_authenticated(self, client, auth_cookies):
+    def test_root_redirects_to_dashboard_authenticated(self, auth_client):
         """/ redirects to /dashboard with cookie."""
-        response = client.get("/", cookies=auth_cookies, follow_redirects=False)
+        response = auth_client.get("/", follow_redirects=False)
         assert response.status_code in (200, 302, 307)
 
 
@@ -192,26 +202,26 @@ class TestHTMXPartials:
     ]
 
     @pytest.mark.parametrize("path", PARTIAL_ENDPOINTS)
-    def test_partial_returns_200(self, client, auth_cookies, path):
+    def test_partial_returns_200(self, auth_client, path):
         """Each partial endpoint returns 200 with auth."""
-        response = client.get(path, cookies=auth_cookies)
+        response = auth_client.get(path)
         assert response.status_code == 200, (
             f"{path} returned {response.status_code}: {response.text[:200]}"
         )
 
     @pytest.mark.parametrize("path", PARTIAL_ENDPOINTS)
-    def test_partial_returns_html_fragment(self, client, auth_cookies, path):
+    def test_partial_returns_html_fragment(self, auth_client, path):
         """Partials return HTML (not JSON error)."""
-        response = client.get(path, cookies=auth_cookies)
+        response = auth_client.get(path)
         assert response.status_code == 200
         body = response.text
         # Should not be a JSON error
         assert not body.startswith("{"), f"{path} returned JSON: {body[:200]}"
 
     @pytest.mark.parametrize("path", PARTIAL_ENDPOINTS)
-    def test_partial_no_full_page(self, client, auth_cookies, path):
+    def test_partial_no_full_page(self, auth_client, path):
         """Partials should NOT be full HTML pages (no <!DOCTYPE>)."""
-        response = client.get(path, cookies=auth_cookies)
+        response = auth_client.get(path)
         if response.status_code == 200 and len(response.text) > 10:
             assert "<!DOCTYPE" not in response.text, (
                 f"{path} returned a full HTML page instead of a fragment"
@@ -267,9 +277,9 @@ class TestDesignSystem:
         for cls in [".bg-brand-primary", ".text-brand-primary", ".btn-brand"]:
             assert cls in css, f"Missing brand class: {cls}"
 
-    def test_dashboard_uses_design_tokens(self, client, auth_cookies):
+    def test_dashboard_uses_design_tokens(self, auth_client):
         """Dashboard HTML uses CSS custom properties, not hardcoded colors."""
-        response = client.get("/dashboard", cookies=auth_cookies)
+        response = auth_client.get("/dashboard")
         html = response.text
         # Should reference brand/design token classes
         assert "wm-" in html or "brand-" in html, (
@@ -285,14 +295,14 @@ class TestDesignSystem:
 class TestSecurityHeaders:
     """Content Security Policy and security headers."""
 
-    def test_csp_header_present(self, client, auth_cookies):
+    def test_csp_header_present(self, auth_client):
         """CSP header is set on all responses."""
-        response = client.get("/dashboard", cookies=auth_cookies)
+        response = auth_client.get("/dashboard")
         assert "content-security-policy" in response.headers
 
-    def test_csp_has_nonce(self, client, auth_cookies):
+    def test_csp_has_nonce(self, auth_client):
         """CSP includes a nonce for inline scripts."""
-        response = client.get("/dashboard", cookies=auth_cookies)
+        response = auth_client.get("/dashboard")
         csp = response.headers["content-security-policy"]
         assert "nonce-" in csp
 
@@ -348,9 +358,9 @@ class TestCookieAuthFlow:
         assert "access_token" in data
         assert data["token_type"] == "bearer"
 
-    def test_cookie_auth_accepted(self, client, auth_cookies):
+    def test_cookie_auth_accepted(self, auth_client):
         """Cookie-based auth is accepted by protected routes."""
-        response = client.get("/api/v1/auth/me", cookies=auth_cookies)
+        response = auth_client.get("/api/v1/auth/me")
         assert response.status_code == 200
         assert response.json()["roles"] == ["admin"]
 

@@ -7,7 +7,6 @@ Traces: SYS-001, SYS-002 — Application bootstrap, middleware chain,
 router registration, and health endpoints.
 """
 
-
 import pytest
 from fastapi.testclient import TestClient
 

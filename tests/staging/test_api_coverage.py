@@ -11,7 +11,6 @@ A 500 here means startup or import failed for that module.
 import pytest
 import requests
 
-
 # All known API route prefixes grouped by feature area.
 # Each entry is (path, allowed_unauthenticated_statuses).
 # 401 = route exists, auth wall working
@@ -19,39 +18,39 @@ import requests
 # 405 = route exists, wrong method — still confirms mount
 API_ROUTES = [
     # ── Core ────────────────────────────────────────────────────────────────
-    ("/health",                    [200]),
-    ("/api/v1/auth/health",        [200]),
-    ("/openapi.json",              [200]),
-    ("/docs",                      [200]),
+    ("/health", [200]),
+    ("/api/v1/auth/health", [200]),
+    ("/openapi.json", [200]),
+    ("/docs", [200]),
     # ── Costs ───────────────────────────────────────────────────────────────
-    ("/api/v1/costs/summary",      [401]),
-    ("/api/v1/costs/anomalies",    [401]),
-    ("/api/v1/costs/trends",       [401]),
+    ("/api/v1/costs/summary", [401]),
+    ("/api/v1/costs/anomalies", [401]),
+    ("/api/v1/costs/trends", [401]),
     # ── Compliance ──────────────────────────────────────────────────────────
     ("/api/v1/compliance/summary", [401]),
-    ("/api/v1/compliance/status",  [401]),
+    ("/api/v1/compliance/status", [401]),
     # ── Identity ────────────────────────────────────────────────────────────
-    ("/api/v1/identity/summary",   [401]),
-    ("/api/v1/identity/privileged",[401]),
-    ("/api/v1/identity/stale",     [401]),
+    ("/api/v1/identity/summary", [401]),
+    ("/api/v1/identity/privileged", [401]),
+    ("/api/v1/identity/stale", [401]),
     # ── Resources ───────────────────────────────────────────────────────────
-    ("/api/v1/resources",          [401]),
+    ("/api/v1/resources", [401]),
     # ── Sync ────────────────────────────────────────────────────────────────
-    ("/api/v1/sync/status",        [401]),
-    ("/api/v1/sync/history",       [401]),
-    ("/api/v1/sync/metrics",       [401]),
-    ("/api/v1/sync/alerts",        [401]),
+    ("/api/v1/sync/status", [401]),
+    ("/api/v1/sync/history", [401]),
+    ("/api/v1/sync/metrics", [401]),
+    ("/api/v1/sync/alerts", [401]),
     # ── Preflight ───────────────────────────────────────────────────────────
-    ("/api/v1/preflight/status",   [401]),
+    ("/api/v1/preflight/status", [401]),
     # ── Recommendations ─────────────────────────────────────────────────────
-    ("/api/v1/recommendations",    [401]),
+    ("/api/v1/recommendations", [401]),
     # ── Riverside ───────────────────────────────────────────────────────────
-    ("/api/v1/riverside/summary",  [401]),
-    ("/api/v1/riverside/mfa-status",    [401]),
-    ("/api/v1/riverside/maturity-scores",[401]),
+    ("/api/v1/riverside/summary", [401]),
+    ("/api/v1/riverside/mfa-status", [401]),
+    ("/api/v1/riverside/maturity-scores", [401]),
     # ── Monitoring (internal) ───────────────────────────────────────────────
-    ("/monitoring/performance",    [401]),
-    ("/monitoring/cache",          [401]),
+    ("/monitoring/performance", [401]),
+    ("/monitoring/cache", [401]),
 ]
 
 
@@ -98,12 +97,9 @@ class TestAPISchemaCompleteness:
     ]
 
     @pytest.mark.parametrize("prefix", EXPECTED_PATH_PREFIXES)
-    def test_openapi_documents_prefix(
-        self, openapi_paths: set[str], prefix: str
-    ) -> None:
+    def test_openapi_documents_prefix(self, openapi_paths: set[str], prefix: str) -> None:
         """At least one path starting with {prefix} must appear in openapi.json."""
         matching = [p for p in openapi_paths if p.startswith(prefix)]
         assert matching, (
-            f"No paths with prefix '{prefix}' in OpenAPI schema. "
-            "Router may not be mounted."
+            f"No paths with prefix '{prefix}' in OpenAPI schema. Router may not be mounted."
         )

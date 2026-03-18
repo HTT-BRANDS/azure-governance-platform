@@ -36,7 +36,9 @@ class TestRequirementsCatalogIntegrity:
     def test_all_ids_unique(self):
         """Every requirement ID should be unique."""
         ids = [r.id for r in REQUIREMENTS]
-        assert len(ids) == len(set(ids)), f"Duplicate IDs: {[x for x, c in Counter(ids).items() if c > 1]}"
+        assert len(ids) == len(set(ids)), (
+            f"Duplicate IDs: {[x for x, c in Counter(ids).items() if c > 1]}"
+        )
 
     def test_all_have_non_empty_title(self):
         """Every requirement must have a non-empty title."""
@@ -109,9 +111,7 @@ class TestCategoryDistribution:
         """IDs should use the correct prefix for their category."""
         for req in REQUIREMENTS:
             if req.category == category:
-                assert req.id.startswith(prefix), (
-                    f"Requirement {req.id} should start with {prefix}"
-                )
+                assert req.id.startswith(prefix), f"Requirement {req.id} should start with {prefix}"
 
 
 # ---------------------------------------------------------------------------
@@ -232,6 +232,4 @@ class TestSpecificRequirements:
 
         for cat, ids in by_category.items():
             nums = sorted(int(rid.split("-")[1]) for rid in ids)
-            assert nums == list(range(1, 10)), (
-                f"Category {cat.value} has non-sequential IDs: {ids}"
-            )
+            assert nums == list(range(1, 10)), f"Category {cat.value} has non-sequential IDs: {ids}"

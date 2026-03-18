@@ -11,10 +11,13 @@ import pytest
 
 # Mock the cache decorator BEFORE importing the service
 
+
 def no_op_cache(cache_key):
     """Decorator that does nothing - bypasses caching."""
+
     def decorator(func):
         return func
+
     return decorator
 
 
@@ -355,7 +358,7 @@ class TestBudgetServiceSummary:
             if model == Budget:
                 mock_q.filter.return_value = mock_q
                 mock_q.all.return_value = budgets
-            elif model.__name__ == 'BudgetAlert':
+            elif model.__name__ == "BudgetAlert":
                 mock_q.join.return_value.filter.return_value = mock_q
                 mock_q.count.return_value = 1
             elif model == Tenant:
@@ -435,18 +438,14 @@ class TestBudgetServiceAzureSync:
             mock_client.return_value.__aenter__.return_value.get.return_value = mock_response
 
             with patch.object(budget_service, "db", mock_db):
-                with patch(
-                    "app.api.services.budget_service.azure_client_manager"
-                ) as mock_azure:
+                with patch("app.api.services.budget_service.azure_client_manager") as mock_azure:
                     mock_credential = MagicMock()
                     mock_token = MagicMock()
                     mock_token.token = "test-token"
                     mock_credential.get_token.return_value = mock_token
                     mock_azure.get_credential.return_value = mock_credential
 
-                    result = await budget_service._fetch_budgets_from_azure(
-                        "tenant-123", "sub-123"
-                    )
+                    result = await budget_service._fetch_budgets_from_azure("tenant-123", "sub-123")
 
         assert isinstance(result, list)
         assert len(result) == 1
@@ -472,9 +471,7 @@ class TestBudgetServiceAzureSync:
 
         mock_db.query.return_value.filter.return_value.first.return_value = None
 
-        result = await budget_service._sync_single_budget(
-            "tenant-123", "sub-123", azure_budget
-        )
+        result = await budget_service._sync_single_budget("tenant-123", "sub-123", azure_budget)
 
         assert result == "created"
         mock_db.add.assert_called()
@@ -505,9 +502,7 @@ class TestBudgetServiceAzureSync:
 
         mock_db.query.return_value.filter.return_value.first.return_value = existing_budget
 
-        result = await budget_service._sync_single_budget(
-            "tenant-123", "sub-123", azure_budget
-        )
+        result = await budget_service._sync_single_budget("tenant-123", "sub-123", azure_budget)
 
         assert result == "updated"
         assert existing_budget.name == "NewName"

@@ -94,63 +94,75 @@ def mock_riverside_service():
     service = MagicMock()
 
     # Async methods (routes use 'await service.method()')
-    service.get_riverside_summary = AsyncMock(return_value={
-        "total_critical_gaps": 12,
-        "days_remaining": 425,
-        "deadline": "2026-07-08",
-        "financial_risk": 4000000,
-        "overall_maturity": 65.5,
-        "requirements_total": 45,
-        "requirements_completed": 28,
-        "requirements_in_progress": 12,
-        "requirements_not_started": 5,
-    })
-    service.get_mfa_status = AsyncMock(return_value={
-        "total_users": 250,
-        "mfa_enabled": 180,
-        "mfa_disabled": 70,
-        "mfa_percentage": 72.0,
-        "target_percentage": 100.0,
-        "gap": 70,
-    })
-    service.get_maturity_scores = AsyncMock(return_value={
-        "iam": {"score": 75.5, "max": 100, "grade": "B"},
-        "governance": {"score": 62.0, "max": 100, "grade": "C"},
-        "data_security": {"score": 58.5, "max": 100, "grade": "C"},
-        "overall": {"score": 65.3, "max": 100, "grade": "C"},
-    })
-    service.get_gaps = AsyncMock(return_value={
-        "critical_gaps": [
-            {"id": "GAP-001", "title": "MFA Gap", "severity": "critical", "affected_users": 70},
-            {"id": "GAP-002", "title": "Legacy Auth", "severity": "high", "affected_users": 25},
-        ],
-        "total": 2,
-    })
-    service.sync_all = AsyncMock(return_value={
-        "mfa": {"synced": 250, "errors": 0},
-        "compliance": {"synced": 45, "errors": 0},
-    })
+    service.get_riverside_summary = AsyncMock(
+        return_value={
+            "total_critical_gaps": 12,
+            "days_remaining": 425,
+            "deadline": "2026-07-08",
+            "financial_risk": 4000000,
+            "overall_maturity": 65.5,
+            "requirements_total": 45,
+            "requirements_completed": 28,
+            "requirements_in_progress": 12,
+            "requirements_not_started": 5,
+        }
+    )
+    service.get_mfa_status = AsyncMock(
+        return_value={
+            "total_users": 250,
+            "mfa_enabled": 180,
+            "mfa_disabled": 70,
+            "mfa_percentage": 72.0,
+            "target_percentage": 100.0,
+            "gap": 70,
+        }
+    )
+    service.get_maturity_scores = AsyncMock(
+        return_value={
+            "iam": {"score": 75.5, "max": 100, "grade": "B"},
+            "governance": {"score": 62.0, "max": 100, "grade": "C"},
+            "data_security": {"score": 58.5, "max": 100, "grade": "C"},
+            "overall": {"score": 65.3, "max": 100, "grade": "C"},
+        }
+    )
+    service.get_gaps = AsyncMock(
+        return_value={
+            "critical_gaps": [
+                {"id": "GAP-001", "title": "MFA Gap", "severity": "critical", "affected_users": 70},
+                {"id": "GAP-002", "title": "Legacy Auth", "severity": "high", "affected_users": 25},
+            ],
+            "total": 2,
+        }
+    )
+    service.sync_all = AsyncMock(
+        return_value={
+            "mfa": {"synced": 250, "errors": 0},
+            "compliance": {"synced": 45, "errors": 0},
+        }
+    )
 
     # SYNC method (route does NOT await: 'return service.get_requirements(...)')
-    service.get_requirements = MagicMock(return_value={
-        "requirements": [
-            {
-                "id": "IAM-001",
-                "title": "MFA Enforcement",
-                "category": "IAM",
-                "priority": "P0",
-                "status": "in_progress",
-            },
-            {
-                "id": "GS-002",
-                "title": "Conditional Access",
-                "category": "GS",
-                "priority": "P1",
-                "status": "not_started",
-            },
-        ],
-        "total": 2,
-    })
+    service.get_requirements = MagicMock(
+        return_value={
+            "requirements": [
+                {
+                    "id": "IAM-001",
+                    "title": "MFA Enforcement",
+                    "category": "IAM",
+                    "priority": "P0",
+                    "status": "in_progress",
+                },
+                {
+                    "id": "GS-002",
+                    "title": "Conditional Access",
+                    "category": "GS",
+                    "priority": "P1",
+                    "status": "not_started",
+                },
+            ],
+            "total": 2,
+        }
+    )
 
     return service
 
@@ -393,9 +405,7 @@ class TestRiversideSyncEndpoint:
 
     @patch("app.api.routes.riverside.get_current_user")
     @patch("app.api.routes.riverside.get_tenant_authorization")
-    def test_sync_forbidden_for_regular_users(
-        self, mock_authz, mock_get_user, client_with_db
-    ):
+    def test_sync_forbidden_for_regular_users(self, mock_authz, mock_get_user, client_with_db):
         """Sync endpoint returns 403 for users without admin/operator role."""
         # Create user without admin/operator role
         regular_user = User(

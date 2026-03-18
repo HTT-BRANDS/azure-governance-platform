@@ -457,7 +457,9 @@ class TestGetCriticalGaps:
         query_mock.filter.side_effect = [p0_filter_mock, p1_filter_mock]
         mock_db.query.side_effect = [
             query_mock,  # RiversideRequirement (P0)
-            MagicMock(filter=MagicMock(return_value=MagicMock(first=MagicMock(return_value=tenant)))),
+            MagicMock(
+                filter=MagicMock(return_value=MagicMock(first=MagicMock(return_value=tenant)))
+            ),
             query_mock,  # RiversideRequirement (P1)
         ]
 

@@ -85,6 +85,7 @@ def mock_viewer_user():
 # Helper: Build a BulkTagResponse-compatible return value
 # ---------------------------------------------------------------------------
 
+
 def _tag_response(resource_ids: list[str], *, success: bool = True) -> BulkTagResponse:
     """Create a BulkTagResponse that passes Pydantic validation."""
     results = [

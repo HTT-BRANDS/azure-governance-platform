@@ -11,7 +11,6 @@ Covered endpoints:
 - GET /api/v1/identity/trends
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 # ============================================================================

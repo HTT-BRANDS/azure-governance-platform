@@ -49,13 +49,24 @@ class TestBackfillJobModel:
     def test_has_expected_columns(self):
         col_names = {c.name for c in BackfillJob.__table__.columns}
         expected = {
-            "id", "job_type", "tenant_id", "status",
-            "start_date", "end_date", "current_date",
-            "progress_percent", "records_processed",
-            "records_inserted", "records_failed",
-            "last_error", "error_count",
-            "created_at", "started_at", "completed_at",
-            "paused_at", "cancelled_at",
+            "id",
+            "job_type",
+            "tenant_id",
+            "status",
+            "start_date",
+            "end_date",
+            "current_date",
+            "progress_percent",
+            "records_processed",
+            "records_inserted",
+            "records_failed",
+            "last_error",
+            "error_count",
+            "created_at",
+            "started_at",
+            "completed_at",
+            "paused_at",
+            "cancelled_at",
         }
         assert expected.issubset(col_names)
 

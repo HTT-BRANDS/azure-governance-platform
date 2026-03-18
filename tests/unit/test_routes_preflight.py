@@ -135,9 +135,7 @@ def mock_preflight_report():
 
 def test_get_preflight_status_with_report(client_with_db, mock_user, mock_preflight_report):
     """Test getting preflight status when report exists."""
-    with patch(
-        "app.api.routes.preflight.get_latest_report", return_value=mock_preflight_report
-    ):
+    with patch("app.api.routes.preflight.get_latest_report", return_value=mock_preflight_report):
         with patch("app.api.routes.preflight.get_runner") as mock_runner:
             mock_runner.return_value.is_running = False
             response = client_with_db.get("/api/v1/preflight/status")
@@ -240,9 +238,7 @@ def test_check_github_preflight_success(client_with_db, mock_user, mock_prefligh
 
 def test_get_report_json_success(client_with_db, mock_user, mock_preflight_report):
     """Test getting preflight report in JSON format."""
-    with patch(
-        "app.api.routes.preflight.get_latest_report", return_value=mock_preflight_report
-    ):
+    with patch("app.api.routes.preflight.get_latest_report", return_value=mock_preflight_report):
         with patch("app.api.routes.preflight.ReportGenerator") as MockGenerator:
             mock_gen = MockGenerator.return_value
             mock_gen.to_json.return_value = '{"total_checks": 10}'

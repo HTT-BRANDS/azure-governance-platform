@@ -1,5 +1,6 @@
 """Monitoring and observability service for sync jobs."""
 
+import asyncio
 import json
 import logging
 from datetime import datetime, timedelta
@@ -461,9 +462,14 @@ class MonitoringService:
         self.db.refresh(alert)
         logger.warning(f"Created alert: {alert_type} - {title}")
 
-        # Send notification for critical alerts
+        # Send notification for critical alerts — fire-and-forget async call
         if severity in ("error", "critical"):
-            self.send_alert_notification(alert)
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self.send_alert_notification(alert))
+            except RuntimeError:
+                # No running event loop (e.g. CLI/sync context) — notification skipped
+                logger.debug("No running event loop; skipping alert notification for %s", alert.id)
 
         return alert
 
