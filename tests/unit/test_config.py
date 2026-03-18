@@ -304,7 +304,7 @@ def test_jwt_secret_required_in_production(monkeypatch):
 
 def test_jwt_secret_accepted_when_set_in_production(monkeypatch):
     """JWT_SECRET_KEY should be accepted when explicitly set in production."""
-    monkeypatch.setenv("JWT_SECRET_KEY", "a-very-secure-production-secret-key-here")
+    monkeypatch.setenv("JWT_SECRET_KEY", "a-very-secure-production-secret-key-here")  # pragma: allowlist secret
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("DEBUG", "false")
 
@@ -314,7 +314,7 @@ def test_jwt_secret_accepted_when_set_in_production(monkeypatch):
     )
 
     assert (
-        settings.jwt_secret_key == "a-very-secure-production-secret-key-here"
+        settings.jwt_secret_key == "a-very-secure-production-secret-key-here"  # pragma: allowlist secret
     )  # pragma: allowlist secret
     assert settings.environment == "production"
 
@@ -408,24 +408,28 @@ def test_get_cache_ttl_all_data_types(monkeypatch):
 
 def test_get_settings_returns_settings_instance(monkeypatch):
     """Test get_settings() returns a Settings instance."""
-    # Clear the cache before testing
+    # Pin secret so re-created Settings use the same key (prevents jwt_manager key mismatch)
+    monkeypatch.setenv("JWT_SECRET_KEY", "test-jwt-key-32-chars-min-length!!")  # pragma: allowlist secret
     get_settings.cache_clear()
-
-    settings = get_settings()
-
-    assert isinstance(settings, Settings)
+    try:
+        settings = get_settings()
+        assert isinstance(settings, Settings)
+    finally:
+        get_settings.cache_clear()  # Clean up — next call re-reads from environment
 
 
 def test_get_settings_returns_cached_singleton(monkeypatch):
     """Test get_settings() returns the same instance (singleton)."""
-    # Clear the cache before testing
+    # Pin secret so re-created Settings use the same key (prevents jwt_manager key mismatch)
+    monkeypatch.setenv("JWT_SECRET_KEY", "test-jwt-key-32-chars-min-length!!")  # pragma: allowlist secret
     get_settings.cache_clear()
-
-    settings1 = get_settings()
-    settings2 = get_settings()
-
-    # Should be the exact same object
-    assert settings1 is settings2
+    try:
+        settings1 = get_settings()
+        settings2 = get_settings()
+        # Should be the exact same object
+        assert settings1 is settings2
+    finally:
+        get_settings.cache_clear()  # Clean up — next call re-reads from environment
 
 
 def test_get_settings_uses_lru_cache(monkeypatch):

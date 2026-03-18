@@ -6,7 +6,7 @@ Supports both internal JWT tokens and Azure AD OAuth2 integration.
 
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import httpx
@@ -676,4 +676,74 @@ async def auth_health_check() -> dict[str, Any]:
         ),
         "token_endpoint": "/api/v1/auth/token",
         "authorization_endpoint": "/api/v1/auth/azure/login",
+    }
+
+
+# ============================================================================
+# Staging-only: E2E test token endpoint
+# ============================================================================
+
+@router.post("/staging-token", include_in_schema=False)
+async def staging_test_token(
+    x_staging_admin_key: str | None = None,
+    request: Request = None,
+) -> dict:
+    """Issue a short-lived admin JWT for staging E2E test suites.
+
+    STAGING ONLY — this endpoint is hard-disabled in production.
+    The caller must supply the X-Staging-Admin-Key header whose value
+    matches the STAGING_ADMIN_KEY environment variable.
+
+    Returns a 1-hour admin JWT that can be used as a Bearer token.
+    """
+    settings = get_settings()
+
+    # Hard block in production — belt-and-suspenders
+    if settings.environment == "production":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
+        )
+
+    if settings.environment not in ("staging", "development"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Staging token endpoint only available in staging/development",
+        )
+
+    # Check the admin key header (from header OR query param for flexibility)
+    header_key = request.headers.get("x-staging-admin-key") if request else None
+    provided_key = x_staging_admin_key or header_key
+    expected_key = os.getenv("STAGING_ADMIN_KEY", "")
+
+    if not expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="STAGING_ADMIN_KEY not configured on this server",
+        )
+
+    if not provided_key or provided_key != expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid staging admin key",
+        )
+
+    # Issue a 60-minute admin JWT
+    access_token = jwt_manager.create_access_token(
+        user_id="e2e-test-runner",
+        email="e2e@staging.local",
+        name="E2E Test Runner",
+        roles=["admin"],
+        tenant_ids=[],
+        expires_delta=timedelta(minutes=60),
+    )
+    refresh_token = jwt_manager.create_refresh_token(user_id="e2e-test-runner")
+
+    logger.info("Issued staging E2E test token")
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in": 3600,
     }

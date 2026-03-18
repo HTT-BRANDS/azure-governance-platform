@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from jose import jwt
 
-from app.core.config import get_settings
+from app.core.auth import jwt_manager
 from app.core.token_blacklist import _token_blacklist
 
 
@@ -26,7 +26,10 @@ def create_test_token(
     Returns:
         Encoded JWT token
     """
-    settings = get_settings()
+    # Use jwt_manager's own settings key so token validation always matches,
+    # even if get_settings() cache was cleared by other tests.
+    secret = jwt_manager.settings.jwt_secret_key
+    algorithm = jwt_manager.settings.jwt_algorithm
 
     if expired:
         expires_delta = timedelta(minutes=-30)  # Already expired
@@ -48,11 +51,7 @@ def create_test_token(
         "type": "access",
     }
 
-    return jwt.encode(
-        to_encode,
-        settings.jwt_secret_key,
-        algorithm=settings.jwt_algorithm,
-    )
+    return jwt.encode(to_encode, secret, algorithm=algorithm)
 
 
 def create_test_refresh_token(
@@ -68,7 +67,9 @@ def create_test_refresh_token(
     Returns:
         Encoded JWT refresh token
     """
-    settings = get_settings()
+    # Use jwt_manager's own settings key so token validation always matches.
+    secret = jwt_manager.settings.jwt_secret_key
+    algorithm = jwt_manager.settings.jwt_algorithm
 
     if expired:
         expires_delta = timedelta(days=-1)  # Already expired
@@ -86,11 +87,7 @@ def create_test_refresh_token(
         "type": "refresh",
     }
 
-    return jwt.encode(
-        to_encode,
-        settings.jwt_secret_key,
-        algorithm=settings.jwt_algorithm,
-    )
+    return jwt.encode(to_encode, secret, algorithm=algorithm)
 
 
 @pytest.fixture(autouse=True)

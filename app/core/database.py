@@ -1,4 +1,7 @@
-"""SQLite database configuration and session management with performance optimizations.
+"""Database configuration and session management — supports SQLite and Azure SQL Server.
+
+Dialect-aware: SQLite pragmas and path setup only activate when DATABASE_URL
+starts with "sqlite". Azure SQL (mssql+pyodbc) uses connection pooling.
 
 Features:
 - Connection pooling with configurable settings
@@ -23,18 +26,23 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
-# Ensure data directory exists
-db_path = settings.database_url.replace("sqlite:///", "")
-Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+_IS_SQLITE = settings.database_url.startswith("sqlite")
 
-# Create engine with SQLite optimizations and connection pooling
+# Ensure data directory exists for SQLite (not needed for remote DBs)
+if _IS_SQLITE:
+    db_path = settings.database_url.replace("sqlite:///", "")
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
+# Build engine kwargs — SQLite and SQL Server need different configs
 engine_args: dict[str, Any] = {
-    "connect_args": {"check_same_thread": False},  # Needed for SQLite
     "echo": settings.debug and settings.enable_query_logging,
 }
 
-# Add pooling settings for non-SQLite databases (PostgreSQL, MySQL)
-if not settings.database_url.startswith("sqlite"):
+if _IS_SQLITE:
+    # SQLite: single-file, needs thread safety override
+    engine_args["connect_args"] = {"check_same_thread": False}
+else:
+    # SQL Server / PostgreSQL: use connection pool
     engine_args.update(
         {
             "pool_size": settings.database_pool_size,
@@ -69,17 +77,19 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
         logger.debug(f"Query executed in {total_time:.2f}ms: {statement[:100]}...")
 
 
-# Enable WAL mode for better concurrent access
-@event.listens_for(engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    """Set SQLite pragmas for performance."""
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL")
-    cursor.execute("PRAGMA synchronous=NORMAL")
-    cursor.execute("PRAGMA cache_size=10000")
-    cursor.execute("PRAGMA temp_store=MEMORY")
-    cursor.execute("PRAGMA mmap_size=30000000000")  # Enable memory-mapped I/O
-    cursor.close()
+# Enable WAL mode for SQLite only — skip for SQL Server / PostgreSQL
+if _IS_SQLITE:
+
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        """Set SQLite pragmas for performance."""
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA cache_size=10000")
+        cursor.execute("PRAGMA temp_store=MEMORY")
+        cursor.execute("PRAGMA mmap_size=30000000000")  # Enable memory-mapped I/O
+        cursor.close()
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

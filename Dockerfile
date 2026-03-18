@@ -67,16 +67,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     WEBSITE_HEALTHCHECK_MAXPINGFAILURES=3 \
     WEBSITES_PORT=8000
 
-# Install runtime dependencies
+# Install Microsoft ODBC Driver 18 for SQL Server + runtime deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Required for health checks
-    curl \
-    # Required for SQL connectivity (if using Azure SQL)
-    libodbc2 \
-    libodbccr2 \
-    # Security updates
-    ca-certificates \
-    # Clean up
+    curl gnupg2 apt-transport-https ca-certificates \
+    && curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
+       | gpg --dearmor > /usr/share/keyrings/microsoft.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" \
+       > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 unixodbc-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -105,19 +104,22 @@ RUN mkdir -p /home/data /home/logs /tmp && \
     chown -R ${APP_USER}:${APP_GROUP} /home/data /home/logs /tmp && \
     chmod 755 /home/data /home/logs
 
+# Copy entrypoint script
+COPY --chown=${APP_USER}:${APP_GROUP} scripts/entrypoint.sh ./scripts/entrypoint.sh
+RUN chmod +x ./scripts/entrypoint.sh
+
 # Switch to non-root user
 USER ${APP_USER}
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+# Health check — longer start period to allow migrations + cold DB start
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Expose port
 EXPOSE ${PORT}
 
-# Run the application
-# Using exec form for proper signal handling
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run migrations then start — entrypoint handles both
+ENTRYPOINT ["./scripts/entrypoint.sh"]
 
 # -----------------------------------------------------------------------------
 # Stage 3: Development image (optional - includes dev dependencies)
