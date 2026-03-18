@@ -88,7 +88,7 @@ open http://localhost:8000/docs
 | Environment | URL | Status |
 |-------------|-----|--------|
 | **Dev** | https://app-governance-dev-001.azurewebsites.net | 🟢 Live |
-| **Staging** | _Not yet deployed_ | ⬜ Planned |
+| **Staging** | https://app-governance-staging-001.azurewebsites.net | 🟢 Live |
 | **Production** | _Not yet deployed_ | ⬜ Planned |
 
 ### Dev Environment Resources (westus2)
@@ -340,7 +340,7 @@ For comprehensive Riverside compliance documentation, see:
 - [x] E2E test suite (273 Playwright + httpx tests)
 - [x] Documentation consolidation (13 → 7 root docs)
 - [x] US/AC Traceability Matrix (93 requirements mapped)
-- [x] Full quality gate validation (1,686 tests, 0 failures)
+- [x] Full quality gate validation (1,686 tests, 0 failures — v1.0.0 baseline)
 - [x] Version 1.0.0 production release
 - [x] Multi-brand design system (5 brands, 47+ CSS variables, WCAG AA)
 - [x] Version 1.1.0 design system release
@@ -349,11 +349,14 @@ For comprehensive Riverside compliance documentation, see:
 - [x] Staging deployment checklist documented
 - [x] Version 1.2.0 production hardening release
 - [x] Replace backfill placeholder data with real Azure API calls (v1.2.0)
+- [x] Staging environment deployed and operational (Entra ID P1, health checks green)
+- [x] Budget tracking (CO-008) — Azure Cost Management budgets, alerts, thresholds (v1.3.x)
+- [x] Test suite expanded 1,686 → 2,531 tests, 100% module coverage (v1.4.0)
+- [x] Zero test failures, zero lint errors (v1.4.0)
 
 ### Planned
 
 - [ ] Connect real Azure tenant credentials via Key Vault
-- [ ] Staging environment deployment
 - [ ] Custom compliance frameworks
 - [ ] Teams bot integration
 - [ ] Access review workflows

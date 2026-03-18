@@ -39,32 +39,30 @@
 
 ### Branch & Git
 - **Branch**: `main`
-- **Tags**: v1.3.2 (current), v1.3.1, v1.3.0, v1.2.0
+- **Tags**: v1.4.0 (current), v1.3.2, v1.3.1, v1.3.0, v1.2.0
 - **Status**: Clean, up to date with origin
 - **Commits since v1.2.0**: 15+ (CO-008 implementation, test traceability, docs updates)
 
 ---
 
-## 🚀 Next Steps (Post v1.3.2)
+## 🚀 Next Steps (Post v1.4.0)
 
-### Immediate (This Session)
-1. **Fix 39 test failures** — Apply MagicMock/AsyncMock fixes to:
-   - `tests/unit/test_routes_dashboard.py` (13 failures)
-   - `tests/unit/test_routes_monitoring.py` (9 failures)  
-   - `tests/unit/test_routes_exports.py` (6 failures)
-   - `tests/unit/test_routes_bulk.py` (6 failures)
-   - `tests/unit/test_routes_recommendations.py` (5 failures)
-   - Pattern: Use `MagicMock` for sync service calls, `AsyncMock` only for async operations
-2. **Clean 47 xpass markers** — Remove xfail from tests that now pass with authed_client fixture
-3. **Retag v1.3.3** — Clean release with all tests green
+### Immediate Opportunities
+The codebase is in its cleanest state ever. Logical next work items:
 
-### Staging (Already Done)
-- ~~TLL tenant permission~~ — ✅ Fixed (Entra ID P1 active)
-- ~~Staging deployment~~ — ✅ Operational (health checks green)
+1. **Fix the 32 intentional xfailed tests** — These are legitimate test debt:
+   - `test_routes_auth.py` (6) — fixture mismatch with current API
+   - `test_routes_preflight.py` (8) — CheckCategory enum changed (AZURE_ACCESS)
+   - `test_routes_sync.py` (12) — SyncJobLog fixture wrong column types for SQLite
+   - `test_cost_api.py` + `test_identity_api.py` (4) — edge-case endpoint fixtures
+2. **Real Azure credentials** — Connect Key Vault secrets to staging environment
+3. **Production deployment** — Staging is green; prod environment needs Bicep + ACR run
 
-### Historical (v1.2.0 Era)
-- ~~Merge `feature/agile-sdlc` to `main`~~ — Done
-- ~~Execute staging deployment~~ — Infrastructure deployed, Dockerfile fixed
+### Already Done
+- ✅ TLL tenant permission — Entra ID P1 active
+- ✅ Staging deployment — Operational (health checks green)
+- ✅ 39 test failures fixed
+- ✅ 47 stale xfail markers removed
 
 ---
 
