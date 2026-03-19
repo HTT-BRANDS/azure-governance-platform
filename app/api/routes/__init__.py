@@ -15,6 +15,7 @@ from app.api.routes.monitoring import router as monitoring_router
 from app.api.routes.onboarding import router as onboarding_router
 from app.api.routes.pages import router as pages_router
 from app.api.routes.preflight import router as preflight_router
+from app.api.routes.quotas import router as quotas_router
 from app.api.routes.recommendations import router as recommendations_router
 from app.api.routes.resources import router as resources_router
 from app.api.routes.riverside import router as riverside_router
@@ -23,6 +24,7 @@ from app.api.routes.tenants import router as tenants_router
 
 __all__ = [
     "audit_logs_router",
+    "quotas_router",
     "auth_router",
     "budgets_router",
     "bulk_router",

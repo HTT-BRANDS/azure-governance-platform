@@ -27,6 +27,7 @@ from app.api.routes import (
     pages_router,
     preflight_router,
     public_router,
+    quotas_router,
     recommendations_router,
     resources_router,
     riverside_router,
@@ -219,6 +220,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include routers - Auth router first (no auth required for login)
 app.include_router(audit_logs_router)
+app.include_router(quotas_router)
 app.include_router(auth_router)
 
 # Onboarding router (public for self-service)
