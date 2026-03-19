@@ -583,6 +583,98 @@ None of these mask production bugs.
 
 ---
 
+## Phase 8: Phase 2 P1 Feature Sprint
+
+**Status:** 🟡 IN PLANNING
+**Goal:** Implement the 7 unblocked P1 features from the Phase 2 backlog
+**Blocked:** RC-030–035 (Sui Generis API creds), RC-050–054 (Cybeta API key)
+
+### 8.1 Audit Log Aggregation (CM-010)
+- [ ] 8.1.1 Create AuditLogEntry SQLAlchemy model + Alembic migration (Python Programmer 🐍)
+  - Files: `app/models/audit_log.py`, `alembic/versions/XXX_add_audit_log.py`
+  - Validation: `uv run alembic upgrade head` succeeds; model importable
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Planning Agent 📋
+
+- [ ] 8.1.2 Implement AuditLogService with filtering and pagination (Python Programmer 🐍)
+  - File: `app/api/services/audit_log_service.py`
+  - Validation: `uv run pytest tests/unit/test_audit_log_service.py -v` passes
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 8.1.3 Create GET /api/v1/audit-logs route with date/user/action filters (Python Programmer 🐍)
+  - File: `app/api/routes/audit_logs.py`
+  - Validation: `uv run pytest tests/unit/test_routes_audit_logs.py -v` passes
+  - Reviewed by: Code Reviewer 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 8.1.4 Wire audit log writes into auth, sync, and bulk action paths (Python Programmer 🐍)
+  - Files: `app/core/auth.py`, `app/services/*.py` (sync writes)
+  - Validation: Auth events appear in audit log; E2E smoke confirms
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Planning Agent 📋
+
+### 8.2 Resource Lifecycle Tracking (RM-004)
+- [ ] 8.2.1 Create ResourceLifecycleEvent model + migration (Python Programmer 🐍)
+  - Files: `app/models/resource_lifecycle.py`, `alembic/versions/XXX_resource_lifecycle.py`
+  - Validation: `uv run alembic upgrade head` succeeds
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Planning Agent 📋
+
+- [ ] 8.2.2 Implement lifecycle event detection in resource sync (Python Programmer 🐍)
+  - File: `app/core/sync/resources.py` (add change detection vs. previous snapshot)
+  - Validation: `uv run pytest tests/unit/test_resource_lifecycle.py -v` passes
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 8.2.3 Create GET /api/v1/resources/{id}/history route (Python Programmer 🐍)
+  - File: `app/api/routes/resources.py` (extend existing router)
+  - Validation: Route returns 200 with event list; test passes
+  - Reviewed by: Code Reviewer 🛡️
+  - Signed off by: Pack Leader 🐺
+
+### 8.3 Quota Utilization Monitoring (RM-007)
+- [ ] 8.3.1 Implement QuotaService using Azure Resource Manager quota API (Python Programmer 🐍)
+  - File: `app/api/services/quota_service.py`
+  - Validation: `uv run pytest tests/unit/test_quota_service.py -v` passes
+  - Reviewed by: Python Reviewer 🐍 + Solutions Architect 🏛️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 8.3.2 Create GET /api/v1/resources/quotas route (Python Programmer 🐍)
+  - File: `app/api/routes/resources.py` (extend existing router)
+  - Validation: `uv run pytest tests/unit/test_routes_resources.py -v` passes
+  - Reviewed by: Code Reviewer 🛡️
+  - Signed off by: Planning Agent 📋
+
+### 8.4 Custom Compliance Rules (CM-002)
+- [ ] 8.4.1 Design CustomRule model with JSON schema validation (Solutions Architect 🏛️)
+  - Output: ADR in `docs/decisions/` for rule engine design
+  - Validation: ADR written and reviewed before implementation starts
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Planning Agent 📋
+
+- [ ] 8.4.2 Create CustomRule SQLAlchemy model + Alembic migration (Python Programmer 🐍)
+  - Files: `app/models/custom_rule.py`, `alembic/versions/XXX_custom_rules.py`
+  - Validation: `uv run alembic upgrade head` succeeds
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 8.4.3 Implement CustomRuleService with CRUD + JSON schema evaluation (Python Programmer 🐍)
+  - File: `app/api/services/custom_rule_service.py`
+  - Validation: `uv run pytest tests/unit/test_custom_rule_service.py -v` passes
+  - Reviewed by: Python Reviewer 🐍 + Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 8.4.4 Create full CRUD routes: POST/GET/PUT/DELETE /api/v1/compliance/rules (Python Programmer 🐍)
+  - File: `app/api/routes/compliance_rules.py`
+  - Validation: All 4 route tests pass; Spectral lint passes
+  - Reviewed by: Code Reviewer 🛡️
+  - Signed off by: Pack Leader 🐺
+
+### 8.5 Deferred (Blocked)
+- [ ] 8.5.1 Sui Generis device compliance — BLOCKED: waiting on API credentials from Sui Generis MSP (Planning Agent 📋)
+- [ ] 8.5.2 Cybeta threat intelligence API — BLOCKED: waiting on API key and endpoint docs (Planning Agent 📋)
+
 ## Progress Summary
 
 | Phase | Total Tasks | Completed | Remaining | Status |
@@ -594,7 +686,8 @@ None of these mask production bugs.
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
 | Phase 7: Production Hardening | 20 | 20 | 0 | ✅ Complete |
-| **TOTAL** | **86** | **86** | **0** | **✅ Complete** |
+| Phase 8: Phase 2 P1 Features | 15 | 0 | 15 | 🟡 In Planning |
+| **TOTAL** | **101** | **86** | **15** | **🟡 In Progress** |
 
 ---
 

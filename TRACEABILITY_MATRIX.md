@@ -1,7 +1,7 @@
 # Traceability Matrix — Code Puppy Agile SDLC Implementation
 
 **Last Updated:** March 19, 2026
-**Managed By:** Planning Agent 📋 (planning-agent-fde434) + Pack Leader 🐺
+**Managed By:** Planning Agent 📋 (planning-agent-8ae68e) + Pack Leader 🐺
 **Methodology:** Tyler Granlund's Agile SDLC Framework
 **Research Date Validation:** All tools/versions confirmed current as of March 6, 2026
 
@@ -130,7 +130,7 @@ Each row traces a requirement from **origin → implementation → testing → s
 | Req ID | User Story | Acceptance Criteria | Impl Agent | Review Agent | Test Type | Test Agent | Security | Sign-Off | Status | bd Issue |
 |--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
 | REQ-1001 | Clean up stale artifacts from project root | compass_artifact moved to research/; no orphan files in root | Code-Puppy 🐶 | Planning Agent 📋 | Manual | Terminal QA 🖥️ | N/A | Planning Agent 📋 | ✅ Passed | — |
-| REQ-1002 | Update all stale agent IDs and metadata in docs | All docs reference planning-agent-fde434; pyproject.toml shows Beta status | Code-Puppy 🐶 | Planning Agent 📋 | Automated | Watchdog 🐕‍🦺 | N/A | Planning Agent 📋 | ✅ Passed | — |
+| REQ-1002 | Update all stale agent IDs and metadata in docs | All docs reference planning-agent-8ae68e; pyproject.toml shows Beta status | Code-Puppy 🐶 | Planning Agent 📋 | Automated | Watchdog 🐕‍🦺 | N/A | Planning Agent 📋 | ✅ Passed | — |
 | REQ-1003 | Cut v1.1.0 release and clean CHANGELOG | CHANGELOG has v1.1.0 section; [Unreleased] is clean for Phase 6-7 | Code-Puppy 🐶 | Code Reviewer 🛡️ | Manual | QA Expert 🐾 | N/A | Planning Agent 📋 | ✅ Passed | — |
 | REQ-1004 | Update SESSION_HANDOFF for production phase | SESSION_HANDOFF.md reflects Phase 6-7 objective and current state | Planning Agent 📋 | Pack Leader 🐺 | Manual | QA Expert 🐾 | N/A | Pack Leader 🐺 | ✅ Passed | — |
 | REQ-1005 | Enforce JWT_SECRET_KEY in production mode | App fails to start without JWT_SECRET_KEY when ENVIRONMENT=production | Python Programmer 🐍 | Security Auditor 🛡️ | Unit | Watchdog 🐕‍🦺 | STRIDE required | Pack Leader 🐺 | ✅ Passed | — |
@@ -279,7 +279,7 @@ This epic maps the compliance monitoring requirements to their implementing code
 | CM-002 | Custom compliance rule definitions | — | — | — | ⏳ Phase 2 (P1) |
 | CM-003 | Regulatory framework mapping (SOC2, etc) | — | — | — | ⏳ Phase 2 (P2) |
 | CM-004 | Compliance drift detection | `app/api/services/compliance_service.py`, `app/models/compliance.py` | `test_compliance_service`, `test_routes_compliance` | Unit + Int | ✅ Implemented |
-| CM-005 | Automated remediation suggestions | `app/api/services/riverside_compliance.py` | `test_azure_connectivity` (smoke only) | Smoke | ⚠️ Implemented, Weak Test Coverage |
+| CM-005 | Automated remediation suggestions | `app/api/services/riverside_compliance.py` | `test_remediation` (16 unit tests), `test_azure_connectivity` (smoke) | Unit + Smoke | ✅ Passed |
 
 ### 13.2 Reporting & Inventory (CM-006 → CM-010)
 
@@ -299,7 +299,6 @@ This epic maps the compliance monitoring requirements to their implementing code
 | Reporting & Inventory (CM-006–010) | 5 | 4 | 4 | 1 | 80% (100% of MVP scope) |
 | **TOTAL** | **10** | **7** | **7** | **3** | **70% (100% of MVP scope)** |
 
-> ⚠️ **QA Note:** CM-005 (Automated remediation suggestions) has only smoke-level coverage via `test_azure_connectivity`. This is a **risk area** — recommend adding unit tests for `riverside_compliance.py` remediation logic before Phase 2 expansion.
 
 ---
 
@@ -321,7 +320,7 @@ This epic maps the resource management requirements to their implementing code a
 
 | Req ID | Requirement | Impl Code | Test Coverage | Test Type | Status |
 |--------|------------|-----------|---------------|-----------|--------|
-| RM-006 | Resource health aggregation | `app/api/routes/monitoring.py`, `app/services/lighthouse_client.py` | — | — | ⚠️ Implemented, NO Test Coverage |
+| RM-006 | Resource health aggregation | `app/api/routes/monitoring.py`, `app/services/lighthouse_client.py` | `test_resource_health` (13 unit tests) | Unit | ✅ Passed |
 | RM-007 | Quota utilization monitoring | — | — | — | ⏳ Phase 2 (P1) |
 | RM-008 | Resource provisioning standards | — | — | — | ⏳ Phase 2 (P2) |
 | RM-009 | Tag enforcement reporting | `app/api/services/resource_service.py`, `app/api/routes/resources.py` | `test_resource_service`, `test_compliance_service`, `test_routes_resources` | Unit + Int | ✅ Implemented |
@@ -332,10 +331,9 @@ This epic maps the resource management requirements to their implementing code a
 | Category | Total Reqs | Implemented | Tested | Phase 2 | Coverage |
 |----------|-----------|-------------|--------|---------|----------|
 | Inventory & Tagging (RM-001–005) | 5 | 4 | 4 | 1 | 80% (100% of MVP scope) |
-| Health & Enforcement (RM-006–010) | 5 | 2 | 1 | 3 | 40% (50% of MVP scope) |
+| Health & Enforcement (RM-006–010) | 5 | 2 | 2 | 3 | 40% (66% of implemented scope) |
 | **TOTAL** | **10** | **6** | **5** | **4** | **60% (83% of MVP scope)** |
 
-> 🔴 **QA Alert:** RM-006 (Resource health aggregation) is implemented in `app/api/routes/monitoring.py` and `app/services/lighthouse_client.py` but has **ZERO test coverage**. This is a P1 gap — `test_lighthouse_client.py` has 41.8 KB of unit tests but they don't exercise the health aggregation path through `monitoring.py`. Recommend adding integration tests immediately.
 
 ---
 
@@ -436,7 +434,7 @@ This epic maps the non-functional requirements (performance, security, availabil
 |------|-----------|-------------|------------|-------------|---------|----------|----------|
 | 12: Cost Optimization | 10 | 7 | 7 | 5 | 2 | 1 | 70% |
 | 13: Compliance Monitoring | 10 | 7 | 7 | 5 | 3 | 0 | 70% |
-| 14: Resource Management | 10 | 6 | 5 | 3 | 4 | 0 | 60% |
+| 14: Resource Management | 10 | 6 | 6 | 3 | 4 | 0 | 60% |
 | 15: Identity Governance | 10 | 10 | 10 | 5 | 0 | 0 | 100% |
 | 16: Non-Functional Reqs | 17 | 17 | 14 | 3 | 0 | 0 | 100% |
 | **TOTAL** | **57** | **47** | **43** | **21** | **9** | **1** | **82%** |
