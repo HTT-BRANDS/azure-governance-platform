@@ -675,6 +675,78 @@ None of these mask production bugs.
 - [ ] 8.5.1 Sui Generis device compliance — BLOCKED: waiting on API credentials from Sui Generis MSP (Planning Agent 📋)
 - [ ] 8.5.2 Cybeta threat intelligence API — BLOCKED: waiting on API key and endpoint docs (Planning Agent 📋)
 
+## Phase 9: Phase 2 Backlog Sprint (v1.5.4)
+**Status: 🟡 IN PLANNING**
+**bd issues: azure-governance-platform-37r, azure-governance-platform-t4j, azure-governance-platform-s6y, azure-governance-platform-b26, azure-governance-platform-4g5, azure-governance-platform-23q**
+
+### 9.1 Per-User License Tracking (IG-009) — bd:azure-governance-platform-37r
+- [ ] 9.1.1 Implement LicenseService with Microsoft Graph per-user license details (Python Programmer 🐍)
+  - File: `app/api/services/license_service.py`
+  - API: `GET /users/{id}/licenseDetails` via Microsoft Graph
+  - Data: store/enrich user license assignment data
+  - Validation: `uv run pytest tests/unit/test_license_service.py -v` passes (>=12 tests)
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 9.1.2 Create GET /api/v1/identity/licenses route (Python Programmer 🐍)
+  - File: `app/api/routes/identity.py` (extend existing router)
+  - Validation: `uv run pytest tests/unit/test_license_service.py -v` passes; ruff clean
+  - Reviewed by: Code Reviewer 🛡️
+  - Signed off by: Pack Leader 🐺
+
+### 9.2 Resource Change History Cross-Resource Feed (RM-010) — bd:azure-governance-platform-t4j
+- [ ] 9.2.1 Add GET /api/v1/resources/changes endpoint surfacing ResourceLifecycleEvents (Code Puppy 🐾)
+  - File: `app/api/routes/resources.py` (extend existing router)
+  - Filters: tenant, resource_type, event_type, date range, limit/offset
+  - Validation: `uv run pytest tests/unit/test_resource_changes.py -v` passes (>=8 tests)
+  - Reviewed by: Code Reviewer 🛡️
+  - Signed off by: Pack Leader 🐺
+
+### 9.3 Reserved Instance Utilization (CO-007) — bd:azure-governance-platform-s6y
+- [ ] 9.3.1 Solutions Architect scope assessment: Azure Lighthouse delegation for Microsoft.Capacity/reservations/read (Solutions Architect 🏛️)
+  - Output: Scope decision documented before implementation begins
+  - Validation: Assessment complete and reviewed before 9.3.2 starts
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 9.3.2 Implement ReservationService using Azure Consumption API (Python Programmer 🐍)
+  - File: `app/api/services/reservation_service.py`
+  - API: `GET /providers/Microsoft.Consumption/reservationSummaries`
+  - Expose: `GET /api/v1/costs/reservations`
+  - Validation: `uv run pytest tests/unit/test_reservation_service.py -v` passes (>=10 tests)
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
+### 9.4 Access Review Facilitation (IG-010) — bd:azure-governance-platform-b26
+- [ ] 9.4.1 Implement AccessReviewService replacing stub in admin_risk_checks.py (Python Programmer 🐍)
+  - File: `app/api/services/access_review_service.py`
+  - Logic: stale privileged assignments >90 days, review task generation, approve/revoke actions
+  - Expose: `GET /api/v1/identity/access-reviews` + `POST /api/v1/identity/access-reviews/{id}/action`
+  - Validation: `uv run pytest tests/unit/test_access_review_service.py -v` passes (>=12 tests)
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
+### 9.5 Regulatory Framework Mapping - SOC2/NIST (CM-003) — bd:azure-governance-platform-4g5
+- [ ] 9.5.1 Solutions Architect writes ADR for compliance framework mapping approach (Solutions Architect 🏛️)
+  - Output: ADR in `docs/decisions/adr-0006-regulatory-framework-mapping.md`
+  - Validation: ADR written and reviewed before implementation starts
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 9.5.2 Implement framework mapping: SOC2 Trust Service Criteria + NIST CSF (Python Programmer 🐍)
+  - Tags existing compliance findings to framework controls
+  - Expose: `GET /api/v1/compliance/frameworks`
+  - Validation: `uv run pytest tests/unit/test_compliance_frameworks.py -v` passes (>=10 tests)
+  - Reviewed by: Python Reviewer 🐍 + Solutions Architect 🏛️
+  - Signed off by: Pack Leader 🐺
+
+### 9.6 Chargeback/Showback Reporting (CO-010) — bd:azure-governance-platform-23q
+- [ ] 9.6.1 Implement ChargebackService for per-tenant cost allocation reports (Python Programmer 🐍)
+  - File: `app/api/services/chargeback_service.py`
+  - Export formats: CSV and JSON
+  - Builds on existing cost data + export infrastructure
+  - Validation: `uv run pytest tests/unit/test_chargeback_service.py -v` passes (>=10 tests)
+  - Reviewed by: Python Reviewer 🐍
+  - Signed off by: Pack Leader 🐺
+
 ## Progress Summary
 
 | Phase | Total Tasks | Completed | Remaining | Status |
@@ -687,7 +759,8 @@ None of these mask production bugs.
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
 | Phase 7: Production Hardening | 20 | 20 | 0 | ✅ Complete |
 | Phase 8: Phase 2 P1 Features | 15 | 13 | 2 | 🟡 In Progress (2 blocked) |
-| **TOTAL** | **101** | **99** | **2** | **🟡 In Progress (2 blocked)** |
+| Phase 9: Phase 2 Backlog Sprint | 13 | 0 | 13 | 🟡 IN PLANNING |
+| **TOTAL** | **114** | **99** | **15** | **🟡 In Progress** |
 
 ---
 
