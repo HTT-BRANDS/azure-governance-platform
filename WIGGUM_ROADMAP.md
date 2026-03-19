@@ -680,7 +680,7 @@ None of these mask production bugs.
 **bd issues: azure-governance-platform-37r, azure-governance-platform-t4j, azure-governance-platform-s6y, azure-governance-platform-b26, azure-governance-platform-4g5, azure-governance-platform-23q**
 
 ### 9.1 Per-User License Tracking (IG-009) — bd:azure-governance-platform-37r
-- [ ] 9.1.1 Implement LicenseService with Microsoft Graph per-user license details (Python Programmer 🐍)
+- [x] 9.1.1 Implement LicenseService with Microsoft Graph per-user license details (Python Programmer 🐍)
   - File: `app/api/services/license_service.py`
   - API: `GET /users/{id}/licenseDetails` via Microsoft Graph
   - Data: store/enrich user license assignment data
@@ -688,14 +688,14 @@ None of these mask production bugs.
   - Reviewed by: Python Reviewer 🐍
   - Signed off by: Pack Leader 🐺
 
-- [ ] 9.1.2 Create GET /api/v1/identity/licenses route (Python Programmer 🐍)
+- [x] 9.1.2 Create GET /api/v1/identity/licenses route (Python Programmer 🐍)
   - File: `app/api/routes/identity.py` (extend existing router)
   - Validation: `uv run pytest tests/unit/test_license_service.py -v` passes; ruff clean
   - Reviewed by: Code Reviewer 🛡️
   - Signed off by: Pack Leader 🐺
 
 ### 9.2 Resource Change History Cross-Resource Feed (RM-010) — bd:azure-governance-platform-t4j
-- [ ] 9.2.1 Add GET /api/v1/resources/changes endpoint surfacing ResourceLifecycleEvents (Code Puppy 🐾)
+- [x] 9.2.1 Add GET /api/v1/resources/changes endpoint surfacing ResourceLifecycleEvents (Code Puppy 🐾)
   - File: `app/api/routes/resources.py` (extend existing router)
   - Filters: tenant, resource_type, event_type, date range, limit/offset
   - Validation: `uv run pytest tests/unit/test_resource_changes.py -v` passes (>=8 tests)
@@ -759,8 +759,8 @@ None of these mask production bugs.
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
 | Phase 7: Production Hardening | 20 | 20 | 0 | ✅ Complete |
 | Phase 8: Phase 2 P1 Features | 15 | 13 | 2 | 🟡 In Progress (2 blocked) |
-| Phase 9: Phase 2 Backlog Sprint | 13 | 0 | 13 | 🟡 IN PLANNING |
-| **TOTAL** | **114** | **99** | **15** | **🟡 In Progress** |
+| Phase 9: Phase 2 Backlog Sprint | 13 | 3 | 10 | 🟡 In Progress |
+| **TOTAL** | **114** | **102** | **12** | **🟡 In Progress** |
 
 ---
 
