@@ -13,7 +13,9 @@ class ServicePlanDetail(BaseModel):
     """Details for a single service plan within a license SKU assignment."""
 
     service_plan_id: str = Field(description="GUID of the service plan")
-    service_plan_name: str = Field(description="Human-readable service plan name, e.g. 'EXCHANGE_S_ENTERPRISE'")
+    service_plan_name: str = Field(
+        description="Human-readable service plan name, e.g. 'EXCHANGE_S_ENTERPRISE'"
+    )
     provisioning_status: str = Field(
         description="Provisioning status: Success, Disabled, PendingInput, etc."
     )

@@ -31,7 +31,9 @@ logger = logging.getLogger(__name__)
 class LicenseServiceError(Exception):
     """Raised when a license service operation fails."""
 
-    def __init__(self, message: str, tenant_id: str | None = None, status_code: int | None = None) -> None:
+    def __init__(
+        self, message: str, tenant_id: str | None = None, status_code: int | None = None
+    ) -> None:
         super().__init__(message)
         self.tenant_id = tenant_id
         self.status_code = status_code
@@ -276,7 +278,7 @@ class LicenseService:
                 {"$select": "skuId,skuPartNumber"},
             )
         except LicenseServiceError:
-            # Re-raise with tenant context.
+            # Re-raise; tenant context not available at this level.
             raise
         sku_map: dict[str, str] = {
             sku["skuId"]: sku.get("skuPartNumber", sku["skuId"])

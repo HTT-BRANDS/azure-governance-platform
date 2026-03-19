@@ -402,9 +402,7 @@ class TestListTenantLicenses:
             if "/subscribedSkus" in endpoint:
                 return {"value": []}
             # Two unlicensed users.
-            return {
-                "value": [_SAMPLE_USER_NO_LICENSE, {**_SAMPLE_USER_NO_LICENSE, "id": "u2"}]
-            }
+            return {"value": [_SAMPLE_USER_NO_LICENSE, {**_SAMPLE_USER_NO_LICENSE, "id": "u2"}]}
 
         mock_client._request = _request
         svc._clients[_TENANT_ID] = mock_client
@@ -455,6 +453,22 @@ class TestListTenantLicenses:
         assert exc_info.value.status_code == 401
 
     @pytest.mark.asyncio
+    async def test_list_tenant_licenses_429_raises(self, svc, mock_client):
+        """list_tenant_licenses raises LicenseServiceError(status_code=429) on 429."""
+
+        async def _request(method, endpoint, params=None):
+            raise _fake_http_error(429, headers={"Retry-After": "5"})
+
+        mock_client._request = _request
+        svc._clients[_TENANT_ID] = mock_client
+
+        with pytest.raises(LicenseServiceError) as exc_info:
+            await svc.list_tenant_licenses(_TENANT_ID)
+
+        assert exc_info.value.status_code == 429
+        assert "429" in str(exc_info.value)
+
+    @pytest.mark.asyncio
     async def test_list_tenant_licenses_sku_fallback_on_unknown_sku(self, svc, mock_client):
         """list_tenant_licenses falls back to skuId when skuId not in the catalogue."""
 
@@ -502,9 +516,7 @@ class TestLicenseRoutes:
             ]
         )
 
-        response = authed_client.get(
-            f"/api/v1/identity/licenses?tenant_id={_TENANT_ID}"
-        )
+        response = authed_client.get(f"/api/v1/identity/licenses?tenant_id={_TENANT_ID}")
 
         assert response.status_code == 200
         data = response.json()
@@ -536,9 +548,7 @@ class TestLicenseRoutes:
             ]
         )
 
-        response = authed_client.get(
-            f"/api/v1/identity/licenses/{_USER_ID}?tenant_id={_TENANT_ID}"
-        )
+        response = authed_client.get(f"/api/v1/identity/licenses/{_USER_ID}?tenant_id={_TENANT_ID}")
 
         assert response.status_code == 200
         data = response.json()
@@ -552,9 +562,7 @@ class TestLicenseRoutes:
         """GET /api/v1/identity/licenses returns 200 with [] when no users are licensed."""
         mock_svc.list_tenant_licenses = AsyncMock(return_value=[])
 
-        response = authed_client.get(
-            f"/api/v1/identity/licenses?tenant_id={_TENANT_ID}"
-        )
+        response = authed_client.get(f"/api/v1/identity/licenses?tenant_id={_TENANT_ID}")
 
         assert response.status_code == 200
         assert response.json() == []
@@ -566,9 +574,7 @@ class TestLicenseRoutes:
             side_effect=LicenseServiceError("Unauthorized", status_code=401)
         )
 
-        response = authed_client.get(
-            f"/api/v1/identity/licenses/{_USER_ID}?tenant_id={_TENANT_ID}"
-        )
+        response = authed_client.get(f"/api/v1/identity/licenses/{_USER_ID}?tenant_id={_TENANT_ID}")
 
         assert response.status_code == 401
 
@@ -579,9 +585,7 @@ class TestLicenseRoutes:
 
     def test_get_user_licenses_route_requires_auth(self, client):
         """GET /api/v1/identity/licenses/{user_id} returns 401 without authentication."""
-        response = client.get(
-            f"/api/v1/identity/licenses/{_USER_ID}?tenant_id={_TENANT_ID}"
-        )
+        response = client.get(f"/api/v1/identity/licenses/{_USER_ID}?tenant_id={_TENANT_ID}")
         assert response.status_code == 401
 
     @patch("app.api.routes.identity.license_service")
@@ -591,8 +595,6 @@ class TestLicenseRoutes:
             side_effect=LicenseServiceError("Rate limit hit", status_code=429)
         )
 
-        response = authed_client.get(
-            f"/api/v1/identity/licenses?tenant_id={_TENANT_ID}"
-        )
+        response = authed_client.get(f"/api/v1/identity/licenses?tenant_id={_TENANT_ID}")
 
         assert response.status_code == 429
