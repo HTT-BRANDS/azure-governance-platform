@@ -703,12 +703,12 @@ None of these mask production bugs.
   - Signed off by: Pack Leader 🐺
 
 ### 9.3 Reserved Instance Utilization (CO-007) — bd:azure-governance-platform-s6y
-- [ ] 9.3.1 Solutions Architect scope assessment: Azure Lighthouse delegation for Microsoft.Capacity/reservations/read (Solutions Architect 🏛️)
+- [x] 9.3.1 Solutions Architect scope assessment: Azure Lighthouse delegation for Microsoft.Capacity/reservations/read (Solutions Architect 🏛️)
   - Output: Scope decision documented before implementation begins
   - Validation: Assessment complete and reviewed before 9.3.2 starts
   - Signed off by: Pack Leader 🐺
 
-- [ ] 9.3.2 Implement ReservationService using Azure Consumption API (Python Programmer 🐍)
+- [x] 9.3.2 Implement ReservationService using Azure Consumption API (Python Programmer 🐍)
   - File: `app/api/services/reservation_service.py`
   - API: `GET /providers/Microsoft.Consumption/reservationSummaries`
   - Expose: `GET /api/v1/costs/reservations`
@@ -717,7 +717,7 @@ None of these mask production bugs.
   - Signed off by: Pack Leader 🐺
 
 ### 9.4 Access Review Facilitation (IG-010) — bd:azure-governance-platform-b26
-- [ ] 9.4.1 Implement AccessReviewService replacing stub in admin_risk_checks.py (Python Programmer 🐍)
+- [x] 9.4.1 Implement AccessReviewService replacing stub in admin_risk_checks.py (Python Programmer 🐍)
   - File: `app/api/services/access_review_service.py`
   - Logic: stale privileged assignments >90 days, review task generation, approve/revoke actions
   - Expose: `GET /api/v1/identity/access-reviews` + `POST /api/v1/identity/access-reviews/{id}/action`
@@ -759,8 +759,8 @@ None of these mask production bugs.
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
 | Phase 7: Production Hardening | 20 | 20 | 0 | ✅ Complete |
 | Phase 8: Phase 2 P1 Features | 15 | 13 | 2 | 🟡 In Progress (2 blocked) |
-| Phase 9: Phase 2 Backlog Sprint | 13 | 3 | 10 | 🟡 In Progress |
-| **TOTAL** | **114** | **102** | **12** | **🟡 In Progress** |
+| Phase 9: Phase 2 Backlog Sprint | 13 | 7 | 6 | 🟡 In Progress |
+| **TOTAL** | **114** | **106** | **8** | **🟡 In Progress** |
 
 ---
 
