@@ -3,9 +3,10 @@
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
+from app.api.services.chargeback_service import ChargebackService
 from app.api.services.cost_service import CostService
 from app.api.services.reservation_service import (
     ReservationAuthError,
@@ -373,3 +374,80 @@ async def get_reservation_summaries(
         raise HTTPException(status_code=429, detail=str(exc)) from exc
     except ReservationServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+# ----------------------------------------------------------------------------
+# CO-010: Chargeback / Showback Reporting
+# ----------------------------------------------------------------------------
+
+
+@router.get("/chargeback")
+async def get_chargeback_report(
+    start_date: date = Query(..., description="Start of the billing period (inclusive)"),
+    end_date: date = Query(..., description="End of the billing period (inclusive)"),
+    tenant_ids: list[str] | None = Query(
+        default=None,
+        description="Tenant IDs to include; repeatable. Defaults to all accessible tenants.",
+    ),
+    format: Literal["json", "csv"] = Query(
+        default="json",
+        description="Response format: json (default) or csv",
+    ),
+    include_breakdown: bool = Query(
+        default=True,
+        description="Include per-category cost breakdown in each tenant entry",
+    ),
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
+    """Generate a chargeback / showback report for the requested billing period.
+
+    Returns cost attribution data per tenant, optionally filtered to a subset
+    of tenants.  Supports both JSON and CSV formats.
+
+    When ``format=csv`` the response is returned as a downloadable CSV file
+    with ``Content-Disposition: attachment``.
+
+    Args:
+        start_date: First day of the billing period.
+        end_date: Last day of the billing period.
+        tenant_ids: Optional list of tenant IDs to filter; defaults to all
+            accessible tenants.
+        format: ``json`` (default) or ``csv``.
+        include_breakdown: When ``True``, per-category cost breakdowns are
+            included in each tenant row.
+    """
+    authz.ensure_at_least_one_tenant()
+
+    # Validate date range
+    if end_date < start_date:
+        raise HTTPException(
+            status_code=422,
+            detail="end_date must be on or after start_date",
+        )
+
+    # Restrict requested tenant_ids to only those the caller can access
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+    effective_tenant_ids: list[str] | None = (
+        filtered_tenant_ids if filtered_tenant_ids else authz.accessible_tenant_ids
+    )
+
+    service = ChargebackService(db)
+    report = await service.get_chargeback_report(
+        tenant_ids=effective_tenant_ids,
+        start_date=start_date,
+        end_date=end_date,
+        include_breakdown=include_breakdown,
+    )
+
+    if format == "csv":
+        csv_content = service.export_chargeback_csv(report)
+        filename = f"chargeback-{start_date}-{end_date}.csv"
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
+    # Default: JSON
+    return report
