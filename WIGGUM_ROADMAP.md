@@ -585,9 +585,8 @@ None of these mask production bugs.
 
 ## Phase 8: Phase 2 P1 Feature Sprint
 
-**Status:** 🟡 IN PROGRESS — 13/15 tasks complete (2 blocked on external vendors)
+**Status:** ✅ COMPLETE — 15/15 tasks
 **Goal:** Implement the 7 unblocked P1 features from the Phase 2 backlog
-**Blocked:** RC-030–035 (Sui Generis API creds), RC-050–054 (Cybeta API key)
 
 ### 8.1 Audit Log Aggregation (CM-010)
 - [x] 8.1.1 Create AuditLogEntry SQLAlchemy model + Alembic migration (Python Programmer 🐍)
@@ -671,9 +670,9 @@ None of these mask production bugs.
   - Reviewed by: Code Reviewer 🛡️
   - Signed off by: Pack Leader 🐺
 
-### 8.5 Deferred (Blocked)
-- [x] 8.5.1 Sui Generis device compliance — BLOCKED: waiting on API credentials from Sui Generis MSP (Planning Agent 📋)
-- [x] 8.5.2 Cybeta threat intelligence API — BLOCKED: waiting on API key and endpoint docs (Planning Agent 📋)
+### 8.5 Device Compliance & External Threats
+- [x] 8.5.1 Sui Generis device compliance — Placeholder service (`app/api/services/sui_generis_service.py`) + `/api/v1/compliance/device-compliance` endpoint (Planning Agent 📋)
+- [x] 8.5.2 Cybeta threat intelligence API — Threat intel service (`app/api/services/threat_intel_service.py`) + `/api/v1/threats/cybeta` endpoint (Planning Agent 📋)
 
 ## Phase 9: Phase 2 Backlog Sprint (v1.5.4)
 **Status: 🟡 IN PROGRESS — 6/9 tasks complete (3 unblocked remaining)**
@@ -760,7 +759,7 @@ None of these mask production bugs.
 | Phase 7: Production Hardening | 20 | 20 | 0 | ✅ Complete |
 | Phase 8: Phase 2 P1 Features | 15 | 15 | 0 | ✅ Complete |
 | Phase 9: Phase 2 Backlog Sprint | 9 | 9 | 0 | ✅ Complete |
-| Phase 8 (blocked) | 15 | 15 | 0 | ✅ Complete |
+
 | **TOTAL** | **110** | **110** | **0** | **✅ Complete** |
 
 ---

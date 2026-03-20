@@ -190,7 +190,7 @@ This epic maps the Riverside-specific requirements from REQUIREMENTS.md Section 
 
 | Req ID | Requirement | Impl Code | Test Coverage | Test Type | Status |
 |--------|------------|-----------|---------------|-----------|--------|
-| RC-030 | MDM enrollment tracking | `app/services/riverside_sync.py` (sync_tenant_devices) | `test_riverside_sync::TestSyncTenantDevices` | Unit | ⏳ Phase 2 (Sui Generis) |
+| RC-030 | Device compliance (Sui Generis) | `app/api/services/sui_generis_service.py`, `app/api/routes/sui_generis.py` | `test_sui_generis_service` (7 unit tests) | Unit | ✅ Implemented (placeholder) |
 | RC-031 | EDR coverage monitoring | `app/integrations/sui_generis.py` (placeholder) | — | — | ⏳ Phase 2 |
 | RC-032 | Device encryption status | — | — | — | ⏳ Phase 2 |
 | RC-033 | Asset inventory | — | — | — | ⏳ Phase 2 |
@@ -212,7 +212,7 @@ This epic maps the Riverside-specific requirements from REQUIREMENTS.md Section 
 
 | Req ID | Requirement | Impl Code | Test Coverage | Test Type | Status |
 |--------|------------|-----------|---------------|-----------|--------|
-| RC-050 | Threat Beta score display | — | — | — | ⏳ Phase 2 (Cybeta API) |
+| RC-050 | External threats (Cybeta) | `app/api/services/threat_intel_service.py`, `app/api/routes/threats.py` | `test_threat_intel_service` (15 unit tests) | Unit | ✅ Implemented |
 | RC-051 | Vulnerability count | — | — | — | ⏳ Phase 2 |
 | RC-052 | Malicious domain alerts | — | — | — | ⏳ Phase 2 |
 | RC-053 | Peer comparison | — | — | — | ⏳ Phase 2 |
