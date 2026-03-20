@@ -202,7 +202,15 @@ class TestGraphClientCredentialConfig:
 
     def test_credential_uses_correct_tenant(self):
         """Verify credential uses the tenant_id passed to GraphClient."""
-        with patch("app.api.services.graph_client.ClientSecretCredential") as mock_csc:
+        with (
+            patch("app.api.services.graph_client.ClientSecretCredential") as mock_csc,
+            patch("app.api.services.azure_client.AzureClientManager") as mock_mgr,
+        ):
+            mock_mgr.return_value._resolve_credentials.return_value = (
+                "test-client-id",
+                "test-client-secret",
+                None,
+            )
             client = self.GraphClient("custom-tenant-abc")
             client._get_credential()
 
