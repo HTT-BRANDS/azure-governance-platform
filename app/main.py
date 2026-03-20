@@ -29,6 +29,7 @@ from app.api.routes import (
     onboarding_router,
     pages_router,
     preflight_router,
+    provisioning_standards_router,
     public_router,
     quotas_router,
     recommendations_router,
@@ -252,6 +253,7 @@ app.include_router(dmarc_router)
 app.include_router(exports_router)
 app.include_router(pages_router)
 app.include_router(preflight_router)
+app.include_router(provisioning_standards_router)
 app.include_router(monitoring_router)
 app.include_router(recommendations_router)
 

@@ -1,0 +1,111 @@
+# Resource Provisioning Standards
+# Defines naming conventions, allowed regions, required tags, and SKU restrictions
+# for Azure resource provisioning across all managed tenants.
+
+version: "1.0"
+last_updated: "2026-03-20"
+
+naming_conventions:
+  pattern: "{env}-{region}-{service}-{component}"
+  max_length: 63
+  allowed_characters: "a-z0-9-"
+  examples:
+    - "prod-eastus-app-governance"
+    - "staging-eastus-sql-governance"
+    - "dev-westus2-kv-secrets"
+  environment_codes:
+    - prod
+    - staging
+    - dev
+    - test
+  region_codes:
+    eastus: "eastus"
+    westus2: "westus2"
+    centralus: "centralus"
+    westeurope: "westeurope"
+
+allowed_regions:
+  primary: "eastus"
+  secondary: "westus2"
+  all_allowed:
+    - eastus
+    - westus2
+    - centralus
+  restricted:
+    - reason: "Data sovereignty"
+      excluded_regions:
+        - chinaeast
+        - chinanorth
+        - germanywestcentral
+
+required_tags:
+  mandatory:
+    - key: "environment"
+      allowed_values: ["production", "staging", "development", "test"]
+      description: "Deployment environment"
+    - key: "owner"
+      pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+$"
+      description: "Email of the resource owner"
+    - key: "cost-center"
+      pattern: "^CC-[0-9]{4}$"
+      description: "Cost center code (CC-XXXX format)"
+    - key: "project"
+      description: "Project or workload name"
+  recommended:
+    - key: "created-by"
+      description: "Identity that created the resource"
+    - key: "expiry-date"
+      pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      description: "Resource expiration date (YYYY-MM-DD)"
+
+sku_restrictions:
+  virtual_machines:
+    allowed_families:
+      - B
+      - D
+      - E
+    max_vcpus: 16
+    blocked_skus:
+      - Standard_M
+      - Standard_L
+    reason: "Cost control — M and L series exceed budget thresholds"
+  storage_accounts:
+    allowed_redundancy:
+      - LRS
+      - ZRS
+    blocked_redundancy:
+      - GRS
+      - GZRS
+      - RA-GRS
+    reason: "Cost control — geo-redundancy not required for non-production data"
+  app_service_plans:
+    allowed_tiers:
+      - Free
+      - Basic
+      - Standard
+    blocked_tiers:
+      - Premium
+      - PremiumV2
+      - PremiumV3
+      - Isolated
+    reason: "Cost control — premium tiers exceed budget for MSP workloads"
+
+network_standards:
+  require_nsg: true
+  require_private_endpoints: false
+  allowed_public_access:
+    - "App Service (with IP restrictions)"
+    - "Application Gateway"
+    - "Azure Front Door"
+  blocked_public_access:
+    - "Storage Account (direct)"
+    - "SQL Database (direct)"
+    - "Key Vault (direct)"
+
+encryption_standards:
+  require_encryption_at_rest: true
+  require_tls_1_2: true
+  require_https_only: true
+  allowed_key_sources:
+    - "Microsoft.Storage"
+    - "Microsoft.KeyVault"
