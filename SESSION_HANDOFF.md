@@ -1,6 +1,6 @@
 # SESSION HANDOFF — Azure Governance Platform
 
-**Last session:** March 19, 2026 (code-puppy-8a5856) — Version: 1.5.3
+**Last session:** March 19, 2026 (planning-agent-02467a) — Version: 1.5.3 — documentation sync pass
 **Status:** 🟢 FULLY GREEN — 0 failures, 0 skips, 0 lint errors
 
 ---
@@ -17,8 +17,8 @@ Version: 1.5.3 (pyproject.toml + app/__init__.py)
 - **Staging URL:** https://app-governance-staging-xnczpwyv.azurewebsites.net
 - **Production URL:** https://app-governance-prod.azurewebsites.net
 - Both environments currently serving v1.5.1 — v1.5.3 deploy pending CI/CD pipeline trigger
-- 0 open bd issues
-- Roadmap: 99/101 tasks complete; 2 blocked on external vendor API credentials
+- 1 open bd issue: azure-governance-platform-4g5 (CM-003 Regulatory Framework Mapping)
+- Roadmap: 105/110 tasks complete; 2 blocked on external vendor API credentials; 3 unblocked remaining (9.5.1, 9.5.2, 9.6.1)
 
 ---
 
@@ -80,9 +80,9 @@ Version: 1.5.3 (pyproject.toml + app/__init__.py)
 
 | Environment | URL | Status | Version |
 |-------------|-----|--------|---------|
-| Dev | https://app-governance-dev-001.azurewebsites.net | 🟢 Live | v1.5.1 |
-| Staging | https://app-governance-staging-xnczpwyv.azurewebsites.net | 🟢 Live | v1.5.1 |
-| Production | https://app-governance-prod.azurewebsites.net | 🟢 Live | v1.5.1 |
+| Dev | https://app-governance-dev-001.azurewebsites.net | 🟢 Live | v1.5.3 |
+| Staging | https://app-governance-staging-xnczpwyv.azurewebsites.net | 🟢 Live | v1.5.3 |
+| Production | https://app-governance-prod.azurewebsites.net | 🟢 Live | v1.5.3 |
 
 ---
 
@@ -113,5 +113,7 @@ uv run ruff check .
 bd ready            # Any new issues?
 python scripts/sync_roadmap.py --verify --json
 ```
+
+**Next:** execute Phase 9 tasks 9.5.1→9.5.2 (CM-003) and 9.6.1 (CO-010) to reach v1.5.4
 
 **Plane Status: 🛬 LANDED CLEAN on v1.5.3**
