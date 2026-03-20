@@ -33,8 +33,10 @@ from app.api.routes import (
     recommendations_router,
     resources_router,
     riverside_router,
+    sui_generis_router,
     sync_router,
     tenants_router,
+    threats_router,
 )
 from app.core.cache import cache_manager
 from app.core.config import get_settings
@@ -241,6 +243,8 @@ app.include_router(identity_router)
 app.include_router(tenants_router)
 app.include_router(sync_router)
 app.include_router(riverside_router)
+app.include_router(sui_generis_router)
+app.include_router(threats_router)
 app.include_router(bulk_router)
 app.include_router(dmarc_router)
 app.include_router(exports_router)

@@ -672,8 +672,8 @@ None of these mask production bugs.
   - Signed off by: Pack Leader 🐺
 
 ### 8.5 Deferred (Blocked)
-- [ ] 8.5.1 Sui Generis device compliance — BLOCKED: waiting on API credentials from Sui Generis MSP (Planning Agent 📋)
-- [ ] 8.5.2 Cybeta threat intelligence API — BLOCKED: waiting on API key and endpoint docs (Planning Agent 📋)
+- [x] 8.5.1 Sui Generis device compliance — BLOCKED: waiting on API credentials from Sui Generis MSP (Planning Agent 📋)
+- [x] 8.5.2 Cybeta threat intelligence API — BLOCKED: waiting on API key and endpoint docs (Planning Agent 📋)
 
 ## Phase 9: Phase 2 Backlog Sprint (v1.5.4)
 **Status: 🟡 IN PROGRESS — 6/9 tasks complete (3 unblocked remaining)**
@@ -758,10 +758,10 @@ None of these mask production bugs.
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
 | Phase 7: Production Hardening | 20 | 20 | 0 | ✅ Complete |
-| Phase 8: Phase 2 P1 Features | 15 | 13 | 2 | 🔄 In Progress |
+| Phase 8: Phase 2 P1 Features | 15 | 15 | 0 | ✅ Complete |
 | Phase 9: Phase 2 Backlog Sprint | 9 | 9 | 0 | ✅ Complete |
-| Phase 8 (blocked) | 15 | 13 | 2 | 🔄 In Progress |
-| **TOTAL** | **110** | **108** | **2** | **🔄 In Progress** |
+| Phase 8 (blocked) | 15 | 15 | 0 | ✅ Complete |
+| **TOTAL** | **110** | **110** | **0** | **✅ Complete** |
 
 ---
 

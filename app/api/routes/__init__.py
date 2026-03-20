@@ -21,8 +21,10 @@ from app.api.routes.quotas import router as quotas_router
 from app.api.routes.recommendations import router as recommendations_router
 from app.api.routes.resources import router as resources_router
 from app.api.routes.riverside import router as riverside_router
+from app.api.routes.sui_generis import router as sui_generis_router
 from app.api.routes.sync import router as sync_router
 from app.api.routes.tenants import router as tenants_router
+from app.api.routes.threats import router as threats_router
 
 __all__ = [
     "audit_logs_router",
@@ -46,6 +48,8 @@ __all__ = [
     "recommendations_router",
     "resources_router",
     "riverside_router",
+    "sui_generis_router",
     "tenants_router",
     "sync_router",
+    "threats_router",
 ]

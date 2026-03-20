@@ -13,6 +13,20 @@ _No unreleased changes._
 
 ---
 
+## [1.5.5] - 2026-03-19
+
+### Added
+- **RC-030 (Sui Generis)**: Placeholder service + `/api/v1/compliance/device-compliance` endpoint (coming soon when API credentials arrive)
+- **RC-050 (Cybeta)**: Threat intelligence service + `/api/v1/threats/cybeta` endpoint using existing `RiversideThreatData` model, with tenant/date/limit filters
+- 22 new unit tests (7 for Sui Generis, 15 for Threat Intel)
+
+### Changed
+- Phase 8 roadmap complete: 15/15 tasks done
+- All Phase 2 P1 backlog items complete (CM-010, RM-004, RM-007, CM-002, CM-003, CO-010, RC-030, RC-050)
+
+---
+
+
 ## [1.5.4] - 2026-03-19
 
 ### Added
