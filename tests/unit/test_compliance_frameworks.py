@@ -101,7 +101,9 @@ class TestYamlLoading:
         lines = ["frameworks:\n", "  FOO:\n", "    controls:\n"]
         # ~513 KB of filler
         for i in range(15000):
-            lines.append(f"      KEY_{i:05d}:\n        name: 'Control {i}'\n")  # pragma: allowlist secret
+            lines.append(
+                f"      KEY_{i:05d}:\n        name: 'Control {i}'\n"
+            )  # pragma: allowlist secret
         big_yaml.write_text("".join(lines))
 
         with pytest.raises(ValueError, match="512KB"):
@@ -211,9 +213,7 @@ class TestGetFramework:
         """NIST_CSF_2.0 covers all 6 CSF functions (GV, ID, PR, DE, RS, RC)."""
         svc = _make_service()
         fw = svc.get_framework("NIST_CSF_2.0")
-        function_ids = {
-            v.get("function_id") for v in fw["controls"].values() if "function_id" in v
-        }
+        function_ids = {v.get("function_id") for v in fw["controls"].values() if "function_id" in v}
         expected = {"GV", "ID", "PR", "DE", "RS", "RC"}
         missing = expected - function_ids
         assert not missing, "Missing CSF functions: " + str(missing)
@@ -280,11 +280,13 @@ class TestMapTagsToControls:
     def test_maps_tags_across_both_frameworks(self):
         """Tags from both frameworks are resolved and grouped correctly."""
         svc = _make_service()
-        result = svc.map_tags_to_controls([
-            "SOC2_2017.CC6.1",
-            "SOC2_2017.CC7.4",
-            "NIST_CSF_2.0.PR.DS-01",
-        ])
+        result = svc.map_tags_to_controls(
+            [
+                "SOC2_2017.CC6.1",
+                "SOC2_2017.CC7.4",
+                "NIST_CSF_2.0.PR.DS-01",
+            ]
+        )
         assert "SOC2_2017" in result
         assert "NIST_CSF_2.0" in result
         assert len(result["SOC2_2017"]) == 2
@@ -294,12 +296,14 @@ class TestMapTagsToControls:
         """Unknown/fabricated tags are silently skipped — no KeyError raised."""
         svc = _make_service()
         # Should not raise; unknown tags are ignored
-        result = svc.map_tags_to_controls([
-            "SOC2_2017.CC6.1",          # valid
-            "SOC2_2017.FAKE_CTRL_999",  # unknown control in known framework
-            "UNKNOWN_FW.CC6.1",          # unknown framework
-            "NOT_A_TAG_AT_ALL",          # malformed
-        ])
+        result = svc.map_tags_to_controls(
+            [
+                "SOC2_2017.CC6.1",  # valid
+                "SOC2_2017.FAKE_CTRL_999",  # unknown control in known framework
+                "UNKNOWN_FW.CC6.1",  # unknown framework
+                "NOT_A_TAG_AT_ALL",  # malformed
+            ]
+        )
         # Only the valid tag should be returned
         assert "SOC2_2017" in result
         assert len(result["SOC2_2017"]) == 1
@@ -457,9 +461,7 @@ class TestGetControlRoute:
 
     def test_returns_200_for_known_control(self, authed_client):
         """Authenticated request for a known control returns 200."""
-        response = authed_client.get(
-            "/api/v1/compliance/frameworks/SOC2_2017/controls/CC6.1"
-        )
+        response = authed_client.get("/api/v1/compliance/frameworks/SOC2_2017/controls/CC6.1")
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == "CC6.1"
@@ -467,9 +469,7 @@ class TestGetControlRoute:
 
     def test_returns_200_for_nist_control_with_dots(self, authed_client):
         """Control IDs containing dots (NIST style) are resolved correctly."""
-        response = authed_client.get(
-            "/api/v1/compliance/frameworks/NIST_CSF_2.0/controls/PR.DS-01"
-        )
+        response = authed_client.get("/api/v1/compliance/frameworks/NIST_CSF_2.0/controls/PR.DS-01")
         assert response.status_code == 200
         assert response.json()["id"] == "PR.DS-01"
 
@@ -482,14 +482,10 @@ class TestGetControlRoute:
 
     def test_returns_404_for_unknown_framework(self, authed_client):
         """Unknown framework_id on the control route returns 404."""
-        response = authed_client.get(
-            "/api/v1/compliance/frameworks/FAKE_FW/controls/CC6.1"
-        )
+        response = authed_client.get("/api/v1/compliance/frameworks/FAKE_FW/controls/CC6.1")
         assert response.status_code == 404
 
     def test_requires_auth_returns_401(self, client):
         """Unauthenticated control request returns 401."""
-        response = client.get(
-            "/api/v1/compliance/frameworks/SOC2_2017/controls/CC6.1"
-        )
+        response = client.get("/api/v1/compliance/frameworks/SOC2_2017/controls/CC6.1")
         assert response.status_code == 401

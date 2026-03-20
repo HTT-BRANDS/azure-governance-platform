@@ -448,9 +448,7 @@ class TestChargebackRoute:
 
     def test_requires_authentication(self, client):
         """Unauthenticated request to /costs/chargeback returns 401."""
-        response = client.get(
-            f"/api/v1/costs/chargeback?start_date={_START}&end_date={_END}"
-        )
+        response = client.get(f"/api/v1/costs/chargeback?start_date={_START}&end_date={_END}")
         assert response.status_code == 401
 
     # -----------------------------------------------------------------------

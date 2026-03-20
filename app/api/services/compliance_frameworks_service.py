@@ -77,9 +77,7 @@ def _load_frameworks_yaml(path: Path) -> dict[str, Any]:
         )
 
     if "frameworks" not in data:
-        raise ValueError(
-            "compliance_frameworks.yaml must have a 'frameworks' root key."
-        )
+        raise ValueError("compliance_frameworks.yaml must have a 'frameworks' root key.")
 
     logger.info(
         "Compliance frameworks loaded successfully: %d frameworks, sha256=%s",
@@ -172,8 +170,7 @@ class ComplianceFrameworksService:
         """
         if framework_id not in self._frameworks:
             raise KeyError(
-                f"Framework '{framework_id}' not found. "
-                f"Available: {sorted(self._frameworks)}"
+                f"Framework '{framework_id}' not found. Available: {sorted(self._frameworks)}"
             )
         fw = dict(self._frameworks[framework_id])
         fw["id"] = framework_id
@@ -205,9 +202,7 @@ class ComplianceFrameworksService:
         control["framework_id"] = framework_id
         return control
 
-    def map_tags_to_controls(
-        self, tags: list[str]
-    ) -> dict[str, list[dict[str, Any]]]:
+    def map_tags_to_controls(self, tags: list[str]) -> dict[str, list[dict[str, Any]]]:
         """Resolve a list of compliance tags to their control definitions.
 
         Tag format: ``{framework_id}.{control_id}``
@@ -243,7 +238,7 @@ class ComplianceFrameworksService:
                 prefix = f"{candidate_fw_id}."
                 if tag.startswith(prefix):
                     fw_id = candidate_fw_id
-                    control_id = tag[len(prefix):]
+                    control_id = tag[len(prefix) :]
                     break
 
             if fw_id is None or control_id is None:
@@ -264,9 +259,7 @@ class ComplianceFrameworksService:
 
         return result
 
-    def get_frameworks_for_rule(
-        self, rule_tags: list[str]
-    ) -> dict[str, list[dict[str, Any]]]:
+    def get_frameworks_for_rule(self, rule_tags: list[str]) -> dict[str, list[dict[str, Any]]]:
         """Convenience method: resolve a CustomComplianceRule's compliance_tags.
 
         Equivalent to :meth:`map_tags_to_controls` — provided as a named

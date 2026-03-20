@@ -106,8 +106,7 @@ class TenantChargebackEntry(BaseModel):
     resource_count: int = Field(
         ...,
         description=(
-            "Number of distinct resource-group / subscription units observed "
-            "in this period"
+            "Number of distinct resource-group / subscription units observed in this period"
         ),
     )
 
@@ -180,9 +179,7 @@ class ChargebackService:
         tenant_name_lookup: dict[str, str] = {}
         all_tenant_ids = list({s.tenant_id for s in snapshots})
         if all_tenant_ids:
-            db_tenants = (
-                self.db.query(Tenant).filter(Tenant.id.in_(all_tenant_ids)).all()
-            )
+            db_tenants = self.db.query(Tenant).filter(Tenant.id.in_(all_tenant_ids)).all()
             tenant_name_lookup = {t.id: t.name for t in db_tenants}
 
         # ----------------------------------------------------------------

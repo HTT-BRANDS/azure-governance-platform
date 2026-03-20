@@ -6,6 +6,7 @@ Traces: RC-031 (EDR coverage), RC-032 (Device encryption), RC-033 (Asset invento
         RC-034 (Device compliance), RC-035 (Non-compliant devices)
 """
 
+
 class TestDeviceSecurityService:
     """Tests for DeviceSecurityService."""
 
@@ -141,9 +142,7 @@ class TestDeviceSecurityRoutes:
 
     def test_edr_coverage_route_with_tenant_param(self, authed_client):
         """EDR coverage endpoint accepts tenant_id parameter."""
-        response = authed_client.get(
-            "/api/v1/device-security/edr-coverage?tenant_id=test-tenant"
-        )
+        response = authed_client.get("/api/v1/device-security/edr-coverage?tenant_id=test-tenant")
 
         assert response.status_code == 200
 
@@ -157,9 +156,7 @@ class TestDeviceSecurityRoutes:
 
     def test_encryption_route_with_tenant_param(self, authed_client):
         """Encryption endpoint accepts tenant_id parameter."""
-        response = authed_client.get(
-            "/api/v1/device-security/encryption?tenant_id=test-tenant"
-        )
+        response = authed_client.get("/api/v1/device-security/encryption?tenant_id=test-tenant")
 
         assert response.status_code == 200
 
@@ -173,9 +170,7 @@ class TestDeviceSecurityRoutes:
 
     def test_inventory_route_with_tenant_param(self, authed_client):
         """Inventory endpoint accepts tenant_id parameter."""
-        response = authed_client.get(
-            "/api/v1/device-security/inventory?tenant_id=test-tenant"
-        )
+        response = authed_client.get("/api/v1/device-security/inventory?tenant_id=test-tenant")
 
         assert response.status_code == 200
 
@@ -205,9 +200,7 @@ class TestDeviceSecurityRoutes:
 
     def test_non_compliant_route_with_tenant_param(self, authed_client):
         """Non-compliant endpoint accepts tenant_id parameter."""
-        response = authed_client.get(
-            "/api/v1/device-security/non-compliant?tenant_id=test-tenant"
-        )
+        response = authed_client.get("/api/v1/device-security/non-compliant?tenant_id=test-tenant")
 
         assert response.status_code == 200
 

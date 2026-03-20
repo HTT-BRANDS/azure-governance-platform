@@ -86,9 +86,7 @@ class DeviceSecurityService:
             "tenant_id": tenant_id,
         }
 
-    def get_device_compliance_score(
-        self, tenant_id: str | None = None
-    ) -> dict[str, Any]:
+    def get_device_compliance_score(self, tenant_id: str | None = None) -> dict[str, Any]:
         """RC-034: Device compliance scoring - placeholder.
 
         Returns placeholder response indicating feature is coming soon.

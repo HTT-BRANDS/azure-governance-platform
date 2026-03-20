@@ -44,9 +44,14 @@ class ThreatIntelService:
         if tenant_ids:
             filters.append(RiversideThreatData.tenant_id.in_(tenant_ids))
         if start_date:
-            filters.append(RiversideThreatData.snapshot_date >= datetime.combine(start_date, datetime.min.time()))
+            filters.append(
+                RiversideThreatData.snapshot_date
+                >= datetime.combine(start_date, datetime.min.time())
+            )
         if end_date:
-            filters.append(RiversideThreatData.snapshot_date <= datetime.combine(end_date, datetime.max.time()))
+            filters.append(
+                RiversideThreatData.snapshot_date <= datetime.combine(end_date, datetime.max.time())
+            )
 
         if filters:
             query = query.where(and_(*filters))
@@ -111,7 +116,9 @@ class ThreatIntelService:
             "latest_vulnerability_count": result.vulnerability_count,
             "latest_malicious_domain_alerts": result.malicious_domain_alerts,
             "peer_comparison_percentile": result.peer_comparison_percentile,
-            "latest_snapshot_date": result.snapshot_date.isoformat() if result.snapshot_date else None,
+            "latest_snapshot_date": result.snapshot_date.isoformat()
+            if result.snapshot_date
+            else None,
             "message": "Threat data retrieved successfully",
         }
 

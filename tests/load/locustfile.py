@@ -102,25 +102,19 @@ class GovernanceAPIUser(HttpUser):
     @task(3)
     def compliance_summary(self):
         """GET /api/v1/compliance/summary — compliance dashboard."""
-        self.client.get(
-            "/api/v1/compliance/summary", name="/api/v1/compliance/summary"
-        )
+        self.client.get("/api/v1/compliance/summary", name="/api/v1/compliance/summary")
 
     @task(2)
     def compliance_frameworks(self):
         """GET /api/v1/compliance/frameworks — framework listing."""
-        self.client.get(
-            "/api/v1/compliance/frameworks", name="/api/v1/compliance/frameworks"
-        )
+        self.client.get("/api/v1/compliance/frameworks", name="/api/v1/compliance/frameworks")
 
     # ---- Resources (20% of traffic) ----
 
     @task(3)
     def resource_inventory(self):
         """GET /api/v1/resources/inventory — resource listing."""
-        self.client.get(
-            "/api/v1/resources/inventory", name="/api/v1/resources/inventory"
-        )
+        self.client.get("/api/v1/resources/inventory", name="/api/v1/resources/inventory")
 
     @task(1)
     def resource_quotas(self):
@@ -135,18 +129,14 @@ class GovernanceAPIUser(HttpUser):
     @task(2)
     def identity_summary(self):
         """GET /api/v1/identity/summary — identity dashboard."""
-        self.client.get(
-            "/api/v1/identity/summary", name="/api/v1/identity/summary"
-        )
+        self.client.get("/api/v1/identity/summary", name="/api/v1/identity/summary")
 
     # ---- Recommendations (5% of traffic) ----
 
     @task(1)
     def recommendations(self):
         """GET /api/v1/recommendations — optimization suggestions."""
-        self.client.get(
-            "/api/v1/recommendations", name="/api/v1/recommendations"
-        )
+        self.client.get("/api/v1/recommendations", name="/api/v1/recommendations")
 
 
 # ---- Event Hooks for CI Assertions ----

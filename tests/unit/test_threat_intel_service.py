@@ -25,9 +25,7 @@ class TestThreatIntelService:
         from app.api.services.threat_intel_service import ThreatIntelService
 
         service = ThreatIntelService()
-        results = service.get_cybeta_threats(
-            db_session, tenant_ids=["tenant-1", "tenant-2"]
-        )
+        results = service.get_cybeta_threats(db_session, tenant_ids=["tenant-1", "tenant-2"])
 
         assert isinstance(results, list)
 
@@ -59,9 +57,7 @@ class TestThreatIntelService:
         from app.api.services.threat_intel_service import ThreatIntelService
 
         service = ThreatIntelService()
-        results = service.get_cybeta_threats(
-            db_session, tenant_ids=["non-existent-tenant"]
-        )
+        results = service.get_cybeta_threats(db_session, tenant_ids=["non-existent-tenant"])
 
         assert isinstance(results, list)
         assert len(results) == 0
@@ -136,9 +132,7 @@ class TestThreatIntelRoute:
 
     def test_route_with_tenant_filter(self, authed_client):
         """Threat endpoint accepts tenant filter."""
-        response = authed_client.get(
-            "/api/v1/threats/cybeta?tenant_ids=test-tenant-123"
-        )
+        response = authed_client.get("/api/v1/threats/cybeta?tenant_ids=test-tenant-123")
 
         assert response.status_code == 200
 
@@ -170,9 +164,7 @@ class TestThreatIntelRoute:
         data = response.json()
         assert "tenant_id" in data
 
-    def test_summary_endpoint_returns_no_data_for_missing_tenant(
-        self, authed_client
-    ):
+    def test_summary_endpoint_returns_no_data_for_missing_tenant(self, authed_client):
         """Summary endpoint returns no_data status for missing tenant."""
         response = authed_client.get("/api/v1/threats/summary/non-existent-tenant")
 

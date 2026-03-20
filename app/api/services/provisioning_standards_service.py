@@ -128,20 +128,24 @@ class ProvisioningStandardsService:
 
         max_length = naming.get("max_length", 63)
         if len(name) > max_length:
-            violations.append({
-                "rule": "naming_length",
-                "message": f"Resource name exceeds {max_length} characters ({len(name)})",
-                "severity": "error",
-            })
+            violations.append(
+                {
+                    "rule": "naming_length",
+                    "message": f"Resource name exceeds {max_length} characters ({len(name)})",
+                    "severity": "error",
+                }
+            )
 
         allowed_chars = naming.get("allowed_characters", "a-z0-9-")
         pattern = f"^[{allowed_chars}]+$"
         if not re.match(pattern, name):
-            violations.append({
-                "rule": "naming_characters",
-                "message": f"Resource name contains characters outside allowed set ({allowed_chars})",
-                "severity": "error",
-            })
+            violations.append(
+                {
+                    "rule": "naming_characters",
+                    "message": f"Resource name contains characters outside allowed set ({allowed_chars})",
+                    "severity": "error",
+                }
+            )
 
         return violations
 
@@ -163,26 +167,31 @@ class ProvisioningStandardsService:
 
         all_allowed = allowed.get("all_allowed", [])
         if all_allowed and region not in all_allowed:
-            violations.append({
-                "rule": "region_not_allowed",
-                "message": f"Region '{region}' is not in allowed list: {all_allowed}",
-                "severity": "error",
-            })
+            violations.append(
+                {
+                    "rule": "region_not_allowed",
+                    "message": f"Region '{region}' is not in allowed list: {all_allowed}",
+                    "severity": "error",
+                }
+            )
 
         restricted = allowed.get("restricted", [])
         for restriction in restricted:
             excluded = restriction.get("excluded_regions", [])
             if region in excluded:
-                violations.append({
-                    "rule": "region_restricted",
-                    "message": f"Region '{region}' is restricted: {restriction.get('reason', 'N/A')}",
-                    "severity": "error",
-                })
+                violations.append(
+                    {
+                        "rule": "region_restricted",
+                        "message": f"Region '{region}' is restricted: {restriction.get('reason', 'N/A')}",
+                        "severity": "error",
+                    }
+                )
 
         return violations
 
     def validate_tags(
-        self, tags: dict[str, str],
+        self,
+        tags: dict[str, str],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Validate resource tags against required tag standards.
 
@@ -205,43 +214,51 @@ class ProvisioningStandardsService:
         for tag_spec in mandatory:
             key = tag_spec["key"]
             if key not in tags:
-                violations.append({
-                    "rule": "missing_mandatory_tag",
-                    "message": f"Missing mandatory tag: '{key}' — {tag_spec.get('description', '')}",
-                    "severity": "error",
-                    "tag_key": key,
-                })
+                violations.append(
+                    {
+                        "rule": "missing_mandatory_tag",
+                        "message": f"Missing mandatory tag: '{key}' — {tag_spec.get('description', '')}",
+                        "severity": "error",
+                        "tag_key": key,
+                    }
+                )
                 continue
 
             value = tags[key]
             allowed_values = tag_spec.get("allowed_values")
             if allowed_values and value not in allowed_values:
-                violations.append({
-                    "rule": "invalid_tag_value",
-                    "message": f"Tag '{key}' has invalid value '{value}'. Allowed: {allowed_values}",
-                    "severity": "error",
-                    "tag_key": key,
-                })
+                violations.append(
+                    {
+                        "rule": "invalid_tag_value",
+                        "message": f"Tag '{key}' has invalid value '{value}'. Allowed: {allowed_values}",
+                        "severity": "error",
+                        "tag_key": key,
+                    }
+                )
 
             tag_pattern = tag_spec.get("pattern")
             if tag_pattern and not re.match(tag_pattern, value):
-                violations.append({
-                    "rule": "invalid_tag_pattern",
-                    "message": f"Tag '{key}' value '{value}' does not match pattern '{tag_pattern}'",
-                    "severity": "error",
-                    "tag_key": key,
-                })
+                violations.append(
+                    {
+                        "rule": "invalid_tag_pattern",
+                        "message": f"Tag '{key}' value '{value}' does not match pattern '{tag_pattern}'",
+                        "severity": "error",
+                        "tag_key": key,
+                    }
+                )
 
         recommended = required.get("recommended", [])
         for tag_spec in recommended:
             key = tag_spec["key"]
             if key not in tags:
-                warnings.append({
-                    "rule": "missing_recommended_tag",
-                    "message": f"Missing recommended tag: '{key}' — {tag_spec.get('description', '')}",
-                    "severity": "warning",
-                    "tag_key": key,
-                })
+                warnings.append(
+                    {
+                        "rule": "missing_recommended_tag",
+                        "message": f"Missing recommended tag: '{key}' — {tag_spec.get('description', '')}",
+                        "severity": "warning",
+                        "tag_key": key,
+                    }
+                )
 
         return violations, warnings
 
@@ -273,14 +290,16 @@ class ProvisioningStandardsService:
         )
         for blocked_item in blocked:
             if blocked_item.lower() in sku.lower():
-                violations.append({
-                    "rule": "blocked_sku",
-                    "message": (
-                        f"SKU '{sku}' is blocked for {resource_type}: "
-                        f"{type_restrictions.get('reason', 'N/A')}"
-                    ),
-                    "severity": "error",
-                })
+                violations.append(
+                    {
+                        "rule": "blocked_sku",
+                        "message": (
+                            f"SKU '{sku}' is blocked for {resource_type}: "
+                            f"{type_restrictions.get('reason', 'N/A')}"
+                        ),
+                        "severity": "error",
+                    }
+                )
                 break
 
         return violations
@@ -339,7 +358,8 @@ class ProvisioningStandardsService:
         return result
 
     def generate_summary(
-        self, results: list[ValidationResult],
+        self,
+        results: list[ValidationResult],
     ) -> ProvisioningStandardsSummary:
         """Generate a summary from a list of validation results.
 

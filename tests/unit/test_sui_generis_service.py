@@ -6,8 +6,6 @@ Traces: RC-030, RC-031 (Phase 2 - Sui Generis integration)
 """
 
 
-
-
 class TestSuiGenerisService:
     """Tests for SuiGenerisService."""
 

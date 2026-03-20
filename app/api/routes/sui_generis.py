@@ -36,7 +36,6 @@ async def get_device_compliance(
     return service.get_status()
 
 
-
 @router.get("/device-compliance/status")
 async def get_device_compliance_status(
     current_user: User = Depends(get_current_user),
