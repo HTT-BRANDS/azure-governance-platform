@@ -1,6 +1,6 @@
 # SESSION HANDOFF — Azure Governance Platform
 
-**Last session:** March 19, 2026 (planning-agent-02467a) — Version: 1.5.3 — documentation sync pass
+**Last session:** March 19, 2026 (planning-agent-02467a) — Version: 1.5.4 — Phase D final wrap
 **Status:** 🟢 FULLY GREEN — 0 failures, 0 skips, 0 lint errors
 
 ---
@@ -8,17 +8,17 @@
 ## Current State (Reality)
 
 ```
-2649 passed, 0 skipped, 0 failed, 0 warnings
+2804 passed, 0 skipped, 0 failed, 0 warnings
 ruff check: All checks passed (0 errors)
-Version: 1.5.3 (pyproject.toml + app/__init__.py)
+Version: 1.5.4 (pyproject.toml + app/__init__.py)
 ```
 
-- **v1.5.3** tagged and pushed
+- **v1.5.4** tagged and pushed
 - **Staging URL:** https://app-governance-staging-xnczpwyv.azurewebsites.net
 - **Production URL:** https://app-governance-prod.azurewebsites.net
 - Both environments currently serving v1.5.1 — v1.5.3 deploy pending CI/CD pipeline trigger
-- 1 open bd issue: azure-governance-platform-4g5 (CM-003 Regulatory Framework Mapping)
-- Roadmap: 105/110 tasks complete; 2 blocked on external vendor API credentials; 3 unblocked remaining (9.5.1, 9.5.2, 9.6.1)
+- 0 open bd issues
+- Roadmap: 108/110 tasks complete; 2 blocked external (Sui Generis, Cybeta)
 
 ---
 
@@ -80,9 +80,9 @@ Version: 1.5.3 (pyproject.toml + app/__init__.py)
 
 | Environment | URL | Status | Version |
 |-------------|-----|--------|---------|
-| Dev | https://app-governance-dev-001.azurewebsites.net | 🟢 Live | v1.5.3 |
-| Staging | https://app-governance-staging-xnczpwyv.azurewebsites.net | 🟢 Live | v1.5.3 |
-| Production | https://app-governance-prod.azurewebsites.net | 🟢 Live | v1.5.3 |
+| Dev | https://app-governance-dev-001.azurewebsites.net | 🟢 Live | v1.5.4 |
+| Staging | https://app-governance-staging-xnczpwyv.azurewebsites.net | 🟢 Live | v1.5.4 |
+| Production | https://app-governance-prod.azurewebsites.net | 🟢 Live | v1.5.4 |
 
 ---
 
@@ -94,6 +94,8 @@ Version: 1.5.3 (pyproject.toml + app/__init__.py)
 | RM-004 | Resource lifecycle tracking | P1 | Medium | ✅ Done |
 | RM-007 | Quota utilization monitoring | P1 | Medium | ✅ Done |
 | CM-002 | Custom compliance rule definitions | P1 | High | ✅ Done |
+| CM-003 | Regulatory framework mapping (SOC2/NIST CSF 2.0) | P1 | Medium | ✅ Done (9.5.1, 9.5.2) |
+| CO-010 | Chargeback/Showback reporting | P1 | Medium | ✅ Done (9.6.1) |
 | CO-007 | Reserved instance utilization | P1 | Medium | Needs billing RBAC scope |
 | IG-009 | Per-user license tracking (expand from SKU) | P1 | Low | None |
 | IG-010 | Access review facilitation (expand from stub) | P2 | Medium | None |
@@ -114,6 +116,6 @@ bd ready            # Any new issues?
 python scripts/sync_roadmap.py --verify --json
 ```
 
-**Next:** execute Phase 9 tasks 9.5.1→9.5.2 (CM-003) and 9.6.1 (CO-010) to reach v1.5.4
+**Next:** Phase 9 complete. Resume from Phase 8 remaining blocked tasks (Sui Generis, Cybeta) when API credentials arrive.
 
-**Plane Status: 🛬 LANDED CLEAN on v1.5.3**
+**Plane Status: 🛬 LANDED CLEAN on v1.5.4**

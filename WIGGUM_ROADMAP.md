@@ -726,12 +726,12 @@ None of these mask production bugs.
   - Signed off by: Pack Leader 🐺
 
 ### 9.5 Regulatory Framework Mapping - SOC2/NIST (CM-003) — bd:azure-governance-platform-4g5
-- [ ] 9.5.1 Solutions Architect writes ADR for compliance framework mapping approach (Solutions Architect 🏛️)
+- [x] 9.5.1 Solutions Architect writes ADR for compliance framework mapping approach (Solutions Architect 🏛️)
   - Output: ADR in `docs/decisions/adr-0006-regulatory-framework-mapping.md`
   - Validation: ADR written and reviewed before implementation starts
   - Signed off by: Pack Leader 🐺
 
-- [ ] 9.5.2 Implement framework mapping: SOC2 Trust Service Criteria + NIST CSF (Python Programmer 🐍)
+- [x] 9.5.2 Implement framework mapping: SOC2 Trust Service Criteria + NIST CSF (Python Programmer 🐍)
   - Tags existing compliance findings to framework controls
   - Expose: `GET /api/v1/compliance/frameworks`
   - Validation: `uv run pytest tests/unit/test_compliance_frameworks.py -v` passes (>=10 tests)
@@ -739,7 +739,7 @@ None of these mask production bugs.
   - Signed off by: Pack Leader 🐺
 
 ### 9.6 Chargeback/Showback Reporting (CO-010) — bd:azure-governance-platform-23q
-- [ ] 9.6.1 Implement ChargebackService for per-tenant cost allocation reports (Python Programmer 🐍)
+- [x] 9.6.1 Implement ChargebackService for per-tenant cost allocation reports (Python Programmer 🐍)
   - File: `app/api/services/chargeback_service.py`
   - Export formats: CSV and JSON
   - Builds on existing cost data + export infrastructure
@@ -758,10 +758,10 @@ None of these mask production bugs.
 | Phase 5: Design System Migration | 24 | 24 | 0 | ✅ Complete |
 | Phase 6: Cleanup & Consolidation | 10 | 10 | 0 | ✅ Complete |
 | Phase 7: Production Hardening | 20 | 20 | 0 | ✅ Complete |
-| Phase 8: Phase 2 P1 Features | 15 | 13 | 2 | 🟡 In Progress (2 blocked) |
-| Phase 9: Phase 2 Backlog Sprint | 9 | 6 | 3 | 🟡 In Progress |
-| Phase 8 (blocked) | 2 | 0 | 2 | ⛔ Blocked (external) |
-| **TOTAL** | **110** | **105** | **5** | **🟡 In Progress** |
+| Phase 8: Phase 2 P1 Features | 15 | 13 | 2 | 🔄 In Progress |
+| Phase 9: Phase 2 Backlog Sprint | 9 | 9 | 0 | ✅ Complete |
+| Phase 8 (blocked) | 15 | 13 | 2 | 🔄 In Progress |
+| **TOTAL** | **110** | **108** | **2** | **🔄 In Progress** |
 
 ---
 

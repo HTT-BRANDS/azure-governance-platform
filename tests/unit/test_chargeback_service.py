@@ -15,7 +15,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.api.services.chargeback_service import ChargebackReport, ChargebackService, TenantChargebackEntry
+from app.api.services.chargeback_service import (
+    ChargebackReport,
+    ChargebackService,
+    TenantChargebackEntry,
+)
 from app.models.cost import CostSnapshot
 from app.models.tenant import Tenant
 
@@ -71,7 +75,6 @@ def _build_report(
     total_cost: float = 1000.0,
 ) -> ChargebackReport:
     """Build a synthetic ChargebackReport for export tests."""
-    from datetime import datetime
 
     if tenants is None:
         tenants = [
@@ -111,8 +114,8 @@ def _build_report(
 
 def test_get_chargeback_report_all_tenants(db_session):
     """Reports include all tenants when no tenant_ids filter is supplied."""
-    t1 = _make_tenant(db_session, "t-aaa", "Alpha Corp")
-    t2 = _make_tenant(db_session, "t-bbb", "Beta Inc")
+    _make_tenant(db_session, "t-aaa", "Alpha Corp")
+    _make_tenant(db_session, "t-bbb", "Beta Inc")
     _make_snapshot(db_session, tenant_id="t-aaa", total_cost=500.0)
     _make_snapshot(db_session, tenant_id="t-bbb", total_cost=300.0)
     db_session.commit()

@@ -13,6 +13,21 @@ _No unreleased changes._
 
 ---
 
+## [1.5.4] - 2026-03-19
+
+### Added
+- **CM-003**: Regulatory Framework Mapping — `ComplianceFrameworksService` with static YAML-backed SOC2 (36 controls) and NIST CSF 2.0 (45 controls), `GET /api/v1/compliance/frameworks`, `/frameworks/{id}`, `/frameworks/{id}/controls/{control_id}` (43 unit tests)
+- **CO-010**: Chargeback/Showback Reporting — `ChargebackService` with per-tenant cost allocation, CSV and JSON export, `GET /api/v1/costs/chargeback` with tenant/date/format params and tenant isolation (13 unit tests)
+- **ADR-0006**: Architecture Decision Record for regulatory framework mapping (static YAML approach, tag-based mapping, STRIDE analysis, 5 fitness functions)
+- `config/compliance_frameworks.yaml`: SOC2 2017 Trust Service Criteria (CC1–CC9 + A1) and NIST CSF 2.0 (all 6 functions: GV, ID, PR, DE, RS, RC)
+
+### Changed
+- Phase 9 roadmap: 6/9 → 9/9 tasks complete (all unblocked Phase 9 tasks done)
+- WIGGUM_ROADMAP.md progress table corrected (total 110 tasks, 108 complete, 2 blocked external)
+- SESSION_HANDOFF.md updated: v1.5.3 environments, accurate task counts
+
+---
+
 ## [1.5.3] - 2026-03-19
 
 ### Added
