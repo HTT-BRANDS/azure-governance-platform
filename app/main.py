@@ -16,6 +16,7 @@ from app.api.routes import (
     auth_router,
     budgets_router,
     bulk_router,
+    compliance_frameworks_router,
     compliance_router,
     compliance_rules_router,
     costs_router,
@@ -233,6 +234,7 @@ app.include_router(dashboard_router)
 app.include_router(costs_router)
 app.include_router(budgets_router)
 app.include_router(compliance_router)
+app.include_router(compliance_frameworks_router)
 app.include_router(compliance_rules_router)
 app.include_router(resources_router)
 app.include_router(identity_router)

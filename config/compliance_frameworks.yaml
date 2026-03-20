@@ -1,0 +1,708 @@
+# Regulatory Framework Mapping — Azure Governance Platform
+# Source of truth for SOC2 TSC and NIST CSF control definitions
+# Changes require PR review (branch protection on config/)
+#
+# Format: frameworks.<FRAMEWORK_ID>.controls.<CONTROL_ID>
+# Tag format: <FRAMEWORK_ID>.<CONTROL_ID>  (e.g., "SOC2_2017.CC6.1")
+#
+# References:
+#   SOC2: AICPA 2017 Trust Services Criteria (Revised Points of Focus 2022)
+#         https://us.aicpa.org/interestareas/frc/assuranceadvisoryservices/trustservicescriteria
+#   NIST CSF 2.0: NIST CSWP 29 (February 2024)
+#                 https://doi.org/10.6028/NIST.CSWP.29
+
+frameworks:
+  SOC2_2017:
+    name: "SOC 2 Trust Services Criteria"
+    version: "2017 (Revised Points of Focus 2022)"
+    authority: "AICPA"
+    published_at: "2017-01-01"
+    source_url: "https://us.aicpa.org/interestareas/frc/assuranceadvisoryservices/trustservicescriteria"
+    deprecated_at: null
+    superseded_by: null
+    controls:
+      # ── CC1 — Control Environment (COSO Principle 1–5) ────────────────────
+      CC1.1:
+        name: "COSO Principle 1: Integrity and Ethical Values"
+        series: "CC1"
+        series_name: "Control Environment"
+        description: "The entity demonstrates a commitment to integrity and ethical values."
+
+      CC1.2:
+        name: "COSO Principle 2: Board Independence"
+        series: "CC1"
+        series_name: "Control Environment"
+        description: "The board of directors demonstrates independence from management and exercises oversight of internal controls."
+
+      CC1.3:
+        name: "COSO Principle 3: Organizational Structures"
+        series: "CC1"
+        series_name: "Control Environment"
+        description: "Management establishes structures, reporting lines, and appropriate authorities and responsibilities."
+
+      CC1.4:
+        name: "COSO Principle 4: Competence"
+        series: "CC1"
+        series_name: "Control Environment"
+        description: "The entity demonstrates a commitment to attract, develop, and retain competent individuals."
+
+      CC1.5:
+        name: "COSO Principle 5: Accountability"
+        series: "CC1"
+        series_name: "Control Environment"
+        description: "The entity holds individuals accountable for their internal control responsibilities."
+
+      # ── CC2 — Communication and Information (COSO Principle 13–15) ────────
+      CC2.1:
+        name: "COSO Principle 13: Quality Information"
+        series: "CC2"
+        series_name: "Communication and Information"
+        description: "The entity obtains or generates and uses relevant, quality information to support the functioning of internal controls."
+
+      CC2.2:
+        name: "COSO Principle 14: Internal Communication"
+        series: "CC2"
+        series_name: "Communication and Information"
+        description: "The entity internally communicates information necessary to support the functioning of internal controls."
+
+      CC2.3:
+        name: "COSO Principle 15: External Communication"
+        series: "CC2"
+        series_name: "Communication and Information"
+        description: "The entity communicates with external parties regarding matters affecting the functioning of internal controls."
+
+      # ── CC3 — Risk Assessment (COSO Principle 6–9) ────────────────────────
+      CC3.1:
+        name: "COSO Principle 6: Risk Assessment Objectives"
+        series: "CC3"
+        series_name: "Risk Assessment"
+        description: "The entity specifies objectives with sufficient clarity to enable the identification and assessment of risks."
+
+      CC3.2:
+        name: "COSO Principle 7: Risk Identification and Analysis"
+        series: "CC3"
+        series_name: "Risk Assessment"
+        description: "The entity identifies risks to the achievement of its objectives and analyzes risks as a basis for determining how they should be managed."
+
+      CC3.3:
+        name: "COSO Principle 8: Fraud Risk Assessment"
+        series: "CC3"
+        series_name: "Risk Assessment"
+        description: "The entity considers the potential for fraud in assessing risks to achieving objectives."
+
+      CC3.4:
+        name: "COSO Principle 9: Change Risk Assessment"
+        series: "CC3"
+        series_name: "Risk Assessment"
+        description: "The entity identifies and assesses changes that could significantly impact the system of internal controls."
+
+      # ── CC4 — Monitoring Activities (COSO Principle 16–17) ───────────────
+      CC4.1:
+        name: "COSO Principle 16: Ongoing Monitoring"
+        series: "CC4"
+        series_name: "Monitoring Activities"
+        description: "The entity selects, develops, and performs ongoing and/or separate evaluations to ascertain whether internal controls are present and functioning."
+
+      CC4.2:
+        name: "COSO Principle 17: Communicating Deficiencies"
+        series: "CC4"
+        series_name: "Monitoring Activities"
+        description: "The entity evaluates and communicates internal control deficiencies in a timely manner to parties responsible for corrective action."
+
+      # ── CC5 — Control Activities (COSO Principle 10–12) ─────────────────
+      CC5.1:
+        name: "COSO Principle 10: Control Activities Selection"
+        series: "CC5"
+        series_name: "Control Activities"
+        description: "The entity selects and develops control activities that contribute to the mitigation of risks to acceptable levels."
+
+      CC5.2:
+        name: "COSO Principle 11: Technology Controls"
+        series: "CC5"
+        series_name: "Control Activities"
+        description: "The entity selects and develops general control activities over technology to support achievement of objectives."
+
+      CC5.3:
+        name: "COSO Principle 12: Policies and Procedures"
+        series: "CC5"
+        series_name: "Control Activities"
+        description: "The entity deploys control activities through policies that establish what is expected and procedures that put policies into action."
+
+      # ── CC6 — Logical and Physical Access Controls ────────────────────────
+      CC6.1:
+        name: "Logical and Physical Access — Security Software"
+        series: "CC6"
+        series_name: "Logical and Physical Access Controls"
+        description: "The entity implements logical access security software, infrastructure, and architectures over protected information assets to protect them from security events."
+
+      CC6.2:
+        name: "Logical and Physical Access — User Registration"
+        series: "CC6"
+        series_name: "Logical and Physical Access Controls"
+        description: "Prior to issuing system credentials and granting system access, the entity registers and authorizes new internal and external users."
+
+      CC6.3:
+        name: "Logical and Physical Access — Credential Management"
+        series: "CC6"
+        series_name: "Logical and Physical Access Controls"
+        description: "The entity authorizes, modifies, or removes access to data, software, functions, and other protected information assets based on roles, responsibilities, or the system design."
+
+      CC6.4:
+        name: "Physical Access — Restrictions"
+        series: "CC6"
+        series_name: "Logical and Physical Access Controls"
+        description: "The entity restricts physical access to facilities and protected information assets to authorized personnel to meet the entity's objectives."
+
+      CC6.5:
+        name: "Logical and Physical Access — Asset Disposal"
+        series: "CC6"
+        series_name: "Logical and Physical Access Controls"
+        description: "The entity discontinues logical and physical protections over physical assets only after the ability to read or recover data and software from those assets has been diminished."
+
+      CC6.6:
+        name: "Logical Access — External Threats"
+        series: "CC6"
+        series_name: "Logical and Physical Access Controls"
+        description: "The entity implements logical access security measures to protect against threats from sources outside its system boundaries."
+
+      CC6.7:
+        name: "Data Transmission — Authorized Channels"
+        series: "CC6"
+        series_name: "Logical and Physical Access Controls"
+        description: "The entity restricts the transmission, movement, and removal of information to authorized internal and external users and processes."
+
+      CC6.8:
+        name: "Malicious Software Prevention"
+        series: "CC6"
+        series_name: "Logical and Physical Access Controls"
+        description: "The entity implements controls to prevent or detect and act upon the introduction of unauthorized or malicious software."
+
+      # ── CC7 — System Operations ───────────────────────────────────────────
+      CC7.1:
+        name: "Monitoring Infrastructure and Software"
+        series: "CC7"
+        series_name: "System Operations"
+        description: "To meet its objectives, the entity uses detection and monitoring procedures to identify changes to configurations or new vulnerabilities."
+
+      CC7.2:
+        name: "Anomaly Detection"
+        series: "CC7"
+        series_name: "System Operations"
+        description: "The entity monitors system components and the operation of those components for anomalies that are indicative of malicious acts, natural disasters, and errors."
+
+      CC7.3:
+        name: "Security Event Evaluation"
+        series: "CC7"
+        series_name: "System Operations"
+        description: "The entity evaluates security events to determine whether they could or have resulted in a failure of the entity to meet its objectives."
+
+      CC7.4:
+        name: "Incident Response"
+        series: "CC7"
+        series_name: "System Operations"
+        description: "The entity responds to identified security incidents by executing a defined incident response program."
+
+      CC7.5:
+        name: "Incident Recovery"
+        series: "CC7"
+        series_name: "System Operations"
+        description: "The entity identifies, develops, and implements activities to recover from identified security incidents."
+
+      # ── CC8 — Change Management ───────────────────────────────────────────
+      CC8.1:
+        name: "Change Management"
+        series: "CC8"
+        series_name: "Change Management"
+        description: "The entity authorizes, designs, develops or acquires, configures, documents, tests, approves, and implements changes to infrastructure, data, software, and procedures."
+
+      # ── CC9 — Risk Mitigation ─────────────────────────────────────────────
+      CC9.1:
+        name: "Risk Mitigation — Business Disruption"
+        series: "CC9"
+        series_name: "Risk Mitigation"
+        description: "The entity identifies, selects, and develops risk mitigation activities for risks arising from potential business disruptions."
+
+      CC9.2:
+        name: "Risk Mitigation — Vendor Management"
+        series: "CC9"
+        series_name: "Risk Mitigation"
+        description: "The entity assesses and manages risks associated with vendors and business partners."
+
+      # ── A1 — Availability ─────────────────────────────────────────────────
+      A1.1:
+        name: "Availability — Capacity Planning"
+        series: "A1"
+        series_name: "Availability"
+        description: "The entity maintains, monitors, and evaluates current processing capacity and use of system components to manage capacity demand."
+
+      A1.2:
+        name: "Availability — Environmental Protections"
+        series: "A1"
+        series_name: "Availability"
+        description: "The entity authorizes, designs, develops or acquires, implements, operates, approves, maintains, and monitors environmental protections, software, data back-up processes, and recovery infrastructure."
+
+      A1.3:
+        name: "Availability — Recovery Testing"
+        series: "A1"
+        series_name: "Availability"
+        description: "The entity tests recovery plan procedures supporting system recovery to meet its objectives."
+
+  # ──────────────────────────────────────────────────────────────────────────
+  NIST_CSF_2.0:
+    name: "NIST Cybersecurity Framework"
+    version: "2.0"
+    authority: "NIST"
+    published_at: "2024-02-26"
+    source_url: "https://doi.org/10.6028/NIST.CSWP.29"
+    deprecated_at: null
+    superseded_by: null
+    controls:
+      # NOTE: CSF 2.0 subcategory IDs have intentional numbering gaps.
+      # The YAML uses literal ID strings from NIST CSWP 29.
+
+      # ── GOVERN (GV) — NEW in CSF 2.0 ──────────────────────────────────────
+      GV.OC-01:
+        name: "Organizational Context — Mission Understanding"
+        function: "Govern"
+        function_id: "GV"
+        category: "Organizational Context"
+        category_id: "GV.OC"
+        description: "The organizational mission is understood and informs cybersecurity risk management."
+
+      GV.OC-02:
+        name: "Organizational Context — Stakeholder Requirements"
+        function: "Govern"
+        function_id: "GV"
+        category: "Organizational Context"
+        category_id: "GV.OC"
+        description: "Internal and external stakeholders are understood and cybersecurity risk management addresses their needs."
+
+      GV.OC-03:
+        name: "Organizational Context — Legal Requirements"
+        function: "Govern"
+        function_id: "GV"
+        category: "Organizational Context"
+        category_id: "GV.OC"
+        description: "Legal, regulatory, and contractual requirements regarding cybersecurity are understood and addressed."
+
+      GV.OC-05:
+        name: "Organizational Context — Outcomes Prioritization"
+        function: "Govern"
+        function_id: "GV"
+        category: "Organizational Context"
+        category_id: "GV.OC"
+        description: "Outcomes, capabilities, and services that the organization depends on are understood and communicated."
+
+      GV.RM-01:
+        name: "Risk Management Strategy — Established"
+        function: "Govern"
+        function_id: "GV"
+        category: "Risk Management Strategy"
+        category_id: "GV.RM"
+        description: "Risk management objectives are established and agreed to by organizational stakeholders."
+
+      GV.RM-02:
+        name: "Risk Management Strategy — Risk Appetite"
+        function: "Govern"
+        function_id: "GV"
+        category: "Risk Management Strategy"
+        category_id: "GV.RM"
+        description: "Risk appetite and risk tolerance statements are established, communicated, and maintained."
+
+      GV.RM-06:
+        name: "Risk Management Strategy — Roles Established"
+        function: "Govern"
+        function_id: "GV"
+        category: "Risk Management Strategy"
+        category_id: "GV.RM"
+        description: "A standardized process for considering cybersecurity risks in organizational decisions is established."
+
+      GV.RR-01:
+        name: "Roles and Responsibilities — Leadership Accountability"
+        function: "Govern"
+        function_id: "GV"
+        category: "Roles, Responsibilities, and Authorities"
+        category_id: "GV.RR"
+        description: "Organizational leadership is responsible and accountable for cybersecurity risk and fosters a culture that is risk-aware, ethical, and continually improving."
+
+      GV.RR-02:
+        name: "Roles and Responsibilities — Defined"
+        function: "Govern"
+        function_id: "GV"
+        category: "Roles, Responsibilities, and Authorities"
+        category_id: "GV.RR"
+        description: "Roles, responsibilities, and authorities related to cybersecurity risk management are established, communicated, understood, and enforced."
+
+      GV.PO-01:
+        name: "Cybersecurity Policy — Established"
+        function: "Govern"
+        function_id: "GV"
+        category: "Policy"
+        category_id: "GV.PO"
+        description: "Policy for managing cybersecurity risks is established based on organizational context, cybersecurity strategy, and priorities."
+
+      GV.PO-02:
+        name: "Cybersecurity Policy — Reviewed and Updated"
+        function: "Govern"
+        function_id: "GV"
+        category: "Policy"
+        category_id: "GV.PO"
+        description: "Policy for managing cybersecurity risks is reviewed, updated, communicated, and enforced to reflect changes in requirements."
+
+      GV.OV-01:
+        name: "Oversight — Cybersecurity Strategy Results"
+        function: "Govern"
+        function_id: "GV"
+        category: "Oversight"
+        category_id: "GV.OV"
+        description: "Cybersecurity risk management strategy outcomes are reviewed to inform and adjust strategy and direction."
+
+      GV.SC-01:
+        name: "Supply Chain Risk Management — Program"
+        function: "Govern"
+        function_id: "GV"
+        category: "Cybersecurity Supply Chain Risk Management"
+        category_id: "GV.SC"
+        description: "A cybersecurity supply chain risk management program, strategy, objectives, policies, and processes are established and agreed to by organizational stakeholders."
+
+      GV.SC-03:
+        name: "Supply Chain Risk Management — Supplier Integration"
+        function: "Govern"
+        function_id: "GV"
+        category: "Cybersecurity Supply Chain Risk Management"
+        category_id: "GV.SC"
+        description: "Cybersecurity supply chain risk management is integrated into cybersecurity and enterprise risk management, risk assessment, and improvement processes."
+
+      # ── IDENTIFY (ID) ─────────────────────────────────────────────────────
+      ID.AM-01:
+        name: "Asset Management — Hardware Inventory"
+        function: "Identify"
+        function_id: "ID"
+        category: "Asset Management"
+        category_id: "ID.AM"
+        description: "Inventories of hardware managed by the organization are maintained."
+
+      ID.AM-02:
+        name: "Asset Management — Software Inventory"
+        function: "Identify"
+        function_id: "ID"
+        category: "Asset Management"
+        category_id: "ID.AM"
+        description: "Inventories of software, services, and systems managed by the organization are maintained."
+
+      ID.AM-03:
+        name: "Asset Management — Network Mapping"
+        function: "Identify"
+        function_id: "ID"
+        category: "Asset Management"
+        category_id: "ID.AM"
+        description: "Representations of the organization's authorized network communication and internal and external network data flows are maintained."
+
+      ID.AM-07:
+        name: "Asset Management — Data Inventory"
+        function: "Identify"
+        function_id: "ID"
+        category: "Asset Management"
+        category_id: "ID.AM"
+        description: "Inventories of data and corresponding metadata for designated data types are maintained."
+
+      ID.RA-01:
+        name: "Risk Assessment — Vulnerability Identification"
+        function: "Identify"
+        function_id: "ID"
+        category: "Risk Assessment"
+        category_id: "ID.RA"
+        description: "Vulnerabilities in assets are identified, validated, and recorded."
+
+      ID.RA-03:
+        name: "Risk Assessment — Threat Intelligence"
+        function: "Identify"
+        function_id: "ID"
+        category: "Risk Assessment"
+        category_id: "ID.RA"
+        description: "Internal and external threats to the organization are identified and recorded."
+
+      ID.RA-05:
+        name: "Risk Assessment — Risk Determination"
+        function: "Identify"
+        function_id: "ID"
+        category: "Risk Assessment"
+        category_id: "ID.RA"
+        description: "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent risk and inform risk response prioritization."
+
+      ID.IM-01:
+        name: "Improvement — Lessons Learned"
+        function: "Identify"
+        function_id: "ID"
+        category: "Improvement"
+        category_id: "ID.IM"
+        description: "Improvements are identified from evaluations of cybersecurity incidents."
+
+      ID.IM-02:
+        name: "Improvement — Vulnerability Remediation Plans"
+        function: "Identify"
+        function_id: "ID"
+        category: "Improvement"
+        category_id: "ID.IM"
+        description: "Improvements are identified from security tests and exercises, including those done in coordination with suppliers and relevant third parties."
+
+      # ── PROTECT (PR) ──────────────────────────────────────────────────────
+      PR.AA-01:
+        name: "Identity Management — Identities and Credentials"
+        function: "Protect"
+        function_id: "PR"
+        category: "Identity Management, Authentication, and Access Control"
+        category_id: "PR.AA"
+        description: "Identities and credentials for authorized users, services, and hardware are managed by the organization."
+
+      PR.AA-02:
+        name: "Identity Management — Remote Access"
+        function: "Protect"
+        function_id: "PR"
+        category: "Identity Management, Authentication, and Access Control"
+        category_id: "PR.AA"
+        description: "Identities are proofed and bound to credentials based on the context of interactions."
+
+      PR.AA-03:
+        name: "Identity Management — Authentication"
+        function: "Protect"
+        function_id: "PR"
+        category: "Identity Management, Authentication, and Access Control"
+        category_id: "PR.AA"
+        description: "Users, services, and hardware are authenticated."
+
+      PR.AA-05:
+        name: "Identity Management — Access Permissions"
+        function: "Protect"
+        function_id: "PR"
+        category: "Identity Management, Authentication, and Access Control"
+        category_id: "PR.AA"
+        description: "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and reviewed, and incorporate the principles of least privilege and separation of duties."
+
+      PR.AT-01:
+        name: "Awareness and Training — General Workforce"
+        function: "Protect"
+        function_id: "PR"
+        category: "Awareness and Training"
+        category_id: "PR.AT"
+        description: "Personnel are provided with awareness and training so that they possess the knowledge and skills to perform general tasks with cybersecurity risks in mind."
+
+      PR.AT-02:
+        name: "Awareness and Training — Privileged Users"
+        function: "Protect"
+        function_id: "PR"
+        category: "Awareness and Training"
+        category_id: "PR.AT"
+        description: "Individuals in specialized roles are provided with awareness and training so that they possess the knowledge and skills to perform relevant tasks with cybersecurity risks in mind."
+
+      PR.DS-01:
+        name: "Data Security — Data-at-Rest Protection"
+        function: "Protect"
+        function_id: "PR"
+        category: "Data Security"
+        category_id: "PR.DS"
+        description: "The confidentiality, integrity, and availability of data-at-rest are protected."
+
+      PR.DS-02:
+        name: "Data Security — Data-in-Transit Protection"
+        function: "Protect"
+        function_id: "PR"
+        category: "Data Security"
+        category_id: "PR.DS"
+        description: "The confidentiality, integrity, and availability of data-in-transit are protected."
+
+      PR.DS-10:
+        name: "Data Security — Data-in-Use Protection"
+        function: "Protect"
+        function_id: "PR"
+        category: "Data Security"
+        category_id: "PR.DS"
+        # Note: intentional gap from PR.DS-02 — draft subcategories 03–09 removed in final CSF 2.0
+        description: "The confidentiality, integrity, and availability of data-in-use are protected."
+
+      PR.PS-01:
+        name: "Platform Security — Configuration Management"
+        function: "Protect"
+        function_id: "PR"
+        category: "Platform Security"
+        category_id: "PR.PS"
+        description: "Configuration management practices are established and applied."
+
+      PR.PS-02:
+        name: "Platform Security — Software Maintenance"
+        function: "Protect"
+        function_id: "PR"
+        category: "Platform Security"
+        category_id: "PR.PS"
+        description: "Software is maintained, replaced, and removed commensurate with risk."
+
+      PR.IR-01:
+        name: "Technology Infrastructure Resilience — Availability"
+        function: "Protect"
+        function_id: "PR"
+        category: "Technology Infrastructure Resilience"
+        category_id: "PR.IR"
+        description: "Networks and environments are protected from being exploited to achieve unauthorized access or other adverse outcomes."
+
+      PR.IR-02:
+        name: "Technology Infrastructure Resilience — Architecture"
+        function: "Protect"
+        function_id: "PR"
+        category: "Technology Infrastructure Resilience"
+        category_id: "PR.IR"
+        description: "The organization's technology assets are protected from environmental threats."
+
+      # ── DETECT (DE) ───────────────────────────────────────────────────────
+      DE.CM-01:
+        name: "Continuous Monitoring — Network Monitoring"
+        function: "Detect"
+        function_id: "DE"
+        category: "Continuous Monitoring"
+        category_id: "DE.CM"
+        description: "Networks and network services are monitored to find potentially adverse events."
+
+      DE.CM-02:
+        name: "Continuous Monitoring — Physical Environment"
+        function: "Detect"
+        function_id: "DE"
+        category: "Continuous Monitoring"
+        category_id: "DE.CM"
+        description: "The physical environment is monitored to find potentially adverse events."
+
+      DE.CM-03:
+        name: "Continuous Monitoring — Personnel Activity"
+        function: "Detect"
+        function_id: "DE"
+        category: "Continuous Monitoring"
+        category_id: "DE.CM"
+        description: "Personnel activity and technology usage are monitored to find potentially adverse events."
+
+      DE.CM-06:
+        name: "Continuous Monitoring — External Service Providers"
+        function: "Detect"
+        function_id: "DE"
+        category: "Continuous Monitoring"
+        category_id: "DE.CM"
+        description: "External service provider activities and services are monitored to find potentially adverse events."
+
+      DE.AE-02:
+        name: "Adverse Event Analysis — Event Correlation"
+        function: "Detect"
+        function_id: "DE"
+        category: "Adverse Event Analysis"
+        category_id: "DE.AE"
+        description: "Potentially adverse events are analyzed to better understand associated activities."
+
+      DE.AE-04:
+        name: "Adverse Event Analysis — Impact Estimation"
+        function: "Detect"
+        function_id: "DE"
+        category: "Adverse Event Analysis"
+        category_id: "DE.AE"
+        description: "The estimated impact and scope of adverse events are understood."
+
+      DE.AE-06:
+        name: "Adverse Event Analysis — Alert Generation"
+        function: "Detect"
+        function_id: "DE"
+        category: "Adverse Event Analysis"
+        category_id: "DE.AE"
+        description: "Information on adverse events is provided to authorized staff and tools."
+
+      # ── RESPOND (RS) ──────────────────────────────────────────────────────
+      RS.MA-01:
+        name: "Incident Management — Plan Execution"
+        function: "Respond"
+        function_id: "RS"
+        category: "Incident Management"
+        category_id: "RS.MA"
+        description: "The incident response plan is executed in coordination with relevant third parties once an incident is declared."
+
+      RS.MA-02:
+        name: "Incident Management — Incident Triage"
+        function: "Respond"
+        function_id: "RS"
+        category: "Incident Management"
+        category_id: "RS.MA"
+        description: "Incidents are triaged to determine their magnitude and the populations they affect."
+
+      RS.AN-03:
+        name: "Incident Analysis — Root Cause"
+        function: "Respond"
+        function_id: "RS"
+        category: "Incident Analysis"
+        category_id: "RS.AN"
+        description: "Root cause analysis is performed on incidents and in post-incident reviews."
+
+      RS.CO-02:
+        name: "Incident Reporting — Stakeholder Communication"
+        function: "Respond"
+        function_id: "RS"
+        category: "Incident Reporting and Communication"
+        category_id: "RS.CO"
+        description: "Internal and external stakeholders are notified of incidents."
+
+      RS.CO-03:
+        name: "Incident Reporting — Information Sharing"
+        function: "Respond"
+        function_id: "RS"
+        category: "Incident Reporting and Communication"
+        category_id: "RS.CO"
+        description: "Information is shared with designated internal and external stakeholders."
+
+      RS.MI-01:
+        name: "Incident Mitigation — Containment"
+        function: "Respond"
+        function_id: "RS"
+        category: "Incident Mitigation"
+        category_id: "RS.MI"
+        description: "Incidents are contained."
+
+      RS.MI-02:
+        name: "Incident Mitigation — Eradication"
+        function: "Respond"
+        function_id: "RS"
+        category: "Incident Mitigation"
+        category_id: "RS.MI"
+        description: "Incidents are eradicated."
+
+      # ── RECOVER (RC) ──────────────────────────────────────────────────────
+      RC.RP-01:
+        name: "Incident Recovery Plan Execution"
+        function: "Recover"
+        function_id: "RC"
+        category: "Incident Recovery Plan Execution"
+        category_id: "RC.RP"
+        description: "The recovery portion of the incident response plan is executed once initiated from the incident response process."
+
+      RC.RP-02:
+        name: "Incident Recovery — Selection and Execution"
+        function: "Recover"
+        function_id: "RC"
+        category: "Incident Recovery Plan Execution"
+        category_id: "RC.RP"
+        description: "Recovery actions are selected, scoped, prioritized, and performed."
+
+      RC.RP-04:
+        name: "Incident Recovery — Crisis Communications"
+        function: "Recover"
+        function_id: "RC"
+        category: "Incident Recovery Plan Execution"
+        category_id: "RC.RP"
+        description: "The integrity of backups and other restoration assets is verified before using them for restoration."
+
+      RC.CO-03:
+        name: "Incident Recovery Communication — Stakeholders"
+        function: "Recover"
+        function_id: "RC"
+        category: "Incident Recovery Communication"
+        category_id: "RC.CO"
+        description: "Recovery activities and progress in restoring operational capabilities are communicated to designated internal and external stakeholders."
+
+      RC.CO-04:
+        name: "Incident Recovery Communication — Public Updates"
+        function: "Recover"
+        function_id: "RC"
+        category: "Incident Recovery Communication"
+        category_id: "RC.CO"
+        description: "Public updates regarding recovery are shared using approved methods and messaging."
