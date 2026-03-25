@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+---
+
+## [1.6.0] - 2026-03-21
+
 ### Added
 - **OIDC Workload Identity Federation**: Zero-secret tenant authentication via App Service Managed Identity
   - `app/core/oidc_credential.py`: `OIDCCredentialProvider` with 3-tier credential resolution (App Service → Workload Identity → Dev fallback)
@@ -17,24 +23,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `scripts/seed_riverside_tenants.py`: Seeds all 5 real Riverside tenants into the DB with `use_oidc=True` and no secrets
   - `alembic/versions/007_add_oidc_federation.py`: Idempotent migration adding `use_oidc` boolean column to `tenants` table
   - `docs/OIDC_TENANT_AUTH.md`: Complete setup, operational, and troubleshooting guide for OIDC tenant auth
-  - `USE_OIDC_FEDERATION` and `AZURE_MANAGED_IDENTITY_CLIENT_ID` config fields on `Settings`
-  - 39 new unit tests (`tests/unit/test_oidc_credential.py`) + 9 smoke tests (`tests/smoke/test_oidc_connectivity.py`) — total suite: 2,933 passed
+  - `USE_OIDC_FEDERATION`, `AZURE_MANAGED_IDENTITY_CLIENT_ID`, and `OIDC_ALLOW_DEV_FALLBACK` config fields on `Settings`
+  - 47 new tests (41 unit + 6 config); `tests/unit/test_oidc_credential.py`, `tests/smoke/test_oidc_connectivity.py` — total suite: 2,935 passed
 
 ### Changed
-- `app/api/services/azure_client.py`: `get_credential()` uses OIDC `ClientAssertionCredential` when `USE_OIDC_FEDERATION=true`
-- `app/api/services/graph_client.py`: `_get_credential()` uses OIDC credential path when `USE_OIDC_FEDERATION=true`
-- `app/preflight/azure_checks.py`: Preflight auth check bypasses `client_secret` requirement in OIDC mode
+- `app/api/services/azure_client.py`: `get_credential()` dispatches to OIDC path when `USE_OIDC_FEDERATION=true`; composite cache key `tenant_id:client_id` prevents stale credentials after app registration rotation; `clear_cache()` uses prefix matching
+- `app/api/services/graph_client.py`: `_get_credential()` routes through `azure_client_manager` singleton — `clear_cache()` now correctly invalidates Graph credentials
+- `app/preflight/azure_checks.py`: Auth check accepts OIDC mode; `_sanitize_error()` result now used; `logger.exception` replaced with structured `logger.error` in all 8 auth catch blocks
 - `app/core/tenants_config.py`: `key_vault_secret_name` now optional (`None`); `oidc_enabled=True` for all 5 tenants; `get_app_id_for_tenant()` helper added; `validate_tenant_config()` skips secret-name check when OIDC enabled
 - `app/models/tenant.py`: Added `use_oidc: bool` column (default `False`)
-- `app/core/config.py`: `is_configured` property respects OIDC mode (no secret required when `use_oidc_federation=True`)
-- `.env.example`: Added OIDC section, updated stale `RIVERSIDE_*_APP_ID` values
-- Test suite: 2,888 → 2,933 (+45 tests)
+- `app/core/config.py`: Added `use_oidc_federation`, `azure_managed_identity_client_id`, `oidc_allow_dev_fallback` fields; `is_configured` property is OIDC-aware
+- `.env.example`: Added OIDC section with `OIDC_ALLOW_DEV_FALLBACK=true`; fixed stale `RIVERSIDE_*_APP_ID` values
+- Test suite: 2,888 → 2,935 (+47 tests)
 
-### Pending (Azure-side — code complete, awaiting manual execution)
-- Run `scripts/setup-federated-creds.sh` on all 5 tenant app registrations
-- Set `USE_OIDC_FEDERATION=true` on App Service config
-- Run `scripts/seed_riverside_tenants.py` against production DB
-- Execute smoke tests from staging App Service (`tests/smoke/test_oidc_connectivity.py`)
+### Security
+- Removed client secret requirement for all 5 Riverside tenant API calls when OIDC mode is enabled
+- Added `OIDC_ALLOW_DEV_FALLBACK` production kill switch — raises `RuntimeError` if neither App Service nor Workload Identity environment detected (prevents silent fallback to unscoped `DefaultAzureCredential`)
+- Fixed dead `_sanitize_error()` code — auth errors now correctly sanitized before including in `CheckResult.details`
+- Composite `tenant_id:client_id` cache key prevents stale credential serving after app registration rotation
+- `GraphClient` now shares credential cache with `AzureClientManager` singleton — emergency `clear_cache()` is effective for both ARM and Graph API paths
+
+### Pending (Azure-Side Setup Required)
+- Configure federated credentials on app registrations: `./scripts/setup-federated-creds.sh`
+- Enable OIDC mode: `USE_OIDC_FEDERATION=true` on App Service
+- Seed real tenant records: `uv run python scripts/seed_riverside_tenants.py`
 
 ---
 
