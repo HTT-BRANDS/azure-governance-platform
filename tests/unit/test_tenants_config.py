@@ -14,6 +14,7 @@ from app.core.tenants_config import (
     get_active_tenants,
     get_all_active_tenant_ids,
     get_all_tenant_ids,
+    get_app_id_for_tenant,
     get_key_vault_secret_name,
     get_tenant_by_code,
     get_tenant_by_id,
@@ -95,27 +96,28 @@ class TestAdminEmails:
 
 
 # ---------------------------------------------------------------------------
-# 4. All key_vault_secret_names contain their lowercase code
+# 4. OIDC federation — all tenants use OIDC, no KV secret names
 # ---------------------------------------------------------------------------
 class TestKeyVaultSecretNames:
-    """Secret names must follow the {code-lower}-client-secret convention."""
+    """All Riverside tenants are OIDC-enabled; key_vault_secret_name must be None."""
 
     @pytest.mark.parametrize("code", EXPECTED_CODES)
-    def test_secret_name_contains_lowercase_code(self, code: str) -> None:
-        secret_name = RIVERSIDE_TENANTS[code].key_vault_secret_name
-        assert code.lower() in secret_name, (
-            f"{code}: key_vault_secret_name '{secret_name}' does not contain '{code.lower()}'"
+    def test_oidc_enabled_is_true(self, code: str) -> None:
+        assert RIVERSIDE_TENANTS[code].oidc_enabled is True, (
+            f"{code}: oidc_enabled should be True"
         )
 
     @pytest.mark.parametrize("code", EXPECTED_CODES)
-    def test_secret_name_follows_convention(self, code: str) -> None:
-        """Expected pattern: <lowercase-code>-client-secret."""
-        expected = f"{code.lower()}-client-secret"
-        assert RIVERSIDE_TENANTS[code].key_vault_secret_name == expected
+    def test_secret_name_is_none_when_oidc_enabled(self, code: str) -> None:
+        """When OIDC is enabled, key_vault_secret_name must be None (no secrets)."""
+        assert RIVERSIDE_TENANTS[code].key_vault_secret_name is None, (
+            f"{code}: key_vault_secret_name should be None when oidc_enabled=True"
+        )
 
     @pytest.mark.parametrize("code", EXPECTED_CODES)
-    def test_secret_name_is_non_empty(self, code: str) -> None:
-        assert RIVERSIDE_TENANTS[code].key_vault_secret_name
+    def test_app_id_is_non_empty(self, code: str) -> None:
+        """app_id is the OIDC identity — must be set."""
+        assert RIVERSIDE_TENANTS[code].app_id
 
 
 # ---------------------------------------------------------------------------
@@ -211,27 +213,36 @@ class TestLookupFunctions:
 # 7. get_key_vault_secret_name returns expected names
 # ---------------------------------------------------------------------------
 class TestGetKeyVaultSecretName:
-    """The helper must return the correct secret name for each code."""
+    """Returns None for OIDC-enabled tenants; raises on unknown codes."""
 
-    @pytest.mark.parametrize(
-        "code, expected",
-        [
-            ("HTT", "htt-client-secret"),
-            ("BCC", "bcc-client-secret"),
-            ("FN", "fn-client-secret"),
-            ("TLL", "tll-client-secret"),
-            ("DCE", "dce-client-secret"),
-        ],
-    )
-    def test_returns_expected_secret_name(self, code: str, expected: str) -> None:
-        assert get_key_vault_secret_name(code) == expected
+    @pytest.mark.parametrize("code", EXPECTED_CODES)
+    def test_returns_none_for_oidc_enabled_tenant(self, code: str) -> None:
+        """All Riverside tenants are OIDC-enabled — no KV secret names needed."""
+        assert get_key_vault_secret_name(code) is None
 
-    def test_case_insensitive_lookup(self) -> None:
-        assert get_key_vault_secret_name("htt") == "htt-client-secret"
+    def test_case_insensitive_lookup_returns_none_for_oidc(self) -> None:
+        """Case-insensitive lookup still returns None for OIDC tenants."""
+        assert get_key_vault_secret_name("htt") is None
 
     def test_raises_on_unknown_code(self) -> None:
         with pytest.raises(ValueError, match="Unknown tenant code"):
             get_key_vault_secret_name("INVALID")
+
+
+# ---------------------------------------------------------------------------
+# 7b. get_app_id_for_tenant — new OIDC helper
+# ---------------------------------------------------------------------------
+class TestGetAppIdForTenant:
+    """The new OIDC helper resolves app_id by tenant_id."""
+
+    @pytest.mark.parametrize("code", EXPECTED_CODES)
+    def test_returns_app_id_for_known_tenant(self, code: str) -> None:
+        tenant_id = RIVERSIDE_TENANTS[code].tenant_id
+        app_id = get_app_id_for_tenant(tenant_id)
+        assert app_id == RIVERSIDE_TENANTS[code].app_id
+
+    def test_returns_none_for_unknown_tenant(self) -> None:
+        assert get_app_id_for_tenant("00000000-0000-0000-0000-000000000000") is None
 
 
 # ---------------------------------------------------------------------------

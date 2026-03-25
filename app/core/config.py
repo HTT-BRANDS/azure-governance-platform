@@ -109,6 +109,14 @@ class Settings(BaseSettings):
     azure_client_id: str | None = None
     azure_client_secret: str | None = None
 
+    # OIDC Workload Identity Federation (replaces client secrets)
+    use_oidc_federation: bool = Field(default=False, alias="USE_OIDC_FEDERATION")
+    azure_managed_identity_client_id: str | None = Field(
+        default=None,
+        alias="AZURE_MANAGED_IDENTITY_CLIENT_ID",
+        description="Client ID of user-assigned managed identity. Leave empty for system-assigned.",
+    )
+
     # Azure Lighthouse Configuration
     managed_identity_object_id: str | None = Field(
         default=None,
@@ -336,7 +344,13 @@ class Settings(BaseSettings):
 
     @property
     def is_configured(self) -> bool:
-        """Check if minimum Azure configuration is present."""
+        """Check if minimum Azure configuration is present.
+
+        When OIDC federation is enabled, client secret is not required —
+        the Managed Identity assertion provides authentication.
+        """
+        if self.use_oidc_federation:
+            return bool(self.azure_tenant_id and self.azure_client_id)
         return all(
             [
                 self.azure_tenant_id,

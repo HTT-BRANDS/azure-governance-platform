@@ -42,11 +42,12 @@ class TenantConfig:
     code: str
     admin_email: str
     app_id: str
-    key_vault_secret_name: str
+    key_vault_secret_name: str | None = None
     domains: list[str] = field(default_factory=list)
     is_active: bool = True
     is_riverside: bool = True
     priority: int = 5
+    oidc_enabled: bool = True
 
 
 @dataclass(frozen=True)
@@ -101,11 +102,12 @@ RIVERSIDE_TENANTS: dict[str, TenantConfig] = {
         code="HTT",
         admin_email="tyler.granlund-admin@httbrands.com",
         app_id="1e3e8417-49f1-4d08-b7be-47045d8a12e9",
-        key_vault_secret_name="htt-client-secret",
+        key_vault_secret_name=None,
         domains=["httbrands.com"],
         is_active=True,
         is_riverside=True,
         priority=1,
+        oidc_enabled=True,
     ),
     "BCC": TenantConfig(
         tenant_id="b5380912-79ec-452d-a6ca-6d897b19b294",
@@ -113,11 +115,12 @@ RIVERSIDE_TENANTS: dict[str, TenantConfig] = {
         code="BCC",
         admin_email="tyler.granlund-Admin@bishopsbs.onmicrosoft.com",
         app_id="4861906b-2079-4335-923f-a55cc0e44d64",
-        key_vault_secret_name="bcc-client-secret",
+        key_vault_secret_name=None,
         domains=["bishopsbs.onmicrosoft.com"],
         is_active=True,
         is_riverside=True,
         priority=2,
+        oidc_enabled=True,
     ),
     "FN": TenantConfig(
         tenant_id="98723287-044b-4bbb-9294-19857d4128a0",
@@ -125,11 +128,12 @@ RIVERSIDE_TENANTS: dict[str, TenantConfig] = {
         code="FN",
         admin_email="tyler.granlund-Admin@ftgfrenchiesoutlook.onmicrosoft.com",
         app_id="7648d04d-ccc4-43ac-bace-da1b68bf11b4",
-        key_vault_secret_name="fn-client-secret",
+        key_vault_secret_name=None,
         domains=["ftgfrenchiesoutlook.onmicrosoft.com"],
         is_active=True,
         is_riverside=True,
         priority=3,
+        oidc_enabled=True,
     ),
     "TLL": TenantConfig(
         tenant_id="3c7d2bf3-b597-4766-b5cb-2b489c2904d6",
@@ -137,11 +141,12 @@ RIVERSIDE_TENANTS: dict[str, TenantConfig] = {
         code="TLL",
         admin_email="tyler.granlund-Admin@LashLoungeFranchise.onmicrosoft.com",
         app_id="52531a02-78fd-44ba-9ab9-b29675767955",
-        key_vault_secret_name="tll-client-secret",
+        key_vault_secret_name=None,
         domains=["LashLoungeFranchise.onmicrosoft.com"],
         is_active=True,
         is_riverside=True,
         priority=4,
+        oidc_enabled=True,
     ),
     "DCE": TenantConfig(
         tenant_id="ce62e17d-2feb-4e67-a115-8ea4af68da30",
@@ -149,11 +154,12 @@ RIVERSIDE_TENANTS: dict[str, TenantConfig] = {
         code="DCE",
         admin_email="tyler.granlund-admin_httbrands.com#EXT#@deltacrown.onmicrosoft.com",
         app_id="79c22a10-3f2d-4e6a-bddc-ee65c9a46cb0",
-        key_vault_secret_name="dce-client-secret",
+        key_vault_secret_name=None,
         domains=["deltacrown.onmicrosoft.com"],
         is_active=True,
         is_riverside=True,
         priority=5,
+        oidc_enabled=True,
     ),
 }
 
@@ -246,13 +252,33 @@ def get_all_active_tenant_ids() -> list[str]:
     return [config.tenant_id for config in RIVERSIDE_TENANTS.values() if config.is_active]
 
 
-def get_key_vault_secret_name(tenant_code: str) -> str:
-    """Generate the Key Vault secret name for a tenant's client secret."""
+def get_key_vault_secret_name(tenant_code: str) -> str | None:
+    """Return the Key Vault secret name for a tenant's client secret.
+
+    Returns None when the tenant is configured for OIDC federation (no secret needed).
+
+    Raises:
+        ValueError: If the tenant code is not recognised.
+    """
     config = get_tenant_by_code(tenant_code)
     if not config:
         raise ValueError(f"Unknown tenant code: {tenant_code}")
+    if config.oidc_enabled:
+        return None
     return config.key_vault_secret_name
 
+
+def get_app_id_for_tenant(tenant_id: str) -> str | None:
+    """Get the app registration client ID for a tenant by tenant ID.
+
+    Args:
+        tenant_id: The Azure AD tenant GUID.
+
+    Returns:
+        The app registration client ID, or None if the tenant is not found.
+    """
+    config = get_tenant_by_id(tenant_id)
+    return config.app_id if config else None
 
 def validate_tenant_config() -> list[str]:
     """Validate all tenant configurations and return list of issues."""
@@ -265,6 +291,10 @@ def validate_tenant_config() -> list[str]:
 
         if config.app_id in ("TBD", "", None):
             issues.append(f"{code}: App ID is not set")
+
+        # When OIDC is enabled, key_vault_secret_name is not required
+        if not config.oidc_enabled and config.key_vault_secret_name in ("TBD", "", None):
+            issues.append(f"{code}: key_vault_secret_name is not set (required when oidc_enabled=False)")
 
         # Validate UUID format
         import uuid
