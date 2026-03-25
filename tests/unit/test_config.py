@@ -558,3 +558,71 @@ def test_settings_database_configuration(monkeypatch):
     assert settings.database_pool_size == 10
     assert settings.database_max_overflow == 20
     assert settings.slow_query_threshold_ms == 1000.0
+
+
+# ============================================================================
+# OIDC Workload Identity Federation settings tests
+# ============================================================================
+
+
+def test_use_oidc_federation_defaults_false(monkeypatch):
+    """use_oidc_federation field defaults to False (secret mode is the default)."""
+    monkeypatch.delenv("USE_OIDC_FEDERATION", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.use_oidc_federation is False
+
+
+def test_use_oidc_federation_can_be_enabled_via_env(monkeypatch):
+    """USE_OIDC_FEDERATION=true activates OIDC mode."""
+    monkeypatch.setenv("USE_OIDC_FEDERATION", "true")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.use_oidc_federation is True
+
+
+def test_azure_managed_identity_client_id_defaults_none(monkeypatch):
+    """AZURE_MANAGED_IDENTITY_CLIENT_ID is optional and defaults to None."""
+    monkeypatch.delenv("AZURE_MANAGED_IDENTITY_CLIENT_ID", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.azure_managed_identity_client_id is None
+
+
+def test_azure_managed_identity_client_id_can_be_set(monkeypatch):
+    """AZURE_MANAGED_IDENTITY_CLIENT_ID is read from environment."""
+    monkeypatch.setenv("AZURE_MANAGED_IDENTITY_CLIENT_ID", "mi-uuid-abc123")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.azure_managed_identity_client_id == "mi-uuid-abc123"
+
+
+def test_is_configured_returns_true_with_oidc_mode_no_secret(monkeypatch):
+    """is_configured returns True when use_oidc_federation=True even without a client secret."""
+    monkeypatch.setenv("USE_OIDC_FEDERATION", "true")
+    monkeypatch.setenv("AZURE_TENANT_ID", "oidc-tenant-id")
+    monkeypatch.setenv("AZURE_CLIENT_ID", "oidc-client-id")
+    monkeypatch.delenv("AZURE_CLIENT_SECRET", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.use_oidc_federation is True
+    assert settings.azure_client_secret is None
+    assert settings.is_configured is True
+
+
+def test_is_configured_requires_tenant_and_client_id_in_oidc_mode(monkeypatch):
+    """is_configured returns False when tenant_id or client_id is missing in OIDC mode."""
+    monkeypatch.setenv("USE_OIDC_FEDERATION", "true")
+    monkeypatch.delenv("AZURE_TENANT_ID", raising=False)
+    monkeypatch.delenv("AZURE_CLIENT_ID", raising=False)
+    monkeypatch.delenv("AZURE_CLIENT_SECRET", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.use_oidc_federation is True
+    assert settings.is_configured is False
