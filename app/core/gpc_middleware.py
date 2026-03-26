@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 class GPCMiddleware(BaseHTTPMiddleware):
     """
     Middleware to detect and honor Global Privacy Control signals.
-    
+
     When Sec-GPC:1 header is present, the user is opting out of:
     - Sale/sharing of personal information
     - Targeted advertising
     - Cross-site tracking
-    
+
     This middleware:
     1. Detects GPC signal from browser headers
     2. Sets request.state.gpc_enabled for downstream use
@@ -52,7 +52,7 @@ class GPCMiddleware(BaseHTTPMiddleware):
                     "method": request.method,
                     "user_agent": request.headers.get("User-Agent", "unknown"),
                     "client_ip": request.client.host if request.client else None,
-                }
+                },
             )
 
         # Process request
@@ -76,7 +76,7 @@ class GPCMiddleware(BaseHTTPMiddleware):
 def get_gpc_status(request: Request) -> bool:
     """
     Helper function to check GPC status in route handlers.
-    
+
     Usage:
         @app.get("/some-route")
         async def some_route(request: Request):
@@ -90,7 +90,7 @@ def get_gpc_status(request: Request) -> bool:
 class GPCConsentManager:
     """
     Manages consent preferences when GPC is enabled.
-    
+
     When GPC signal is present, automatically opts out of:
     - Analytics tracking
     - Marketing cookies
@@ -99,10 +99,10 @@ class GPCConsentManager:
     """
 
     GPC_CATEGORIES = {
-        "analytics": False,      # GPC opts out of analytics
-        "marketing": False,      # GPC opts out of marketing
-        "functional": True,      # Functional cookies still allowed
-        "necessary": True,       # Necessary cookies always allowed
+        "analytics": False,  # GPC opts out of analytics
+        "marketing": False,  # GPC opts out of marketing
+        "functional": True,  # Functional cookies still allowed
+        "necessary": True,  # Necessary cookies always allowed
     }
 
     @classmethod

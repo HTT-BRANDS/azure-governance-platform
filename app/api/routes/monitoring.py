@@ -3,10 +3,12 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
+from app.api.services.azure_client import azure_client_manager
 from app.core.auth import User, get_current_user
+from app.core.cache import cache_manager
 from app.core.database import get_db
 from app.core.monitoring import (
     get_cache_stats,
@@ -14,8 +16,6 @@ from app.core.monitoring import (
     performance_monitor,
     reset_metrics,
 )
-from app.core.cache import cache_manager
-from app.api.services.azure_client import azure_client_manager
 
 router = APIRouter(
     prefix="/monitoring",
@@ -114,6 +114,7 @@ async def health_check_deep(db: Session = Depends(get_db)) -> dict[str, Any]:
     - Azure API connectivity (lightweight call)
     """
     import time
+
     from app.core.config import settings
 
     checks = {}
@@ -146,6 +147,7 @@ async def health_check_deep(db: Session = Depends(get_db)) -> dict[str, Any]:
     try:
         # Use first tenant for health check
         from app.core.tenants_config import RIVERSIDE_TENANTS
+
         first_tenant = list(RIVERSIDE_TENANTS.keys())[0]
 
         # Just verify we can get a credential (don't actually call API)
@@ -155,8 +157,4 @@ async def health_check_deep(db: Session = Depends(get_db)) -> dict[str, Any]:
         checks["azure_auth"] = {"status": "degraded", "error": str(e)}
         overall_status = "degraded"
 
-    return {
-        "status": overall_status,
-        "version": settings.app_version,
-        "checks": checks
-    }
+    return {"status": overall_status, "version": settings.app_version, "checks": checks}

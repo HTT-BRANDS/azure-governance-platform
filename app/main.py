@@ -2,6 +2,7 @@
 
 import logging
 import secrets
+import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -47,34 +48,22 @@ from app.api.routes import (
 from app.core.cache import cache_manager
 from app.core.config import get_settings
 from app.core.database import init_db
+from app.core.gpc_middleware import GPCMiddleware
+from app.core.logging_config import set_correlation_id
 from app.core.rate_limit import rate_limiter
 from app.core.scheduler import init_scheduler
 from app.core.tenant_context import register_template_filters
 from app.core.token_blacklist import get_blacklist_backend, get_blacklist_size
-from app.core.gpc_middleware import GPCMiddleware
 from app.core.tracing import setup_tracing
-from app.core.logging_config import set_correlation_id
-import uuid
 
-# Initialize tracing if enabled
-tracer = setup_tracing(app) if settings.enable_tracing else None
-
-# Initialize Jinja2 templates and register custom filters
-templates = Jinja2Templates(directory="app/templates")
-register_template_filters(templates.env)
-
-# Expose app version to all templates as a global
-from app import __version__ as _app_version  # noqa: E402
-
-templates.env.globals["app_version"] = _app_version
-
-# Configure logging
+# Configure logging first
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
+# Load settings
 settings = get_settings()
 
 
@@ -129,6 +118,16 @@ app = FastAPI(
 
 # Configure CORS — single middleware, no wildcards, no duplicates
 # SECURITY: Explicit origins, methods, and headers only (P1 fix)
+
+# Initialize Jinja2 templates and register custom filters
+templates = Jinja2Templates(directory="app/templates")
+register_template_filters(templates.env)
+
+# Expose app version to all templates as a global
+from app import __version__ as _app_version  # noqa: E402
+
+templates.env.globals["app_version"] = _app_version
+
 _cors_origins = list(settings.cors_origins)
 if settings.cors_allowed_origins:
     _cors_origins.extend(o.strip() for o in settings.cors_allowed_origins.split(",") if o.strip())
@@ -140,6 +139,10 @@ app.add_middleware(
     allow_headers=settings.cors_allow_headers,
 )
 
+# Initialize OpenTelemetry tracing (after app is created)
+# This must happen after app creation but before routes are added
+tracer = setup_tracing(app) if settings.enable_tracing else None
+
 # GPC (Global Privacy Control) middleware - Legal compliance for CCPA/GDPR
 # Must be after CORS but before security headers to properly set privacy-related headers
 app.add_middleware(GPCMiddleware, log_all_requests=False)
@@ -149,14 +152,14 @@ app.add_middleware(GPCMiddleware, log_all_requests=False)
 async def correlation_id_middleware(request: Request, call_next):
     """Add correlation ID to all requests for distributed tracing."""
     # Get or generate correlation ID
-    cid = request.headers.get('X-Correlation-ID') or str(uuid.uuid4())[:8]
+    cid = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())[:8]
     set_correlation_id(cid)
 
     # Process request
     response = await call_next(request)
 
     # Add to response headers
-    response.headers['X-Correlation-ID'] = cid
+    response.headers["X-Correlation-ID"] = cid
 
     return response
 

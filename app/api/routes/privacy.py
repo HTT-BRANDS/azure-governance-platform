@@ -18,7 +18,7 @@ async def get_consent_categories():
     return {
         "categories": PrivacyConfig.CATEGORIES,
         "cookie_name": PrivacyConfig.COOKIE_NAME,
-        "version": "1.0"
+        "version": "1.0",
     }
 
 
@@ -31,9 +31,7 @@ async def get_consent_preferences(request: Request):
 
 @router.post("/consent/preferences")
 async def save_consent_preferences(
-    request: Request,
-    response: Response,
-    preferences: ConsentPreferences
+    request: Request, response: Response, preferences: ConsentPreferences
 ):
     """Save user's consent preferences."""
     # Ensure necessary is always True
@@ -41,28 +39,19 @@ async def save_consent_preferences(
 
     PrivacyService.save_consent_to_cookie(response, preferences)
 
-    return {
-        "status": "saved",
-        "preferences": preferences.model_dump()
-    }
+    return {"status": "saved", "preferences": preferences.model_dump()}
 
 
 @router.post("/consent/accept-all")
 async def accept_all_cookies(request: Request, response: Response):
     """Accept all cookie categories."""
     preferences = ConsentPreferences(
-        necessary=True,
-        functional=True,
-        analytics=True,
-        marketing=True
+        necessary=True, functional=True, analytics=True, marketing=True
     )
 
     PrivacyService.save_consent_to_cookie(response, preferences)
 
-    return {
-        "status": "accepted_all",
-        "preferences": preferences.model_dump()
-    }
+    return {"status": "accepted_all", "preferences": preferences.model_dump()}
 
 
 @router.post("/consent/reject-all")
@@ -72,15 +61,12 @@ async def reject_all_cookies(request: Request, response: Response):
         necessary=True,  # Required
         functional=False,
         analytics=False,
-        marketing=False
+        marketing=False,
     )
 
     PrivacyService.save_consent_to_cookie(response, preferences)
 
-    return {
-        "status": "rejected_non_essential",
-        "preferences": preferences.model_dump()
-    }
+    return {"status": "rejected_non_essential", "preferences": preferences.model_dump()}
 
 
 @router.get("/consent/status")
@@ -95,6 +81,6 @@ async def get_consent_status(request: Request):
             "necessary": prefs.necessary,
             "functional": prefs.functional,
             "analytics": prefs.analytics,
-            "marketing": prefs.marketing
-        }
+            "marketing": prefs.marketing,
+        },
     }

@@ -43,9 +43,9 @@ class TestPagesRouterRegistration:
         assert "/identity" in paths
 
     def test_route_count(self):
-        """Should have exactly 4 page routes."""
+        """Should have exactly 5 page routes (including privacy)."""
         paths = [r.path for r in router.routes]
-        assert len(paths) == 4
+        assert len(paths) == 5
 
     def test_all_routes_are_get(self):
         """All page routes should be GET endpoints."""

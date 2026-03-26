@@ -4,20 +4,17 @@ Distributed Tracing Configuration
 OpenTelemetry integration for request tracing and observability.
 """
 
-import os
-from typing import Optional
-
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-from opentelemetry.sdk.resources import Resource, SERVICE_NAME, SERVICE_VERSION
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_VERSION, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
 from app.core.config import get_settings
 
 
-def setup_tracing(app) -> Optional[trace.Tracer]:
+def setup_tracing(app) -> trace.Tracer | None:
     """
     Configure OpenTelemetry tracing for the application.
 
@@ -32,11 +29,13 @@ def setup_tracing(app) -> Optional[trace.Tracer]:
         return None
 
     # Configure resource
-    resource = Resource.create({
-        SERVICE_NAME: "azure-governance-platform",
-        SERVICE_VERSION: settings.app_version,
-        "deployment.environment": settings.environment,
-    })
+    resource = Resource.create(
+        {
+            SERVICE_NAME: "azure-governance-platform",
+            SERVICE_VERSION: settings.app_version,
+            "deployment.environment": settings.environment,
+        }
+    )
 
     # Create tracer provider
     provider = TracerProvider(resource=resource)
@@ -46,8 +45,7 @@ def setup_tracing(app) -> Optional[trace.Tracer]:
     if settings.otel_exporter_endpoint:
         # OTLP exporter (for Jaeger, Honeycomb, etc.)
         exporter = OTLPSpanExporter(
-            endpoint=settings.otel_exporter_endpoint,
-            headers=settings.otel_exporter_headers
+            endpoint=settings.otel_exporter_endpoint, headers=settings.otel_exporter_headers
         )
     else:
         # Console exporter for development
@@ -63,7 +61,7 @@ def setup_tracing(app) -> Optional[trace.Tracer]:
     return trace.get_tracer(__name__)
 
 
-def get_tracer(name: str) -> Optional[trace.Tracer]:
+def get_tracer(name: str) -> trace.Tracer | None:
     """Get a tracer for the current module."""
     try:
         return trace.get_tracer(name)
@@ -74,7 +72,7 @@ def get_tracer(name: str) -> Optional[trace.Tracer]:
 class TracedContext:
     """Context manager for manual span creation."""
 
-    def __init__(self, tracer: trace.Tracer, name: str, attributes: Optional[dict] = None):
+    def __init__(self, tracer: trace.Tracer, name: str, attributes: dict | None = None):
         self.tracer = tracer
         self.name = name
         self.attributes = attributes or {}

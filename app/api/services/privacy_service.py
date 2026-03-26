@@ -27,10 +27,7 @@ class PrivacyService:
         return None
 
     @staticmethod
-    def save_consent_to_cookie(
-        response: Response,
-        preferences: ConsentPreferences
-    ) -> None:
+    def save_consent_to_cookie(response: Response, preferences: ConsentPreferences) -> None:
         """Save consent preferences to cookie."""
         preferences.timestamp = datetime.now(UTC).isoformat()
 
@@ -40,14 +37,14 @@ class PrivacyService:
             max_age=PrivacyConfig.COOKIE_MAX_AGE,
             httponly=False,  # Must be accessible to JS for consent management
             secure=True,
-            samesite="Lax"
+            samesite="Lax",
         )
 
     @classmethod
     def get_effective_consent(cls, request: Request) -> ConsentPreferences:
         """
         Get effective consent preferences.
-        
+
         Priority:
         1. GPC signal (if enabled, forces opt-out)
         2. Saved cookie preferences
@@ -67,10 +64,7 @@ class PrivacyService:
         return ConsentPreferences()
 
     @staticmethod
-    def has_consent_for(
-        request: Request,
-        category: ConsentCategory
-    ) -> bool:
+    def has_consent_for(request: Request, category: ConsentCategory) -> bool:
         """Check if user has consented to specific category."""
         prefs = PrivacyService.get_effective_consent(request)
         return getattr(prefs, category.value, False)

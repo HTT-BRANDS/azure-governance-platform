@@ -3,15 +3,14 @@ Tests for HTTP Client Timeout utilities
 """
 
 import asyncio
+
 import pytest
-from unittest.mock import AsyncMock, patch
 
 from app.core.http_client import (
-    with_timeout,
-    timeout_async,
     TimeoutError,
     Timeouts,
-    DEFAULT_TIMEOUT
+    timeout_async,
+    with_timeout,
 )
 
 
@@ -21,30 +20,24 @@ class TestWithTimeout:
     @pytest.mark.asyncio
     async def test_successful_completion(self):
         """Coro completes before timeout - returns result."""
+
         async def quick_task():
             return "success"
 
-        result = await with_timeout(
-            quick_task(),
-            timeout=1.0,
-            operation_name="test_op"
-        )
+        result = await with_timeout(quick_task(), timeout=1.0, operation_name="test_op")
 
         assert result == "success"
 
     @pytest.mark.asyncio
     async def test_timeout_raises_custom_error(self):
         """Coro exceeds timeout - raises TimeoutError."""
+
         async def slow_task():
             await asyncio.sleep(10)
             return "never"
 
         with pytest.raises(TimeoutError) as exc_info:
-            await with_timeout(
-                slow_task(),
-                timeout=0.01,
-                operation_name="slow_test"
-            )
+            await with_timeout(slow_task(), timeout=0.01, operation_name="slow_test")
 
         assert "slow_test" in str(exc_info.value)
         assert "0.01s" in str(exc_info.value)
@@ -54,29 +47,23 @@ class TestWithTimeout:
     @pytest.mark.asyncio
     async def test_exception_propagation(self):
         """Coro raises exception - exception propagates."""
+
         async def failing_task():
             raise ValueError("test error")
 
         with pytest.raises(ValueError, match="test error"):
-            await with_timeout(
-                failing_task(),
-                timeout=1.0,
-                operation_name="failing_test"
-            )
+            await with_timeout(failing_task(), timeout=1.0, operation_name="failing_test")
 
     @pytest.mark.asyncio
     async def test_logging_on_timeout(self, caplog):
         """Timeout is logged at warning level."""
+
         async def slow_task():
             await asyncio.sleep(10)
 
         with pytest.raises(TimeoutError):
             with caplog.at_level("WARNING"):
-                await with_timeout(
-                    slow_task(),
-                    timeout=0.01,
-                    operation_name="logged_op"
-                )
+                await with_timeout(slow_task(), timeout=0.01, operation_name="logged_op")
 
         assert "logged_op" in caplog.text
         assert "timed out" in caplog.text
@@ -88,6 +75,7 @@ class TestTimeoutAsyncDecorator:
     @pytest.mark.asyncio
     async def test_decorator_success(self):
         """Decorated function completes successfully."""
+
         @timeout_async(timeout=1.0)
         async def my_function(x: int) -> int:
             return x * 2
@@ -98,6 +86,7 @@ class TestTimeoutAsyncDecorator:
     @pytest.mark.asyncio
     async def test_decorator_timeout(self):
         """Decorated function times out."""
+
         @timeout_async(timeout=0.01, operation_name="decorated_slow")
         async def slow_function():
             await asyncio.sleep(10)
@@ -111,6 +100,7 @@ class TestTimeoutAsyncDecorator:
     @pytest.mark.asyncio
     async def test_decorator_uses_function_name(self):
         """Decorator uses function name when operation_name not provided."""
+
         @timeout_async(timeout=0.01)
         async def named_function():
             await asyncio.sleep(10)

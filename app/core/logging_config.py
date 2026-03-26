@@ -4,15 +4,14 @@ Structured Logging Configuration
 JSON-formatted logs with correlation IDs for distributed tracing.
 """
 
-import logging
 import json
+import logging
 import sys
-from contextvars import ContextVar
-from typing import Any, Optional
 import uuid
+from contextvars import ContextVar
 
 # Context variable for correlation ID
-correlation_id: ContextVar[Optional[str]] = ContextVar('correlation_id', default=None)
+correlation_id: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 
 def get_correlation_id() -> str:
@@ -34,21 +33,21 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         log_data = {
-            'timestamp': self.formatTime(record),
-            'level': record.levelname,
-            'logger': record.name,
-            'message': record.getMessage(),
-            'correlation_id': getattr(record, 'correlation_id', None) or get_correlation_id(),
-            'path': f"{record.pathname}:{record.lineno}",
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "correlation_id": getattr(record, "correlation_id", None) or get_correlation_id(),
+            "path": f"{record.pathname}:{record.lineno}",
         }
 
         # Add extra fields
-        if hasattr(record, 'extra'):
+        if hasattr(record, "extra"):
             log_data.update(record.extra)
 
         # Add exception info
         if record.exc_info:
-            log_data['exception'] = self.formatException(record.exc_info)
+            log_data["exception"] = self.formatException(record.exc_info)
 
         return json.dumps(log_data, default=str)
 
