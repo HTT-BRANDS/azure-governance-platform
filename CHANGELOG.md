@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - **CI/CD Pipeline Overhaul**: 6 workflows diagnosed, 4 fixed, 2 legacy deleted (-967 lines)
   - `deploy-oidc.yml`: Deleted — replaced by dedicated `ci.yml` + fixed `deploy-staging.yml`
   - `deploy.yml`: Deleted — used non-existent `AZURE_CREDENTIALS` secret (legacy)
@@ -81,6 +89,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `config/provisioning_standards.yaml`: Naming conventions, allowed regions, mandatory/recommended tags, SKU restrictions, network/encryption standards
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - Alembic schema drift: `tenants.billing_account_id` column now exists in DB (was in model only)
 - Stale trace matrix risk items for IG-009 and IG-010 corrected (both fully implemented, not stubs)
 
@@ -154,6 +170,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 5 Alembic migrations (003–005) for resource_lifecycle_events, audit_log_entries, custom_compliance_rules tables
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - Phase 8 documentation: WIGGUM_ROADMAP Phase 8 populated, TRACEABILITY_MATRIX CM-002/CM-010/RM-004/RM-007 updated to ✅
 
 ---
@@ -167,6 +191,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed duplicate `GET /` dashboard route from `dashboard.py` that shadowed the redirect
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - Rate-limit state bleed between unit tests (`_memory_cache` not cleared between tests)
 - Dependency override leak between unit tests (snapshot/restore pattern via autouse fixture)
 - 3 remaining xfail markers removed (tests now pass)
@@ -176,6 +208,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.5.1] - 2026-03-18
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - **MSSQL compatibility**: Replaced `.is_(True)` with `== True` for MSSQL `bit` column compatibility across 4 files
 - **Startup resilience**: Alembic migration made non-fatal on DB connection failure (allows app to start with degraded DB)
 - **Startup resilience**: `_create_indexes()` made non-fatal on DB connection failure
@@ -197,6 +237,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Staging CI/CD pipeline**: Rewrote `deploy-staging.yml` with correct app name, ACR registry, hard test gate
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - **Test isolation**: `test_config.py` cache clear created new Settings with different JWT secret — now pins `JWT_SECRET_KEY` env var
 - **Test isolation**: `auth_flow/conftest.py` token helpers now use `jwt_manager.settings` directly
 - **Staging E2E**: Aligned test URLs to actual API routes + fixed fixture scope
@@ -219,6 +267,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.1] - 2026-03-18
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - Cleared all 32 remaining `xfail` markers — tests now pass:
   - `test_routes_sync.py` (12): FastAPI DI via `dependency_overrides`
   - `test_routes_auth.py` (6): Accept 401/422 for empty credentials
@@ -235,6 +291,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2026-03-17
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - **39 test failures resolved** across 5 route test files:
   - Dashboard: Patched template rendering to avoid MagicMock/Jinja2 comparison errors; removed stray @patch decorator stealing authed_client fixture
   - Monitoring: Corrected URL paths from /api/v1/monitoring/ to /monitoring/ (matching router prefix)
@@ -267,6 +331,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero untested app modules** — all 70+ Python modules under `app/` now have corresponding test coverage
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - 71 stale xfail markers cleaned up (tests were passing but marked as expected failures)
 - Architecture fitness function failure (`azure_ad_admin_service.py` trimmed from 603 to 592 lines)
 - 4 Riverside analytics enum-vs-string comparison bugs in `riverside_analytics.py`
@@ -304,6 +376,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rate limiting tuned for production traffic
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - Alembic migration 002 now handles fresh database creation
 - 266 ruff linting errors resolved
 
@@ -324,6 +404,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **23 performance benchmark tests**: CSS generation <10ms per brand, middleware caching verified
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - WCAG AA compliance: Fixed 2 brand accent colors (#00d084→#008754) for 4.5:1 contrast ratio
 - Event loop contamination from e2e conftest — excluded e2e/smoke from default pytest run (1591 tests pass cleanly)
 
@@ -405,6 +493,14 @@ This release marks the completion of the full development roadmap (70/70 tasks) 
 - All security headers verified live on deployed App Service
 
 ### Fixed
+- **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
+  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
+  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
+  - Removed continue-on-error: true — failures now surface properly
+  - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
+- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+  - OIDC federation confirmed working — zero service principal secrets in staging or production
 - `DATABASE_URL` using 3 slashes (relative path crash) — fixed to 4 slashes in app settings + Bicep
 - `ENVIRONMENT=dev` not accepted by Pydantic validator — changed to `development`
 - `get_recent_alerts()` method doesn't exist — changed to `get_active_alerts()`
