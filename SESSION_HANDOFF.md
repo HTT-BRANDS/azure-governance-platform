@@ -71,7 +71,7 @@ Security findings: 0 open (all 7 HIGH + MEDIUM resolved)
 | Item | Status | Action |
 |------|--------|--------|
 | **Production client secrets** | ⏳ Keep 24h, then remove | `az webapp config appsettings delete --name app-governance-prod --resource-group rg-governance-production --setting-names AZURE_CLIENT_SECRET AZURE_AD_CLIENT_SECRET` |
-| **CI pipeline auth fix** | 🔴 Failing | `Deploy to Azure (OIDC)` workflow fails on `az acr login --name acrgovernancedev` — needs `AZURE_CLIENT_ID` GitHub secret updated or OIDC federated cred for the GitHub Actions workflow |
+| **CI pipeline** | ✅ Fixed | All 4 workflows green: CI (3m23s), Deploy to Staging (8m), Accessibility (37s), Deploy to Production (dispatch-only) |
 | **Sui Generis device compliance** | Placeholder live | Awaiting API credentials from MSP |
 | **Cybeta threat intel** | Placeholder live | Awaiting API key |
 | **DCE billing** | Skipped | No subscription/billing account |
