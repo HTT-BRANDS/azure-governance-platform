@@ -108,6 +108,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -127,8 +135,10 @@ jobs:
 
       - name: pip-audit (no known CVEs)
         run: |
+          # Export locked deps (no hashes — pip-audit doesn't support them)
+          uv export --no-hashes --no-dev > /tmp/requirements.txt
           pip install pip-audit
-          pip-audit --desc --format=json --output=pip-audit.json
+          pip-audit -r /tmp/requirements.txt --desc --format=json --output=pip-audit.json
           # Fail if any CVE found
           python -c "
           import json, sys
