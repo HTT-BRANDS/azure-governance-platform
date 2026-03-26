@@ -9,14 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.6.1] - 2026-03-26
+
 ### Fixed
 - **Multi-Tenant Sync**: BCC/FN/TLL jobs now authenticate with per-tenant OIDC federated credentials
-  - Created github-actions-main federated credential on BCC, FN, TLL app registrations
-  - Added 6 GitHub secrets (BCC/FN/TLL_CLIENT_ID + BCC/FN/TLL_TENANT_ID)
-  - Each sync job uses its own client-id/tenant-id/subscription-id (was: shared HTT client ID causing AADSTS700016)
-  - Removed continue-on-error: true — failures now surface properly
+  - Created `github-actions-main` federated credential on BCC, FN, TLL app registrations
+  - Added 6 GitHub secrets (`BCC_CLIENT_ID`, `BCC_TENANT_ID`, `FN_CLIENT_ID`, `FN_TENANT_ID`, `TLL_CLIENT_ID`, `TLL_TENANT_ID`)
+  - Each sync job uses its own `client-id`/`tenant-id`/`subscription-id` (was: shared HTT client ID causing AADSTS700016)
+  - Removed `continue-on-error: true` — failures now surface properly
   - Removed hardcoded tenant IDs from workflow YAML (now in secrets)
-- **Production Secrets Removal**: Removed AZURE_CLIENT_SECRET from production App Service
+- **Production Secrets Removal**: Removed `AZURE_CLIENT_SECRET` from production App Service
   - OIDC federation confirmed working — zero service principal secrets in staging or production
 - **CI/CD Pipeline Overhaul**: 6 workflows diagnosed, 4 fixed, 2 legacy deleted (-967 lines)
   - `deploy-oidc.yml`: Deleted — replaced by dedicated `ci.yml` + fixed `deploy-staging.yml`
@@ -35,10 +39,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 2 new GitHub Actions federated credentials on HTT app registration (`github-actions-staging`, `github-actions-production`)
 - `.acrignore` file to exclude build artifacts from ACR builds
 - 2 new unit tests for OIDC `is_configured()` scenarios
+- **Externalized tenant configuration** (LOW-1 remediation): `config/tenants.yaml` (gitignored) replaces hardcoded IDs
+  - `config/tenants.yaml.example` committed as template with placeholder UUIDs
+  - `app/core/tenants_config.py` loads from YAML with automatic fallback to example file
+  - Shell scripts (`setup-federated-creds.sh`, `verify-federated-creds.sh`) read from YAML via shared `_tenant_lookup.sh`
+  - Eliminates DRY violation (IDs were duplicated in Python + 2 shell scripts)
 
 ### Changed
 - Test count: 2,935 to 2,937 (+2)
 - GitHub workflows: 6 to 5 (2 deleted + 1 created)
+- GitHub secrets: 6 to 12 (+6 per-tenant secrets for multi-tenant sync)
 
 ---
 

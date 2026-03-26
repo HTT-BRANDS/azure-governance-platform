@@ -83,3 +83,7 @@ tests/e2e/screenshots/
 
 # OIDC configuration backups
 infrastructure/.oidc-config-*.json
+
+# Tenant configuration (contains real Azure AD IDs — LOW-1)
+config/tenants.yaml
+!config/tenants.yaml.example

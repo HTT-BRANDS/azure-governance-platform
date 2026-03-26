@@ -1,7 +1,7 @@
 # SESSION HANDOFF — Azure Governance Platform
 
-**Last session:** code-puppy-ecf058 — Version: **1.6.0** — P1 SECRETS REMOVED + OPERATIONAL CLEANUP
-**Status:** 🟢 v1.6.0 deployed to staging + prod, OIDC active, prod secrets removed, CI green
+**Last session:** code-puppy-ecf058 — Version: **v1.6.1** — FULL OPS CLEANUP (P1 + P2 + P3)
+**Status:** 🟢 v1.6.1 — All 3 bd issues closed, OIDC-only auth, multi-tenant sync fixed, config externalized
 
 ---
 
@@ -11,11 +11,12 @@
 2,937 unit/integration tests passed, 0 failed
 9 staging smoke tests passed
 ruff check + ruff format: All checks passed (0 errors)
-Version: 1.6.0 — DEPLOYED to staging + production
+Version: 1.6.1 — tagged, staging + production running v1.6.0 (deploy v1.6.1 via workflow_dispatch)
 Requirements: 57/57 implemented (100%)
 Roadmap tasks: 128/128 complete (100%)
-Security findings: 0 open (all 7 HIGH + MEDIUM resolved)
-CI/CD: 4 workflows green, 1 dispatch-only ready
+Security findings: 0 open (all 7 HIGH + MEDIUM resolved, LOW-1 externalized)
+CI/CD: 5 workflows green, multi-tenant sync now fully operational
+bd issues: 0 open (3/3 closed this session)
 ```
 
 ---
@@ -26,7 +27,7 @@ CI/CD: 4 workflows green, 1 dispatch-only ready
 |-------------|-----|---------|--------|-----------|---------|
 | **Dev** | https://app-governance-dev-001.azurewebsites.net | 0.2.0 | ✅ | Secret | Legacy |
 | **Staging** | https://app-governance-staging-xnczpwyv.azurewebsites.net | **1.6.0** | ✅ | **OIDC** | ❌ Removed |
-| **Production** | https://app-governance-prod.azurewebsites.net | **1.6.0** | ✅ | **OIDC** | ✅ Removed (2026-03-26 15:15 UTC) |
+| **Production** | https://app-governance-prod.azurewebsites.net | **1.6.0** | ✅ | **OIDC** | ✅ Removed (2026-03-26 15:15 UTC) — zero secrets |
 
 ---
 

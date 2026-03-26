@@ -49,38 +49,11 @@ validate_uuid() {
 to_upper() { echo "$1" | tr '[:lower:]' '[:upper:]'; }
 
 # ---------------------------------------------------------------------------
-# Tenant lookup functions (matches app/core/tenants_config.py)
+# Tenant lookup — loaded from config/tenants.yaml (no hardcoded IDs)
 # ---------------------------------------------------------------------------
-TENANT_ORDER="HTT BCC FN TLL DCE"
-
-get_tenant_id() {
-    case "$1" in
-        HTT) echo "0c0e35dc-188a-4eb3-b8ba-61752154b407" ;;
-        BCC) echo "b5380912-79ec-452d-a6ca-6d897b19b294" ;;
-        FN)  echo "98723287-044b-4bbb-9294-19857d4128a0" ;;
-        TLL) echo "3c7d2bf3-b597-4766-b5cb-2b489c2904d6" ;;
-        DCE) echo "ce62e17d-2feb-4e67-a115-8ea4af68da30" ;;
-        *)   return 1 ;;
-    esac
-}
-
-get_app_id() {
-    case "$1" in
-        HTT) echo "1e3e8417-49f1-4d08-b7be-47045d8a12e9" ;;
-        BCC) echo "4861906b-2079-4335-923f-a55cc0e44d64" ;;
-        FN)  echo "7648d04d-ccc4-43ac-bace-da1b68bf11b4" ;;
-        TLL) echo "52531a02-78fd-44ba-9ab9-b29675767955" ;;
-        DCE) echo "79c22a10-3f2d-4e6a-bddc-ee65c9a46cb0" ;;
-        *)   return 1 ;;
-    esac
-}
-
-is_valid_code() {
-    case "$1" in
-        HTT|BCC|FN|TLL|DCE) return 0 ;;
-        *) return 1 ;;
-    esac
-}
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=scripts/_tenant_lookup.sh
+source "$SCRIPT_DIR/_tenant_lookup.sh"
 
 set_status() {
     # set_status CODE VALUE — stores STATUS_<CODE>=VALUE

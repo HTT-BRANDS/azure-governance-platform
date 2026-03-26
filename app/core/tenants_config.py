@@ -1,23 +1,35 @@
 """Riverside Tenant Configuration for DMARC/DKIM Insights.
 
-This module contains hardcoded configuration for Tyler's 5 Riverside tenants.
-All sensitive credentials are stored in Azure Key Vault and referenced here.
+Loads tenant configuration from ``config/tenants.yaml`` (gitignored) with
+automatic fallback to ``config/tenants.yaml.example`` for CI/testing.
 
-Security Notes:
-- Client secrets are NOT stored in this file
-- Use Key Vault references for production
-- Rotate credentials regularly
-- Follow least privilege principle for Graph API permissions
-
-Tenant List:
-1. HTT (Head-To-Toe)
-2. BCC (Bishops)
-3. FN (Frenchies)
-4. TLL (Lash Lounge)
-5. DCE (Delta Crown Extensions) - Placeholder for later setup
+Security Notes (LOW-1 remediation):
+- Real tenant IDs, app IDs, and admin emails live in a gitignored YAML file.
+- The committed example file contains placeholder UUIDs only.
+- Override the path via the ``TENANTS_CONFIG_PATH`` environment variable.
 """
 
+from __future__ import annotations
+
+import logging
+import os
+import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
+
+import yaml
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Project root — two levels up from app/core/tenants_config.py
+# ---------------------------------------------------------------------------
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+# ---------------------------------------------------------------------------
+# Data classes (unchanged public API)
+# ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -35,6 +47,7 @@ class TenantConfig:
         is_active: Whether this tenant is currently monitored
         is_riverside: Whether this is a Riverside-managed tenant
         priority: Tenant priority for sync operations (1=highest)
+        oidc_enabled: Whether OIDC workload identity federation is active
     """
 
     tenant_id: str
@@ -58,16 +71,9 @@ class GraphPermissions:
     All are Application permissions requiring admin consent.
     """
 
-    # Read security reports including email authentication reports
     REPORTS_READ_ALL: str = "Reports.Read.All"
-
-    # Read security events and alerts
     SECURITY_EVENTS_READ_ALL: str = "SecurityEvents.Read.All"
-
-    # Read domain information for custom domain verification
     DOMAIN_READ_ALL: str = "Domain.Read.All"
-
-    # Read directory data (users, groups, apps)
     DIRECTORY_READ_ALL: str = "Directory.Read.All"
 
     @classmethod
@@ -91,104 +97,103 @@ class GraphPermissions:
         }
 
 
-# =============================================================================
-# RIVERSIDE TENANT CONFIGURATIONS
-# =============================================================================
-
-RIVERSIDE_TENANTS: dict[str, TenantConfig] = {
-    "HTT": TenantConfig(
-        tenant_id="0c0e35dc-188a-4eb3-b8ba-61752154b407",
-        name="Head-To-Toe (HTT)",
-        code="HTT",
-        admin_email="tyler.granlund-admin@httbrands.com",
-        app_id="1e3e8417-49f1-4d08-b7be-47045d8a12e9",
-        key_vault_secret_name=None,
-        domains=["httbrands.com"],
-        is_active=True,
-        is_riverside=True,
-        priority=1,
-        oidc_enabled=True,
-    ),
-    "BCC": TenantConfig(
-        tenant_id="b5380912-79ec-452d-a6ca-6d897b19b294",
-        name="Bishops (BCC)",
-        code="BCC",
-        admin_email="tyler.granlund-Admin@bishopsbs.onmicrosoft.com",
-        app_id="4861906b-2079-4335-923f-a55cc0e44d64",
-        key_vault_secret_name=None,
-        domains=["bishopsbs.onmicrosoft.com"],
-        is_active=True,
-        is_riverside=True,
-        priority=2,
-        oidc_enabled=True,
-    ),
-    "FN": TenantConfig(
-        tenant_id="98723287-044b-4bbb-9294-19857d4128a0",
-        name="Frenchies (FN)",
-        code="FN",
-        admin_email="tyler.granlund-Admin@ftgfrenchiesoutlook.onmicrosoft.com",
-        app_id="7648d04d-ccc4-43ac-bace-da1b68bf11b4",
-        key_vault_secret_name=None,
-        domains=["ftgfrenchiesoutlook.onmicrosoft.com"],
-        is_active=True,
-        is_riverside=True,
-        priority=3,
-        oidc_enabled=True,
-    ),
-    "TLL": TenantConfig(
-        tenant_id="3c7d2bf3-b597-4766-b5cb-2b489c2904d6",
-        name="Lash Lounge (TLL)",
-        code="TLL",
-        admin_email="tyler.granlund-Admin@LashLoungeFranchise.onmicrosoft.com",
-        app_id="52531a02-78fd-44ba-9ab9-b29675767955",
-        key_vault_secret_name=None,
-        domains=["LashLoungeFranchise.onmicrosoft.com"],
-        is_active=True,
-        is_riverside=True,
-        priority=4,
-        oidc_enabled=True,
-    ),
-    "DCE": TenantConfig(
-        tenant_id="ce62e17d-2feb-4e67-a115-8ea4af68da30",
-        name="Delta Crown Extensions (DCE)",
-        code="DCE",
-        admin_email="tyler.granlund-admin_httbrands.com#EXT#@deltacrown.onmicrosoft.com",
-        app_id="79c22a10-3f2d-4e6a-bddc-ee65c9a46cb0",
-        key_vault_secret_name=None,
-        domains=["deltacrown.onmicrosoft.com"],
-        is_active=True,
-        is_riverside=True,
-        priority=5,
-        oidc_enabled=True,
-    ),
-}
+# ---------------------------------------------------------------------------
+# YAML config loader
+# ---------------------------------------------------------------------------
 
 
-# =============================================================================
-# DMARC/DKIM MONITORING CONFIGURATION
-# =============================================================================
+def _find_config_path() -> Path:
+    """Locate the tenant configuration YAML file.
+
+    Search order:
+        1. ``TENANTS_CONFIG_PATH`` environment variable (explicit override)
+        2. ``config/tenants.yaml`` (gitignored, real values)
+        3. ``config/tenants.yaml.example`` (committed, placeholder values)
+
+    Returns:
+        Resolved ``Path`` to the chosen file.
+
+    Raises:
+        FileNotFoundError: If none of the candidate paths exist.
+    """
+    env_path = os.environ.get("TENANTS_CONFIG_PATH")
+    if env_path:
+        p = Path(env_path)
+        if p.is_file():
+            return p
+        logger.warning("TENANTS_CONFIG_PATH=%s does not exist — trying defaults", env_path)
+
+    real = _PROJECT_ROOT / "config" / "tenants.yaml"
+    if real.is_file():
+        return real
+
+    example = _PROJECT_ROOT / "config" / "tenants.yaml.example"
+    if example.is_file():
+        logger.info(
+            "Using config/tenants.yaml.example (placeholder values). "
+            "Copy to config/tenants.yaml with real IDs for production."
+        )
+        return example
+
+    raise FileNotFoundError(
+        "Tenant config not found. Expected config/tenants.yaml or set TENANTS_CONFIG_PATH. "
+        "See config/tenants.yaml.example for the template."
+    )
+
+
+def _load_tenants(path: Path) -> dict[str, TenantConfig]:
+    """Parse the YAML file at *path* into a dict of ``TenantConfig``."""
+    with open(path) as fh:
+        data = yaml.safe_load(fh)
+
+    tenants: dict[str, TenantConfig] = {}
+    for code, cfg in data["tenants"].items():
+        code_upper = code.upper()
+        tenants[code_upper] = TenantConfig(
+            tenant_id=cfg["tenant_id"],
+            name=cfg["name"],
+            code=cfg.get("code", code_upper),
+            admin_email=cfg["admin_email"],
+            app_id=cfg["app_id"],
+            key_vault_secret_name=cfg.get("key_vault_secret_name"),
+            domains=cfg.get("domains", []),
+            is_active=cfg.get("is_active", True),
+            is_riverside=cfg.get("is_riverside", True),
+            priority=cfg.get("priority", 5),
+            oidc_enabled=cfg.get("oidc_enabled", True),
+        )
+    return tenants
+
+
+def _load() -> dict[str, TenantConfig]:
+    """Find and load the tenant configuration (cached at module level)."""
+    path = _find_config_path()
+    logger.debug("Loading tenant config from %s", path)
+    return _load_tenants(path)
+
+
+# ---------------------------------------------------------------------------
+# Module-level singleton — loaded once on first import
+# ---------------------------------------------------------------------------
+RIVERSIDE_TENANTS: dict[str, TenantConfig] = _load()
+
+
+# ---------------------------------------------------------------------------
+# DMARC/DKIM monitoring configuration (unchanged)
+# ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
 class DmarcDkimConfig:
     """Configuration for DMARC/DKIM monitoring across all tenants."""
 
-    # Graph API endpoints for email authentication
     GRAPH_BASE_URL: str = "https://graph.microsoft.com/v1.0"
-
-    # Security report endpoints
     EMAIL_AUTHENTICATION_REPORTS_ENDPOINT: str = "/reports/getEmailActivityUserDetail"
     SECURITY_ALERTS_ENDPOINT: str = "/security/alerts"
-
-    # Sync intervals (in minutes)
     DMARC_SYNC_INTERVAL_MINUTES: int = 60
     DKIM_SYNC_INTERVAL_MINUTES: int = 60
-
-    # Alert thresholds
     DMARC_FAILURE_THRESHOLD_PERCENT: float = 5.0
     DKIM_FAILURE_THRESHOLD_PERCENT: float = 5.0
-
-    # Data retention (days)
     DMARC_DATA_RETENTION_DAYS: int = 90
 
     @classmethod
@@ -203,25 +208,21 @@ class DmarcDkimConfig:
         }
 
 
-# =============================================================================
-# KEY VAULT CONFIGURATION
-# =============================================================================
+# ---------------------------------------------------------------------------
+# Key Vault configuration (unchanged)
+# ---------------------------------------------------------------------------
 
 KEY_VAULT_CONFIG = {
-    # Key Vault URL should be set via environment variable
-    # Format: https://{vault-name}.vault.azure.net/
     "vault_url_env_var": "KEY_VAULT_URL",
-    # Secret naming convention for tenant credentials
     "secret_name_template": "{tenant_code.lower()}-client-secret",
-    # Certificate-based auth (preferred over secrets)
-    "use_certificate_auth": False,  # Set to True when certificates are available
+    "use_certificate_auth": False,
     "certificate_env_var": "AZURE_CLIENT_CERTIFICATE_PATH",
 }
 
 
-# =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
+# ---------------------------------------------------------------------------
+# Helper functions (unchanged public API)
+# ---------------------------------------------------------------------------
 
 
 def get_active_tenants() -> dict[str, TenantConfig]:
@@ -283,24 +284,19 @@ def get_app_id_for_tenant(tenant_id: str) -> str | None:
 
 def validate_tenant_config() -> list[str]:
     """Validate all tenant configurations and return list of issues."""
-    issues = []
+    issues: list[str] = []
 
     for code, config in RIVERSIDE_TENANTS.items():
-        # Check for unconfigured or missing values
         if config.tenant_id in ("TBD", "", None):
             issues.append(f"{code}: Tenant ID is not set")
 
         if config.app_id in ("TBD", "", None):
             issues.append(f"{code}: App ID is not set")
 
-        # When OIDC is enabled, key_vault_secret_name is not required
         if not config.oidc_enabled and config.key_vault_secret_name in ("TBD", "", None):
             issues.append(
                 f"{code}: key_vault_secret_name is not set (required when oidc_enabled=False)"
             )
-
-        # Validate UUID format
-        import uuid
 
         try:
             if config.tenant_id not in ("TBD", "", None):
@@ -314,34 +310,29 @@ def validate_tenant_config() -> list[str]:
         except ValueError:
             issues.append(f"{code}: App ID is not a valid UUID")
 
-        # Check admin email format
         if "@" not in config.admin_email:
             issues.append(f"{code}: Admin email is invalid")
 
     return issues
 
 
-# =============================================================================
-# DEFAULT SETTINGS FOR NEW TENANTS
-# =============================================================================
+# ---------------------------------------------------------------------------
+# Default settings for new tenants (unchanged)
+# ---------------------------------------------------------------------------
 
 DEFAULT_TENANT_SETTINGS = {
-    # Graph API version to use
     "graph_api_version": "v1.0",
-    # Default sync intervals (hours)
     "sync_intervals": {
         "dmarc_dkim": 1,
         "security_alerts": 1,
         "domain_status": 24,
     },
-    # Monitoring flags
     "monitoring": {
         "enable_dmarc_monitoring": True,
         "enable_dkim_monitoring": True,
         "enable_spf_monitoring": True,
         "alert_on_failure": True,
     },
-    # Retry configuration
     "retry": {
         "max_retries": 3,
         "backoff_factor": 2.0,

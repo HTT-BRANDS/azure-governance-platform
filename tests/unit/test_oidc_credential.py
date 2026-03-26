@@ -579,12 +579,11 @@ class TestAzureCheckGetCredentialOidcBypass:
 # ===========================================================================
 
 
+# Build the parametrized list dynamically from the tenant config — no hardcoded IDs.
+from app.core.tenants_config import RIVERSIDE_TENANTS as _RT
+
 ALL_FIVE_TENANTS = [
-    ("HTT", "0c0e35dc-188a-4eb3-b8ba-61752154b407", "1e3e8417-49f1-4d08-b7be-47045d8a12e9"),
-    ("BCC", "b5380912-79ec-452d-a6ca-6d897b19b294", "4861906b-2079-4335-923f-a55cc0e44d64"),
-    ("FN", "98723287-044b-4bbb-9294-19857d4128a0", "7648d04d-ccc4-43ac-bace-da1b68bf11b4"),
-    ("TLL", "3c7d2bf3-b597-4766-b5cb-2b489c2904d6", "52531a02-78fd-44ba-9ab9-b29675767955"),
-    ("DCE", "ce62e17d-2feb-4e67-a115-8ea4af68da30", "79c22a10-3f2d-4e6a-bddc-ee65c9a46cb0"),
+    (code, cfg.tenant_id, cfg.app_id) for code, cfg in _RT.items()
 ]
 
 
