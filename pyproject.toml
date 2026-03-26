@@ -33,6 +33,7 @@ dependencies = [
     "python-multipart>=0.0.6",
     "cryptography>=42.0.0",
     # Azure SDKs
+    "requests>=2.33.0",  # CVE-2026-25645 fix (transitive via azure-identity/msal)
     "azure-identity>=1.15.0",
     "azure-mgmt-resource>=23.0.0,<24.0.0",
     "azure-mgmt-costmanagement>=4.0.0",
