@@ -50,12 +50,12 @@ async def with_timeout(
     """
     try:
         return await asyncio.wait_for(coro, timeout=timeout)
-    except builtins.TimeoutError:
+    except builtins.TimeoutError as err:
         logger.warning(
             f"Operation '{operation_name}' timed out after {timeout}s",
             extra={"operation": operation_name, "timeout": timeout},
         )
-        raise TimeoutError(operation_name, timeout)
+        raise TimeoutError(operation_name, timeout) from err
 
 
 def timeout_async(timeout: float = DEFAULT_TIMEOUT, operation_name: str | None = None):
