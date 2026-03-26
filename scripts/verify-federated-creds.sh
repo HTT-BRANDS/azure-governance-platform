@@ -10,6 +10,8 @@
 #     --mi-object-id <managed_identity_object_id> \
 #     [--tenant HTT|BCC|FN|TLL|DCE] \
 #     [--name <federated-credential-name>]
+#
+# NOTE: Requires bash 3.2+ (macOS default). No associative arrays used.
 
 set -euo pipefail
 
@@ -28,26 +30,44 @@ warn() { echo -e "  ${YELLOW}⚠ WARN${RESET}  $*"; }
 err()  { echo -e "  ${RED}✗ FAIL${RESET}  $*" >&2; }
 hdr()  { echo -e "\n${BOLD}${CYAN}$*${RESET}"; }
 
-# ---------------------------------------------------------------------------
-# Tenant definitions (mirrors app/core/tenants_config.py — source of truth)
-# ---------------------------------------------------------------------------
-declare -A TENANT_IDS=(
-    [HTT]="0c0e35dc-188a-4eb3-b8ba-61752154b407"
-    [BCC]="b5380912-79ec-452d-a6ca-6d897b19b294"
-    [FN]="98723287-044b-4bbb-9294-19857d4128a0"
-    [TLL]="3c7d2bf3-b597-4766-b5cb-2b489c2904d6"
-    [DCE]="ce62e17d-2feb-4e67-a115-8ea4af68da30"
-)
+to_upper() { echo "$1" | tr '[:lower:]' '[:upper:]'; }
 
-declare -A APP_IDS=(
-    [HTT]="1e3e8417-49f1-4d08-b7be-47045d8a12e9"
-    [BCC]="4861906b-2079-4335-923f-a55cc0e44d64"
-    [FN]="7648d04d-ccc4-43ac-bace-da1b68bf11b4"
-    [TLL]="52531a02-78fd-44ba-9ab9-b29675767955"
-    [DCE]="79c22a10-3f2d-4e6a-bddc-ee65c9a46cb0"
-)
+# ---------------------------------------------------------------------------
+# Tenant lookup functions (mirrors app/core/tenants_config.py)
+# ---------------------------------------------------------------------------
+TENANT_ORDER="HTT BCC FN TLL DCE"
 
-TENANT_ORDER=(HTT BCC FN TLL DCE)
+get_tenant_id() {
+    case "$1" in
+        HTT) echo "0c0e35dc-188a-4eb3-b8ba-61752154b407" ;;
+        BCC) echo "b5380912-79ec-452d-a6ca-6d897b19b294" ;;
+        FN)  echo "98723287-044b-4bbb-9294-19857d4128a0" ;;
+        TLL) echo "3c7d2bf3-b597-4766-b5cb-2b489c2904d6" ;;
+        DCE) echo "ce62e17d-2feb-4e67-a115-8ea4af68da30" ;;
+        *)   return 1 ;;
+    esac
+}
+
+get_app_id() {
+    case "$1" in
+        HTT) echo "1e3e8417-49f1-4d08-b7be-47045d8a12e9" ;;
+        BCC) echo "4861906b-2079-4335-923f-a55cc0e44d64" ;;
+        FN)  echo "7648d04d-ccc4-43ac-bace-da1b68bf11b4" ;;
+        TLL) echo "52531a02-78fd-44ba-9ab9-b29675767955" ;;
+        DCE) echo "79c22a10-3f2d-4e6a-bddc-ee65c9a46cb0" ;;
+        *)   return 1 ;;
+    esac
+}
+
+is_valid_code() {
+    case "$1" in
+        HTT|BCC|FN|TLL|DCE) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+set_status() { eval "VSTATUS_${1}=\"${2}\""; }
+get_status()  { eval "echo \"\${VSTATUS_${1}:-UNKNOWN}\""; }
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -60,14 +80,14 @@ CRED_NAME="governance-platform-app-service"
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case "$1" in
         --managing-tenant-id)
             MANAGING_TENANT_ID="$2"; shift 2 ;;
         --mi-object-id)
             MI_OBJECT_ID="$2"; shift 2 ;;
         --tenant)
-            FILTER_TENANT="${2^^}"; shift 2 ;;
+            FILTER_TENANT=$(to_upper "$2"); shift 2 ;;
         --name)
             CRED_NAME="$2"; shift 2 ;;
         -h|--help)
@@ -82,17 +102,17 @@ done
 # ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------
-if [[ -z "$MANAGING_TENANT_ID" ]]; then
+if [ -z "$MANAGING_TENANT_ID" ]; then
     err "--managing-tenant-id is required"
     exit 1
 fi
 
-if [[ -z "$MI_OBJECT_ID" ]]; then
+if [ -z "$MI_OBJECT_ID" ]; then
     err "--mi-object-id is required"
     exit 1
 fi
 
-if [[ -n "$FILTER_TENANT" && -z "${TENANT_IDS[$FILTER_TENANT]+_}" ]]; then
+if [ -n "$FILTER_TENANT" ] && ! is_valid_code "$FILTER_TENANT"; then
     err "Unknown tenant code: $FILTER_TENANT. Valid: HTT BCC FN TLL DCE"
     exit 1
 fi
@@ -100,19 +120,14 @@ fi
 # ---------------------------------------------------------------------------
 # Build work list
 # ---------------------------------------------------------------------------
-if [[ -n "$FILTER_TENANT" ]]; then
-    WORK_LIST=("$FILTER_TENANT")
+if [ -n "$FILTER_TENANT" ]; then
+    WORK_LIST="$FILTER_TENANT"
 else
-    WORK_LIST=("${TENANT_ORDER[@]}")
+    WORK_LIST="$TENANT_ORDER"
 fi
 
 EXPECTED_ISSUER="https://login.microsoftonline.com/${MANAGING_TENANT_ID}/v2.0"
 EXPECTED_AUDIENCE="api://AzureADTokenExchange"
-
-# ---------------------------------------------------------------------------
-# Status tracking
-# ---------------------------------------------------------------------------
-declare -A STATUS=()
 PASS_COUNT=0
 FAIL_COUNT=0
 
@@ -126,9 +141,9 @@ echo "  Expected Subject : ${MI_OBJECT_ID}"
 echo "  Expected Audience: ${EXPECTED_AUDIENCE}"
 echo "  Credential Name  : ${CRED_NAME}"
 
-for CODE in "${WORK_LIST[@]}"; do
-    TENANT_ID="${TENANT_IDS[$CODE]}"
-    APP_ID="${APP_IDS[$CODE]}"
+for CODE in $WORK_LIST; do
+    TENANT_ID=$(get_tenant_id "$CODE")
+    APP_ID=$(get_app_id "$CODE")
 
     hdr "── Tenant: ${CODE} (${TENANT_ID})"
     echo "   App ID: ${APP_ID}"
@@ -136,7 +151,7 @@ for CODE in "${WORK_LIST[@]}"; do
     # Log in read-only
     if ! az login --tenant "$TENANT_ID" --allow-no-subscriptions --output none 2>/dev/null; then
         err "Cannot log in to tenant ${CODE}"
-        STATUS[$CODE]="LOGIN_FAIL"
+        set_status "$CODE" "LOGIN_FAIL"
         FAIL_COUNT=$((FAIL_COUNT + 1))
         continue
     fi
@@ -148,15 +163,15 @@ for CODE in "${WORK_LIST[@]}"; do
     echo "   Total federated credentials: ${CRED_COUNT}"
 
     # Show all credentials for visibility
-    if [[ "$CRED_COUNT" -gt 0 ]]; then
+    if [ "$CRED_COUNT" -gt 0 ]; then
         echo "$ALL_CREDS" | python3 -c "
 import sys, json
 creds = json.load(sys.stdin)
 for c in creds:
-    print(f\"     [{c.get('name','?')}]\")
-    print(f\"       issuer   : {c.get('issuer','?')}\")
-    print(f\"       subject  : {c.get('subject','?')}\")
-    print(f\"       audiences: {c.get('audiences','?')}\")
+    print('     [' + c.get('name','?') + ']')
+    print('       issuer   : ' + c.get('issuer','?'))
+    print('       subject  : ' + c.get('subject','?'))
+    print('       audiences: ' + str(c.get('audiences','?')))
 " 2>/dev/null || true
     fi
 
@@ -168,9 +183,9 @@ found = [c for c in creds if c.get('name') == '$CRED_NAME']
 print(json.dumps(found[0]) if found else 'null')
 " 2>/dev/null || echo "null")
 
-    if [[ "$TARGET_CRED" == "null" ]]; then
+    if [ "$TARGET_CRED" = "null" ]; then
         err "Credential '${CRED_NAME}' NOT FOUND in tenant ${CODE}"
-        STATUS[$CODE]="MISSING"
+        set_status "$CODE" "MISSING"
         FAIL_COUNT=$((FAIL_COUNT + 1))
         continue
     fi
@@ -182,7 +197,7 @@ print(json.dumps(found[0]) if found else 'null')
 
     TENANT_PASS=true
 
-    if [[ "$ACTUAL_ISSUER" == "$EXPECTED_ISSUER" ]]; then
+    if [ "$ACTUAL_ISSUER" = "$EXPECTED_ISSUER" ]; then
         ok "Issuer matches"
     else
         err "Issuer MISMATCH"
@@ -191,7 +206,7 @@ print(json.dumps(found[0]) if found else 'null')
         TENANT_PASS=false
     fi
 
-    if [[ "$ACTUAL_SUBJECT" == "$MI_OBJECT_ID" ]]; then
+    if [ "$ACTUAL_SUBJECT" = "$MI_OBJECT_ID" ]; then
         ok "Subject (MI Object ID) matches"
     else
         err "Subject MISMATCH"
@@ -209,11 +224,11 @@ print(json.dumps(found[0]) if found else 'null')
         TENANT_PASS=false
     fi
 
-    if [[ "$TENANT_PASS" == true ]]; then
-        STATUS[$CODE]="PASS"
+    if [ "$TENANT_PASS" = true ]; then
+        set_status "$CODE" "PASS"
         PASS_COUNT=$((PASS_COUNT + 1))
     else
-        STATUS[$CODE]="FAIL"
+        set_status "$CODE" "FAIL"
         FAIL_COUNT=$((FAIL_COUNT + 1))
     fi
 done
@@ -225,8 +240,9 @@ hdr "=== Verification Summary ==="
 printf "%-6s  %-40s  %s\n" "CODE" "TENANT_ID" "STATUS"
 printf "%-6s  %-40s  %s\n" "------" "----------------------------------------" "-------"
 
-for CODE in "${WORK_LIST[@]}"; do
-    STATE="${STATUS[$CODE]:-UNKNOWN}"
+for CODE in $WORK_LIST; do
+    STATE=$(get_status "$CODE")
+    TENANT_ID=$(get_tenant_id "$CODE")
     case "$STATE" in
         PASS)
             INDICATOR="${GREEN}✓ PASS${RESET}" ;;
@@ -235,14 +251,14 @@ for CODE in "${WORK_LIST[@]}"; do
         *)
             INDICATOR="${YELLOW}? ${STATE}${RESET}" ;;
     esac
-    printf "%-6s  %-40s  " "$CODE" "${TENANT_IDS[$CODE]}"
+    printf "%-6s  %-40s  " "$CODE" "$TENANT_ID"
     echo -e "${INDICATOR}"
 done
 
 echo ""
 echo -e "  ${GREEN}Passed: ${PASS_COUNT}${RESET}  |  ${RED}Failed: ${FAIL_COUNT}${RESET}"
 
-if [[ $FAIL_COUNT -gt 0 ]]; then
+if [ $FAIL_COUNT -gt 0 ]; then
     echo ""
     err "Verification FAILED — run setup-federated-creds.sh to fix missing credentials"
     exit 1
