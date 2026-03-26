@@ -8,7 +8,7 @@
 #   1. QA Gate       — lint + full test suite (hard gate)
 #   2. Security Scan — Trivy + pip-audit
 #   3. Build Image   — az acr build → production ACR as :latest + :sha-*
-#   4. Deploy        — az webapp restart (requires prod environment approval)
+#   4. Deploy        — az webapp config container set + restart (requires prod environment approval)
 #   5. Smoke Test    — health + auth wall checks against production URL
 #   6. Notify        — Teams webhook on success/failure
 #
@@ -227,8 +227,12 @@ jobs:
       - name: Set subscription context
         run: az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Restart App Service (pulls new :latest image)
+      - name: Update container image and restart App Service
         run: |
+          az webapp config container set \
+            --name ${{ env.AZURE_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --container-image-name ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_REPO }}:${{ needs.build-image.outputs.sha_tag }}
           az webapp restart \
             --name ${{ env.AZURE_APP_NAME }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
