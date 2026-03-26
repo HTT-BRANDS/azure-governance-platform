@@ -143,16 +143,20 @@ class TestUser:
         assert user.has_access_to_tenant("tenant-z") is True
         assert user.has_access_to_tenant("any-tenant-id") is True
 
-    def test_has_access_to_tenant_returns_true_when_no_restrictions(self):
-        """User.has_access_to_tenant returns True when tenant_ids is empty (no restrictions)."""
+    def test_has_access_to_tenant_fails_closed_when_no_tenants(self):
+        """User.has_access_to_tenant fails closed when tenant_ids is empty.
+
+        P0 security fix: empty tenant_ids means no access, not universal access.
+        Admin role is the only bypass for all-tenant access.
+        """
         user = User(
             id="user-7",
             email="user@example.com",
             roles=["user"],
             tenant_ids=[],
         )
-        # Empty tenant_ids means access to all
-        assert user.has_access_to_tenant("any-tenant") is True
+        # Fail closed — no tenants assigned means no access
+        assert user.has_access_to_tenant("any-tenant") is False
 
     def test_has_access_to_tenant_returns_false_when_tenant_not_in_list(self):
         """User.has_access_to_tenant returns False when tenant_id not in tenant_ids."""
