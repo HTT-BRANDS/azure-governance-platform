@@ -651,3 +651,36 @@ This epic maps the non-functional requirements (performance, security, availabil
 | TestExportDownloads | REQ-1012 (real API calls) |
 | TestAuthProtection | REQ-1005 (JWT enforcement) |
 | TestTenantScopedEndpoints | REQ-1012 (tenant isolation) |
+
+---
+
+## Epic 17: Legal Compliance (Phase 1)
+
+| Req ID | User Story | Acceptance Criteria | Impl Agent | Review Agent | Test Type | Test Agent | Security | Sign-Off | Status | bd Issue |
+|--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
+| REQ-1701 | GPC Middleware | Detect Sec-GPC:1 header, auto-opt-out analytics/marketing, audit logging | Code-Puppy | Security Auditor | Unit + Integration | Watchdog | STRIDE reviewed | Planning Agent | ✅ Passed | — |
+| REQ-1702 | Cookie Consent Banner | 4 categories (necessary/functional/analytics/marketing), layered consent, GPC integration | Code-Puppy | Experience Architect | E2E + Manual | QA Kitten | Privacy review | Planning Agent | ✅ Passed | — |
+| REQ-1703 | Privacy Policy Page | CCPA/GDPR compliant content, data retention disclosure, contact info | Code-Puppy | Experience Architect | Content Review | QA Expert | Legal review | Planning Agent | ✅ Passed | — |
+
+## Epic 18: Performance Foundation (Phase 2)
+
+| Req ID | User Story | Acceptance Criteria | Impl Agent | Review Agent | Test Type | Test Agent | Security | Sign-Off | Status | bd Issue |
+|--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
+| REQ-1801 | HTTP Request Timeouts | All Azure API calls have timeouts (30-300s), decorator pattern, logging | Code-Puppy | Solutions Architect | Unit | Watchdog | N/A | Planning Agent | ✅ Passed | — |
+| REQ-1802 | Deep Health Checks | /health/deep verifies DB, cache, Azure auth with response times | Code-Puppy | Solutions Architect | Integration | Terminal QA | N/A | Planning Agent | ✅ Passed | — |
+
+## Epic 19: Accessibility & UX (Phase 3)
+
+| Req ID | User Story | Acceptance Criteria | Impl Agent | Review Agent | Test Type | Test Agent | Security | Sign-Off | Status | bd Issue |
+|--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
+| REQ-1901 | Touch Target Verification | 24×24px minimum enforcement, client-side scanner, API endpoint | Code-Puppy | Experience Architect | Manual + Unit | QA Kitten | N/A | Planning Agent | ✅ Passed | — |
+| REQ-1902 | Global Search | Cmd+K shortcut, parallel search across tenants/users/resources/alerts, keyboard nav | Code-Puppy | Experience Architect | E2E | QA Kitten | N/A | Planning Agent | ✅ Passed | — |
+| REQ-1903 | WCAG 2.2 Manual Testing | Comprehensive checklist with JavaScript automation helpers | Experience Architect | QA Expert | Manual | QA Kitten | N/A | Planning Agent | ✅ Passed | — |
+
+## Epic 20: Observability (Phase 4)
+
+| Req ID | User Story | Acceptance Criteria | Impl Agent | Review Agent | Test Type | Test Agent | Security | Sign-Off | Status | bd Issue |
+|--------|-----------|-------------------|------------|-------------|-----------|-----------|----------|----------|--------|----------|
+| REQ-2001 | Distributed Tracing | OpenTelemetry integration, FastAPI instrumentation, correlation IDs | Code-Puppy | Solutions Architect | Integration | Terminal QA | N/A | Planning Agent | ✅ Passed | — |
+| REQ-2002 | Structured Logging | JSON format, correlation ID propagation, configurable exporters | Code-Puppy | Solutions Architect | Unit | Watchdog | N/A | Planning Agent | ✅ Passed | — |
+| REQ-2003 | Metrics API | /api/v1/metrics endpoints for cache, DB, health metrics | Code-Puppy | Solutions Architect | Integration | Terminal QA | N/A | Planning Agent | ✅ Passed | — |

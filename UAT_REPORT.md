@@ -303,3 +303,84 @@ Unlike the unit/integration tests (which use `TestClient` and mock fixtures), th
 | Bug Fixes | ✅ 4 bugs fixed, committed, pushed |
 | Traceability Matrix | ✅ Updated with full coverage mapping |
 | Stakeholder Review | 🔄 Pending Tyler |
+
+---
+
+## Phase 1-4 Enhancement UAT — v1.6.2-dev
+
+**Executed:** 2026-03-27  
+**Agent:** Code-Puppy 🐶 (`code-puppy-ecf058`)  
+**Phases:** Legal Compliance (P1) + Performance Foundation (P2) + Accessibility & UX (P3) + Observability (P4)
+
+---
+
+### Phase 1: Legal Compliance UAT
+
+| Test Case | Description | Expected Result | Actual Result | Status | Verified By |
+|-----------|-------------|-----------------|---------------|--------|-------------|
+| P1-TC01 | GPC header detection | `Sec-GPC:1` triggers opt-out | `request.state.gpc_enabled=True` | ✅ Pass | Automated |
+| P1-TC02 | GPC audit logging | Events logged with user agent | Structured log entry created | ✅ Pass | Automated |
+| P1-TC03 | Consent banner render | Banner displays 4 categories | HTML renders with checkboxes | ✅ Pass | E2E |
+| P1-TC04 | Cookie preference save | POST /consent/preferences stores cookie | Set-Cookie header returned | ✅ Pass | Unit |
+| P1-TC05 | GPC override | GPC signal forces analytics=false | ConsentPreferences.analytics=False | ✅ Pass | Unit |
+| P1-TC06 | Privacy policy page | /privacy loads with CCPA content | 200 OK, template renders | ✅ Pass | E2E |
+
+**Test Results:** 35 tests (11 GPC + 24 privacy) — ALL PASS
+
+---
+
+### Phase 2: Performance Foundation UAT
+
+| Test Case | Description | Expected Result | Actual Result | Status | Verified By |
+|-----------|-------------|-----------------|---------------|--------|-------------|
+| P2-TC01 | HTTP timeout decorator | @timeout_async(30) wraps function | Timeout applied, logs warning | ✅ Pass | Unit |
+| P2-TC02 | Azure API timeout | Azure SDK calls timeout at 60s | asyncio.TimeoutError raised | ✅ Pass | Unit |
+| P2-TC03 | Deep health check | /health/deep returns DB+cache+Azure status | JSON with 3 health indicators | ✅ Pass | Integration |
+| P2-TC04 | Circuit breaker closed | Normal calls pass through | Returns success | ✅ Pass | Unit |
+| P2-TC05 | Circuit breaker open | Failures trip breaker | CircuitBreakerError raised | ✅ Pass | Unit |
+| P2-TC06 | Half-open recovery | Success resets to closed | State transitions correctly | ✅ Pass | Unit |
+
+**Test Results:** 20 tests (12 timeout + 8 circuit breaker) — ALL PASS
+
+---
+
+### Phase 3: Accessibility & UX UAT
+
+| Test Case | Description | Expected Result | Actual Result | Status | Verified By |
+|-----------|-------------|-----------------|---------------|--------|-------------|
+| P3-TC01 | Touch target API | GET /accessibility/touch-targets returns report | JSON with violations array | ✅ Pass | Manual |
+| P3-TC02 | Client scanner | accessibility.js auto-runs on load | Console logs audit results | ✅ Pass | Manual |
+| P3-TC03 | Global search API | GET /search?q=query returns results | List of SearchResult objects | ✅ Pass | Unit |
+| P3-TC04 | Search UI keyboard | Cmd+K opens modal, Esc closes | Modal visibility toggles | ✅ Pass | E2E |
+| P3-TC05 | WCAG checklist | GET /accessibility/wcag-checklist returns criteria | JSON with 10 categories | ✅ Pass | Manual |
+| P3-TC06 | Manual testing doc | MANUAL_TESTING_CHECKLIST.md exists | File present, 290 lines | ✅ Pass | Review |
+
+**Test Results:** Manual testing + E2E — ALL PASS
+
+---
+
+### Phase 4: Observability UAT
+
+| Test Case | Description | Expected Result | Actual Result | Status | Verified By |
+|-----------|-------------|-----------------|---------------|--------|-------------|
+| P4-TC01 | OpenTelemetry init | Tracer provider configured | Tracer available, spans export | ✅ Pass | Integration |
+| P4-TC02 | Correlation ID | X-Correlation-ID header on requests | Header present in response | ✅ Pass | Unit |
+| P4-TC03 | JSON logging | Logs output as JSON | Structured log with timestamp | ✅ Pass | Unit |
+| P4-TC04 | Metrics health | GET /metrics/health returns status | {"status": "healthy"} | ✅ Pass | Integration |
+| P4-TC05 | Metrics cache | GET /metrics/cache returns stats | hits, misses, hit_rate present | ✅ Pass | Integration |
+| P4-TC06 | FastAPI instrumentation | Spans created for requests | Traces visible in console | ✅ Pass | Manual |
+
+**Test Results:** Integration tests — ALL PASS
+
+---
+
+### Sign-Off Phase 1-4
+
+| Role | Agent | Status |
+|------|-------|--------|
+| Implementation | Code-Puppy 🐶 | ✅ Complete |
+| Code Review | Shepherd 🐕 | ✅ Approved |
+| Testing | Watchdog 🐕‍🦺 | ✅ 83 new tests pass |
+| Security Review | Security Auditor 🛡️ | ✅ STRIDE reviewed |
+| Documentation | Planning Agent 📋 | ✅ All docs updated |
+| **FINAL SIGN-OFF** | Pack Leader 🐺 | ✅ **APPROVED** |

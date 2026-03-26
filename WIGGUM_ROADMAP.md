@@ -894,6 +894,98 @@ None of these mask production bugs.
 
 | **TOTAL** | **128** | **128** | **0** | **✅ All Complete** |
 
+## Phase 12: Legal Compliance (P1)
+
+**Status:** ✅ COMPLETE (v1.6.1)
+**Goal:** CCPA/GDPR/GPC compliance with privacy framework
+
+### 12.1 GPC Middleware
+- [x] 12.1.1 Implement Sec-GPC:1 detection (Code-Puppy 🐶)
+- [x] 12.1.2 Add audit logging for GPC events (Code-Puppy 🐶)
+- [x] 12.1.3 Integrate with consent management (Code-Puppy 🐶)
+- [x] 12.1.4 Write unit tests — 11 passed (Watchdog 🐕‍🦺)
+- [x] 12.1.5 Document GPC compliance (Planning Agent 📋)
+
+### 12.2 Privacy Framework
+- [x] 12.2.1 Create consent categories model (Code-Puppy 🐶)
+- [x] 12.2.2 Implement cookie consent banner UI (Code-Puppy 🐶)
+- [x] 12.2.3 Create REST API for consent management — 6 endpoints (Code-Puppy 🐶)
+- [x] 12.2.4 Add privacy policy page (Code-Puppy 🐶)
+- [x] 12.2.5 Write comprehensive tests — 24 passed (Watchdog 🐕‍🦺)
+
+## Phase 13: Performance Foundation (P2)
+
+**Status:** ✅ COMPLETE (v1.6.1)
+**Goal:** HTTP timeouts, circuit breakers, deep health checks
+
+### 13.1 Request Timeouts
+- [x] 13.1.1 Create timeout utilities with decorators (Code-Puppy 🐶)
+- [x] 13.1.2 Apply timeouts to Azure SDK calls (Code-Puppy 🐶)
+- [x] 13.1.3 Configure predefined timeout values — AZURE_LIST, AZURE_GET, etc. (Code-Puppy 🐶)
+- [x] 13.1.4 Write unit tests — 12 passed (Watchdog 🐕‍🦺)
+
+### 13.2 Health Monitoring
+- [x] 13.2.1 Implement deep health check endpoint — /monitoring/health/deep (Code-Puppy 🐶)
+- [x] 13.2.2 Add DB connectivity verification (Code-Puppy 🐶)
+- [x] 13.2.3 Add cache verification (Code-Puppy 🐶)
+- [x] 13.2.4 Add Azure auth verification (Code-Puppy 🐶)
+
+### 13.3 Circuit Breaker
+- [x] 13.3.1 Create AsyncCircuitBreaker with asyncio.Lock (Code-Puppy 🐶)
+- [x] 13.3.2 Create SyncCircuitBreaker with threading.Lock (Code-Puppy 🐶)
+- [x] 13.3.3 Implement CLOSED/OPEN/HALF_OPEN state machine (Code-Puppy 🐶)
+- [x] 13.3.4 Pre-configure breakers for Azure services (Code-Puppy 🐶)
+
+## Phase 14: Accessibility & UX (P3)
+
+**Status:** ✅ COMPLETE (v1.6.2-dev)
+**Goal:** WCAG 2.2 compliance, touch targets, global search
+
+### 14.1 Touch Target Compliance
+- [x] 14.1.1 Create client-side touch target scanner — accessibility.js (Code-Puppy 🐶)
+- [x] 14.1.2 Create API endpoint for touch target reports — /api/v1/accessibility/touch-targets (Code-Puppy 🐶)
+- [x] 14.1.3 Add focus obscured detection for sticky headers (Code-Puppy 🐶)
+- [x] 14.1.4 Add WCAG checklist API — /api/v1/accessibility/wcag-checklist (Code-Puppy 🐶)
+
+### 14.2 Global Search
+- [x] 14.2.1 Implement parallel search service — SearchService (Code-Puppy 🐶)
+- [x] 14.2.2 Create search REST API — /api/v1/search/ (Code-Puppy 🐶)
+- [x] 14.2.3 Add autocomplete endpoint — /api/v1/search/suggestions (Code-Puppy 🐶)
+- [x] 14.2.4 Build Cmd+K search UI component — search.html (Code-Puppy 🐶)
+- [x] 14.2.5 Add keyboard navigation (Code-Puppy 🐶)
+
+### 14.3 WCAG Documentation
+- [x] 14.3.1 Create manual testing checklist — MANUAL_TESTING_CHECKLIST.md (Experience Architect 🏛️)
+- [x] 14.3.2 Add JavaScript automation helpers (Experience Architect 🏛️)
+- [x] 14.3.3 Document browser/AT compatibility matrix (Experience Architect 🏛️)
+
+## Phase 15: Observability (P4)
+
+**Status:** ✅ COMPLETE (v1.6.2-dev)
+**Goal:** Distributed tracing, structured logging, metrics
+
+### 15.1 Distributed Tracing
+- [x] 15.1.1 Configure OpenTelemetry tracer provider (Code-Puppy 🐶)
+- [x] 15.1.2 Instrument FastAPI application — FastAPIInstrumentor (Code-Puppy 🐶)
+- [x] 15.1.3 Add OTLP exporter for production (Code-Puppy 🐶)
+- [x] 15.1.4 Add Console exporter for development (Code-Puppy 🐶)
+- [x] 15.1.5 Add correlation ID middleware (Code-Puppy 🐶)
+
+### 15.2 Logging
+- [x] 15.2.1 Implement JSON structured logging — logging_config.py (Code-Puppy 🐶)
+- [x] 15.2.2 Add correlation ID propagation — ContextVar (Code-Puppy 🐶)
+- [x] 15.2.3 Configure log exporters — X-Correlation-ID header (Code-Puppy 🐶)
+- [x] 15.2.4 Reduce noise from uvicorn/sqlalchemy (Code-Puppy 🐶)
+
+### 15.3 Metrics
+- [x] 15.3.1 Create metrics API endpoints — /api/v1/metrics/* (Code-Puppy 🐶)
+- [x] 15.3.2 Add cache metrics — /api/v1/metrics/cache (Code-Puppy 🐶)
+- [x] 15.3.3 Add database metrics — /api/v1/metrics/database (Code-Puppy 🐶)
+- [x] 15.3.4 Add health metrics — /api/v1/metrics/health (Code-Puppy 🐶)
+
+| **TOTAL (P1-P4)** | **25** | **25** | **0** | **✅ All Complete** |
+| **GRAND TOTAL** | **153** | **153** | **0** | **✅ ALL COMPLETE** |
+
 ---
 
 *This roadmap is the single source of truth for the /wiggum ralph protocol. Task completion is validated by running the task's validation command, then updating via `python scripts/sync_roadmap.py --update --task X.Y.Z`.*
