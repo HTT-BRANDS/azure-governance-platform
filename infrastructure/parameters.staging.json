@@ -17,6 +17,9 @@
     "sqlDatabaseSku": {
       "value": "Standard_S0"
     },
+    "acrName": {
+      "value": "acrgovprod"
+    },
     "enableAzureSql": {
       "value": false
     },

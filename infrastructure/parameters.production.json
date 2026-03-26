@@ -12,10 +12,10 @@
       "value": "westus2"
     },
     "appServiceSku": {
-      "value": "B2"
+      "value": "B1"
     },
     "sqlDatabaseSku": {
-      "value": "Standard_S1"
+      "value": "Standard_S0"
     },
     "enableAzureSql": {
       "value": true

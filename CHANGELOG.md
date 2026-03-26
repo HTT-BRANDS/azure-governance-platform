@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Infrastructure
+- **Cost Optimization**: 75% reduction in Azure infrastructure costs ($225/mo savings)
+  - Production: App Service B2→B1 (-$60/mo), SQL S2→S0 (-$45/mo)
+  - Staging: SQL S2→S0 (-$45/mo), deleted orphaned ACR (-$5/mo)
+  - Cleaned up orphaned resources: 3 Key Vaults, 3 Log Analytics, 4 Storage Accounts, 1 App Service Plan (-$85/mo)
+  - Total: $298/mo → $73/mo
+  - Updated `infrastructure/parameters.production.json` and `parameters.staging.json` with new SKUs
+  - Created `infrastructure/COST_OPTIMIZATION.md` with full details and rollback plan
+
 ---
 
 ## [1.6.1] - 2026-03-26
