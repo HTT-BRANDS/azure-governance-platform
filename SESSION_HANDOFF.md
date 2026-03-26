@@ -1,49 +1,66 @@
 # SESSION HANDOFF — Azure Governance Platform
 
-**Last session:** code-puppy-ecf058 — Version: **v1.6.2-dev** — ALL PHASES COMPLETE
-**Status:** 🟢 v1.6.2-dev on staging, ALL 4 PHASES COMPLETE, 153 roadmap tasks, zero open issues
+**Last session:** planning-agent-9a4ce8 — Version: **v1.6.3-dev** — Production Auth Fix
+**Status:** 🟡 v1.6.3-dev ready for deployment, production auth 500 diagnosed and fixed
 
-## 🎉 MILESTONE: PHASES 1-4 COMPLETE
+## 🔧 CRITICAL FIX: Production OAuth 500 Error
 
-| Phase | Focus | Key Deliverables | Status |
-|-------|-------|------------------|--------|
-| **P1** | Legal Compliance | GPC middleware, privacy framework, consent banner | ✅ Complete |
-| **P2** | Performance Foundation | HTTP timeouts, circuit breakers, deep health checks | ✅ Complete |
-| **P3** | Accessibility & UX | WCAG 2.2, touch targets, global search | ✅ Complete |
-| **P4** | Observability | OpenTelemetry tracing, structured logging, metrics | ✅ Complete |
+**Problem:** After Azure AD redirect URI fix, the OAuth callback (`/api/v1/auth/azure/callback`) and login test (`/api/v1/auth/login`) both returned HTTP 500 in production. The global exception handler masked the real error with "An unexpected error occurred" (DEBUG=false).
 
-**Cost Optimization:** $225/mo savings (75% reduction) — $298/mo → $73/mo
+**Root Causes Identified:**
+1. **Missing Azure AD environment variables** — The Bicep infrastructure template did not deploy `AZURE_AD_TENANT_ID`, `AZURE_AD_CLIENT_ID`, `AZURE_AD_ISSUER`, `AZURE_AD_TOKEN_ENDPOINT`, or related settings to the App Service
+2. **Database connection string missing auth** — `DATABASE_URL` lacked `Authentication=ActiveDirectoryMsi` parameter for managed identity access to Azure SQL
+3. **No error handling in OAuth callback** — Unhandled exceptions in `azure_oauth_callback` (httpx network errors, database connection failures) bubbled up as generic 500s
 
----
-
-## Current State
-
-```
-3,020 unit/integration tests (2,937 + 83 new P1-P4 tests)
-Core test suites passing:
-- test_gpc_middleware.py: 11 passed
-- test_privacy.py: 24 passed
-- test_timeouts.py: 12 passed
-- test_circuit_breaker.py: 8 passed
-9 staging smoke tests passed
-ruff check + ruff format: All checks passed (0 errors)
-Version: 1.6.2-dev — deployed to staging, production running v1.6.0
-Requirements: 69/69 implemented (100%) — 12 new from P1-P4
-Roadmap tasks: 153/153 complete (100%) — 25 new from P1-P4
-Security findings: 0 open (7 HIGH + MEDIUM resolved, LOW-1 externalized)
-CI/CD: 5 workflows all green
-bd issues: 0 open (4/4 closed across sessions)
-```
+**Fixes Applied (code-level — requires deployment):**
+| Fix | File | Change |
+|-----|------|--------|
+| Auth error handling | `app/api/routes/auth.py` | Pre-flight config check, httpx error catch, non-fatal tenant sync, DB error isolation |
+| Bicep: Azure AD settings | `infrastructure/modules/app-service.bicep` | Added 12 new app settings (Azure AD, JWT, CORS, OIDC) |
+| Bicep: DB auth fix | `infrastructure/modules/app-service.bicep` | Fixed `DATABASE_URL` interpolation and added `ActiveDirectoryMsi` |
+| Bicep: param pass-through | `infrastructure/main.bicep` | 6 new params passed to app-service module |
+| Param files | `parameters.production.json`, `parameters.staging.json` | Added Azure AD and CORS placeholders |
+| Diagnostic script | `scripts/diagnose-production.sh` | Checks all settings, suggests fixes, `--fix` flag for auto-apply |
 
 ---
 
 ## Environment Status
 
-| Environment | URL | Version | Health | Auth Mode | Secrets |
-|-------------|-----|---------|--------|-----------|---------|
-| **Dev** | https://app-governance-dev-001.azurewebsites.net | 0.2.0 | ✅ | Secret | Legacy |
-| **Staging** | https://app-governance-staging-xnczpwyv.azurewebsites.net | **1.6.1** | ✅ | **OIDC** | ❌ Removed |
-| **Production** | https://app-governance-prod.azurewebsites.net | **1.6.0** | ✅ | **OIDC** | ✅ `AZURE_CLIENT_SECRET` removed (2026-03-26 15:15 UTC) |
+| Environment | URL | Version | Health | Auth Mode | Auth Status |
+|-------------|-----|---------|--------|-----------|-------------|
+| **Dev** | localhost:8000 | dev | ✅ | Secret | Working |
+| **Staging** | https://app-governance-staging-xnczpwyv.azurewebsites.net | 1.6.1 | ✅ | OIDC | Working |
+| **Production** | https://app-governance-prod.azurewebsites.net | 1.6.0 | ✅ Health | OIDC | ❌ OAuth 500 — fix ready, needs deploy |
+
+## 🚀 Deployment Steps for Production Fix
+
+### Step 1: Run diagnostics (see what's missing)
+```bash
+./scripts/diagnose-production.sh
+```
+
+### Step 2: Apply missing Azure AD settings
+```bash
+az webapp config appsettings set --name app-governance-prod --resource-group rg-governance-production --settings \
+  "AZURE_AD_TENANT_ID=0c0e35dc-188a-4eb3-b8ba-61752154b407" \
+  "AZURE_AD_CLIENT_ID=1e3e8417-49f1-4d08-b7be-47045d8a12e9" \
+  "AZURE_AD_ISSUER=https://login.microsoftonline.com/0c0e35dc-188a-4eb3-b8ba-61752154b407/v2.0" \
+  "AZURE_AD_TOKEN_ENDPOINT=https://login.microsoftonline.com/0c0e35dc-188a-4eb3-b8ba-61752154b407/oauth2/v2.0/token" \
+  "AZURE_AD_AUTHORIZATION_ENDPOINT=https://login.microsoftonline.com/0c0e35dc-188a-4eb3-b8ba-61752154b407/oauth2/v2.0/authorize" \
+  "AZURE_AD_JWKS_URI=https://login.microsoftonline.com/0c0e35dc-188a-4eb3-b8ba-61752154b407/discovery/v2.0/keys" \
+  "CORS_ORIGINS=https://app-governance-prod.azurewebsites.net"
+```
+
+### Step 3: Deploy v1.6.3 with error handling fixes
+```bash
+gh workflow run deploy-production.yml
+```
+
+### Step 4: Verify
+```bash
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/auth/health | python3 -m json.tool
+# Then test Sign in with Microsoft in browser
+```
 
 **Production App Settings (SECRET/OIDC-related):**
 

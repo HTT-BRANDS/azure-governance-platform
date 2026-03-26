@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.3] - 2026-03-27
+
+### Fixed
+- **Production OAuth 500 error** — Azure AD callback handler now has comprehensive error handling:
+  - Pre-flight validation checks Azure AD configuration before attempting token exchange
+  - httpx network errors caught with `502 BAD_GATEWAY` instead of generic 500
+  - Database failures during tenant sync are non-fatal — user can still authenticate
+  - Per-tenant error isolation in `_sync_user_tenant_mappings` prevents cascade failures
+  - Added explicit timeout (30s) on Azure AD token exchange HTTP client
+
+### Added
+- **`scripts/diagnose-production.sh`** — Production auth diagnostic tool that checks all App Service settings, SQL firewall rules, managed identity, and offers auto-fix with `--fix` flag
+- **Infrastructure: Azure AD settings in Bicep** — All 12 Azure AD/security settings now deployed via infrastructure-as-code instead of manual portal configuration
+- **Infrastructure: CORS auto-default** — `CORS_ORIGINS` defaults to the App Service URL when not explicitly set
+
+### Changed
+- **`infrastructure/modules/app-service.bicep`** — Added `azureAdTenantId`, `azureAdClientId`, `azureAdClientSecret` (secure), `jwtSecretKey` (secure), `corsOrigins`, `adminEmails` parameters
+- **`infrastructure/main.bicep`** — Pass-through for 6 new App Service parameters
+- **`infrastructure/parameters.production.json`** — Added Azure AD and CORS configuration placeholders
+- **`infrastructure/parameters.staging.json`** — Added Azure AD and CORS configuration for staging URL
+- **DATABASE_URL Bicep template** — Fixed interpolation syntax (`@{var}` → `@${var}`) and added `Authentication=ActiveDirectoryMsi` for managed identity
+
+### Security
+- Sensitive Bicep parameters (`azureAdClientSecret`, `jwtSecretKey`) use `@secure()` decorator to prevent exposure in deployment logs
+- Auth error responses no longer leak internal exception details in production
+
+---
+
 ## [Unreleased]
 
 ### Accessibility & UX

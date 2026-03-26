@@ -85,6 +85,26 @@ param tags object = {
   ManagedBy: 'Bicep'
 }
 
+@description('Azure AD tenant ID for user authentication')
+param azureAdTenantId string = ''
+
+@description('Azure AD app registration client ID for OAuth2')
+param azureAdClientId string = ''
+
+@description('Azure AD app registration client secret')
+@secure()
+param azureAdClientSecret string = ''
+
+@description('JWT signing secret key (min 32 chars). Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"')
+@secure()
+param jwtSecretKey string = ''
+
+@description('Comma-separated CORS allowed origins (e.g. https://app-governance-prod.azurewebsites.net)')
+param corsOrigins string = ''
+
+@description('Comma-separated admin email addresses for elevated access')
+param adminEmails string = ''
+
 // -----------------------------------------------------------------------------
 // Variables
 // -----------------------------------------------------------------------------
@@ -236,6 +256,12 @@ module appService 'modules/app-service.bicep' = {
     tags: tags
     logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
     useContainerDeployment: useContainerDeployment
+    azureAdTenantId: azureAdTenantId
+    azureAdClientId: azureAdClientId
+    azureAdClientSecret: azureAdClientSecret
+    jwtSecretKey: jwtSecretKey
+    corsOrigins: corsOrigins
+    adminEmails: adminEmails
   }
   dependsOn: [
     storage

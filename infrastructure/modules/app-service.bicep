@@ -46,6 +46,26 @@ param useContainerDeployment bool = true
 @description('Log Analytics workspace ID for diagnostics')
 param logAnalyticsWorkspaceId string = ''
 
+@description('Azure AD tenant ID for user authentication')
+param azureAdTenantId string = ''
+
+@description('Azure AD app registration client ID')
+param azureAdClientId string = ''
+
+@description('Azure AD app registration client secret')
+@secure()
+param azureAdClientSecret string = ''
+
+@description('JWT signing secret key (min 32 chars)')
+@secure()
+param jwtSecretKey string = ''
+
+@description('Comma-separated CORS origins')
+param corsOrigins string = ''
+
+@description('Comma-separated admin email addresses')
+param adminEmails string = ''
+
 // Reference to storage account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
   name: storageAccountName
@@ -178,7 +198,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'DATABASE_URL'
           value: enableAzureSql 
-            ? 'mssql+pyodbc://@{sqlServerName}.database.windows.net:1433/${sqlDatabaseName}?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=no'
+            ? 'mssql+pyodbc://@${sqlServerName}.database.windows.net:1433/${sqlDatabaseName}?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=no&Authentication=ActiveDirectoryMsi'
             : 'sqlite:////home/data/governance.db'
         }
         {
@@ -192,6 +212,54 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'WEBSITE_HEALTHCHECK_MAXPINGFAILURES'
           value: '3'
+        }
+        {
+          name: 'AZURE_AD_TENANT_ID'
+          value: azureAdTenantId
+        }
+        {
+          name: 'AZURE_AD_CLIENT_ID'
+          value: azureAdClientId
+        }
+        {
+          name: 'AZURE_AD_CLIENT_SECRET'
+          value: azureAdClientSecret
+        }
+        {
+          name: 'AZURE_AD_ISSUER'
+          value: empty(azureAdTenantId) ? '' : 'https://login.microsoftonline.com/${azureAdTenantId}/v2.0'
+        }
+        {
+          name: 'AZURE_AD_TOKEN_ENDPOINT'
+          value: empty(azureAdTenantId) ? '' : 'https://login.microsoftonline.com/${azureAdTenantId}/oauth2/v2.0/token'
+        }
+        {
+          name: 'AZURE_AD_AUTHORIZATION_ENDPOINT'
+          value: empty(azureAdTenantId) ? '' : 'https://login.microsoftonline.com/${azureAdTenantId}/oauth2/v2.0/authorize'
+        }
+        {
+          name: 'AZURE_AD_JWKS_URI'
+          value: empty(azureAdTenantId) ? '' : 'https://login.microsoftonline.com/${azureAdTenantId}/discovery/v2.0/keys'
+        }
+        {
+          name: 'JWT_SECRET_KEY'
+          value: jwtSecretKey
+        }
+        {
+          name: 'CORS_ORIGINS'
+          value: empty(corsOrigins) ? 'https://${name}.azurewebsites.net' : corsOrigins
+        }
+        {
+          name: 'ADMIN_EMAILS'
+          value: adminEmails
+        }
+        {
+          name: 'USE_OIDC_FEDERATION'
+          value: 'true'
+        }
+        {
+          name: 'OIDC_ALLOW_DEV_FALLBACK'
+          value: environment == 'development' ? 'true' : 'false'
         }
       ]
       connectionStrings: []

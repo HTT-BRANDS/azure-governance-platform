@@ -49,6 +49,18 @@
         "CostCenter": "IT-Operations",
         "Owner": "QA-Team"
       }
+    },
+    "azureAdTenantId": {
+      "value": ""
+    },
+    "azureAdClientId": {
+      "value": ""
+    },
+    "corsOrigins": {
+      "value": "https://app-governance-staging-xnczpwyv.azurewebsites.net"
+    },
+    "adminEmails": {
+      "value": ""
     }
   }
 }

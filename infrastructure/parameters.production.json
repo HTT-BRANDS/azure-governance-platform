@@ -50,6 +50,18 @@
         "Owner": "Cloud-Team",
         "Compliance": "Riverside"
       }
+    },
+    "azureAdTenantId": {
+      "value": ""
+    },
+    "azureAdClientId": {
+      "value": ""
+    },
+    "corsOrigins": {
+      "value": "https://app-governance-prod.azurewebsites.net"
+    },
+    "adminEmails": {
+      "value": ""
     }
   }
 }
