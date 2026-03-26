@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Build dependencies
 # -----------------------------------------------------------------------------
-FROM acrgovstaging19859.azurecr.io/python:3.11-slim-bookworm as builder
+FROM python:3.11-slim-bookworm as builder
 
 # Build arguments
 ARG PYTHON_VERSION=3.11
@@ -46,7 +46,7 @@ RUN rm -rf /root/.cache
 # -----------------------------------------------------------------------------
 # Stage 2: Production image
 # -----------------------------------------------------------------------------
-FROM acrgovstaging19859.azurecr.io/python:3.11-slim-bookworm as production
+FROM python:3.11-slim-bookworm as production
 
 LABEL maintainer="Cloud Governance Team" \
       application="Azure Governance Platform" \
