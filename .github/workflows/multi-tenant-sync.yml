@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Azure Login - HTT
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -59,6 +59,8 @@ jobs:
           echo "::endgroup::"
 
   sync-bcc:
+    # TODO: Requires per-tenant app registration with GitHub Actions federated credential
+    continue-on-error: true
     name: Sync BCC Holding
     runs-on: ubuntu-latest
     needs: sync-htt
@@ -66,7 +68,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Azure Login - BCC
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: b5380912-79ec-452d-a6ca-6d897b19b294
@@ -82,6 +84,8 @@ jobs:
           echo "::endgroup::"
 
   sync-fn:
+    # TODO: Requires per-tenant app registration with GitHub Actions federated credential
+    continue-on-error: true
     name: Sync Frenchies Nails
     runs-on: ubuntu-latest
     needs: sync-htt
@@ -89,7 +93,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Azure Login - FN
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: 98723287-044b-4bbb-9294-19857d4128a0
@@ -105,6 +109,8 @@ jobs:
           echo "::endgroup::"
 
   sync-tll:
+    # TODO: Requires per-tenant app registration with GitHub Actions federated credential
+    continue-on-error: true
     name: Sync The Lash Lounge
     runs-on: ubuntu-latest
     needs: sync-htt
@@ -112,7 +118,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Azure Login - TLL
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: 3c7d2bf3-b597-4766-b5cb-2b489c2904d6
