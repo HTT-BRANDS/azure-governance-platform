@@ -13,6 +13,7 @@ import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.auth import (
@@ -392,7 +393,17 @@ async def azure_oauth_callback(
     """
     settings = get_settings()
 
-    # Exchange code for tokens
+    # ── Pre-flight: verify Azure AD is configured ───────────────
+    if not settings.azure_ad_client_id or not settings.azure_ad_client_secret:
+        logger.error(
+            "Azure AD OAuth2 not configured: missing AZURE_AD_CLIENT_ID or AZURE_AD_CLIENT_SECRET"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Azure AD authentication is not configured. Contact your administrator.",
+        )
+
+    # ── Step 1: Exchange code for tokens with Azure AD ──────────
     token_request = {
         "grant_type": "authorization_code",
         "code": request.code,
@@ -404,44 +415,58 @@ async def azure_oauth_callback(
     if request.code_verifier:
         token_request["code_verifier"] = request.code_verifier
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            settings.azure_ad_token_endpoint,
-            data=token_request,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                settings.azure_ad_token_endpoint,
+                data=token_request,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+    except httpx.HTTPError as e:
+        logger.error(f"Azure AD token exchange network error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to reach Azure AD. Please try again.",
+        ) from e
+
+    if response.status_code != 200:
+        error_body = response.text[:500]
+        logger.error(
+            f"Azure AD token exchange failed (HTTP {response.status_code}): {error_body}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Failed to authenticate with Azure AD",
         )
 
-        if response.status_code != 200:
-            logger.error(f"Azure AD token exchange failed: {response.text}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Failed to authenticate with Azure AD",
-            )
+    token_data = response.json()
 
-        token_data = response.json()
-
-    # Validate the ID token
+    # ── Step 2: Validate the ID token ───────────────────────────
     id_token = token_data.get("id_token")
     if not id_token:
+        logger.error(
+            f"No ID token in Azure AD response. Keys received: {list(token_data.keys())}"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No ID token received from Azure AD",
         )
 
-    validated = await azure_ad_validator.validate_token(id_token)
+    try:
+        validated = await azure_ad_validator.validate_token(id_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"ID token validation failed with unexpected error: {type(e).__name__}: {e}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Failed to validate Azure AD token",
+        ) from e
 
-    # Create or update user tenant mappings based on Azure AD groups/tid
-    resolved_tenant_ids = await _sync_user_tenant_mappings(db, validated)
-
-    logger.info(
-        f"Azure AD callback: user={validated.sub}, "
-        f"email={validated.email}, "
-        f"azure_tid={validated.azure_tenant_id}, "
-        f"group_tenant_ids={validated.tenant_ids}, "
-        f"resolved_tenant_ids={resolved_tenant_ids}"
-    )
-
-    # Check if user should have admin role (from environment config)
+    # ── Step 3: Sync user tenant mappings ───────────────────────
+    # Determine admin status early (needed for fail-closed decision)
     admin_emails_str = os.environ.get("ADMIN_EMAILS", "")
     admin_emails = [e.strip().lower() for e in admin_emails_str.split(",") if e.strip()]
 
@@ -451,14 +476,45 @@ async def azure_oauth_callback(
             roles = list(set(roles + ["admin"]))
             logger.info(f"Granting admin role to {validated.email} (in ADMIN_EMAILS)")
 
-    # If no tenants resolved, grant access to ALL tenants for admin users
-    if not resolved_tenant_ids and "admin" in roles:
-        all_tenants = db.query(Tenant).filter(Tenant.is_active == True).all()  # noqa: E712
-        resolved_tenant_ids = [t.tenant_id for t in all_tenants]
-        logger.info(
-            f"Admin user with no tenant mappings, granting access to all "
-            f"{len(resolved_tenant_ids)} tenants"
+    is_admin = "admin" in roles
+
+    try:
+        resolved_tenant_ids = await _sync_user_tenant_mappings(db, validated)
+    except Exception as e:
+        logger.error(
+            f"User tenant sync failed: {type(e).__name__}: {e}",
+            exc_info=True,
         )
+        if not is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication service temporarily unavailable. Please retry.",
+            ) from e
+        resolved_tenant_ids = []
+
+    logger.info(
+        f"Azure AD callback: user={validated.sub}, "
+        f"azure_tid={validated.azure_tenant_id}, "
+        f"group_tenant_ids={validated.tenant_ids}, "
+        f"resolved_tenant_ids={resolved_tenant_ids}, "
+        f"is_admin={is_admin}"
+    )
+
+    # If no tenants resolved, grant access to ALL tenants for admin users
+    if not resolved_tenant_ids and is_admin:
+        try:
+            all_tenants = db.query(Tenant).filter(Tenant.is_active == True).all()  # noqa: E712
+            resolved_tenant_ids = [t.tenant_id for t in all_tenants]
+            logger.info(
+                f"Admin user with no tenant mappings, granting access to all "
+                f"{len(resolved_tenant_ids)} tenants"
+            )
+        except OperationalError as e:
+            logger.error(f"Database connection error querying admin tenants: {e}")
+            resolved_tenant_ids = []
+        except Exception as e:
+            logger.error(f"Failed to query tenants for admin fallback: {e}")
+            resolved_tenant_ids = []
 
     # Create internal tokens — use resolved tenant IDs (includes tid fallback)
     access_token = jwt_manager.create_access_token(
@@ -488,6 +544,9 @@ async def _sync_user_tenant_mappings(db: Session, token_data: TokenData) -> list
     via Azure AD group memberships. Falls back to the Azure AD 'tid'
     claim when no group-based tenant IDs are found.
 
+    Individual tenant failures are logged but do not abort the entire
+    sync — the user can still authenticate with partial access.
+
     Returns:
         List of resolved Azure tenant IDs the user has access to.
     """
@@ -507,39 +566,58 @@ async def _sync_user_tenant_mappings(db: Session, token_data: TokenData) -> list
     resolved: list[str] = []
 
     for tenant_id in candidate_ids:
-        # Find tenant by Azure tenant ID
-        tenant = db.query(Tenant).filter(Tenant.tenant_id == tenant_id).first()
-        if not tenant:
-            logger.debug(f"No local tenant record for Azure tenant {tenant_id}, skipping")
+        try:
+            # Find tenant by Azure tenant ID
+            tenant = db.query(Tenant).filter(Tenant.tenant_id == tenant_id).first()
+            if not tenant:
+                logger.debug(f"No local tenant record for Azure tenant {tenant_id}, skipping")
+                continue
+
+            resolved.append(tenant_id)
+
+            # Ensure a UserTenant mapping exists
+            existing = (
+                db.query(UserTenant)
+                .filter(
+                    UserTenant.user_id == token_data.sub,
+                    UserTenant.tenant_id == tenant.id,
+                )
+                .first()
+            )
+
+            if not existing:
+                mapping = UserTenant(
+                    id=str(uuid.uuid4()),
+                    user_id=token_data.sub,
+                    tenant_id=tenant.id,
+                    role="viewer",  # Default role
+                    is_active=True,
+                    can_view_costs=True,
+                    granted_by="azure_ad_sync",
+                    granted_at=datetime.utcnow(),
+                )
+                db.add(mapping)
+                db.commit()
+
+                logger.info(f"Created user tenant mapping: {token_data.sub} -> {tenant_id}")
+        except OperationalError as e:
+            logger.error(
+                f"Database connection error syncing tenant {tenant_id}: {e}"
+            )
+            db.rollback()
             continue
-
-        resolved.append(tenant_id)
-
-        # Ensure a UserTenant mapping exists
-        existing = (
-            db.query(UserTenant)
-            .filter(
-                UserTenant.user_id == token_data.sub,
-                UserTenant.tenant_id == tenant.id,
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error syncing tenant mapping for {tenant_id}: {e}"
             )
-            .first()
-        )
-
-        if not existing:
-            mapping = UserTenant(
-                id=str(uuid.uuid4()),
-                user_id=token_data.sub,
-                tenant_id=tenant.id,
-                role="viewer",  # Default role
-                is_active=True,
-                can_view_costs=True,
-                granted_by="azure_ad_sync",
-                granted_at=datetime.utcnow(),
+            db.rollback()
+            continue
+        except Exception as e:
+            logger.error(
+                f"Failed to sync tenant mapping for {tenant_id}: {type(e).__name__}: {e}"
             )
-            db.add(mapping)
-            db.commit()
-
-            logger.info(f"Created user tenant mapping: {token_data.sub} -> {tenant_id}")
+            db.rollback()
+            continue
 
     return resolved
 

@@ -60,9 +60,15 @@ class User(BaseModel):
         return role in self.roles or "admin" in self.roles
 
     def has_access_to_tenant(self, tenant_id: str) -> bool:
-        """Check if user has access to a specific tenant."""
-        if "admin" in self.roles or not self.tenant_ids:
+        """Check if user has access to a specific tenant.
+
+        Fails closed: empty tenant_ids means no access (not universal access).
+        Admin role grants access to all tenants.
+        """
+        if "admin" in self.roles:
             return True
+        if not self.tenant_ids:
+            return False  # No known tenant access — deny by default
         return tenant_id in self.tenant_ids
 
 
