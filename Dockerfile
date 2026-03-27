@@ -97,6 +97,14 @@ WORKDIR ${APP_HOME}
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
+# Harden: remove build tools that aren't needed at runtime.
+# These trip CVE scanners and increase attack surface.
+#   - uv/uvx:      Rust-based installer (CVE-2026-31812, CVE-2026-25537)
+#   - pip/wheel:    Python build tools (CVE-2026-24049, CVE-2025-8869)
+#   - setuptools:   Build tool with vendored jars (CVE-2026-23949)
+#   - ecdsa:        Transitive dep of paramiko via pip (CVE-2024-23342)
+RUN rm -f /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/pip*          /usr/local/bin/wheel /usr/local/bin/easy_install*     && rm -rf /usr/local/lib/python3.11/site-packages/pip*               /usr/local/lib/python3.11/site-packages/setuptools*               /usr/local/lib/python3.11/site-packages/wheel*               /usr/local/lib/python3.11/site-packages/ecdsa*               /usr/local/lib/python3.11/site-packages/_distutils_hack*               /usr/local/lib/python3.11/site-packages/pkg_resources*
+
 # Smoke-test: verify pyodbc can import against the system libodbc.so.2.
 # This fails the BUILD (not just runtime) if the ODBC runtime is missing.
 RUN python3 -c "import pyodbc; print('pyodbc import OK — libodbc.so.2 found')"
