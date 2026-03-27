@@ -292,6 +292,18 @@ async def _handle_authorization_code(
 
     settings = get_settings()
 
+    # ── Validate redirect URI against whitelist ─────────────────
+    effective_redirect = redirect_uri or "http://localhost:8000/auth/callback"
+    if effective_redirect not in settings.allowed_redirect_uris:
+        logger.warning(
+            "Rejected authorization_code grant with unauthorized redirect_uri: "
+            f"{effective_redirect[:100]}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid redirect URI",
+        )
+
     # Exchange code for tokens with Azure AD
     token_endpoint = settings.azure_ad_token_endpoint
 
@@ -392,6 +404,17 @@ async def azure_oauth_callback(
         TokenResponse with internal access and refresh tokens
     """
     settings = get_settings()
+
+    # ── Validate redirect URI against whitelist ─────────────────
+    if request.redirect_uri not in settings.allowed_redirect_uris:
+        logger.warning(
+            "Rejected OAuth callback with unauthorized redirect_uri: "
+            f"{request.redirect_uri[:100]}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid redirect URI",
+        )
 
     # ── Pre-flight: verify Azure AD is configured ───────────────
     if not settings.azure_ad_client_id or not settings.azure_ad_client_secret:

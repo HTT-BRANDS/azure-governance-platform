@@ -384,3 +384,102 @@ class TestAuthHealthEndpoint:
         assert "azure_ad_configured" in data
         assert data["jwt_configured"] is True
         assert data["azure_ad_configured"] is True
+
+
+# ============================================================================
+# Redirect URI Whitelist Tests (Task 16.1.1 — CVSS 9.1 Critical Fix)
+# ============================================================================
+
+
+class TestRedirectURIWhitelist:
+    """Tests for OAuth redirect URI whitelist validation.
+
+    Ensures that azure_oauth_callback rejects redirect URIs not in
+    the ALLOWED_REDIRECT_URIS whitelist (CVSS 9.1 open redirect fix).
+    """
+
+    @patch("app.api.routes.auth.get_settings")
+    def test_redirect_uri_valid_passes(self, mock_settings, client_with_db):
+        """Whitelisted redirect URI passes validation (hits Azure AD next)."""
+        settings = MagicMock()
+        settings.allowed_redirect_uris = {
+            "http://localhost:8000/auth/callback",
+        }
+        settings.azure_ad_client_id = "test-client-id"
+        settings.azure_ad_client_secret = "test-secret"
+        settings.azure_ad_token_endpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+        settings.jwt_access_token_expire_minutes = 30
+        mock_settings.return_value = settings
+
+        response = client_with_db.post(
+            "/api/v1/auth/azure/callback",
+            json={
+                "code": "fake-auth-code",
+                "redirect_uri": "http://localhost:8000/auth/callback",
+            },
+        )
+
+        # Should NOT be 400 "Invalid redirect URI" — it passes the whitelist
+        # and proceeds to Azure AD token exchange (which will fail in test).
+        assert response.status_code != 400 or "redirect" not in response.json().get("detail", "").lower()
+
+    @patch("app.api.routes.auth.get_settings")
+    def test_redirect_uri_evil_rejected(self, mock_settings, client_with_db):
+        """Unauthorized redirect URI returns 400 Bad Request."""
+        settings = MagicMock()
+        settings.allowed_redirect_uris = {
+            "http://localhost:8000/login",
+            "http://localhost:8000/auth/callback",
+        }
+        mock_settings.return_value = settings
+
+        response = client_with_db.post(
+            "/api/v1/auth/azure/callback",
+            json={
+                "code": "stolen-code",
+                "redirect_uri": "https://evil.com/steal",
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Invalid redirect URI"
+
+    @patch("app.api.routes.auth.get_settings")
+    def test_redirect_uri_similar_but_wrong_rejected(self, mock_settings, client_with_db):
+        """Tricky near-match redirect URI is still rejected."""
+        settings = MagicMock()
+        settings.allowed_redirect_uris = {
+            "http://localhost:8000/auth/callback",
+        }
+        mock_settings.return_value = settings
+
+        response = client_with_db.post(
+            "/api/v1/auth/azure/callback",
+            json={
+                "code": "auth-code",
+                "redirect_uri": "http://localhost:8000/auth/callback/../../../evil",
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Invalid redirect URI"
+
+    @patch("app.api.routes.auth.get_settings")
+    def test_redirect_uri_empty_rejected(self, mock_settings, client_with_db):
+        """Empty redirect URI is rejected (not in whitelist)."""
+        settings = MagicMock()
+        settings.allowed_redirect_uris = {
+            "http://localhost:8000/auth/callback",
+        }
+        mock_settings.return_value = settings
+
+        response = client_with_db.post(
+            "/api/v1/auth/azure/callback",
+            json={
+                "code": "auth-code",
+                "redirect_uri": "",
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Invalid redirect URI"

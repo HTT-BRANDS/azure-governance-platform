@@ -890,9 +890,9 @@ None of these mask production bugs.
 | Phase 8: Phase 2 P1 Features | 15 | 15 | 0 | ✅ Complete |
 | Phase 9: Phase 2 Backlog Sprint | 9 | 9 | 0 | ✅ Complete |
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
-| Phase 11: OIDC + Security Hardening | 13 | 13 | 0 | ✅ Complete |
+| Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **128** | **128** | **0** | **✅ All Complete** |
+| **TOTAL** | **221** | **179** | **42** | **🔄 In Progress** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -995,7 +995,7 @@ None of these mask production bugs.
 
 ### 16.1 Week 1: Emergency Security Fixes (Critical + High — Auth/Secrets)
 
-- [ ] 16.1.1 Whitelist OAuth redirect URIs server-side (Security Auditor 🛡️ → Code-Puppy 🐶)
+- [x] 16.1.1 Whitelist OAuth redirect URIs server-side (Security Auditor 🛡️ → Code-Puppy 🐶)
   - File: `app/api/routes/auth.py`
   - Action: Add ALLOWED_REDIRECT_URIS set, validate request.redirect_uri before Azure AD exchange
   - Validation: `uv run pytest tests/unit/test_routes_auth.py -v -k redirect` passes; manual curl with evil redirect_uri returns 400
@@ -1285,7 +1285,7 @@ None of these mask production bugs.
   - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
-| Phase 16: Audit Remediation Sprint | 43 | 0 | 43 | 🔴 Not Started |
+| Phase 16: Audit Remediation Sprint | 43 | 1 | 42 | 🔄 In Progress |
 | **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
 | **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 
