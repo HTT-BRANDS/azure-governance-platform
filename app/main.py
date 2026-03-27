@@ -170,8 +170,9 @@ async def rate_limit_middleware(request: Request, call_next):
 
     SECURITY: Provides DDoS protection and abuse prevention.
     """
-    # Skip rate limiting for health checks
-    if request.url.path in ["/health", "/health/detailed"]:
+    # Skip rate limiting for health checks and in development mode
+    settings = get_settings()
+    if settings.is_development or request.url.path in ["/health", "/health/detailed"]:
         response = await call_next(request)
         return response
 
