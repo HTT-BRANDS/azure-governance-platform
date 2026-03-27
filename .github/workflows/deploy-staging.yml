@@ -145,6 +145,10 @@ jobs:
     name: Build & Push to ACR
     runs-on: ubuntu-latest
     needs: [qa-gate, security-scan]
+    # Environment required so OIDC subject matches the environment-staging
+    # federated credential (without this, subject is ref:refs/heads/main
+    # which may lack ACR access)
+    environment: staging
 
     outputs:
       image_full: ${{ steps.set-output.outputs.image_full }}
