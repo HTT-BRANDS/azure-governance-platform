@@ -5,7 +5,7 @@
   Respects GPC signals (Global Privacy Control).
 #}
 
-{% macro consent_banner() %}
+{% macro consent_banner(request) %}
 <div id="consent-banner" 
      class="fixed bottom-0 left-0 right-0 bg-slate-900 text-white p-4 shadow-lg z-50 hidden"
      role="dialog"
@@ -74,7 +74,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 (function() {
     const banner = document.getElementById('consent-banner');
     const preferences = document.getElementById('consent-preferences');

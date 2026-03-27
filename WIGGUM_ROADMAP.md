@@ -892,7 +892,7 @@ None of these mask production bugs.
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
 | Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **221** | **185** | **36** | **🔄 In Progress** |
+| **TOTAL** | **221** | **186** | **35** | **🔄 In Progress** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -1044,7 +1044,7 @@ None of these mask production bugs.
   - Reviewed by: Security Auditor 🛡️
   - Signed off by: Pack Leader 🐺
 
-- [ ] 16.1.8 Add nonces to consent_banner.html and search.html scripts (Experience Architect 🎨 → Code-Puppy 🐶)
+- [x] 16.1.8 Add nonces to consent_banner.html and search.html scripts (Experience Architect 🎨 → Code-Puppy 🐶)
   - Files: `app/templates/components/consent_banner.html`, `app/templates/components/search.html`
   - Action: Add `nonce="{{ request.state.csp_nonce }}"` to all script tags; pass request into macros
   - Validation: No CSP violations in browser console on /dashboard; consent banner JS executes
@@ -1285,7 +1285,7 @@ None of these mask production bugs.
   - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
-| Phase 16: Audit Remediation Sprint | 43 | 7 | 36 | 🔄 In Progress |
+| Phase 16: Audit Remediation Sprint | 43 | 8 | 35 | 🔄 In Progress |
 | **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
 | **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 

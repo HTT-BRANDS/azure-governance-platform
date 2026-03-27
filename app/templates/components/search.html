@@ -1,7 +1,7 @@
 {# Global Search Component #}
 {# Keyboard shortcut: Cmd+K or Ctrl+K #}
 
-{% macro global_search() %}
+{% macro global_search(request) %}
 <div id="global-search" class="relative">
     <button 
         id="search-trigger"
@@ -40,7 +40,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 (function() {
     const trigger = document.getElementById('search-trigger');
     const modal = document.getElementById('search-modal');
