@@ -610,15 +610,11 @@ class TestDeviceSecurityAPI:
         assert resp.status == 200
 
     def test_compliance_score(self, page: Page):
-        resp = page.goto(
-            f"{page._base_url}/api/v1/device-security/compliance-score"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/device-security/compliance-score")
         assert resp.status == 200
 
     def test_non_compliant_devices(self, page: Page):
-        resp = page.goto(
-            f"{page._base_url}/api/v1/device-security/non-compliant"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/device-security/non-compliant")
         assert resp.status == 200
 
 
@@ -704,16 +700,12 @@ class TestIdentityAdvancedAPI:
         return tenants[0]["id"]
 
     def test_admin_roles_summary_requires_tenant(self, page: Page):
-        resp = page.goto(
-            f"{page._base_url}/api/v1/identity/admin-roles/summary"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/identity/admin-roles/summary")
         assert resp.status == 422
 
     def test_admin_roles_summary_with_tenant(self, page: Page):
         tid = self._get_tenant_id(page)
-        resp = page.goto(
-            f"{page._base_url}/api/v1/identity/admin-roles/summary?tenant_id={tid}"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/identity/admin-roles/summary?tenant_id={tid}")
         assert resp.status == 200
 
     def test_global_admins_with_tenant(self, page: Page):
@@ -732,16 +724,12 @@ class TestIdentityAdvancedAPI:
 
     def test_licenses_with_tenant(self, page: Page):
         tid = self._get_tenant_id(page)
-        resp = page.goto(
-            f"{page._base_url}/api/v1/identity/licenses?tenant_id={tid}"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/identity/licenses?tenant_id={tid}")
         assert resp.status == 200
 
     def test_access_reviews_with_tenant(self, page: Page):
         tid = self._get_tenant_id(page)
-        resp = page.goto(
-            f"{page._base_url}/api/v1/identity/access-reviews?tenant_id={tid}"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/identity/access-reviews?tenant_id={tid}")
         assert resp.status == 200
 
 
@@ -773,15 +761,11 @@ class TestSuiGenerisAPI:
     """Sui generis device compliance endpoints (under /compliance prefix)."""
 
     def test_device_compliance(self, page: Page):
-        resp = page.goto(
-            f"{page._base_url}/api/v1/compliance/device-compliance"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/compliance/device-compliance")
         assert resp.status == 200
 
     def test_device_compliance_status(self, page: Page):
-        resp = page.goto(
-            f"{page._base_url}/api/v1/compliance/device-compliance/status"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/compliance/device-compliance/status")
         assert resp.status == 200
 
 
@@ -796,10 +780,7 @@ class TestDarkModeAndTheme:
     def test_theme_toggle_exists(self, page: Page):
         """Theme toggle button is present in the nav."""
         page.goto(f"{page._base_url}/dashboard")
-        toggle = page.locator(
-            '[aria-label="Toggle dark mode"], #theme-toggle, '
-            '[data-theme-toggle]'
-        )
+        toggle = page.locator('[aria-label="Toggle dark mode"], #theme-toggle, [data-theme-toggle]')
         assert toggle.count() > 0, "No theme toggle found"
 
     def test_dark_mode_toggle_adds_class(self, page: Page):
@@ -807,32 +788,21 @@ class TestDarkModeAndTheme:
         page.goto(f"{page._base_url}/dashboard")
         page.wait_for_load_state("domcontentloaded")
 
-        initial_dark = page.evaluate(
-            "() => document.documentElement.classList.contains('dark')"
-        )
+        initial_dark = page.evaluate("() => document.documentElement.classList.contains('dark')")
 
-        toggle = page.locator(
-            '[aria-label="Toggle dark mode"], #theme-toggle, '
-            '[data-theme-toggle]'
-        )
+        toggle = page.locator('[aria-label="Toggle dark mode"], #theme-toggle, [data-theme-toggle]')
         if toggle.count() > 0:
             toggle.first.click()
             page.wait_for_timeout(500)
-            new_dark = page.evaluate(
-                "() => document.documentElement.classList.contains('dark')"
-            )
-            assert new_dark != initial_dark, (
-                "Theme toggle didn't change .dark class"
-            )
+            new_dark = page.evaluate("() => document.documentElement.classList.contains('dark')")
+            assert new_dark != initial_dark, "Theme toggle didn't change .dark class"
 
     def test_css_variables_change_in_dark_mode(self, page: Page):
         """CSS variables update when .dark class is applied."""
         page.goto(f"{page._base_url}/dashboard")
         page.wait_for_load_state("domcontentloaded")
 
-        page.evaluate(
-            "() => document.documentElement.classList.add('dark')"
-        )
+        page.evaluate("() => document.documentElement.classList.add('dark')")
         page.wait_for_timeout(200)
 
         bg = page.evaluate("""
@@ -852,9 +822,7 @@ class TestNavigationBundle:
 
     def test_navigation_bundle_loads(self, page: Page):
         """The bundled navigation JS file loads successfully."""
-        resp = page.goto(
-            f"{page._base_url}/static/js/navigation/navigation.bundle.js"
-        )
+        resp = page.goto(f"{page._base_url}/static/js/navigation/navigation.bundle.js")
         assert resp.status == 200
         body = page.evaluate("() => document.body.innerText")
         assert len(body) > 100, "Bundle file is too small"
@@ -956,8 +924,7 @@ class TestAccessibilityE2E:
         """)
         if result["total"] > 0:
             assert result["withScope"] == result["total"], (
-                f"Only {result['withScope']}/{result['total']} "
-                "<th> elements have scope"
+                f"Only {result['withScope']}/{result['total']} <th> elements have scope"
             )
 
 
@@ -1037,9 +1004,7 @@ class TestComplianceAdvancedAPI:
     """Compliance frameworks and custom rules."""
 
     def test_compliance_frameworks(self, page: Page):
-        resp = page.goto(
-            f"{page._base_url}/api/v1/compliance/frameworks"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/compliance/frameworks")
         assert resp.status == 200
 
     def test_compliance_rules(self, page: Page):
@@ -1136,23 +1101,17 @@ class TestErrorHandling:
     """Application error handling is graceful."""
 
     def test_404_page_renders(self, page: Page):
-        resp = page.goto(
-            f"{page._base_url}/this-page-does-not-exist-12345"
-        )
+        resp = page.goto(f"{page._base_url}/this-page-does-not-exist-12345")
         assert resp.status == 404
         assert "Internal Server Error" not in page.inner_text("body")
 
     def test_api_404_returns_json(self, page: Page):
-        resp = page.goto(
-            f"{page._base_url}/api/v1/nonexistent-endpoint-xyz"
-        )
+        resp = page.goto(f"{page._base_url}/api/v1/nonexistent-endpoint-xyz")
         assert resp.status in (404, 405)
 
     def test_no_stack_traces_in_errors(self, page: Page):
         """Error pages must not expose Python tracebacks."""
-        page.goto(
-            f"{page._base_url}/this-page-does-not-exist-12345"
-        )
+        page.goto(f"{page._base_url}/this-page-does-not-exist-12345")
         body = page.inner_text("body")
         assert "Traceback" not in body
         assert 'File "/' not in body

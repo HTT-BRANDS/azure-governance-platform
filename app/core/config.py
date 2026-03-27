@@ -354,11 +354,7 @@ class Settings(BaseSettings):
     @property
     def allowed_redirect_uris(self) -> set[str]:
         """Parse comma-separated redirect URIs into a set for O(1) lookup."""
-        return {
-            uri.strip()
-            for uri in self.allowed_redirect_uris_str.split(",")
-            if uri.strip()
-        }
+        return {uri.strip() for uri in self.allowed_redirect_uris_str.split(",") if uri.strip()}
 
     @property
     def is_production(self) -> bool:

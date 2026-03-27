@@ -411,7 +411,9 @@ class TestRedirectURIWhitelist:
         }
         settings.azure_ad_client_id = "test-client-id"
         settings.azure_ad_client_secret = "test-secret"
-        settings.azure_ad_token_endpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+        settings.azure_ad_token_endpoint = (
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+        )
         settings.jwt_access_token_expire_minutes = 30
         mock_settings.return_value = settings
 
@@ -425,7 +427,10 @@ class TestRedirectURIWhitelist:
 
         # Should NOT be 400 "Invalid redirect URI" — it passes the whitelist
         # and proceeds to Azure AD token exchange (which will fail in test).
-        assert response.status_code != 400 or "redirect" not in response.json().get("detail", "").lower()
+        assert (
+            response.status_code != 400
+            or "redirect" not in response.json().get("detail", "").lower()
+        )
 
     @patch("app.api.routes.auth.get_settings")
     def test_redirect_uri_evil_rejected(self, mock_settings, client_with_db):

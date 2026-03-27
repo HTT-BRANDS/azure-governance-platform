@@ -155,7 +155,9 @@ def blacklist_token(token: str) -> None:
     """
     ttl = TokenBlacklist.DEFAULT_TTL_SECONDS
     try:
-        payload = jwt.decode(token, options={"verify_signature": False}, algorithms=["HS256", "RS256"])
+        payload = jwt.decode(
+            token, options={"verify_signature": False}, algorithms=["HS256", "RS256"]
+        )
         exp = payload.get("exp")
         if exp is not None:
             remaining = int(exp - datetime.now(UTC).timestamp())

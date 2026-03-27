@@ -567,10 +567,7 @@ class TestAlgorithmConfusionPrevention:
         # Sign with HS256 (attacker trying to bypass validation)
         secret_key = "test-secret-key"
         forged_token = jwt.encode(
-            forged_payload,
-            secret_key,
-            algorithm="HS256",
-            headers={"typ": "JWT", "alg": "HS256"}
+            forged_payload, secret_key, algorithm="HS256", headers={"typ": "JWT", "alg": "HS256"}
         )
 
         # Verify token has HS256 algorithm in header
@@ -581,7 +578,7 @@ class TestAlgorithmConfusionPrevention:
         unverified_payload = jwt.decode(
             forged_token,
             algorithms=["HS256", "RS256"],
-            options={"verify_signature": False, "verify_aud": False}
+            options={"verify_signature": False, "verify_aud": False},
         )
         assert unverified_payload["iss"].startswith("https://login.microsoftonline.com/")
 
@@ -608,17 +605,11 @@ class TestAlgorithmConfusionPrevention:
         }
 
         secret_key = "test-secret-key"
-        internal_token = jwt.encode(
-            internal_payload,
-            secret_key,
-            algorithm="HS256"
-        )
+        internal_token = jwt.encode(internal_payload, secret_key, algorithm="HS256")
 
         # Verify issuer is NOT Azure AD pattern
         unverified_payload = jwt.decode(
-            internal_token,
-            algorithms=["HS256"],
-            options={"verify_signature": False}
+            internal_token, algorithms=["HS256"], options={"verify_signature": False}
         )
         assert not unverified_payload["iss"].startswith("https://login.microsoftonline.com/")
 

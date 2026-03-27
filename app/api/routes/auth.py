@@ -60,8 +60,6 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
-
-
 def create_token_response_with_cookies(
     token_response: TokenResponse, request: Request
 ) -> JSONResponse:
@@ -100,6 +98,7 @@ def create_token_response_with_cookies(
         )
 
     return response
+
 
 class UserInfoResponse(BaseModel):
     """Current user info response."""
@@ -256,7 +255,9 @@ async def token_endpoint(
     if grant_type == "refresh_token":
         return await _handle_refresh_token(refresh_token, db, request)
     elif grant_type == "authorization_code":
-        return await _handle_authorization_code(code, redirect_uri, client_id, client_secret, request)
+        return await _handle_authorization_code(
+            code, redirect_uri, client_id, client_secret, request
+        )
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -438,20 +439,17 @@ async def _handle_authorization_code(
 # ============================================================================
 
 
-
-
 def generate_code_verifier() -> str:
     """Generate a PKCE code verifier (random 128-character base64url string)."""
     # 96 bytes of randomness = 128 base64url characters
-    return base64.urlsafe_b64encode(
-        secrets.token_bytes(96)
-    ).rstrip(b'=').decode('ascii')
+    return base64.urlsafe_b64encode(secrets.token_bytes(96)).rstrip(b"=").decode("ascii")
 
 
 def generate_code_challenge(verifier: str) -> str:
     """Generate PKCE code challenge from verifier (SHA256 hash, base64url encoded)."""
-    digest = hashlib.sha256(verifier.encode('ascii')).digest()
-    return base64.urlsafe_b64encode(digest).rstrip(b'=').decode('ascii')
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
 
 @router.get("/azure/login")
 async def azure_login_redirect() -> dict[str, str]:
@@ -495,8 +493,7 @@ async def azure_oauth_callback(
     # ── Validate redirect URI against whitelist ─────────────────
     if request.redirect_uri not in settings.allowed_redirect_uris:
         logger.warning(
-            "Rejected OAuth callback with unauthorized redirect_uri: "
-            f"{request.redirect_uri[:100]}"
+            f"Rejected OAuth callback with unauthorized redirect_uri: {request.redirect_uri[:100]}"
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

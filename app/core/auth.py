@@ -416,7 +416,11 @@ async def get_current_user(
     # Detect token type by issuer claim, NOT algorithm header (prevents algorithm confusion)
     try:
         # Get unverified payload to check issuer (safe - only reads, doesn't validate signature)
-        unverified_payload = jwt.decode(token, algorithms=["HS256", "RS256"], options={"verify_signature": False, "verify_exp": False})
+        unverified_payload = jwt.decode(
+            token,
+            algorithms=["HS256", "RS256"],
+            options={"verify_signature": False, "verify_exp": False},
+        )
         issuer = unverified_payload.get("iss", "")
 
         # Azure AD tokens have issuer like: https://login.microsoftonline.com/{tenant}/v2.0
