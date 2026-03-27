@@ -1,0 +1,119 @@
+{
+  "research_date": "2026-03-27",
+  "subject": "python-jose JWT library security status",
+  "current_version": {
+    "package": "python-jose",
+    "version": "3.5.0",
+    "release_date": "2025-05-28",
+    "pypi_url": "https://pypi.org/project/python-jose/",
+    "github_url": "https://github.com/mpdavis/python-jose",
+    "open_issues": 88,
+    "open_pull_requests": 15,
+    "status": "Production/Stable (classifier) but effectively undermaintained"
+  },
+  "cves": [
+    {
+      "id": "CVE-2024-33663",
+      "severity": "HIGH",
+      "type": "Algorithm Confusion / Signature Forgery",
+      "cwe": "CWE-327 (Use of a Broken or Risky Cryptographic Algorithm)",
+      "description": "python-jose through 3.3.0 has algorithm confusion with OpenSSH ECDSA keys and other key formats. Similar to CVE-2022-29217.",
+      "affected_versions": "<= 3.3.0",
+      "patched_version": "None (issue remains open)",
+      "nvd_published": "2024-04-25",
+      "nvd_modified": "2025-09-02",
+      "nvd_url": "https://nvd.nist.gov/vuln/detail/CVE-2024-33663",
+      "exploit_available": true,
+      "exploit_url": "https://www.vicarius.io/vsociety/posts/algorithm-confusion-in-python-jose-cve-2024-33663",
+      "source": "MITRE"
+    },
+    {
+      "id": "CVE-2024-33664",
+      "severity": "MEDIUM",
+      "type": "Denial of Service (Resource Consumption)",
+      "cwe": "CWE-400 (Uncontrolled Resource Consumption)",
+      "description": "python-jose through 3.3.0 allows attackers to cause a denial of service (resource consumption) during a decode via a crafted JSON Web Encryption (JWE) token with a high compression ratio, aka a 'JWT bomb'. Similar to CVE-2024-21319.",
+      "affected_versions": "<= 3.3.0",
+      "patched_version": "None (issue remains open)",
+      "nvd_published": "2024-04-25",
+      "nvd_modified": "2025-09-02",
+      "nvd_url": "https://nvd.nist.gov/vuln/detail/CVE-2024-33664",
+      "exploit_available": true,
+      "source": "MITRE"
+    },
+    {
+      "id": "CVE-2024-23342",
+      "severity": "HIGH",
+      "type": "Timing Side-Channel Attack (Transitive via ecdsa dependency)",
+      "cwe": "CWE-208 (Observable Timing Discrepancy)",
+      "description": "The `ecdsa` PyPI package versions 0.18.0 and prior are vulnerable to the Minerva timing attack. As of time of publication, no known patched version exists.",
+      "affected_versions": "<= 0.18.0 (ecdsa package)",
+      "patched_version": "None",
+      "nvd_published": "2024-01-22",
+      "nvd_modified": "2025-08-26",
+      "nvd_url": "https://nvd.nist.gov/vuln/detail/CVE-2024-23342",
+      "transitive": true,
+      "dependency_chain": "python-jose -> ecdsa",
+      "source": "GitHub, Inc."
+    }
+  ],
+  "open_security_issues": [
+    {
+      "number": 399,
+      "title": "Security issue: Minerva timing attack vulnerability in python-ecdsa usage",
+      "opened": "~2026-03-13",
+      "status": "Open, no assignee"
+    },
+    {
+      "number": 398,
+      "title": "Security: DER key algorithm confusion, empty HMAC key, and timing side-channels",
+      "opened": "~2026-03-06",
+      "status": "Open, no assignee"
+    },
+    {
+      "number": 392,
+      "title": "Python-RSA dependency library is retired",
+      "opened": "2025-10-17",
+      "status": "Open, no assignee"
+    },
+    {
+      "number": 390,
+      "title": "CVE-2024-23342, High level vulnerability",
+      "opened": "2025-10-06",
+      "status": "Open, no assignee, no milestone"
+    }
+  ],
+  "recommended_replacements": [
+    {
+      "package": "PyJWT",
+      "version": "2.12.1",
+      "release_date": "2026-03-13",
+      "pypi_url": "https://pypi.org/project/PyJWT/",
+      "maintainer": "Auth0/Okta (jpadilla)",
+      "codecov": "99%",
+      "migration_difficulty": "Low",
+      "notes": "JWT-only implementation. API is similar to python-jose. Backed by Auth0. Most popular Python JWT library."
+    },
+    {
+      "package": "joserfc",
+      "version": "1.6.3",
+      "release_date": "2026-02-25",
+      "pypi_url": "https://pypi.org/project/joserfc/",
+      "maintainer": "Hsiaoming Yang (Authlib author)",
+      "migration_difficulty": "Medium",
+      "notes": "Full JOSE stack: JWS, JWE, JWK, JWA, JWT per RFCs 7515-7519. Most comprehensive and RFC-compliant."
+    }
+  ],
+  "project_impact": {
+    "files_affected": [
+      "app/core/auth.py",
+      "app/core/token_blacklist.py",
+      "pyproject.toml",
+      "tests/unit/test_auth.py",
+      "tests/unit/test_token_blacklist.py"
+    ],
+    "usage_pattern": "JWT encode/decode with HS256 (internal tokens) and RS256 (Azure AD JWKS validation)",
+    "direct_cve_risk": "CVE-2024-33663 affects ECDSA keys; project uses HS256/RS256 so direct exploitation is limited. However, library supply chain is compromised.",
+    "recommendation": "Migrate to PyJWT 2.12.1 — lowest effort, highest community support, backed by Auth0"
+  }
+}

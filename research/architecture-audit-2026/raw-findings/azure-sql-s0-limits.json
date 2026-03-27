@@ -1,0 +1,44 @@
+{
+  "research_date": "2026-03-27",
+  "source": "https://learn.microsoft.com/en-us/azure/azure-sql/database/resource-limits-dtu-single-databases",
+  "source_tier": "Tier 1 (Official Microsoft Documentation)",
+  "azure_sql_standard_s0_limits": {
+    "max_dtus": 10,
+    "included_storage_gb": 250,
+    "max_storage_gb": 250,
+    "max_in_memory_oltp_storage_gb": "N/A",
+    "max_concurrent_workers": 60,
+    "max_concurrent_logins": 60,
+    "max_concurrent_external_connections": 6,
+    "max_concurrent_sessions": 600,
+    "vcores": "<1 (less than one vCore)",
+    "note": "The Standard S0, S1 and S2 tiers provide less than one vCore (CPU). For resource-intensive workloads, a service tier of S3 or greater is recommended."
+  },
+  "project_current_config": {
+    "pool_size": 5,
+    "max_overflow": 10,
+    "total_max_connections": 15,
+    "pool_timeout": 30,
+    "pool_pre_ping": true,
+    "pool_recycle": 3600,
+    "issue": "Total possible connections (15) exceeds Azure SQL S0 external connection limit (6)"
+  },
+  "recommended_config": {
+    "pool_size": 3,
+    "max_overflow": 2,
+    "total_max_connections": 5,
+    "pool_timeout": 30,
+    "pool_pre_ping": true,
+    "pool_recycle": 1800,
+    "pool_reset_on_return": "rollback",
+    "rationale": "Stay under 6 external connection limit with margin for admin/monitoring connections"
+  },
+  "connection_string_recommendations": {
+    "Connection Timeout": 30,
+    "Command Timeout": 30,
+    "Encrypt": true,
+    "TrustServerCertificate": false,
+    "MultipleActiveResultSets": false,
+    "note": "Azure SQL enforces TLS 1.2 minimum. MARS should be disabled for connection pooling efficiency."
+  }
+}
