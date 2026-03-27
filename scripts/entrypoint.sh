@@ -8,7 +8,8 @@
 #   2. alembic upgrade head — apply incremental migrations (idempotent).
 #                 Migration 001 is safe if the table was pre-created by
 #                 create_all — it checks for existence before creating.
-#   3. uvicorn  — serve the app.
+#   3. seed     — optional: run if SEED_ON_STARTUP=true (no-op otherwise).
+#   4. uvicorn  — serve the app.
 # =============================================================================
 set -euo pipefail
 
@@ -36,7 +37,17 @@ else
     echo "         Run 'python -m alembic upgrade head' manually once DB is reachable."
 fi
 
-# 3 — Start the application
+# 3 — Optionally seed reference data (run once on fresh deployments)
+if [ "${SEED_ON_STARTUP:-false}" = "true" ]; then
+    echo "--- SEED_ON_STARTUP=true: Seeding Riverside tenants ---"
+    if python scripts/seed_riverside_tenants.py; then
+        echo "--- Seed complete ---"
+    else
+        echo "WARNING: Seed script failed - app will still start"
+    fi
+fi
+
+# 4 — Start the application
 PORT="${PORT:-8000}"
 echo "--- Starting uvicorn on port ${PORT} ---"
 exec python -m uvicorn app.main:app \

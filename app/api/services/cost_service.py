@@ -70,7 +70,7 @@ class CostService:
             change_percent = ((current_total - prev_total) / prev_total) * 100
 
         # Get unique counts
-        tenant_ids = {c.tenant_id for c in current_costs}
+        unique_tenant_ids = {c.tenant_id for c in current_costs}
         sub_ids = {c.subscription_id for c in current_costs}
 
         # Top services by cost
@@ -95,7 +95,7 @@ class CostService:
             currency="USD",
             period_start=start_date,
             period_end=end_date,
-            tenant_count=len(tenant_ids),
+            tenant_count=len(unique_tenant_ids),
             subscription_count=len(sub_ids),
             cost_change_percent=change_percent,
             top_services=top_services,
