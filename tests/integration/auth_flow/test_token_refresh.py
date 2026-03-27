@@ -52,13 +52,13 @@ class TestTokenRefresh:
             assert response.status_code == 200
             token_data = response.json()
 
-            assert "access_token" in token_data
-            assert "refresh_token" in token_data
+            assert token_data.get("cookies_set") is True
             assert token_data["token_type"] == "bearer"
             assert token_data["expires_in"] > 0
 
-            # Verify new access token is different from input refresh token
-            assert token_data["access_token"] != refresh_token
+            # Tokens are in HttpOnly cookies, not JSON body
+            assert response.cookies.get("access_token")
+            assert response.cookies.get("access_token") != refresh_token
             # Note: New refresh tokens may be identical due to implementation
             # The important thing is we got valid new tokens
 
@@ -178,7 +178,8 @@ class TestTokenRefresh:
 
             assert response.status_code == 200
             token_data = response.json()
-            assert "access_token" in token_data
-            assert "refresh_token" in token_data
+            assert token_data.get("cookies_set") is True
+            # Tokens are in HttpOnly cookies
+            assert response.cookies.get("access_token")
 
         app.dependency_overrides.clear()

@@ -58,7 +58,8 @@ def auth_token(client):
         data={"username": "admin", "password": "admin"},  # pragma: allowlist secret
     )
     assert response.status_code == 200
-    return response.json()["access_token"]
+    # Token is set as HttpOnly cookie (not in JSON body)
+    return response.cookies.get("access_token")
 
 
 @pytest.fixture()
@@ -355,8 +356,10 @@ class TestCookieAuthFlow:
         )
         assert response.status_code == 200
         data = response.json()
-        assert "access_token" in data
+        assert data.get("cookies_set") is True
         assert data["token_type"] == "bearer"
+        # Token is in HttpOnly cookie, not JSON body
+        assert response.cookies.get("access_token")
 
     def test_cookie_auth_accepted(self, auth_client):
         """Cookie-based auth is accepted by protected routes."""

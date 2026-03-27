@@ -892,7 +892,7 @@ None of these mask production bugs.
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
 | Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **221** | **214** | **7** | **🔄 In Progress** |
+| **TOTAL** | **221** | **216** | **5** | **🔄 In Progress** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -1250,12 +1250,12 @@ None of these mask production bugs.
 
 ### 16.5 Validation & Release
 
-- [ ] 16.5.1 Full test suite green (Watchdog 🐕‍🦺)
+- [x] 16.5.1 Full test suite green (Watchdog 🐕‍🦺)
   - Command: `uv run pytest tests/ -q --ignore=tests/e2e --ignore=tests/smoke --ignore=tests/load`
   - Validation: Exit code 0; zero failures; count >= 2984 (baseline)
   - Signed off by: Pack Leader 🐺
 
-- [ ] 16.5.2 CSS rebuild and verification (Code-Puppy 🐶)
+- [x] 16.5.2 CSS rebuild and verification (Code-Puppy 🐶)
   - Command: `npm run css:build`
   - Validation: `app/static/css/theme.css` regenerated; all pages load without style regressions
   - Signed off by: Experience Architect 🎨
@@ -1285,7 +1285,7 @@ None of these mask production bugs.
   - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
-| Phase 16: Audit Remediation Sprint | 43 | 36 | 7 | 🔄 In Progress |
+| Phase 16: Audit Remediation Sprint | 43 | 38 | 5 | 🔄 In Progress |
 | **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
 | **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 

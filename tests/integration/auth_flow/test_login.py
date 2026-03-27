@@ -48,12 +48,13 @@ class TestLoginFlow:
             assert response.status_code == 200
             token_data = response.json()
 
-            assert "access_token" in token_data
-            assert "refresh_token" in token_data
+            assert token_data.get("cookies_set") is True
             assert token_data["token_type"] == "bearer"
             assert token_data["expires_in"] > 0
 
-            access_token = token_data["access_token"]
+            # Tokens are in HttpOnly cookies, not JSON body
+            access_token = response.cookies.get("access_token")
+            assert access_token
 
             # Step 2: Use token to access protected endpoint
             # Test with /api/v1/auth/me endpoint
