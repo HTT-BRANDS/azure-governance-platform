@@ -467,6 +467,7 @@ def test_detect_environment_defaults_to_production(monkeypatch):
     monkeypatch.delenv("HOSTNAME", raising=False)
     monkeypatch.delenv("DEBUG", raising=False)
     monkeypatch.setenv("CORS_ORIGINS", '["https://app.example.com"]')
+    monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-for-ci-validation-only-32chars")
 
     settings = Settings(_env_file=None)
 
