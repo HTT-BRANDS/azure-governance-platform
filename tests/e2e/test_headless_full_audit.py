@@ -296,7 +296,7 @@ class TestRESTAPIEndpoints:
 
 STATIC_ASSETS = [
     "/static/css/theme.css",
-    "/static/js/navigation/index.js",
+    "/static/js/navigation/navigation.bundle.js",
     "/static/js/darkMode.js",
 ]
 

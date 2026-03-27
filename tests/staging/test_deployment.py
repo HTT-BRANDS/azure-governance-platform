@@ -11,7 +11,7 @@ import requests
 
 # Minimum acceptable version — increment this when we cut releases.
 # Anything below this means staging hasn't been updated in a while.
-MINIMUM_VERSION = (1, 4, 0)
+MINIMUM_VERSION = (1, 7, 0)
 
 
 class TestVersionFreshness:
