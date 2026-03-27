@@ -253,6 +253,9 @@ jobs:
             --staging-url="${{ env.STAGING_URL }}"
         env:
           STAGING_URL: ${{ env.STAGING_URL }}
+          # Tests only make HTTP requests to the live URL; ENVIRONMENT=development
+          # prevents Settings() from requiring CORS_ORIGINS during import.
+          ENVIRONMENT: development
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
