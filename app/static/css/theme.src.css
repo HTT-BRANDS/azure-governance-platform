@@ -333,6 +333,15 @@ body {
 .text-secondary-theme { color: var(--text-secondary); }
 .text-muted-theme { color: var(--text-muted); }
 
+/* Divide Colors */
+.divide-border-default > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-default);
+}
+
+/* Border Colors */
+.border-default { border-color: var(--border-default); }
+.border-light { border-color: var(--border-light); }
+
 /* ==========================================================================
    HTT Primary Button (from microsoft-group-management)
    ========================================================================== */

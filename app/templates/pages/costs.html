@@ -5,14 +5,12 @@
 {% block nav_costs %}bg-brand-primary-110{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-100">
+<div class="space-y-6">
     <!-- Header -->
-    <div class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Cost Management</h1>
-                    <p class="mt-1 text-sm text-gray-500">Azure spend across all managed tenants</p>
+                    <h1 class="text-3xl font-bold text-primary-theme">Cost Management</h1>
+                    <p class="mt-1 text-sm text-muted-theme">Azure spend across all managed tenants</p>
                 </div>
                 <button onclick="loadAllData()"
                         class="inline-flex items-center px-4 py-2 bg-wm-blue-100 text-white text-sm font-medium rounded-lg hover:bg-wm-blue-110 transition-colors">
@@ -21,92 +19,87 @@
                     </svg>
                     Refresh
                 </button>
-            </div>
-        </div>
     </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow p-6">
-                <div class="text-sm font-medium text-gray-500">Total Spend</div>
-                <div class="mt-2 text-3xl font-bold text-gray-900" id="total-cost">--</div>
+            <div class="bg-surface-primary rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-muted-theme">Total Spend</div>
+                <div class="mt-2 text-3xl font-bold text-primary-theme" id="total-cost">--</div>
                 <div class="mt-1 text-sm" id="cost-change">--</div>
             </div>
-            <div class="bg-white rounded-xl shadow p-6">
-                <div class="text-sm font-medium text-gray-500">Tenants</div>
-                <div class="mt-2 text-3xl font-bold text-gray-900" id="tenant-count">--</div>
-                <div class="mt-1 text-sm text-gray-500">Managed accounts</div>
+            <div class="bg-surface-primary rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-muted-theme">Tenants</div>
+                <div class="mt-2 text-3xl font-bold text-primary-theme" id="tenant-count">--</div>
+                <div class="mt-1 text-sm text-muted-theme">Managed accounts</div>
             </div>
-            <div class="bg-white rounded-xl shadow p-6">
-                <div class="text-sm font-medium text-gray-500">Subscriptions</div>
-                <div class="mt-2 text-3xl font-bold text-gray-900" id="subscription-count">--</div>
-                <div class="mt-1 text-sm text-gray-500">Active billing</div>
+            <div class="bg-surface-primary rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-muted-theme">Subscriptions</div>
+                <div class="mt-2 text-3xl font-bold text-primary-theme" id="subscription-count">--</div>
+                <div class="mt-1 text-sm text-muted-theme">Active billing</div>
             </div>
-            <div class="bg-white rounded-xl shadow p-6">
-                <div class="text-sm font-medium text-gray-500">Anomalies</div>
-                <div class="mt-2 text-3xl font-bold text-gray-900" id="anomaly-count">--</div>
-                <div class="mt-1 text-sm text-gray-500">Unacknowledged</div>
+            <div class="bg-surface-primary rounded-xl shadow p-6">
+                <div class="text-sm font-medium text-muted-theme">Anomalies</div>
+                <div class="mt-2 text-3xl font-bold text-primary-theme" id="anomaly-count">--</div>
+                <div class="mt-1 text-sm text-muted-theme">Unacknowledged</div>
             </div>
         </div>
 
         <!-- Cost by Tenant -->
-        <div class="bg-white rounded-xl shadow mb-8">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-900">Cost by Tenant</h2>
+        <div class="bg-surface-primary rounded-xl shadow mb-8">
+            <div class="px-6 py-4 border-b border-default">
+                <h2 class="text-lg font-semibold text-primary-theme">Cost by Tenant</h2>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-border-default">
+                    <thead class="bg-surface-tertiary">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscriptions</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Tenant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Total Cost</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Subscriptions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200" id="tenant-costs-table">
-                        <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                    <tbody class="bg-surface-primary divide-y divide-border-default" id="tenant-costs-table">
+                        <tr><td colspan="3" class="px-6 py-4 text-center text-muted-theme">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
         <!-- Top Services -->
-        <div class="bg-white rounded-xl shadow mb-8">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-900">Top Services by Spend</h2>
+        <div class="bg-surface-primary rounded-xl shadow mb-8">
+            <div class="px-6 py-4 border-b border-default">
+                <h2 class="text-lg font-semibold text-primary-theme">Top Services by Spend</h2>
             </div>
             <div class="p-6">
                 <div class="space-y-4" id="top-services">
-                    <div class="text-center text-gray-500">Loading...</div>
+                    <div class="text-center text-muted-theme">Loading...</div>
                 </div>
             </div>
         </div>
 
         <!-- Anomalies -->
-        <div class="bg-white rounded-xl shadow">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-900">Cost Anomalies</h2>
+        <div class="bg-surface-primary rounded-xl shadow">
+            <div class="px-6 py-4 border-b border-default">
+                <h2 class="text-lg font-semibold text-primary-theme">Cost Anomalies</h2>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-border-default">
+                    <thead class="bg-surface-tertiary">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Tenant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Expected</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Actual</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Change</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200" id="anomalies-table">
-                        <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                    <tbody class="bg-surface-primary divide-y divide-border-default" id="anomalies-table">
+                        <tr><td colspan="6" class="px-6 py-4 text-center text-muted-theme">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
 </div>
 
 <script nonce="{{ request.state.csp_nonce }}">
@@ -140,7 +133,7 @@ async function loadAllData() {
             changeEl.className = `mt-1 text-sm ${isUp ? 'text-red-600' : 'text-green-600'}`;
         } else {
             changeEl.textContent = 'No prior period data';
-            changeEl.className = 'mt-1 text-sm text-gray-500';
+            changeEl.className = 'mt-1 text-sm text-muted-theme';
         }
 
         const servicesEl = document.getElementById('top-services');
@@ -149,17 +142,17 @@ async function loadAllData() {
                 <div class="flex items-center justify-between">
                     <div class="flex-1">
                         <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium text-gray-700">${s.service_name}</span>
-                            <span class="text-sm text-gray-500">${formatCurrency(s.cost)} (${s.percentage_of_total.toFixed(1)}%)</span>
+                            <span class="text-sm font-medium text-secondary-theme">${s.service_name}</span>
+                            <span class="text-sm text-muted-theme">${formatCurrency(s.cost)} (${s.percentage_of_total.toFixed(1)}%)</span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="w-full bg-surface-tertiary rounded-full h-2">
                             <div class="bg-wm-blue-100 h-2 rounded-full" style="width: ${Math.min(s.percentage_of_total, 100)}%"></div>
                         </div>
                     </div>
                 </div>
             `).join('');
         } else {
-            servicesEl.innerHTML = '<div class="text-center text-gray-500">No service data available</div>';
+            servicesEl.innerHTML = '<div class="text-center text-muted-theme">No service data available</div>';
         }
     }
 
@@ -167,13 +160,13 @@ async function loadAllData() {
     if (tenantCosts && tenantCosts.length > 0) {
         tenantTable.innerHTML = tenantCosts.map(t => `
             <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${t.tenant_name}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(t.total_cost)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${t.subscription_costs ? t.subscription_costs.length : 0}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary-theme">${t.tenant_name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-theme">${formatCurrency(t.total_cost)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-theme">${t.subscription_costs ? t.subscription_costs.length : 0}</td>
             </tr>
         `).join('');
     } else {
-        tenantTable.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No tenant cost data available. Run a cost sync first.</td></tr>';
+        tenantTable.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-muted-theme">No tenant cost data available. Run a cost sync first.</td></tr>';
     }
 
     const anomalyTable = document.getElementById('anomalies-table');
@@ -181,13 +174,13 @@ async function loadAllData() {
         document.getElementById('anomaly-count').textContent = anomalies.filter(a => !a.is_acknowledged).length;
         anomalyTable.innerHTML = anomalies.map(a => `
             <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${a.tenant_name}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${a.anomaly_type}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(a.expected_cost)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(a.actual_cost)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-theme">${a.tenant_name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-theme">${a.anomaly_type}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-theme">${formatCurrency(a.expected_cost)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-theme">${formatCurrency(a.actual_cost)}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm ${a.percentage_change > 0 ? 'text-red-600' : 'text-green-600'}">${a.percentage_change > 0 ? '+' : ''}${a.percentage_change.toFixed(1)}%</td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${a.is_acknowledged ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'}">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${a.is_acknowledged ? 'bg-surface-secondary text-gray-800' : 'bg-red-100 text-red-800'}">
                         ${a.is_acknowledged ? 'Acknowledged' : 'Open'}
                     </span>
                 </td>
@@ -195,7 +188,7 @@ async function loadAllData() {
         `).join('');
     } else {
         document.getElementById('anomaly-count').textContent = '0';
-        anomalyTable.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No anomalies detected</td></tr>';
+        anomalyTable.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-muted-theme">No anomalies detected</td></tr>';
     }
 }
 
