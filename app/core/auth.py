@@ -9,6 +9,7 @@ Features:
 """
 
 import logging
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -307,6 +308,7 @@ class JWTTokenManager:
             "sub": user_id,
             "exp": expire,
             "iat": datetime.now(UTC),
+            "jti": str(uuid.uuid4()),
             "iss": "azure-governance-platform",
             "aud": "azure-governance-api",
             "type": "refresh",

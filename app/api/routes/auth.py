@@ -24,6 +24,7 @@ from app.core.auth import (
     azure_ad_validator,
     blacklist_token,
     get_current_user,
+    is_token_blacklisted,
     jwt_manager,
 )
 from app.core.config import get_settings
@@ -272,6 +273,15 @@ async def _handle_refresh_token(
             detail="Refresh token required",
         )
 
+    # Check if refresh token has been revoked (e.g., already rotated)
+    if is_token_blacklisted(refresh_token):
+        logger.warning("Attempted use of blacklisted refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has been revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
         # Validate refresh token
         payload = jwt_manager.decode_token(refresh_token)
@@ -307,6 +317,9 @@ async def _handle_refresh_token(
             tenant_ids=tenant_ids,
         )
         new_refresh_token = jwt_manager.create_refresh_token(user_id=user_id)
+
+        # Blacklist the old refresh token (rotation = one-time use)
+        blacklist_token(refresh_token)
 
         logger.info(f"Token refreshed for user: {user_id}")
 

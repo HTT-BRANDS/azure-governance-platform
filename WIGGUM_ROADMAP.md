@@ -892,7 +892,7 @@ None of these mask production bugs.
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
 | Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **221** | **190** | **31** | **🔄 In Progress** |
+| **TOTAL** | **221** | **191** | **30** | **🔄 In Progress** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -1081,7 +1081,7 @@ None of these mask production bugs.
   - Reviewed by: Solutions Architect 🏛️
   - Signed off by: Pack Leader 🐺
 
-- [ ] 16.2.3 Add refresh token blacklisting on rotation (Security Auditor 🛡️ → Code-Puppy 🐶)
+- [x] 16.2.3 Add refresh token blacklisting on rotation (Security Auditor 🛡️ → Code-Puppy 🐶)
   - File: `app/api/routes/auth.py:224-278`
   - Action: After issuing new tokens, blacklist the old refresh token; add blacklist check before token exchange
   - Validation: `uv run pytest tests/unit/test_routes_auth.py -v -k refresh` passes
@@ -1285,7 +1285,7 @@ None of these mask production bugs.
   - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
-| Phase 16: Audit Remediation Sprint | 43 | 12 | 31 | 🔄 In Progress |
+| Phase 16: Audit Remediation Sprint | 43 | 13 | 30 | 🔄 In Progress |
 | **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
 | **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 
