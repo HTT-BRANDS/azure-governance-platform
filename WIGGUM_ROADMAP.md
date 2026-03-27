@@ -892,7 +892,7 @@ None of these mask production bugs.
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
 | Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **221** | **191** | **30** | **🔄 In Progress** |
+| **TOTAL** | **221** | **194** | **27** | **🔄 In Progress** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -1088,14 +1088,14 @@ None of these mask production bugs.
   - Reviewed by: Security Auditor 🛡️
   - Signed off by: Pack Leader 🐺
 
-- [ ] 16.2.4 Fix navHighlight.js to use brand-primary-110 (Experience Architect 🎨 → Code-Puppy 🐶)
+- [x] 16.2.4 Fix navHighlight.js to use brand-primary-110 (Experience Architect 🎨 → Code-Puppy 🐶)
   - File: `app/static/js/navigation/navHighlight.js`
   - Action: Replace `bg-wm-blue-110` with `bg-brand-primary-110` in CONFIG and all classList operations
   - Validation: Nav active state renders in brand color (burgundy for HTT) after HTMX navigation
   - Reviewed by: Experience Architect 🎨
   - Signed off by: Planning Agent 📋
 
-- [ ] 16.2.5 Fix progressBar.js to use CSS variables (Experience Architect 🎨 → Code-Puppy 🐶)
+- [x] 16.2.5 Fix progressBar.js to use CSS variables (Experience Architect 🎨 → Code-Puppy 🐶)
   - File: `app/static/js/navigation/progressBar.js:14-15`
   - Action: Replace hardcoded `#0053e2` with `getComputedStyle(...).getPropertyValue('--brand-primary-100')`
   - Validation: Progress bar color matches brand
@@ -1109,7 +1109,7 @@ None of these mask production bugs.
   - Reviewed by: Experience Architect 🎨
   - Signed off by: QA Expert 🐾
 
-- [ ] 16.2.7 Fix duplicate #page-announcer (Experience Architect 🎨 → Code-Puppy 🐶)
+- [x] 16.2.7 Fix duplicate #page-announcer (Experience Architect 🎨 → Code-Puppy 🐶)
   - File: `app/static/js/navigation/index.js:148-153`
   - Action: Check for existing element before creating new one
   - Validation: `document.querySelectorAll('#page-announcer').length` returns 1 in browser console
@@ -1285,7 +1285,7 @@ None of these mask production bugs.
   - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
-| Phase 16: Audit Remediation Sprint | 43 | 13 | 30 | 🔄 In Progress |
+| Phase 16: Audit Remediation Sprint | 43 | 16 | 27 | 🔄 In Progress |
 | **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
 | **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 

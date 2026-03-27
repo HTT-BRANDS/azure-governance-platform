@@ -168,13 +168,16 @@
      * Initialize accessibility features
      */
     function initAccessibility() {
-        // Announce page changes to screen readers
-        const announcer = document.createElement('div');
-        announcer.id = 'page-announcer';
-        announcer.setAttribute('aria-live', 'polite');
-        announcer.setAttribute('aria-atomic', 'true');
-        announcer.className = 'sr-only';
-        document.body.appendChild(announcer);
+        // Announce page changes to screen readers (avoid duplicates)
+        let announcer = document.getElementById('page-announcer');
+        if (!announcer) {
+            announcer = document.createElement('div');
+            announcer.id = 'page-announcer';
+            announcer.setAttribute('aria-live', 'polite');
+            announcer.setAttribute('aria-atomic', 'true');
+            announcer.className = 'sr-only';
+            document.body.appendChild(announcer);
+        }
 
         // Announce navigation
         document.body.addEventListener('htmx:afterSwap', (event) => {

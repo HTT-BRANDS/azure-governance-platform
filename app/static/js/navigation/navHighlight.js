@@ -10,7 +10,7 @@
     'use strict';
 
     const CONFIG = {
-        activeClass: 'bg-wm-blue-110',
+        activeClass: 'bg-brand-primary-110',
         selector: 'nav a[href]'
     };
 
@@ -38,7 +38,7 @@
                 if (!href) return;
                 
                 // Remove existing active classes
-                link.classList.remove('bg-wm-blue-110', 'text-white');
+                link.classList.remove('bg-brand-primary-110', 'text-white');
                 link.removeAttribute('aria-current');
                 
                 // Check if this link matches current path
@@ -46,7 +46,7 @@
                                 (href !== '/' && currentPath.startsWith(href));
                 
                 if (isActive) {
-                    link.classList.add('bg-wm-blue-110', 'text-white');
+                    link.classList.add('bg-brand-primary-110', 'text-white');
                     link.setAttribute('aria-current', 'page');
                 }
             });

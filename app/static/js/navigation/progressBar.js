@@ -11,8 +11,8 @@
 
     const CONFIG = {
         height: '3px',
-        color: '#0053e2', // wm-blue-100
-        colorError: '#ea1100', // wm-red-100
+        color: '#0053e2',       // fallback, resolved in init()
+        colorError: '#ea1100',  // fallback, resolved in init()
         animationDuration: 200
     };
 
@@ -26,6 +26,11 @@
          * Initialize the progress bar
          */
         init() {
+            // Resolve brand colors from CSS custom properties
+            const root = getComputedStyle(document.documentElement);
+            CONFIG.color = root.getPropertyValue('--brand-primary-100').trim() || CONFIG.color;
+            CONFIG.colorError = root.getPropertyValue('--brand-error').trim() || CONFIG.colorError;
+
             this.element = document.getElementById('htmx-progress-bar');
             if (this.element) return;
 
