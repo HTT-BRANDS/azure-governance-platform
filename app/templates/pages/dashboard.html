@@ -4,7 +4,7 @@
 {% block nav_dashboard %}bg-brand-primary-110{% endblock %}
 
 {% set has_cost_data = cost_summary.total_cost > 0 or cost_summary.tenant_count > 0 %}
-{% set has_compliance_data = compliance_summary.total_policies > 0 %}
+{% set has_compliance_data = compliance_summary.total_compliant_resources > 0 or compliance_summary.total_non_compliant_resources > 0 %}
 {% set has_resource_data = resource_inventory.total_resources > 0 %}
 {% set has_identity_data = identity_summary.total_users > 0 %}
 {% set has_any_data = has_cost_data or has_compliance_data or has_resource_data or has_identity_data %}

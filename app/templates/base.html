@@ -50,7 +50,7 @@
     <div id="page-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
     <!-- Navigation -->
-    <nav class="bg-brand-primary-100 text-white shadow-lg" role="navigation" aria-label="Main navigation">
+    <nav class="bg-brand-primary-100 text-white shadow-lg" role="navigation" aria-label="Main navigation" hx-boost="true" hx-select="main" hx-target="main" hx-swap="outerHTML settle:150ms">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <!-- Logo + Desktop Nav -->
@@ -59,7 +59,7 @@
                         Azure Governance
                     </a>
                     <div class="hidden lg:block ml-8">
-                        <div class="flex items-baseline space-x-1" hx-boost="true" hx-select="main" hx-target="main" hx-swap="outerHTML settle:150ms">
+                        <div class="flex items-baseline space-x-1">
                             <a href="/dashboard" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_dashboard %}{% endblock %}" data-nav-path="/dashboard">Dashboard</a>
                             <a href="/sync-dashboard" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_sync_dashboard %}{% endblock %}" data-nav-path="/sync-dashboard">Sync</a>
                             <a href="/api/v1/preflight" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_preflight %}{% endblock %}" data-nav-path="/api/v1/preflight">Preflight</a>
@@ -101,7 +101,7 @@
 
         <!-- Mobile Menu (hidden by default) -->
         <div id="mobile-menu" class="lg:hidden hidden border-t border-brand-primary-110">
-            <div class="px-4 py-3 space-y-1" hx-boost="true" hx-select="main" hx-target="main" hx-swap="outerHTML settle:150ms">
+            <div class="px-4 py-3 space-y-1">
                 <a href="/dashboard" class="block px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors">Dashboard</a>
                 <a href="/sync-dashboard" class="block px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors">Sync Status</a>
                 <a href="/api/v1/preflight" class="block px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors">Preflight</a>
