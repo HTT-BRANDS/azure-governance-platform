@@ -892,7 +892,7 @@ None of these mask production bugs.
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
 | Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **221** | **186** | **35** | **🔄 In Progress** |
+| **TOTAL** | **221** | **187** | **34** | **🔄 In Progress** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -1051,7 +1051,7 @@ None of these mask production bugs.
   - Reviewed by: Experience Architect 🎨
   - Signed off by: Security Auditor 🛡️
 
-- [ ] 16.1.9 Replace 4 onclick handlers with addEventListener (Experience Architect 🎨 → Code-Puppy 🐶)
+- [x] 16.1.9 Replace 4 onclick handlers with addEventListener (Experience Architect 🎨 → Code-Puppy 🐶)
   - Files: `app/templates/pages/costs.html:15`, `compliance.html:15`, `resources.html:15`, `identity.html:15`
   - Action: Remove onclick="loadAllData()", add event listener in nonced script block or use HTMX
   - Validation: Refresh buttons work in production (no CSP block)
@@ -1285,7 +1285,7 @@ None of these mask production bugs.
   - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
-| Phase 16: Audit Remediation Sprint | 43 | 8 | 35 | 🔄 In Progress |
+| Phase 16: Audit Remediation Sprint | 43 | 9 | 34 | 🔄 In Progress |
 | **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
 | **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 
