@@ -892,7 +892,7 @@ None of these mask production bugs.
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
 | Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **221** | **198** | **23** | **🔄 In Progress** |
+| **TOTAL** | **221** | **201** | **20** | **🔄 In Progress** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -1139,21 +1139,21 @@ None of these mask production bugs.
   - Reviewed by: Security Auditor 🛡️
   - Signed off by: Pack Leader 🐺
 
-- [ ] 16.3.3 Add scope="col" to all table headers across templates (Experience Architect 🎨 → Code-Puppy 🐶)
+- [x] 16.3.3 Add scope="col" to all table headers across templates (Experience Architect 🎨 → Code-Puppy 🐶)
   - Files: All 37 templates containing `<th>` tags
   - Action: Add `scope="col"` to every `<th>` element
   - Validation: `grep -r '<th ' app/templates/ | grep -cv 'scope='` returns 0
   - Reviewed by: Experience Architect 🎨
   - Signed off by: QA Expert 🐾
 
-- [ ] 16.3.4 Add ARIA attributes to Chart.js canvases (Experience Architect 🎨 → Code-Puppy 🐶)
+- [x] 16.3.4 Add ARIA attributes to Chart.js canvases (Experience Architect 🎨 → Code-Puppy 🐶)
   - File: `app/templates/pages/dashboard.html`
   - Action: Add `role="img"` and `aria-label` to canvas elements; add fallback text content
   - Validation: axe-core scan shows no canvas accessibility violations
   - Reviewed by: Experience Architect 🎨
   - Signed off by: QA Expert 🐾
 
-- [ ] 16.3.5 Fix confirm dialog accessibility — focus trap + ARIA (Experience Architect 🎨 → Code-Puppy 🐶)
+- [x] 16.3.5 Fix confirm dialog accessibility — focus trap + ARIA (Experience Architect 🎨 → Code-Puppy 🐶)
   - File: `app/static/js/navigation/confirmDialog.js`
   - Action: Add role="alertdialog", aria-modal="true", focus trap, focus cancel first, restore focus on close
   - Validation: Keyboard-only user can open/close dialog without focus escaping
@@ -1285,7 +1285,7 @@ None of these mask production bugs.
   - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
-| Phase 16: Audit Remediation Sprint | 43 | 20 | 23 | 🔄 In Progress |
+| Phase 16: Audit Remediation Sprint | 43 | 23 | 20 | 🔄 In Progress |
 | **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
 | **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 

@@ -159,9 +159,11 @@
             <h3 class="text-lg font-semibold text-primary-theme mb-4">Cost Trend (30 Days)</h3>
             <div style="height: 300px;">
                 <canvas id="costTrendChart"
+                    role="img"
+                    aria-label="Cost trend chart showing daily costs over 30 days"
                     data-labels='{{ cost_summary.daily_labels | default([], true) | tojson }}'
                     data-values='{{ cost_summary.daily_costs | default([], true) | tojson }}'
-                ></canvas>
+                >Cost trend data is available in the table below.</canvas>
             </div>
         </div>
 
@@ -170,9 +172,11 @@
             <h3 class="text-lg font-semibold text-primary-theme mb-4">Compliance by Tenant</h3>
             <div style="height: 300px;">
                 <canvas id="complianceChart"
+                    role="img"
+                    aria-label="Compliance scores by tenant bar chart"
                     data-labels='{{ compliance_summary.tenant_names | default([], true) | tojson }}'
                     data-values='{{ compliance_summary.tenant_scores | default([], true) | tojson }}'
-                ></canvas>
+                >Compliance data is available in the table below.</canvas>
             </div>
         </div>
     </div>
@@ -188,9 +192,9 @@
                 <table class="min-w-full divide-y" style="--tw-divide-opacity:1; --tw-divide-color: var(--border-color);">
                     <thead class="bg-surface-secondary">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase">Service</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-muted-theme uppercase">Cost</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-muted-theme uppercase">% of Total</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase">Service</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-theme uppercase">Cost</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-theme uppercase">% of Total</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y" style="--tw-divide-color: var(--border-color);">
@@ -221,9 +225,9 @@
                 <table class="min-w-full divide-y" style="--tw-divide-color: var(--border-color);">
                     <thead class="bg-surface-secondary">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase">Policy</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-muted-theme uppercase">Violations</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-muted-theme uppercase">Tenants</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase">Policy</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-theme uppercase">Violations</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-theme uppercase">Tenants</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y" style="--tw-divide-color: var(--border-color);">

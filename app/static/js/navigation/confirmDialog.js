@@ -3,7 +3,7 @@
  * Custom confirmation dialogs for destructive actions
  * 
  * @module navigation/confirmDialog
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 (function() {
@@ -31,8 +31,13 @@
          * @param {Function} onCancel - Callback when cancelled
          */
         show(message, onConfirm, onCancel) {
+            const previouslyFocused = document.activeElement;
+
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 z-[10001] flex items-center justify-center p-4';
+            modal.setAttribute('role', 'alertdialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('aria-labelledby', 'confirm-dialog-title');
             modal.innerHTML = `
                 <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
                 <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all">
@@ -43,7 +48,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="text-lg font-semibold text-gray-900">Confirm Action</h3>
+                            <h3 id="confirm-dialog-title" class="text-lg font-semibold text-gray-900">Confirm Action</h3>
                             <p class="text-sm text-gray-500 mt-1">${escapeHtml(message)}</p>
                             <div class="flex justify-end gap-3 mt-6">
                                 <button type="button" class="cancel-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -62,9 +67,14 @@
             
             const confirmBtn = modal.querySelector('.confirm-btn');
             const cancelBtn = modal.querySelector('.cancel-btn');
-            confirmBtn.focus();
+            cancelBtn.focus();
             
-            const close = () => modal.remove();
+            const close = () => {
+                modal.remove();
+                if (previouslyFocused && previouslyFocused.focus) {
+                    previouslyFocused.focus();
+                }
+            };
             
             confirmBtn.addEventListener('click', () => {
                 close();
@@ -76,15 +86,35 @@
                 if (onCancel) onCancel();
             });
             
-            modal.querySelector('.fixed.inset-0').addEventListener('click', () => {
+            modal.querySelector('[aria-hidden="true"]').addEventListener('click', () => {
                 close();
                 if (onCancel) onCancel();
             });
             
+            // Focus trap + Escape handling
             modal.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     close();
                     if (onCancel) onCancel();
+                    return;
+                }
+
+                if (e.key === 'Tab') {
+                    const focusable = modal.querySelectorAll('button');
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+
+                    if (e.shiftKey) {
+                        if (document.activeElement === first) {
+                            e.preventDefault();
+                            last.focus();
+                        }
+                    } else {
+                        if (document.activeElement === last) {
+                            e.preventDefault();
+                            first.focus();
+                        }
+                    }
                 }
             });
         }
