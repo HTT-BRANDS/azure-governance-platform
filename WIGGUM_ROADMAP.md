@@ -984,7 +984,310 @@ None of these mask production bugs.
 - [x] 15.3.4 Add health metrics — /api/v1/metrics/health (Code-Puppy 🐶)
 
 | **TOTAL (P1-P4)** | **25** | **25** | **0** | **✅ All Complete** |
-| **GRAND TOTAL** | **153** | **153** | **0** | **✅ ALL COMPLETE** |
+
+## Phase 16: Production Audit Remediation Sprint (v1.7.0)
+
+**Status:** 🔴 NOT STARTED — 0/43 tasks
+**Goal:** Remediate all findings from March 2026 triple-specialist audit (Experience Architect + Solutions Architect + Security Auditor)
+**Audit Reports:** 73 total findings (6 Critical, 14 High, 16 Medium, 11 Low, 26 Observations)
+**Traceability:** REQ-1601 through REQ-1643 in TRACEABILITY_MATRIX.md
+**Target:** v1.7.0 release
+
+### 16.1 Week 1: Emergency Security Fixes (Critical + High — Auth/Secrets)
+
+- [ ] 16.1.1 Whitelist OAuth redirect URIs server-side (Security Auditor 🛡️ → Code-Puppy 🐶)
+  - File: `app/api/routes/auth.py`
+  - Action: Add ALLOWED_REDIRECT_URIS set, validate request.redirect_uri before Azure AD exchange
+  - Validation: `uv run pytest tests/unit/test_routes_auth.py -v -k redirect` passes; manual curl with evil redirect_uri returns 400
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.1.2 Set HttpOnly + Secure flags on JWT cookies (Security Auditor 🛡️ → Code-Puppy 🐶)
+  - Files: `app/api/routes/auth.py`, `app/templates/login.html`
+  - Action: Move cookie-setting from client-side JS to server-side `response.set_cookie()` with httponly=True, secure=True, samesite="lax"
+  - Validation: `curl -v` shows Set-Cookie with HttpOnly; Secure flags; `document.cookie` no longer contains access_token
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.1.3 Remove SQL password from Bicep outputs + rotate credential (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - File: `infrastructure/modules/sql-server.bicep:89`
+  - Action: Delete `output connectionString` line; `az deployment group delete` old deployments; rotate SQL admin password
+  - Validation: `grep -c "output connectionString" infrastructure/modules/sql-server.bicep` returns 0
+  - Reviewed by: Solutions Architect 🏛️
+  - Signed off by: Security Auditor 🛡️
+
+- [ ] 16.1.4 Disable SQL Server public network access + AllowAllAzureIPs (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - Files: `infrastructure/modules/sql-server.bicep:34,69-76`, `infrastructure/parameters.production.json`
+  - Action: Set publicNetworkAccess=Disabled, remove AllowAllAzureIps firewall rule, enable VNet integration
+  - Validation: `az sql server show --name sql-gov-prod-mylxq53d --query publicNetworkAccess -o tsv` returns "Disabled"
+  - Reviewed by: Solutions Architect 🏛️
+  - Signed off by: Security Auditor 🛡️
+
+- [ ] 16.1.5 Fix algorithm confusion in JWT validation — issuer-based routing (Security Auditor 🛡️ → Code-Puppy 🐶)
+  - File: `app/core/auth.py:361-380`
+  - Action: Route token validation by `iss` claim (Azure AD issuer vs internal) instead of `alg` header
+  - Validation: `uv run pytest tests/unit/test_auth.py -v -k algorithm` passes; forged HS256 token with Azure claims rejected
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.1.6 Implement PKCE in OAuth login flow (Security Auditor 🛡️ → Code-Puppy 🐶)
+  - Files: `app/templates/login.html`, `app/api/routes/auth.py`
+  - Action: Generate code_challenge/code_verifier in login.html, enforce code_verifier server-side
+  - Validation: `uv run pytest tests/unit/test_routes_auth.py -v -k pkce` passes; login flow includes code_challenge in auth URL
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.1.7 Validate OAuth state parameter server-side (Security Auditor 🛡️ → Code-Puppy 🐶)
+  - Files: `app/templates/login.html`, `app/api/routes/auth.py`
+  - Action: Store state in sessionStorage, validate on callback return
+  - Validation: Login with tampered state parameter returns error
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.1.8 Add nonces to consent_banner.html and search.html scripts (Experience Architect 🎨 → Code-Puppy 🐶)
+  - Files: `app/templates/components/consent_banner.html`, `app/templates/components/search.html`
+  - Action: Add `nonce="{{ request.state.csp_nonce }}"` to all script tags; pass request into macros
+  - Validation: No CSP violations in browser console on /dashboard; consent banner JS executes
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Security Auditor 🛡️
+
+- [ ] 16.1.9 Replace 4 onclick handlers with addEventListener (Experience Architect 🎨 → Code-Puppy 🐶)
+  - Files: `app/templates/pages/costs.html:15`, `compliance.html:15`, `resources.html:15`, `identity.html:15`
+  - Action: Remove onclick="loadAllData()", add event listener in nonced script block or use HTMX
+  - Validation: Refresh buttons work in production (no CSP block)
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.1.10 Fix staging token endpoint timing attack (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - File: `app/api/routes/auth.py:542-570`
+  - Action: Replace `!=` with `hmac.compare_digest()`; return 404 for all rejections
+  - Validation: `uv run pytest tests/unit/test_routes_auth.py -v -k staging` passes
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+### 16.2 Week 2: Critical Infrastructure + Auth Hardening
+
+- [ ] 16.2.1 Migrate python-jose to PyJWT (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - Files: `app/core/auth.py`, `app/core/token_blacklist.py`, `pyproject.toml`, `uv.lock`
+  - Action: Replace `from jose import jwt, JWTError` with `import jwt; from jwt.exceptions import *`; remove python-jose + ecdsa deps
+  - Validation: `uv run pytest tests/ -q --tb=short` all pass; `pip show python-jose` returns "not found"
+  - Reviewed by: Python Reviewer 🐍 + Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.2.2 Deploy Azure Cache for Redis Basic (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - Files: `infrastructure/modules/redis.bicep` (new), `infrastructure/main.bicep`, `infrastructure/parameters.production.json`
+  - Action: Create Redis Basic C0 ($16/mo); set REDIS_URL in App Service; verify token_blacklist + rate_limit + cache use it
+  - Validation: `az redis show --name redis-gov-prod --query hostName` returns FQDN; app health shows redis=healthy
+  - Reviewed by: Solutions Architect 🏛️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.2.3 Add refresh token blacklisting on rotation (Security Auditor 🛡️ → Code-Puppy 🐶)
+  - File: `app/api/routes/auth.py:224-278`
+  - Action: After issuing new tokens, blacklist the old refresh token; add blacklist check before token exchange
+  - Validation: `uv run pytest tests/unit/test_routes_auth.py -v -k refresh` passes
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.2.4 Fix navHighlight.js to use brand-primary-110 (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/static/js/navigation/navHighlight.js`
+  - Action: Replace `bg-wm-blue-110` with `bg-brand-primary-110` in CONFIG and all classList operations
+  - Validation: Nav active state renders in brand color (burgundy for HTT) after HTMX navigation
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.2.5 Fix progressBar.js to use CSS variables (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/static/js/navigation/progressBar.js:14-15`
+  - Action: Replace hardcoded `#0053e2` with `getComputedStyle(...).getPropertyValue('--brand-primary-100')`
+  - Validation: Progress bar color matches brand
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.2.6 Fix accessibility.css conflicting focus indicators + overbroad touch targets (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/static/css/accessibility.css`
+  - Action: Remove `:focus-visible` rules (theme.src.css handles this); remove blanket 44px min-height on all a/button
+  - Validation: `wc -l app/static/css/accessibility.css` shows reduced file; focus rings use brand color
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: QA Expert 🐾
+
+- [ ] 16.2.7 Fix duplicate #page-announcer (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/static/js/navigation/index.js:148-153`
+  - Action: Check for existing element before creating new one
+  - Validation: `document.querySelectorAll('#page-announcer').length` returns 1 in browser console
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.2.8 Change default environment to production in config (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - File: `app/core/config.py:40`
+  - Action: Change `default="development"` to `default="production"` (fail-safe not fail-open)
+  - Validation: `uv run pytest tests/` still pass; app refuses to start without explicit ENVIRONMENT=development locally
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+### 16.3 Week 3: Database + Scalability + Accessibility
+
+- [ ] 16.3.1 Fix Azure SQL connection pool sizing (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - File: `app/core/config.py:214-215`
+  - Action: Set pool_size=3, max_overflow=2 (S0 supports 6 connections); pool_recycle=1800
+  - Validation: `uv run pytest tests/` pass; no connection errors under load
+  - Reviewed by: Solutions Architect 🏛️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.3.2 Move JWT_SECRET_KEY to Key Vault (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - Files: `app/core/config.py`, `infrastructure/modules/app-service.bicep`
+  - Action: Store key in kv-gov-prod; reference via `@Microsoft.KeyVault(SecretUri=...)` in app settings
+  - Validation: `az webapp config appsettings list` shows Key Vault reference; app starts successfully
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.3.3 Add scope="col" to all table headers across templates (Experience Architect 🎨 → Code-Puppy 🐶)
+  - Files: All 37 templates containing `<th>` tags
+  - Action: Add `scope="col"` to every `<th>` element
+  - Validation: `grep -r '<th ' app/templates/ | grep -cv 'scope='` returns 0
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: QA Expert 🐾
+
+- [ ] 16.3.4 Add ARIA attributes to Chart.js canvases (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/templates/pages/dashboard.html`
+  - Action: Add `role="img"` and `aria-label` to canvas elements; add fallback text content
+  - Validation: axe-core scan shows no canvas accessibility violations
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: QA Expert 🐾
+
+- [ ] 16.3.5 Fix confirm dialog accessibility — focus trap + ARIA (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/static/js/navigation/confirmDialog.js`
+  - Action: Add role="alertdialog", aria-modal="true", focus trap, focus cancel first, restore focus on close
+  - Validation: Keyboard-only user can open/close dialog without focus escaping
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: QA Expert 🐾
+
+- [ ] 16.3.6 Consolidate dark mode CSS — single source of truth (Experience Architect 🎨 → Code-Puppy 🐶)
+  - Files: `app/static/css/theme.src.css`, `app/static/css/dark-mode.css`
+  - Action: Move all dark mode variables from dark-mode.css into theme.src.css .dark block; delete dark-mode.css; remove import from base.html
+  - Validation: Dark mode toggle works; `test ! -f app/static/css/dark-mode.css`; `npm run css:build` succeeds
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.3.7 Fix rate limiter fail-closed on auth endpoints (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - Files: `app/core/rate_limit.py:204-207`, `app/main.py:193-196`
+  - Action: On exception, fail-closed for /auth/ endpoints (return 429), fail-open for others
+  - Validation: `uv run pytest tests/unit/test_rate_limit.py -v` passes
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.3.8 Increase uvicorn workers to 2 + add uvloop (Solutions Architect 🏛️ → Code-Puppy 🐶)
+  - File: `scripts/entrypoint.sh`
+  - Action: Change `--workers 1` to `--workers 2 --loop uvloop --http httptools`; add uvloop+httptools to pyproject.toml
+  - Validation: `curl /health` returns correctly from both workers; performance improvement measurable
+  - Reviewed by: Solutions Architect 🏛️
+  - Signed off by: Pack Leader 🐺
+
+### 16.4 Week 4: Design System Migration + Polish
+
+- [ ] 16.4.1 Migrate riverside.html from wm-* to brand-* tokens (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/templates/pages/riverside.html`
+  - Validation: `grep -c 'wm-' app/templates/pages/riverside.html` returns 0
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.4.2 Migrate riverside_dashboard.html from raw Tailwind to brand tokens (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/templates/pages/riverside_dashboard.html`
+  - Validation: `grep -c 'bg-white\|text-gray-900\|bg-gray-' app/templates/pages/riverside_dashboard.html` returns 0
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.4.3 Migrate dmarc_dashboard.html from raw Tailwind to brand tokens (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/templates/pages/dmarc_dashboard.html`
+  - Validation: `grep -c 'bg-white\|text-gray-900\|bg-gray-' app/templates/pages/dmarc_dashboard.html` returns 0
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.4.4 Migrate login.html from inline styles to brand tokens (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/templates/login.html`
+  - Action: Replace inline `style="background-color: #f3f4f6"` etc. with CSS variable classes; fix hardcoded version
+  - Validation: Login page renders correctly in dark mode; version shows `{{ app_version }}`
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.4.5 Migrate 5 riverside partials from wm-* to brand tokens (Experience Architect 🎨 → Code-Puppy 🐶)
+  - Files: `app/templates/partials/riverside_*.html` (all 5)
+  - Validation: `grep -c 'wm-' app/templates/partials/` returns 0
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.4.6 Migrate sync components from wm-* to brand tokens (Experience Architect 🎨 → Code-Puppy 🐶)
+  - Files: `app/templates/components/sync/*.html` (all 8)
+  - Validation: `grep -c 'wm-' app/templates/components/sync/` returns 0
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.4.7 Fix toast notifications to use CSS variables (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/static/js/navigation/toast.js:77-100`
+  - Action: Replace raw Tailwind colors with CSS variable references
+  - Validation: Toasts render correctly in both light and dark mode
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.4.8 Fix consent banner error handling (Experience Architect 🎨 → Code-Puppy 🐶)
+  - File: `app/templates/components/consent_banner.html:98-116`
+  - Action: Add .catch() to all fetch calls; only hide banner on successful API response
+  - Validation: Banner stays visible if API call fails
+  - Reviewed by: Security Auditor 🛡️
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.4.9 Remove dead CSS (btn-htt-primary) + refactor riverside.css (Experience Architect 🎨 → Code-Puppy 🐶)
+  - Files: `app/static/css/theme.src.css:340-360`, `app/static/css/riverside.css`
+  - Action: Delete btn-htt-primary; refactor riverside.css to use CSS variables
+  - Validation: `npm run css:build` succeeds; all pages render correctly
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+- [ ] 16.4.10 Bundle navigation JS into single file (Experience Architect 🎨 → Code-Puppy 🐶)
+  - Files: 5 files in `app/static/js/navigation/` → single `navigation.bundle.js`
+  - Action: Concatenate in correct order; update base.html to load single file
+  - Validation: Navigation works identically; 4 fewer HTTP requests
+  - Reviewed by: Experience Architect 🎨
+  - Signed off by: Planning Agent 📋
+
+### 16.5 Validation & Release
+
+- [ ] 16.5.1 Full test suite green (Watchdog 🐕‍🦺)
+  - Command: `uv run pytest tests/ -q --ignore=tests/e2e --ignore=tests/smoke --ignore=tests/load`
+  - Validation: Exit code 0; zero failures; count >= 2984 (baseline)
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.5.2 CSS rebuild and verification (Code-Puppy 🐶)
+  - Command: `npm run css:build`
+  - Validation: `app/static/css/theme.css` regenerated; all pages load without style regressions
+  - Signed off by: Experience Architect 🎨
+
+- [ ] 16.5.3 Security re-audit of Critical findings (Security Auditor 🛡️)
+  - Output: Updated `docs/security/production-audit-v2.md`
+  - Validation: All P0/Critical findings from March 2026 audit marked RESOLVED with evidence
+  - Signed off by: Pack Leader 🐺 + Planning Agent 📋
+
+- [ ] 16.5.4 WCAG 2.2 AA spot-check of fixed pages (QA Expert 🐾)
+  - Validation: axe-core scan on /dashboard, /costs, /login returns 0 critical violations
+  - Signed off by: Experience Architect 🎨
+
+- [ ] 16.5.5 Deploy to production and verify (Code-Puppy 🐶)
+  - Command: `gh workflow run deploy-production.yml -f reason="v1.7.0: audit remediation"`
+  - Validation: All 6 pipeline jobs green; production health check healthy; dashboard renders correctly
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.5.6 Update TRACEABILITY_MATRIX.md with Phase 16 REQ-IDs (Planning Agent 📋)
+  - File: `TRACEABILITY_MATRIX.md`
+  - Action: Add Epic 16 with REQ-1601 through REQ-1643 mapped to all audit findings
+  - Validation: `grep 'REQ-1643' TRACEABILITY_MATRIX.md` returns match
+  - Signed off by: Pack Leader 🐺
+
+- [ ] 16.5.7 Tag v1.7.0 release and push (Pack Leader 🐺)
+  - Command: `git tag -a v1.7.0 -m "v1.7.0: Audit remediation — 43 findings resolved" && git push --tags`
+  - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
+  - Signed off by: Pack Leader 🐺 + Planning Agent 📋
+
+| Phase 16: Audit Remediation Sprint | 43 | 0 | 43 | 🔴 Not Started |
+| **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
+| **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 
 ---
 
