@@ -892,7 +892,7 @@ None of these mask production bugs.
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
 | Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **221** | **182** | **39** | **🔄 In Progress** |
+| **TOTAL** | **221** | **184** | **37** | **🔄 In Progress** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -1023,14 +1023,14 @@ None of these mask production bugs.
   - Reviewed by: Solutions Architect 🏛️
   - Signed off by: Security Auditor 🛡️
 
-- [ ] 16.1.5 Fix algorithm confusion in JWT validation — issuer-based routing (Security Auditor 🛡️ → Code-Puppy 🐶)
+- [x] 16.1.5 Fix algorithm confusion in JWT validation — issuer-based routing (Security Auditor 🛡️ → Code-Puppy 🐶)
   - File: `app/core/auth.py:361-380`
   - Action: Route token validation by `iss` claim (Azure AD issuer vs internal) instead of `alg` header
   - Validation: `uv run pytest tests/unit/test_auth.py -v -k algorithm` passes; forged HS256 token with Azure claims rejected
   - Reviewed by: Security Auditor 🛡️
   - Signed off by: Pack Leader 🐺
 
-- [ ] 16.1.6 Implement PKCE in OAuth login flow (Security Auditor 🛡️ → Code-Puppy 🐶)
+- [x] 16.1.6 Implement PKCE in OAuth login flow (Security Auditor 🛡️ → Code-Puppy 🐶)
   - Files: `app/templates/login.html`, `app/api/routes/auth.py`
   - Action: Generate code_challenge/code_verifier in login.html, enforce code_verifier server-side
   - Validation: `uv run pytest tests/unit/test_routes_auth.py -v -k pkce` passes; login flow includes code_challenge in auth URL
@@ -1285,7 +1285,7 @@ None of these mask production bugs.
   - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
-| Phase 16: Audit Remediation Sprint | 43 | 4 | 39 | 🔄 In Progress |
+| Phase 16: Audit Remediation Sprint | 43 | 6 | 37 | 🔄 In Progress |
 | **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
 | **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 

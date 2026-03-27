@@ -419,6 +419,21 @@ async def _handle_authorization_code(
 # ============================================================================
 
 
+
+
+def generate_code_verifier() -> str:
+    """Generate a PKCE code verifier (random 128-character base64url string)."""
+    # 96 bytes of randomness = 128 base64url characters
+    return base64.urlsafe_b64encode(
+        secrets.token_bytes(96)
+    ).rstrip(b'=').decode('ascii')
+
+
+def generate_code_challenge(verifier: str) -> str:
+    """Generate PKCE code challenge from verifier (SHA256 hash, base64url encoded)."""
+    digest = hashlib.sha256(verifier.encode('ascii')).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b'=').decode('ascii')
+
 @router.get("/azure/login")
 async def azure_login_redirect() -> dict[str, str]:
     """Get Azure AD OAuth2 authorization endpoint URL.

@@ -410,12 +410,14 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Detect token type and validate accordingly
+    # Detect token type by issuer claim, NOT algorithm header (prevents algorithm confusion)
     try:
-        unverified = jwt.get_unverified_header(token)
-        algorithm = unverified.get("alg", "")
-
-        if algorithm == "RS256":
+        # Get unverified payload to check issuer (safe - only reads, doesn't validate signature)
+        unverified_payload = jwt.decode(token, key="", options={"verify_signature": False, "verify_exp": False})
+        issuer = unverified_payload.get("iss", "")
+        
+        # Azure AD tokens have issuer like: https://login.microsoftonline.com/{tenant}/v2.0
+        if issuer.startswith("https://login.microsoftonline.com/"):
             # Azure AD token (asymmetric signing)
             token_data = await azure_ad_validator.validate_token(token)
             return User(
