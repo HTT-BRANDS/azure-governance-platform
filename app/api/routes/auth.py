@@ -11,6 +11,7 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
@@ -40,11 +41,12 @@ router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 class TokenResponse(BaseModel):
     """OAuth2 token response."""
 
-    access_token: str
-    refresh_token: str
+    access_token: str | None = None  # Can be None if sent as HttpOnly cookie
+    refresh_token: str | None = None  # Can be None if sent as HttpOnly cookie
     token_type: str = "bearer"
     expires_in: int  # Seconds until access token expires
     scope: str | None = None
+    cookies_set: bool = True  # Indicates HttpOnly cookies were set server-side
 
 
 class RefreshTokenRequest(BaseModel):
@@ -52,6 +54,47 @@ class RefreshTokenRequest(BaseModel):
 
     refresh_token: str
 
+
+
+
+def create_token_response_with_cookies(
+    token_response: TokenResponse, request: Request
+) -> JSONResponse:
+    """Create JSON response with HttpOnly Secure cookies."""
+    response = JSONResponse(
+        content=token_response.model_dump(exclude={"access_token", "refresh_token"})
+    )
+
+    settings = get_settings()
+
+    # Determine if we should use Secure flag (always in production)
+    secure = settings.environment == "production"
+
+    # Set access token as HttpOnly cookie
+    if token_response.access_token:
+        response.set_cookie(
+            key="access_token",
+            value=token_response.access_token,
+            httponly=True,
+            secure=secure,
+            samesite="lax",
+            max_age=token_response.expires_in,
+            path="/",
+        )
+
+    # Set refresh token as HttpOnly cookie (longer lived)
+    if token_response.refresh_token:
+        response.set_cookie(
+            key="refresh_token",
+            value=token_response.refresh_token,
+            httponly=True,
+            secure=secure,
+            samesite="lax",
+            max_age=settings.jwt_refresh_token_expire_days * 24 * 3600,
+            path="/",
+        )
+
+    return response
 
 class UserInfoResponse(BaseModel):
     """Current user info response."""
@@ -103,6 +146,7 @@ _DEV_PASSWORD = "admin"  # noqa: S105
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
+    request: Request = None,
 ) -> TokenResponse:
     """OAuth2 token endpoint for internal authentication.
 
@@ -165,12 +209,14 @@ async def login(
 
     logger.info(f"User logged in: {user_id}")
 
-    return TokenResponse(
+    token_response = TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",
         expires_in=settings.jwt_access_token_expire_minutes * 60,
     )
+
+    return create_token_response_with_cookies(token_response, request)
 
 
 @router.post("/token", response_model=TokenResponse)
@@ -260,12 +306,14 @@ async def _handle_refresh_token(
 
         logger.info(f"Token refreshed for user: {user_id}")
 
-        return TokenResponse(
+        token_response = TokenResponse(
             access_token=new_access_token,
             refresh_token=new_refresh_token,
             token_type="bearer",
             expires_in=settings.jwt_access_token_expire_minutes * 60,
         )
+
+        return create_token_response_with_cookies(token_response, request)
 
     except HTTPException:
         raise
@@ -349,12 +397,14 @@ async def _handle_authorization_code(
 
             refresh_token = jwt_manager.create_refresh_token(user_id=validated.sub)
 
-            return TokenResponse(
+            token_response = TokenResponse(
                 access_token=access_token,
                 refresh_token=refresh_token,
                 token_type="bearer",
                 expires_in=settings.jwt_access_token_expire_minutes * 60,
             )
+
+            return create_token_response_with_cookies(token_response, request)
 
     raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -546,12 +596,14 @@ async def azure_oauth_callback(
 
     logger.info(f"Azure AD login successful: {validated.sub}")
 
-    return TokenResponse(
+    token_response = TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",
         expires_in=settings.jwt_access_token_expire_minutes * 60,
     )
+
+    return create_token_response_with_cookies(token_response, request)
 
 
 async def _sync_user_tenant_mappings(db: Session, token_data: TokenData) -> list[str]:

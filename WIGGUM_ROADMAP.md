@@ -892,7 +892,7 @@ None of these mask production bugs.
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
 | Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **221** | **179** | **42** | **🔄 In Progress** |
+| **TOTAL** | **221** | **180** | **41** | **🔄 In Progress** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -1002,7 +1002,7 @@ None of these mask production bugs.
   - Reviewed by: Security Auditor 🛡️
   - Signed off by: Pack Leader 🐺
 
-- [ ] 16.1.2 Set HttpOnly + Secure flags on JWT cookies (Security Auditor 🛡️ → Code-Puppy 🐶)
+- [x] 16.1.2 Set HttpOnly + Secure flags on JWT cookies (Security Auditor 🛡️ → Code-Puppy 🐶)
   - Files: `app/api/routes/auth.py`, `app/templates/login.html`
   - Action: Move cookie-setting from client-side JS to server-side `response.set_cookie()` with httponly=True, secure=True, samesite="lax"
   - Validation: `curl -v` shows Set-Cookie with HttpOnly; Secure flags; `document.cookie` no longer contains access_token
@@ -1285,7 +1285,7 @@ None of these mask production bugs.
   - Validation: `git tag -l v1.7.0` returns match; GitHub shows release
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
-| Phase 16: Audit Remediation Sprint | 43 | 1 | 42 | 🔄 In Progress |
+| Phase 16: Audit Remediation Sprint | 43 | 2 | 41 | 🔄 In Progress |
 | **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
 | **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
 
