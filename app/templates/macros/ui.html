@@ -11,7 +11,7 @@
 {% set variant_classes = {
   "primary": "btn-brand",
   "secondary": "btn-brand-secondary",
-  "accent": "bg-brand-accent text-gray-160 hover:opacity-90",
+  "accent": "bg-brand-accent text-primary-theme hover:opacity-90",
   "ghost": "bg-transparent text-brand-primary hover:bg-brand-primary-5 border border-brand-primary-50",
   "danger": "bg-danger text-white hover:opacity-90"
 } %}
@@ -34,8 +34,8 @@
 <div class="card-brand {{ accent_map.get(accent, '') }} p-6 {{ extra_classes }}" role="region" {% if title %}aria-label="{{ title }}"{% endif %}>
   {% if title %}
   <div class="mb-4">
-    <h3 class="text-lg font-semibold text-gray-160">{{ title }}</h3>
-    {% if subtitle %}<p class="text-sm text-gray-100 mt-1">{{ subtitle }}</p>{% endif %}
+    <h3 class="text-lg font-semibold text-primary-theme">{{ title }}</h3>
+    {% if subtitle %}<p class="text-sm text-muted-theme mt-1">{{ subtitle }}</p>{% endif %}
   </div>
   {% endif %}
   {{ caller() }}
@@ -64,7 +64,7 @@
   {% if icon %}<span aria-hidden="true">{{ icon }}</span>{% endif %}
   <span>{{ text }}</span>
   {% if badge_count is not none %}
-  <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-brand-accent text-gray-160" aria-label="{{ badge_count }} items">{{ badge_count }}</span>
+  <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-brand-accent text-primary-theme" aria-label="{{ badge_count }} items">{{ badge_count }}</span>
   {% endif %}
 </a>
 {% endmacro %}
@@ -92,7 +92,7 @@
 <div class="progress-brand" role="progressbar" aria-valuenow="{{ value }}" aria-valuemin="0" aria-valuemax="{{ max }}" {% if label %}aria-label="{{ label }}"{% endif %}>
   <div class="progress-brand-fill" style="width: {{ pct }}%"></div>
 </div>
-{% if show_text %}<span class="text-xs text-gray-100 mt-1">{{ pct }}%</span>{% endif %}
+{% if show_text %}<span class="text-xs text-muted-theme mt-1">{{ pct }}%</span>{% endif %}
 {% endmacro %}
 
 {# ── Metric Card ──────────────────────────────────────────────── #}
@@ -100,10 +100,10 @@
 <div class="card-brand p-4 border-l-4 border-brand-primary" role="region" aria-label="{{ label }}">
   <div class="flex items-center justify-between">
     <div>
-      <p class="text-sm text-gray-100">{{ label }}</p>
-      <p class="text-2xl font-bold text-gray-160 mt-1">{{ value }}</p>
+      <p class="text-sm text-muted-theme">{{ label }}</p>
+      <p class="text-2xl font-bold text-primary-theme mt-1">{{ value }}</p>
       {% if change is not none %}
-      <p class="text-xs mt-1 {% if change_direction == 'up' %}text-success{% elif change_direction == 'down' %}text-danger{% else %}text-gray-100{% endif %}">
+      <p class="text-xs mt-1 {% if change_direction == 'up' %}text-success{% elif change_direction == 'down' %}text-danger{% else %}text-muted-theme{% endif %}">
         {% if change_direction == 'up' %}↑{% elif change_direction == 'down' %}↓{% endif %} {{ change }}
       </p>
       {% endif %}

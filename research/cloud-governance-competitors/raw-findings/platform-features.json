@@ -1,0 +1,268 @@
+{
+  "research_date": "2026-03-27",
+  "custom_platform_modules": {
+    "cost_management": {
+      "features": ["cross-tenant aggregation", "anomaly detection", "trending", "forecasting", "idle resources", "rightsizing", "reserved instances", "budget tracking", "chargeback/showback", "cost attribution by tags"],
+      "priority": "P0",
+      "coverage_pct": 100
+    },
+    "compliance_monitoring": {
+      "features": ["Azure Policy compliance", "custom rules (JSON Schema)", "regulatory mapping (SOC2/NIST)", "drift detection", "remediation suggestions", "Secure Score", "non-compliant inventory", "trend reporting", "audit logs"],
+      "priority": "P0",
+      "coverage_pct": 100
+    },
+    "resource_management": {
+      "features": ["cross-tenant inventory", "tagging compliance", "orphaned resources", "lifecycle tracking", "subscription/RG views", "health aggregation", "quota monitoring", "provisioning standards", "change history"],
+      "priority": "P0",
+      "coverage_pct": 100
+    },
+    "identity_governance": {
+      "features": ["cross-tenant user inventory", "privileged access reporting", "guest user management", "stale account detection", "MFA compliance", "conditional access audit", "role assignment analysis", "service principal inventory", "license utilization", "access reviews"],
+      "priority": "P0",
+      "coverage_pct": 100
+    },
+    "dmarc_monitoring": {
+      "features": ["DMARC record monitoring", "email authentication compliance", "cross-tenant DMARC status"],
+      "priority": "P0",
+      "coverage_pct": 100
+    },
+    "riverside_compliance": {
+      "features": ["PE deadline tracking (Jul 8 2026)", "maturity scoring", "MFA coverage tracking", "requirement mapping", "financial risk calculation", "gap analysis", "milestone tracking"],
+      "priority": "P0",
+      "coverage_pct": 100
+    },
+    "multi_brand_theming": {
+      "features": ["5 brand themes", "WCAG AA compliance", "47+ CSS custom properties", "server-side CSS generation", "dark mode"],
+      "priority": "P1",
+      "coverage_pct": 100
+    },
+    "azure_lighthouse": {
+      "features": ["cross-tenant delegation", "no per-tenant credentials", "self-service onboarding", "JIT access support"],
+      "priority": "P0",
+      "coverage_pct": 100
+    }
+  },
+  "competitors": {
+    "cloudhealth_broadcom": {
+      "status": "active",
+      "url": "https://www.broadcom.com/products/software/finops/cloudhealth",
+      "ownership": "Broadcom (acquired VMware 2023)",
+      "target_market": "Enterprise, large MSPs (50+ accounts)",
+      "key_features": ["Perspectives", "FlexOrgs", "Reports", "Optimization Dashboard", "Intelligent Assist (AI)", "Smart Summary", "Asset Explorer", "Realized Savings"],
+      "azure_support": true,
+      "multi_tenant": true,
+      "multi_tenant_method": "FlexOrgs (proprietary hierarchy)",
+      "lighthouse_support": false,
+      "pricing_model": "enterprise_sales",
+      "estimated_annual_cost_small_msp": "$10,000-$30,000",
+      "module_coverage": {
+        "cost_management": 0.95,
+        "compliance": 0.20,
+        "resource_management": 0.60,
+        "identity_governance": 0.0,
+        "dmarc": 0.0,
+        "riverside": 0.0,
+        "multi_brand": 0.0,
+        "lighthouse": 0.0
+      },
+      "overall_coverage_pct": 35
+    },
+    "spot_io_netapp": {
+      "status": "discontinued",
+      "url": "https://spot.io (redirects to flexera.com)",
+      "ownership": "NetApp (acquired 2020) → appears divested/discontinued",
+      "notes": "Domain redirects to Flexera. NetApp cloud services page returns Access Denied.",
+      "overall_coverage_pct": 0
+    },
+    "cloudability_ibm": {
+      "status": "active",
+      "url": "https://www.apptio.com/products/cloudability/",
+      "ownership": "IBM (acquired Apptio 2023)",
+      "target_market": "Enterprise FinOps teams",
+      "analyst_recognition": ["Forrester Wave Leader 2024", "Gartner MQ Cloud Financial Management", "FinOps Certified", "TrustRadius Buyer's Choice 2026"],
+      "key_features": ["Multi-Cloud Dashboard", "Team-Based Views", "Chargeback/Showback", "Commitment Management", "Anomaly Detection", "Custom Dashboards", "Kubernetes Cost"],
+      "azure_support": true,
+      "multi_tenant": true,
+      "multi_tenant_method": "Team-based views (not true tenant isolation)",
+      "lighthouse_support": false,
+      "pricing_model": "enterprise_sales",
+      "estimated_annual_cost_small_msp": "$12,000-$50,000",
+      "free_trial": true,
+      "module_coverage": {
+        "cost_management": 0.95,
+        "compliance": 0.10,
+        "resource_management": 0.30,
+        "identity_governance": 0.0,
+        "dmarc": 0.0,
+        "riverside": 0.0,
+        "multi_brand": 0.0,
+        "lighthouse": 0.0
+      },
+      "overall_coverage_pct": 30
+    },
+    "vantage": {
+      "status": "active",
+      "url": "https://www.vantage.sh",
+      "ownership": "Vantage (independent, founded 2020)",
+      "target_market": "Engineering teams, startups to enterprise",
+      "key_features": ["Cost Reports", "Anomaly Detection", "Virtual Tagging", "Automated Waste Detection", "Kubernetes", "FinOps as Code (Terraform)", "Budgets & Forecasting", "27+ Integrations"],
+      "azure_support": true,
+      "multi_tenant": false,
+      "multi_tenant_method": "Workspaces (logical, not isolated)",
+      "lighthouse_support": false,
+      "pricing_model": "transparent_fixed",
+      "pricing_tiers": {
+        "starter": {"price_monthly": 0, "cloud_spend_limit": 2500},
+        "pro": {"price_monthly": 30, "cloud_spend_limit": 7500},
+        "business": {"price_monthly": 200, "cloud_spend_limit": 20000},
+        "enterprise": {"price_monthly": "custom", "cloud_spend_limit": "unlimited"}
+      },
+      "module_coverage": {
+        "cost_management": 0.85,
+        "compliance": 0.0,
+        "resource_management": 0.40,
+        "identity_governance": 0.0,
+        "dmarc": 0.0,
+        "riverside": 0.0,
+        "multi_brand": 0.0,
+        "lighthouse": 0.0
+      },
+      "overall_coverage_pct": 25
+    },
+    "nerdio": {
+      "status": "active",
+      "url": "https://getnerdio.com",
+      "ownership": "Nerdio (independent, Chicago IL)",
+      "target_market": "MSPs and Enterprises using Microsoft Cloud (AVD/W365/Intune/M365)",
+      "products": ["Nerdio Manager for Enterprise", "Nerdio Manager for MSP"],
+      "key_features": ["AVD Management", "Windows 365", "Intune Integration", "Cost Optimization (VMs)", "Multi-Customer MSP Dashboard", "M365 Administration"],
+      "azure_support": true,
+      "multi_tenant": true,
+      "multi_tenant_method": "Azure CSP partner model",
+      "lighthouse_support": false,
+      "pricing_model": "contact_sales",
+      "estimated_per_user_monthly": "$3-6",
+      "module_coverage": {
+        "cost_management": 0.15,
+        "compliance": 0.10,
+        "resource_management": 0.10,
+        "identity_governance": 0.15,
+        "dmarc": 0.0,
+        "riverside": 0.0,
+        "multi_brand": 0.0,
+        "lighthouse": 0.0
+      },
+      "overall_coverage_pct": 10
+    },
+    "corestack": {
+      "status": "active",
+      "url": "https://www.corestack.io",
+      "ownership": "CoreStack (independent)",
+      "target_market": "Enterprise, MSPs/partners",
+      "enterprise_clients": ["Capgemini", "De Beers", "Deloitte", "EMAAR", "GE Health"],
+      "modules": ["FinOps+", "SecOps", "CloudOps"],
+      "key_features": ["Cost tracking/optimization", "Compliance automation (SOC2/NIST/CIS/PCI-DSS)", "Resource management", "IAM policy management", "AI-driven governance", "Ten governance facets"],
+      "azure_support": true,
+      "multi_tenant": true,
+      "multi_tenant_method": "Service principal connector + partner portal",
+      "lighthouse_support": false,
+      "pricing_model": "enterprise_sales",
+      "estimated_annual_cost_small_msp": "$15,000-$50,000",
+      "module_coverage": {
+        "cost_management": 0.90,
+        "compliance": 0.75,
+        "resource_management": 0.70,
+        "identity_governance": 0.20,
+        "dmarc": 0.0,
+        "riverside": 0.0,
+        "multi_brand": 0.0,
+        "lighthouse": 0.10
+      },
+      "overall_coverage_pct": 55
+    },
+    "komiser_oss": {
+      "status": "declining",
+      "url": "https://github.com/mlabouardy/komiser",
+      "license": "ELv2 (changed from MIT — NOT true open source)",
+      "github_stars": 4100,
+      "github_forks": 454,
+      "contributors": 63,
+      "languages": {"go": 0.538, "typescript": 0.453},
+      "last_significant_update": "2024 (2+ years ago)",
+      "open_issues": 220,
+      "open_prs": 41,
+      "supported_clouds": ["AWS", "Azure", "GCP", "DigitalOcean", "Linode", "OCI", "Tencent", "Civo", "Scaleway"],
+      "module_coverage": {
+        "cost_management": 0.20,
+        "compliance": 0.0,
+        "resource_management": 0.30,
+        "identity_governance": 0.0,
+        "dmarc": 0.0,
+        "riverside": 0.0,
+        "multi_brand": 0.0,
+        "lighthouse": 0.0
+      },
+      "overall_coverage_pct": 12
+    },
+    "opencost_oss": {
+      "status": "active",
+      "url": "https://opencost.io",
+      "license": "Apache 2.0",
+      "github_stars": 6443,
+      "cncf_status": "Sandbox",
+      "focus": "Kubernetes container cost monitoring ONLY",
+      "azure_billing_api": true,
+      "general_azure_governance": false,
+      "module_coverage": {
+        "cost_management": 0.10,
+        "compliance": 0.0,
+        "resource_management": 0.05,
+        "identity_governance": 0.0,
+        "dmarc": 0.0,
+        "riverside": 0.0,
+        "multi_brand": 0.0,
+        "lighthouse": 0.0
+      },
+      "overall_coverage_pct": 5,
+      "notes": "Only relevant for Kubernetes workloads — this project uses App Service/VMs/SQL"
+    },
+    "infracost": {
+      "status": "active",
+      "url": "https://www.infracost.io",
+      "focus": "Pre-deployment cost estimation in CI/CD",
+      "pricing_tiers": {
+        "ci_cd": {"price_monthly": 0, "scope": "individual engineers"},
+        "cloud": {"price_monthly": 1000, "scope": "FinOps/platform teams"},
+        "enterprise": {"price_monthly": "custom", "scope": "large orgs"}
+      },
+      "azure_support": true,
+      "github_azure_repos_integration": true,
+      "runtime_monitoring": false,
+      "module_coverage": {
+        "cost_management": 0.15,
+        "compliance": 0.05,
+        "resource_management": 0.0,
+        "identity_governance": 0.0,
+        "dmarc": 0.0,
+        "riverside": 0.0,
+        "multi_brand": 0.0,
+        "lighthouse": 0.0
+      },
+      "overall_coverage_pct": 5,
+      "notes": "Complement not replacement — useful for CI/CD cost gates"
+    }
+  },
+  "best_combination": {
+    "tools": ["Vantage Business ($200/mo)", "Azure native tools (included)", "Infracost CI/CD (free)"],
+    "total_monthly_cost": 200,
+    "total_annual_cost": 2400,
+    "estimated_coverage_pct": 55,
+    "uncovered_modules": ["Riverside compliance", "DMARC monitoring", "Identity governance (cross-tenant)", "Multi-brand theming", "Azure Lighthouse integration", "Custom compliance rules"]
+  },
+  "custom_platform_cost": {
+    "hosting_monthly": 50,
+    "hosting_annual": 600,
+    "coverage_pct": 100,
+    "notes": "Azure App Service B2 + Azure SQL S0"
+  }
+}

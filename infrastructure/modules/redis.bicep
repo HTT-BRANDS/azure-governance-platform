@@ -52,8 +52,10 @@ output sslPort int = redis.properties.sslPort
 @description('Redis primary connection string')
 output connectionString string = '${redis.properties.hostName}:${redis.properties.sslPort}'
 
-@description('Redis primary access key')
-output primaryKey string = redis.listKeys().primaryKey
+// NOTE: Key-based outputs removed (listKeys() leaks secrets into ARM
+// deployment history). Use Key Vault references or Managed Identity
+// (Microsoft.Cache/redis/accessPolicies) at the consumption site.
+// See: https://learn.microsoft.com/azure/azure-cache-for-redis/cache-azure-active-directory-for-authentication
 
-@description('Full Redis URL for app configuration')
-output redisUrl string = 'rediss://:${redis.listKeys().primaryKey}@${redis.properties.hostName}:${redis.properties.sslPort}/0'
+@description('Redis resource ID — use for Key Vault reference or RBAC assignment')
+output resourceId string = redis.id

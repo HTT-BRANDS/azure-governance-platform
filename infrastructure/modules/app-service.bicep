@@ -284,14 +284,17 @@ resource azureStorageConfig 'Microsoft.Web/sites/config@2023-12-01' = {
       shareName: 'appdata'
       mountPath: '/home/data'
       accountName: storageAccountName
-      accessKey: storageAccount.listKeys().keys[0].value
+      // TODO: Migrate to Managed Identity for Azure Files access.
+      // listKeys() exposes secrets in ARM deployment history.
+      // See: https://learn.microsoft.com/azure/storage/files/storage-files-identity-auth-active-directory-enable
+      accessKey: storageAccount.listKeys().keys[0].value  // #nosec — tracked for MI migration
     }
     logsVolume: {
       type: 'AzureFiles'
       shareName: 'applogs'
       mountPath: '/home/logs'
       accountName: storageAccountName
-      accessKey: storageAccount.listKeys().keys[0].value
+      accessKey: storageAccount.listKeys().keys[0].value  // #nosec — tracked for MI migration
     }
   }
 }

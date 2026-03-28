@@ -2168,7 +2168,7 @@
   --color-info: #3B82F6;
   --text-primary: #111827;
   --text-secondary: #4B5563;
-  --text-muted: #9CA3AF;
+  --text-muted: #6B7280;  /* gray-500: 4.64:1 on white (WCAG AA) */
   --text-on-primary: white;
   --text-on-secondary: #111827;
   --bg-primary: #FFFFFF;
@@ -2256,7 +2256,7 @@ body {
   background: var(--bg-secondary, #F9FAFB);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--text-muted, #9CA3AF);
+  background: var(--text-muted, #6B7280);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {

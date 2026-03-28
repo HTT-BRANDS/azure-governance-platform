@@ -8,7 +8,7 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-lg font-bold text-brand-gray-160">Active Alerts</h3>
+                <h3 class="text-lg font-bold text-primary-theme">Active Alerts</h3>
                 <p class="text-sm text-brand-gray-100">
                     {{ stats.active }} active
                     {% if stats.resolved > 0 %}
@@ -31,9 +31,9 @@
             {% for severity, count in stats.by_severity.items() %}
             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
                 {% if severity == 'critical' %}bg-brand-error-100 text-white
-                {% elif severity == 'error' %}bg-brand-warning-100 text-brand-gray-160
-                {% elif severity == 'warning' %}bg-brand-warning-50 text-brand-gray-160
-                {% else %}bg-brand-primary-10 text-brand-gray-160{% endif %}">
+                {% elif severity == 'error' %}bg-brand-warning-100 text-primary-theme
+                {% elif severity == 'warning' %}bg-brand-warning-50 text-primary-theme
+                {% else %}bg-brand-primary-10 text-primary-theme{% endif %}">
                 {{ severity.title() }}: {{ count }}
             </span>
             {% endfor %}
@@ -52,7 +52,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </div>
-            <h4 class="text-lg font-medium text-brand-gray-160">No Active Alerts</h4>
+            <h4 class="text-lg font-medium text-primary-theme">No Active Alerts</h4>
             <p class="text-sm text-brand-gray-100 mt-1">All sync jobs are healthy</p>
         </div>
         {% endfor %}

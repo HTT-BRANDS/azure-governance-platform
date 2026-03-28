@@ -30,7 +30,6 @@ dependencies = [
     # Authentication & Security
     "PyJWT[crypto]>=2.8.0",
     "passlib[bcrypt]>=1.7.4",
-    "python-multipart>=0.0.6",
     "cryptography>=42.0.0",
     # Azure SDKs
     "requests>=2.33.0",  # CVE-2026-25645 fix (transitive via azure-identity/msal)

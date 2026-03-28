@@ -77,7 +77,7 @@
   /* Text Colors (light mode) */
   --text-primary: #111827;
   --text-secondary: #4B5563;
-  --text-muted: #9CA3AF;
+  --text-muted: #6B7280;  /* gray-500: 4.64:1 on white (WCAG AA) */
   --text-on-primary: white;
   --text-on-secondary: #111827;
 
@@ -327,7 +327,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--text-muted, #9CA3AF);
+  background: var(--text-muted, #6B7280);
   border-radius: 4px;
 }
 

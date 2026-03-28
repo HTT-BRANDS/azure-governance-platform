@@ -1,0 +1,175 @@
+{
+  "research_date": "2026-03-27",
+  "researcher": "web-puppy-d7a84d",
+  "azure_free_tiers": {
+    "azure_sql_database_free_offer": {
+      "source": "https://learn.microsoft.com/en-us/azure/azure-sql/database/free-offer",
+      "verified": "2026-03-27",
+      "monthly_limits": {
+        "vcore_seconds": 100000,
+        "vcore_seconds_human": "~27.8 hours of 1 vCore",
+        "data_storage_gb": 32,
+        "backup_storage_gb": 32
+      },
+      "subscription_limits": {
+        "max_databases": 10,
+        "database_type": "General Purpose",
+        "compute_model": "Serverless"
+      },
+      "limitations": {
+        "max_vcores": 4,
+        "pitr_retention_days": 7,
+        "backup_redundancy": "LRS only",
+        "cannot_convert_existing": true,
+        "elastic_jobs": false,
+        "dns_alias": false,
+        "elastic_pool": false,
+        "failover_group": false
+      },
+      "exhaustion_behavior_options": [
+        "Auto-pause database until next month",
+        "Continue using for additional charges"
+      ],
+      "renewal": "Resets at start of each calendar month",
+      "lifetime": "Lifetime of subscription (not time-limited)"
+    },
+    "container_apps_consumption": {
+      "source": "https://azure.microsoft.com/en-us/pricing/details/container-apps/",
+      "verified": "2026-03-27",
+      "free_grants_per_month": {
+        "vcpu_seconds": 180000,
+        "vcpu_seconds_human": "50 hours of 1 vCPU",
+        "gib_seconds": 360000,
+        "gib_seconds_human": "100 hours of 1 GiB",
+        "requests": 2000000
+      },
+      "active_rates_after_free": {
+        "vcpu_per_second_usd": 0.000024,
+        "memory_gib_per_second_usd": 0.000003
+      },
+      "idle_rates": {
+        "vcpu_per_second_usd": 0.000003,
+        "note": "Charged when min replicas > 0 and replica is idle"
+      },
+      "scale_to_zero": true,
+      "scale_to_zero_cost": 0
+    },
+    "azure_functions_consumption": {
+      "source": "https://azure.microsoft.com/en-us/pricing/details/functions/",
+      "verified": "2026-03-27",
+      "free_grants_per_month": {
+        "executions": 1000000,
+        "gb_seconds": 400000
+      },
+      "rates_after_free": {
+        "per_gb_second_usd": 0.000016,
+        "per_million_executions_usd": 0.20
+      },
+      "note": "Storage account required, not included in free grant"
+    },
+    "azure_functions_flex_consumption": {
+      "source": "https://azure.microsoft.com/en-us/pricing/details/functions/",
+      "verified": "2026-03-27",
+      "free_grants_per_month": {
+        "executions": 250000,
+        "gb_seconds": 100000
+      },
+      "rates_after_free": {
+        "per_gb_second_usd": 0.000026
+      }
+    },
+    "cosmos_db_free_tier": {
+      "source": "https://learn.microsoft.com/en-us/azure/cosmos-db/free-tier",
+      "verified": "2026-03-27",
+      "free_allowance": {
+        "ru_per_second": 1000,
+        "storage_gb": 25,
+        "max_containers": 25
+      },
+      "limitations": {
+        "one_per_subscription": true,
+        "must_opt_in_at_creation": true,
+        "not_available_for_serverless": true
+      },
+      "apis_supported": ["NoSQL", "MongoDB", "Cassandra", "Gremlin", "Table"]
+    },
+    "app_service_f1_free": {
+      "source": "https://azure.microsoft.com/en-us/pricing/details/app-service/linux/",
+      "verified": "2026-03-27",
+      "specs": {
+        "cores": "Shared",
+        "cpu_minutes_per_day": 60,
+        "ram_gb": 1,
+        "storage_gb": 1,
+        "price_usd": 0
+      },
+      "limitations": {
+        "no_sla": true,
+        "no_custom_domains": true,
+        "no_docker_support": true,
+        "shared_compute": true,
+        "not_for_production": true
+      }
+    },
+    "static_web_apps_free": {
+      "source": "https://azure.microsoft.com/en-us/pricing/details/app-service/static/",
+      "verified": "2026-03-27",
+      "free_tier": {
+        "price_usd": 0,
+        "bandwidth_gb": 100,
+        "custom_domains": 2,
+        "ssl": "free",
+        "storage_gb": 0.5,
+        "max_per_deployment_gb": 0.25,
+        "service_defined_auth": true,
+        "custom_auth": false
+      },
+      "standard_tier": {
+        "price_usd_per_app_month": 9,
+        "custom_domains": 5,
+        "storage_gb": 2,
+        "max_per_deployment_gb": 0.5,
+        "custom_auth": true
+      }
+    },
+    "key_vault_standard": {
+      "source": "https://azure.microsoft.com/en-us/pricing/details/key-vault/",
+      "verified": "2026-03-27",
+      "operations": {
+        "secrets_per_10k_transactions_usd": 0.03,
+        "note": "First 10K operations/month effectively free for low-volume use"
+      }
+    },
+    "github_container_registry": {
+      "source": "https://docs.github.com/en/billing/concepts/product-billing/github-packages",
+      "verified": "2026-03-27",
+      "container_images": {
+        "price": "Currently free",
+        "policy_change_notice": "At least 1 month advance notice",
+        "storage_shared_with": "GitHub Actions artifacts and caches"
+      },
+      "github_free_plan": {
+        "total_storage_mb": 500,
+        "data_transfer_gb": 1
+      },
+      "github_pro_plan": {
+        "total_storage_gb": 2,
+        "data_transfer_gb": 10
+      }
+    }
+  },
+  "current_workload_estimate": {
+    "database_size_mb": 6.25,
+    "concurrent_users_max": 30,
+    "daily_page_loads_estimate": 100,
+    "background_sync_jobs": {
+      "cost_sync_hours": 24,
+      "compliance_sync_hours": 4,
+      "resource_sync_hours": 1,
+      "identity_sync_hours": 24
+    },
+    "estimated_monthly_vcpu_seconds": 35000,
+    "estimated_monthly_sql_vcore_seconds": 1500,
+    "estimated_monthly_requests": 3000
+  }
+}

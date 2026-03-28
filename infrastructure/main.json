@@ -594,7 +594,7 @@
                 },
                 "minimumTlsVersion": "TLS1_2",
                 "networkAcls": {
-                  "defaultAction": "Allow",
+                  "defaultAction": "Deny",
                   "bypass": "AzureServices"
                 },
                 "supportsHttpsTrafficOnly": true
@@ -1014,7 +1014,7 @@
                 "enabledForTemplateDeployment": true,
                 "publicNetworkAccess": "Enabled",
                 "networkAcls": {
-                  "defaultAction": "Allow",
+                  "defaultAction": "Deny",
                   "bypass": "AzureServices",
                   "ipRules": [],
                   "virtualNetworkRules": []
