@@ -77,10 +77,17 @@ async def dashboard_page(
     request: Request,
     db: Session = Depends(get_db),
     authz: TenantAuthorization = Depends(get_tenant_authorization),
+    tenant_id: str | None = None,
 ):
-    """Main dashboard view."""
+    """Main dashboard view with optional tenant scope filter."""
     data = await _get_dashboard_data(db, authz)
     brand_context = get_brand_context_for_request(request)
+
+    # Build tenant list for scope selector
+    if "admin" in authz.user.roles:
+        tenants = db.query(Tenant).filter(Tenant.is_active).all()
+    else:
+        tenants = get_user_tenants(authz.user, db, include_inactive=False)
 
     return templates.TemplateResponse(
         request,
@@ -88,6 +95,8 @@ async def dashboard_page(
         {
             **data,
             **brand_context,
+            "tenants": tenants,
+            "selected_tenant_id": tenant_id or "",
         },
     )
 

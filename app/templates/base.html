@@ -20,9 +20,12 @@
     <link rel="stylesheet" href="/static/css/riverside.css">
     <link rel="stylesheet" href="/static/css/accessibility.css">
 
-    <!-- HTMX -->
-    <meta name="htmx-config" content='{"inlineScriptNonce":"{{ request.state.csp_nonce }}"}'>
-    <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous" nonce="{{ request.state.csp_nonce }}"></script>  {# pragma: allowlist secret #}
+    <!-- HTMX 2.0 — selfRequestsOnly:true is now default (security) -->
+    <meta name="htmx-config" content='{"inlineScriptNonce":"{{ request.state.csp_nonce }}","selfRequestsOnly":true}'>
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" crossorigin="anonymous" nonce="{{ request.state.csp_nonce }}"></script>
+
+    <!-- Alpine.js CSP build — no eval(), works with strict Content-Security-Policy -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.14.9/dist/cdn.min.js" nonce="{{ request.state.csp_nonce }}"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous" nonce="{{ request.state.csp_nonce }}"></script>  {# pragma: allowlist secret #}

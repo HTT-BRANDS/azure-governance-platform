@@ -12,11 +12,32 @@
 {% block content %}
 <div class="space-y-6">
     <!-- Page Header -->
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center flex-wrap gap-4">
         <div>
             <h1 class="text-2xl font-bold text-primary-theme">Governance Dashboard</h1>
             <p class="text-secondary-theme">Cross-tenant visibility into costs, compliance, resources, and identity</p>
         </div>
+        <div class="flex items-center gap-3">
+            <!-- Tenant Scope Selector -->
+            {% if tenants is defined and tenants|length > 1 %}
+            <label for="tenant-scope" class="sr-only">Filter by tenant</label>
+            <select id="tenant-scope"
+                    name="tenant_id"
+                    hx-get="/dashboard"
+                    hx-target="#main-content"
+                    hx-swap="innerHTML"
+                    hx-push-url="true"
+                    hx-indicator="#refresh-spinner"
+                    class="rounded-lg border-theme bg-surface-primary text-primary-theme px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-1"
+                    aria-label="Filter dashboard by tenant">
+                <option value="">All Tenants ({{ tenants|length }})</option>
+                {% for tenant in tenants %}
+                <option value="{{ tenant.tenant_id }}" {% if selected_tenant_id == tenant.tenant_id %}selected{% endif %}>
+                    {{ tenant.name }}
+                </option>
+                {% endfor %}
+            </select>
+            {% endif %}
         <button
             hx-post="/api/v1/sync/all"
             hx-swap="none"
@@ -30,6 +51,7 @@
             </svg>
             Refresh Data
         </button>
+        </div>{# end .flex items-center gap-3 #}
     </div>
 
     {% if not has_any_data %}
