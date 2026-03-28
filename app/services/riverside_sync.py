@@ -14,7 +14,7 @@ from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING
 
 from azure.core.exceptions import HttpResponseError
-from sqlalchemy import func
+from sqlalchemy import Date, cast
 from sqlalchemy.orm import Session
 
 from app.core.circuit_breaker import RIVERSIDE_SYNC_BREAKER, CircuitBreakerError, circuit_breaker
@@ -245,8 +245,24 @@ async def sync_all_tenants(
                             if not skip_failed:
                                 raise
 
-                    progress.increment_completed()
-                    logger.info(f"Successfully synced tenant: {tenant.name}")
+                    # Check if ALL enabled sync ops failed for this tenant
+                    tenant_failed = True
+                    if include_mfa and tenant_results["mfa"] and tenant_results["mfa"].get("status") != "error":
+                        tenant_failed = False
+                    if include_requirements and tenant_results["requirements"] and tenant_results["requirements"].get("status") != "error":
+                        tenant_failed = False
+                    if include_maturity and tenant_results["maturity"] and tenant_results["maturity"].get("status") != "error":
+                        tenant_failed = False
+
+                    if tenant_failed:
+                        progress.increment_failed(
+                            f"All sync operations failed for {tenant.name}",
+                            tenant.tenant_id,
+                        )
+                        logger.warning(f"All sync operations failed for tenant: {tenant.name}")
+                    else:
+                        progress.increment_completed()
+                        logger.info(f"Successfully synced tenant: {tenant.name}")
 
                 except Exception as e:
                     progress.increment_failed(str(e), tenant.tenant_id)
@@ -266,10 +282,11 @@ async def sync_all_tenants(
             monitoring.complete_sync_job(
                 log_id=log_id,
                 status=status,
-                error_message=None,
+                error_message="; ".join(e["error"][:100] for e in progress.errors) if progress.errors else None,
                 final_records={
                     "records_processed": progress.completed + progress.failed,
                     "errors_count": progress.failed,
+                    "error_details": progress.errors[:10],
                 },
             )
 
@@ -435,7 +452,7 @@ async def sync_tenant_mfa(
                 session.query(RiversideMFA)
                 .filter(
                     RiversideMFA.tenant_id == tenant_id,
-                    func.date(RiversideMFA.snapshot_date) == snapshot_date.date(),
+                    cast(RiversideMFA.snapshot_date, Date) == snapshot_date.date(),
                 )
                 .first()
             )
@@ -598,7 +615,7 @@ async def sync_tenant_devices(
                 session.query(RiversideDeviceCompliance)
                 .filter(
                     RiversideDeviceCompliance.tenant_id == tenant_id,
-                    func.date(RiversideDeviceCompliance.snapshot_date) == snapshot_date.date(),
+                    cast(RiversideDeviceCompliance.snapshot_date, Date) == snapshot_date.date(),
                 )
                 .first()
             )
