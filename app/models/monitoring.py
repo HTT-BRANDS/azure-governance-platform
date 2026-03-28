@@ -1,6 +1,6 @@
 """Monitoring and observability models for sync jobs."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
@@ -28,7 +28,7 @@ class SyncJobLog(Base):
         String(50), nullable=False, default="running"
     )  # running, completed, failed
     started_at: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, nullable=False, index=True
+        DateTime, default=lambda: datetime.now(UTC), nullable=False, index=True
     )
     ended_at: Mapped[datetime | None] = Column(DateTime, nullable=True)
     duration_ms: Mapped[int | None] = Column(Integer, nullable=True)
@@ -62,7 +62,7 @@ class SyncJobMetrics(Base):
 
     id: Mapped[int] = Column(Integer, primary_key=True, autoincrement=True)
     job_type: Mapped[str] = Column(String(50), nullable=False, unique=True, index=True)
-    calculated_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
+    calculated_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     # Execution counts
     total_runs: Mapped[int] = Column(Integer, default=0)
@@ -115,7 +115,7 @@ class Alert(Base):
         Integer, default=False
     )  # Store as 0/1 for SQLite compatibility
     created_at: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, nullable=False, index=True
+        DateTime, default=lambda: datetime.now(UTC), nullable=False, index=True
     )
     resolved_at: Mapped[datetime | None] = Column(DateTime, nullable=True)
     resolved_by: Mapped[str | None] = Column(String(100), nullable=True)

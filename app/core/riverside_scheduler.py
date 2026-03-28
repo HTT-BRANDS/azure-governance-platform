@@ -7,7 +7,7 @@ Integrates with the notification system for alerting.
 
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -789,7 +789,7 @@ async def run_daily_compliance_report() -> dict[str, Any]:
     threat_result = await run_threat_escalation_check()
 
     results: dict[str, Any] = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "mfa_check": mfa_result,
         "deadline_check": deadline_result,
         "maturity_check": maturity_result,

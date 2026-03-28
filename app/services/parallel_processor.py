@@ -391,10 +391,10 @@ class TenantProcessor:
         start_time = time.monotonic()
 
         try:
-            from datetime import datetime, timedelta
+            from datetime import UTC, datetime, timedelta
 
             # Calculate date range
-            end_date = datetime.utcnow()
+            end_date = datetime.now(UTC)
             start_date = end_date - timedelta(days=30 * months)
 
             # Create backfill job

@@ -13,7 +13,7 @@ from app.core.rate_limit import rate_limit
 router = APIRouter(
     prefix="/api/v1/resources/quotas",
     tags=["quotas"],
-    dependencies=[Depends(rate_limit("default"))],
+    dependencies=[Depends(get_current_user), Depends(rate_limit("default"))],
 )
 
 

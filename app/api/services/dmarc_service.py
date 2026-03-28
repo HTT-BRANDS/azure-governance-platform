@@ -8,7 +8,7 @@ import json
 import logging
 import re
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -111,7 +111,7 @@ class DMARCService:
                     dns_record_value=config.get("dnsRecordValue"),
                     is_aligned=config.get("alignmentStatus") == "aligned",
                     selector_status=config.get("status", "unknown"),
-                    synced_at=datetime.utcnow(),
+                    synced_at=datetime.now(UTC),
                 )
                 records.append(record)
                 self.db.merge(record)
@@ -257,7 +257,7 @@ class DMARCService:
                     report = DMARCReport(
                         id=str(uuid.uuid4()),
                         tenant_id=tenant_id,
-                        report_date=data.get("date", datetime.utcnow()),
+                        report_date=data.get("date", datetime.now(UTC)),
                         domain=record.domain,
                         messages_total=data.get("total", 0),
                         messages_passed=data.get("passed", 0),
@@ -273,7 +273,7 @@ class DMARCService:
                         source_domains=json.dumps(data.get("source_domains", [])),
                         reporter=data.get("reporter"),
                         report_id=data.get("report_id"),
-                        synced_at=datetime.utcnow(),
+                        synced_at=datetime.now(UTC),
                     )
                     reports.append(report)
                     self.db.merge(report)
@@ -308,7 +308,7 @@ class DMARCService:
         self, tenant_id: str | None = None, days: int = 30
     ) -> list[dict[str, Any]]:
         """Get DMARC compliance trends over time."""
-        end_date = datetime.utcnow()
+        end_date = datetime.now(UTC)
         start_date = end_date - timedelta(days=days)
 
         query = self.db.query(DMARCReport).filter(
@@ -366,7 +366,7 @@ class DMARCService:
             domain=domain,
             message=message,
             details=json.dumps(details) if details else None,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         self.db.add(alert)
         self.db.commit()
@@ -378,7 +378,7 @@ class DMARCService:
         if alert:
             alert.is_acknowledged = True
             alert.acknowledged_by = user
-            alert.acknowledged_at = datetime.utcnow()
+            alert.acknowledged_at = datetime.now(UTC)
             self.db.commit()
         return alert
 
@@ -503,7 +503,7 @@ class DMARCService:
             sp=params.get("sp"),
             is_valid=is_valid,
             validation_errors=validation_errors,
-            synced_at=datetime.utcnow(),
+            synced_at=datetime.now(UTC),
         )
 
     async def _fetch_dmarc_reports(self, rua: str | None) -> list[dict]:

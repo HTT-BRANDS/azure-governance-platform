@@ -1,7 +1,7 @@
 """Compliance data synchronization module."""
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from azure.core.exceptions import HttpResponseError
 
@@ -26,9 +26,9 @@ async def sync_compliance():
     and their subscriptions, storing results in ComplianceSnapshot and
     PolicyState models.
     """
-    logger.info(f"Starting compliance sync at {datetime.utcnow()}")
+    logger.info(f"Starting compliance sync at {datetime.now(UTC)}")
 
-    snapshot_date = datetime.utcnow().date()
+    snapshot_date = datetime.now(UTC).date()
     total_snapshots = 0
     total_policy_states = 0
     total_errors = 0
@@ -158,7 +158,7 @@ async def sync_compliance():
                                         non_compliant_count=policy_data["non_compliant_count"],
                                         resource_id=policy_data["resource_id"],
                                         recommendation=policy_data["recommendation"],
-                                        synced_at=datetime.utcnow(),
+                                        synced_at=datetime.now(UTC),
                                     )
                                     db.add(policy_state)
                                     total_policy_states += 1
@@ -233,7 +233,7 @@ async def sync_compliance():
                                 compliant_resources=compliant_resources,
                                 non_compliant_resources=non_compliant_resources,
                                 exempt_resources=exempt_resources,
-                                synced_at=datetime.utcnow(),
+                                synced_at=datetime.now(UTC),
                             )
                             db.add(snapshot)
                             db.commit()

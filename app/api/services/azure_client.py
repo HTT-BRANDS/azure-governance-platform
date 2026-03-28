@@ -33,7 +33,6 @@ from azure.mgmt.policyinsights import PolicyInsightsClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.security import SecurityCenter
 from azure.mgmt.subscription import SubscriptionClient
-from dotenv import load_dotenv
 
 from app.core.config import get_settings
 from app.core.database import SessionLocal
@@ -48,10 +47,6 @@ except ImportError:
     KEYVAULT_AVAILABLE = False
     SecretClient = None
 
-# Load .env into os.environ so per-tenant secrets are accessible.
-# In production, secrets come from Key Vault; locally, from .env file.
-_env_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
-load_dotenv(os.path.normpath(_env_path))
 
 if TYPE_CHECKING:
     from app.models.tenant import Tenant

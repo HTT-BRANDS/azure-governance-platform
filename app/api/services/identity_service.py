@@ -1,7 +1,7 @@
 """Identity governance service with caching support."""
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -151,7 +151,7 @@ class IdentityService:
 
         # No recent sign-in = potential stale account
         if user.last_sign_in:
-            days_since_signin = (datetime.utcnow() - user.last_sign_in).days
+            days_since_signin = (datetime.now(UTC) - user.last_sign_in).days
             if days_since_signin > 30:
                 risk_score += 1
             if days_since_signin > 90:
@@ -196,7 +196,7 @@ class IdentityService:
         - Privileged account count
         - Stale account count
         """
-        end_date = datetime.utcnow()
+        end_date = datetime.now(UTC)
         start_date = end_date - timedelta(days=days)
 
         # Query identity snapshots within the date range

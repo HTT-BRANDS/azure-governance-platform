@@ -7,7 +7,7 @@ contrast validation and CSS variable generation.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, ForeignKey, Index, String
@@ -55,9 +55,9 @@ class BrandConfig(Base):
     gradient: Mapped[str | None] = Column(String(255), nullable=True)
 
     # Metadata
-    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Relationship

@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -237,12 +237,12 @@ class RecommendationService:
             return DismissRecommendationResponse(
                 success=False,
                 recommendation_id=recommendation_id,
-                dismissed_at=datetime.utcnow(),
+                dismissed_at=datetime.now(UTC),
             )
 
         recommendation.is_dismissed = True
         recommendation.dismissed_by = user
-        recommendation.dismissed_at = datetime.utcnow()
+        recommendation.dismissed_at = datetime.now(UTC)
         recommendation.dismiss_reason = reason
 
         self.db.commit()
@@ -250,5 +250,5 @@ class RecommendationService:
         return DismissRecommendationResponse(
             success=True,
             recommendation_id=recommendation_id,
-            dismissed_at=datetime.utcnow(),
+            dismissed_at=datetime.now(UTC),
         )

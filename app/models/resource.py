@@ -1,6 +1,6 @@
 """Resource inventory database models."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped
@@ -26,7 +26,7 @@ class Resource(Base):
     tags_json: Mapped[str | None] = Column(Text)  # JSON blob
     is_orphaned: Mapped[int] = Column(Integer, default=0)  # SQLite bool
     estimated_monthly_cost: Mapped[float | None] = Column(Integer)
-    synced_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:
         return f"<Resource {self.resource_type}/{self.name}>"
@@ -42,7 +42,7 @@ class ResourceTag(Base):
     tag_name: Mapped[str] = Column(String(255), nullable=False)
     tag_value: Mapped[str | None] = Column(String(500))
     is_required: Mapped[int] = Column(Integer, default=0)  # SQLite bool
-    synced_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:
         return f"<ResourceTag {self.tag_name}={self.tag_value}>"
@@ -57,7 +57,7 @@ class IdleResource(Base):
     resource_id: Mapped[str] = Column(String(500), ForeignKey("resources.id"), nullable=False)
     tenant_id: Mapped[str] = Column(String(36), ForeignKey("tenants.id"), nullable=False)
     subscription_id: Mapped[str] = Column(String(36), nullable=False)
-    detected_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    detected_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     idle_type: Mapped[str] = Column(String(50), nullable=False)  # low_cpu, no_connections, etc.
     description: Mapped[str] = Column(Text, nullable=False)
     estimated_monthly_savings: Mapped[float | None] = Column(Float)

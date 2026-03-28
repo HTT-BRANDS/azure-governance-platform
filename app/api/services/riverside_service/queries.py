@@ -1,6 +1,6 @@
 """Riverside Service - Query and reporting functions."""
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from app.api.services.riverside_service.constants import (
     ALL_TENANTS,
@@ -188,7 +188,7 @@ def get_riverside_summary(db) -> dict:
         "requirements_by_category": requirements_by_category,
         "requirements_by_priority": requirements_by_priority,
         "critical_gaps": [g.__dict__ for g in critical_gaps],
-        "last_updated": datetime.utcnow().isoformat(),
+        "last_updated": datetime.now(UTC).isoformat(),
     }
 
 
@@ -257,7 +257,7 @@ def get_mfa_status(db) -> dict:
         },
         "tenants": tenant_mfa,
         "target": 100,
-        "last_updated": datetime.utcnow().isoformat(),
+        "last_updated": datetime.now(UTC).isoformat(),
     }
 
 

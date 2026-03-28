@@ -1,7 +1,7 @@
 """Identity data synchronization module."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from app.api.services.graph_client import GraphClient
 from app.api.services.monitoring_service import MonitoringService
@@ -118,9 +118,9 @@ async def sync_identity():
     and service principals. Stores aggregated results in IdentitySnapshot
     and detailed privileged user information in PrivilegedUser models.
     """
-    logger.info(f"Starting identity sync at {datetime.utcnow()}")
+    logger.info(f"Starting identity sync at {datetime.now(UTC)}")
 
-    snapshot_date = datetime.utcnow().date()
+    snapshot_date = datetime.now(UTC).date()
     total_snapshots = 0
     total_privileged_users = 0
     total_errors = 0
@@ -159,7 +159,7 @@ async def sync_identity():
                         logger.warning(f"Could not fetch MFA status for tenant {tenant.name}: {e}")
 
                     # Calculate date thresholds for stale account detection
-                    now = datetime.utcnow()
+                    now = datetime.now(UTC)
                     stale_30d_threshold = now - timedelta(days=30)
                     stale_90d_threshold = now - timedelta(days=90)
 
@@ -283,7 +283,7 @@ async def sync_identity():
                             is_permanent=priv_user_data["is_permanent"],
                             mfa_enabled=priv_user_data["mfa_enabled"],
                             last_sign_in=priv_user_data["last_sign_in"],
-                            synced_at=datetime.utcnow(),
+                            synced_at=datetime.now(UTC),
                         )
                         db.add(privileged_user)
                         total_privileged_users += 1
@@ -301,7 +301,7 @@ async def sync_identity():
                         stale_accounts_30d=stale_30d_count,
                         stale_accounts_90d=stale_90d_count,
                         service_principals=len(service_principals),
-                        synced_at=datetime.utcnow(),
+                        synced_at=datetime.now(UTC),
                     )
                     db.add(snapshot)
                     total_snapshots += 1

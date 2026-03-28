@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -117,7 +117,7 @@ class AccessReviewService:
         """Return True if *last_sign_in* is None or older than STALE_THRESHOLD_DAYS."""
         if last_sign_in is None:
             return True
-        threshold = datetime.utcnow() - timedelta(days=STALE_THRESHOLD_DAYS)
+        threshold = datetime.now(UTC) - timedelta(days=STALE_THRESHOLD_DAYS)
         return last_sign_in < threshold
 
     @staticmethod
@@ -125,7 +125,7 @@ class AccessReviewService:
         """Return days since *last_sign_in*; None when last_sign_in is None (never signed in)."""
         if last_sign_in is None:
             return None
-        delta = datetime.utcnow() - last_sign_in
+        delta = datetime.now(UTC) - last_sign_in
         return max(0, delta.days)
 
     async def _get_sign_in_activity(
@@ -432,7 +432,7 @@ class AccessReviewService:
         else:
             review.status = "approved"
 
-        review.resolved_at = datetime.utcnow()
+        review.resolved_at = datetime.now(UTC)
         store[review_id] = review
 
         logger.info(

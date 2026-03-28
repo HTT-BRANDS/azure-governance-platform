@@ -3,7 +3,7 @@
 Includes tenant configuration, subscriptions, and user-tenant access mappings.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String, Text, UniqueConstraint
@@ -30,9 +30,9 @@ class Tenant(Base):
     is_active: Mapped[bool] = Column(Boolean, default=True)
     use_lighthouse: Mapped[bool] = Column(Boolean, default=False)
     use_oidc: Mapped[bool] = Column(Boolean, default=False, nullable=False, server_default="0")
-    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Relationships
@@ -97,7 +97,7 @@ class UserTenant(Base):
 
     # Metadata
     granted_by: Mapped[str | None] = Column(String(255))  # User who granted access
-    granted_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    granted_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     expires_at: Mapped[datetime | None] = Column(DateTime)  # Optional expiration
     last_accessed_at: Mapped[datetime | None] = Column(DateTime)
 
@@ -111,4 +111,4 @@ class UserTenant(Base):
         """Check if the access has expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(UTC) > self.expires_at

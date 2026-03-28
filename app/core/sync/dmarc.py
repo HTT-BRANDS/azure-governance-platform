@@ -5,7 +5,7 @@ reports for all Riverside tenants with email security compliance.
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from app.api.services.dmarc_service import DMARCService
 from app.api.services.monitoring_service import MonitoringService
@@ -30,7 +30,7 @@ async def sync_dmarc_dkim():
     reports for all active tenants. Prioritizes Riverside tenants for
     the July 2026 compliance deadline.
     """
-    logger.info(f"Starting DMARC/DKIM sync at {datetime.utcnow()}")
+    logger.info(f"Starting DMARC/DKIM sync at {datetime.now(UTC)}")
 
     total_dmarc = 0
     total_dkim = 0

@@ -1,6 +1,6 @@
 """Identity governance database models."""
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped
@@ -25,7 +25,7 @@ class IdentitySnapshot(Base):
     stale_accounts_30d: Mapped[int] = Column(Integer, default=0)
     stale_accounts_90d: Mapped[int] = Column(Integer, default=0)
     service_principals: Mapped[int] = Column(Integer, default=0)
-    synced_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:
         return f"<IdentitySnapshot {self.snapshot_date}: {self.total_users} users>"
@@ -46,7 +46,7 @@ class PrivilegedUser(Base):
     is_permanent: Mapped[int] = Column(Integer, default=1)  # vs PIM eligible
     mfa_enabled: Mapped[int] = Column(Integer, default=0)
     last_sign_in: Mapped[datetime | None] = Column(DateTime)
-    synced_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:
         return f"<PrivilegedUser {self.user_principal_name}: {self.role_name}>"

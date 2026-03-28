@@ -1,7 +1,7 @@
 """Compliance management service with caching support."""
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -264,7 +264,7 @@ class ComplianceService:
         Returns:
             List of trend data points with date and compliance metrics
         """
-        end_date = datetime.utcnow()
+        end_date = datetime.now(UTC)
         start_date = end_date - timedelta(days=days)
 
         # Query compliance snapshots within the date range

@@ -20,7 +20,7 @@ Example:
 """
 
 import logging
-from datetime import datetime
+import time
 from typing import Any
 
 import httpx
@@ -65,7 +65,7 @@ class RiversideDatabaseCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute database connectivity check for Riverside tables."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -150,7 +150,7 @@ class RiversideDatabaseCheck(BasePreflightCheck):
                 except Exception as e:
                     recent_data_check["error"] = str(e)[:100]
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if errors:
                 return CheckResult(
@@ -195,7 +195,7 @@ class RiversideDatabaseCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -237,7 +237,7 @@ class RiversideAPIEndpointCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute API endpoint availability check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         settings = get_settings()
 
         # Define endpoints to check
@@ -308,7 +308,7 @@ class RiversideAPIEndpointCheck(BasePreflightCheck):
                     }
                     failed_endpoints.append(endpoint["name"])
 
-        duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+        duration_ms = (time.perf_counter() - start_time) * 1000
 
         accessible_count = sum(1 for r in results.values() if r.get("accessible"))
 
@@ -372,7 +372,7 @@ class RiversideSchedulerCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute scheduler job registration check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
 
         try:
             from app.core.scheduler import get_scheduler
@@ -380,7 +380,7 @@ class RiversideSchedulerCheck(BasePreflightCheck):
             scheduler = get_scheduler()
 
             if not scheduler:
-                duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                duration_ms = (time.perf_counter() - start_time) * 1000
                 return CheckResult(
                     check_id=self.check_id,
                     name=self.name,
@@ -417,7 +417,7 @@ class RiversideSchedulerCheck(BasePreflightCheck):
                     }
                     break
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if not riverside_job:
                 return CheckResult(
@@ -484,7 +484,7 @@ class RiversideSchedulerCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -524,7 +524,7 @@ class RiversideAzureADPermissionsCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute Azure AD permissions check for Riverside."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         settings = get_settings()
 
         # Required Graph API permissions for Riverside
@@ -542,7 +542,7 @@ class RiversideAzureADPermissionsCheck(BasePreflightCheck):
             target_tenant_id = tenant_id or settings.azure_tenant_id
 
             if not target_tenant_id:
-                duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                duration_ms = (time.perf_counter() - start_time) * 1000
                 return CheckResult(
                     check_id=self.check_id,
                     name=self.name,
@@ -602,7 +602,7 @@ class RiversideAzureADPermissionsCheck(BasePreflightCheck):
                     "error": str(e)[:100],
                 }
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             # Determine overall status
             granted_count = sum(1 for p in permissions_status.values() if p.get("granted"))
@@ -669,7 +669,7 @@ class RiversideAzureADPermissionsCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             error_str = str(e).lower()
 
             # Handle specific authentication errors
@@ -876,7 +876,7 @@ class RiversideEvidenceCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute evidence verification check for completed requirements."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -897,7 +897,7 @@ class RiversideEvidenceCheck(BasePreflightCheck):
             completed_requirements = query.all()
 
             if not completed_requirements:
-                duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                duration_ms = (time.perf_counter() - start_time) * 1000
                 return CheckResult(
                     check_id=self.check_id,
                     name=self.name,
@@ -984,7 +984,7 @@ class RiversideEvidenceCheck(BasePreflightCheck):
             with_evidence = total_completed - len(missing_evidence_items)
             missing_count = len(missing_evidence_items)
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             # Determine overall status and severity
             if p0_missing:
@@ -1063,7 +1063,7 @@ class RiversideEvidenceCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -1106,7 +1106,7 @@ class RiversideMFADataSourceCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute MFA data source connectivity check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         settings = get_settings()
 
         try:
@@ -1115,7 +1115,7 @@ class RiversideMFADataSourceCheck(BasePreflightCheck):
             target_tenant_id = tenant_id or settings.azure_tenant_id
 
             if not target_tenant_id:
-                duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                duration_ms = (time.perf_counter() - start_time) * 1000
                 return CheckResult(
                     check_id=self.check_id,
                     name=self.name,
@@ -1195,7 +1195,7 @@ class RiversideMFADataSourceCheck(BasePreflightCheck):
                         "error": str(e)[:100],
                     }
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             # Determine overall status
             users_accessible = data_source_status.get("users_endpoint", {}).get("accessible", False)
@@ -1262,7 +1262,7 @@ class RiversideMFADataSourceCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,

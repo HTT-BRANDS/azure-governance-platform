@@ -5,7 +5,7 @@ tracking, running every 4 hours to keep data fresh for the July 8, 2026 deadline
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from app.api.services.monitoring_service import MonitoringService
 from app.api.services.riverside_service import RiversideService
@@ -33,7 +33,7 @@ async def sync_riverside():
     - RiversideDeviceCompliance: Device compliance metrics
     - RiversideRequirement: Individual requirement status
     """
-    logger.info(f"Starting Riverside compliance sync at {datetime.utcnow()}")
+    logger.info(f"Starting Riverside compliance sync at {datetime.now(UTC)}")
 
     total_tenants = 0
     total_errors = 0

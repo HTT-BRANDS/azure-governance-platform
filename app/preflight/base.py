@@ -6,7 +6,7 @@ Provides async support for checks with result caching capability.
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.preflight.models import (
@@ -29,7 +29,7 @@ class CheckCache:
         """Get cached result if available and not expired."""
         if check_id in self._cache:
             result, cached_at = self._cache[check_id]
-            if datetime.utcnow() - cached_at < timedelta(seconds=self._ttl):
+            if datetime.now(UTC) - cached_at < timedelta(seconds=self._ttl):
                 logger.debug(f"Cache hit for check: {check_id}")
                 return result
             else:
@@ -39,7 +39,7 @@ class CheckCache:
 
     def set(self, check_id: str, result: CheckResult) -> None:
         """Cache a check result."""
-        self._cache[check_id] = (result, datetime.utcnow())
+        self._cache[check_id] = (result, datetime.now(UTC))
         logger.debug(f"Cached result for check: {check_id}")
 
     def invalidate(self, check_id: str | None = None) -> None:
@@ -113,7 +113,7 @@ class BasePreflightCheck(ABC):
             cached = self._cache.get(cache_key)
             if cached:
                 # Return a fresh timestamp but cached content
-                cached.timestamp = datetime.utcnow()
+                cached.timestamp = datetime.now(UTC)
                 return cached
 
         # Return running status while executing

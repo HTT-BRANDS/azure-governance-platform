@@ -5,7 +5,7 @@ along with threshold monitoring and alert generation.
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from app.api.services.budget_service import BudgetService
 from app.core.circuit_breaker import BUDGET_SYNC_BREAKER, circuit_breaker
@@ -39,7 +39,7 @@ async def sync_budgets_for_tenant(
     """
     logger.info(f"Starting budget sync for tenant {tenant_id} (type: {sync_type})")
 
-    started_at = datetime.utcnow()
+    started_at = datetime.now(UTC)
 
     with get_db_context() as db:
         service = BudgetService(db)
@@ -165,7 +165,7 @@ async def sync_budget_alerts(tenant_id: str | None = None) -> dict[str, int]:
 
                         # Update threshold stats
                         threshold.trigger_count += 1
-                        threshold.last_triggered_at = datetime.utcnow()
+                        threshold.last_triggered_at = datetime.now(UTC)
 
                         tenant_alerts += 1
 

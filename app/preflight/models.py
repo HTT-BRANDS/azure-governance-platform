@@ -1,6 +1,6 @@
 """Pydantic models for preflight checks."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -59,7 +59,7 @@ class CheckResult(BaseModel):
     )
     duration_ms: float = Field(0, description="Execution time in milliseconds")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When this check was run"
+        default_factory=lambda: datetime.now(UTC), description="When this check was run"
     )
     recommendations: list[str] = Field(
         default_factory=list, description="List of fix recommendations"
@@ -94,7 +94,7 @@ class PreflightReport(BaseModel):
 
     id: str = Field(..., description="Unique identifier for this report")
     started_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When the check run started"
+        default_factory=lambda: datetime.now(UTC), description="When the check run started"
     )
     completed_at: datetime | None = Field(None, description="When the check run completed")
     results: list[CheckResult] = Field(default_factory=list, description="Results of all checks")

@@ -1,6 +1,6 @@
 """Compliance-related database models."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped
@@ -22,7 +22,7 @@ class ComplianceSnapshot(Base):
     compliant_resources: Mapped[int] = Column(Integer, default=0)
     non_compliant_resources: Mapped[int] = Column(Integer, default=0)
     exempt_resources: Mapped[int] = Column(Integer, default=0)
-    synced_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:
         return f"<ComplianceSnapshot {self.snapshot_date}: {self.overall_compliance_percent:.1f}%>"
@@ -45,7 +45,7 @@ class PolicyState(Base):
     non_compliant_count: Mapped[int] = Column(Integer, default=0)
     resource_id: Mapped[str | None] = Column(Text)  # Affected resource
     recommendation: Mapped[str | None] = Column(Text)
-    synced_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:
         return f"<PolicyState {self.policy_name}: {self.compliance_state}>"

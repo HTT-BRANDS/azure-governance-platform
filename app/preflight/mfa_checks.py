@@ -24,7 +24,8 @@ Example:
 """
 
 import logging
-from datetime import datetime
+import time
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -62,7 +63,7 @@ class MFATenantDataCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute MFA tenant data availability check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -79,7 +80,7 @@ class MFATenantDataCheck(BasePreflightCheck):
             # Get total record count
             total_records = query.count()
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if not latest_mfa:
                 return CheckResult(
@@ -103,7 +104,7 @@ class MFATenantDataCheck(BasePreflightCheck):
                 )
 
             # Check data freshness (data older than 7 days is stale)
-            data_age_days = (datetime.utcnow() - latest_mfa.snapshot_date).total_seconds() / 86400
+            data_age_days = (datetime.now(UTC) - latest_mfa.snapshot_date).total_seconds() / 86400
 
             is_stale = data_age_days > 7
 
@@ -148,7 +149,7 @@ class MFATenantDataCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -193,7 +194,7 @@ class MFAAdminEnrollmentCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute admin MFA enrollment check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -206,7 +207,7 @@ class MFAAdminEnrollmentCheck(BasePreflightCheck):
 
             latest_mfa = query.order_by(RiversideMFA.snapshot_date.desc()).first()
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if not latest_mfa:
                 return CheckResult(
@@ -302,7 +303,7 @@ class MFAAdminEnrollmentCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -347,7 +348,7 @@ class MFAUserEnrollmentCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute user MFA enrollment check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -360,7 +361,7 @@ class MFAUserEnrollmentCheck(BasePreflightCheck):
 
             latest_mfa = query.order_by(RiversideMFA.snapshot_date.desc()).first()
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if not latest_mfa:
                 return CheckResult(
@@ -495,7 +496,7 @@ class MFAUserEnrollmentCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -536,7 +537,7 @@ class MFAGapReportCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute MFA gap analysis check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -567,7 +568,7 @@ class MFAGapReportCheck(BasePreflightCheck):
 
             mfa_records = query.all()
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if not mfa_records:
                 return CheckResult(
@@ -715,7 +716,7 @@ class MFAGapReportCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,

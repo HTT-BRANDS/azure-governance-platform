@@ -1,7 +1,7 @@
 """Cost management service with caching support."""
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import func
@@ -173,7 +173,7 @@ class CostService:
 
         anomaly.is_acknowledged = True
         anomaly.acknowledged_by = user
-        anomaly.acknowledged_at = datetime.utcnow()
+        anomaly.acknowledged_at = datetime.now(UTC)
         self.db.commit()
 
         # Invalidate cache after state change
@@ -198,7 +198,7 @@ class CostService:
             success=len(failed_ids) == 0,
             acknowledged_count=acknowledged_count,
             failed_ids=failed_ids,
-            acknowledged_at=datetime.utcnow(),
+            acknowledged_at=datetime.now(UTC),
         )
 
     @cached("cost_anomaly_trends")
@@ -206,7 +206,7 @@ class CostService:
         self, months: int = 6, tenant_ids: list[str] | None = None
     ) -> list[AnomalyTrend]:
         """Get anomaly trends over time grouped by month."""
-        end_date = datetime.utcnow()
+        end_date = datetime.now(UTC)
         start_date = end_date - timedelta(days=30 * months)
 
         query = self.db.query(CostAnomaly).filter(

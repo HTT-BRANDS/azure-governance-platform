@@ -26,8 +26,9 @@ Example:
 """
 
 import logging
+import time
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -79,7 +80,7 @@ class AdminMfaCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute MFA check for privileged accounts."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -106,7 +107,7 @@ class AdminMfaCheck(BasePreflightCheck):
                 if user.role_name in CRITICAL_ROLES:
                     unique_users[user.user_principal_name]["is_critical"] = True
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if unique_users:
                 critical_count = sum(1 for u in unique_users.values() if u["is_critical"])
@@ -172,7 +173,7 @@ class AdminMfaCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -214,7 +215,7 @@ class OverprivilegedAccountCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute overprivileged account check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -259,7 +260,7 @@ class OverprivilegedAccountCheck(BasePreflightCheck):
                         }
                     )
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if overprivileged:
                 critical_count = sum(1 for u in overprivileged if u["has_critical_role"])
@@ -315,7 +316,7 @@ class OverprivilegedAccountCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -358,14 +359,14 @@ class InactiveAdminCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute inactive admin check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
             db = SessionLocal()
 
             # Calculate the threshold date
-            threshold_date = datetime.utcnow() - timedelta(days=INACTIVE_ADMIN_DAYS)
+            threshold_date = datetime.now(UTC) - timedelta(days=INACTIVE_ADMIN_DAYS)
 
             # Find inactive admins
             query = db.query(PrivilegedUser).filter(PrivilegedUser.last_sign_in < threshold_date)
@@ -380,7 +381,7 @@ class InactiveAdminCheck(BasePreflightCheck):
             for user in inactive_users:
                 if user.user_principal_name not in unique_users:
                     days_inactive = (
-                        (datetime.utcnow() - user.last_sign_in).days if user.last_sign_in else None
+                        (datetime.now(UTC) - user.last_sign_in).days if user.last_sign_in else None
                     )
 
                     unique_users[user.user_principal_name] = {
@@ -398,7 +399,7 @@ class InactiveAdminCheck(BasePreflightCheck):
                 if user.role_name in CRITICAL_ROLES:
                     unique_users[user.user_principal_name]["has_critical_role"] = True
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if unique_users:
                 critical_count = sum(1 for u in unique_users.values() if u["has_critical_role"])
@@ -466,7 +467,7 @@ class InactiveAdminCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -509,7 +510,7 @@ class SharedAdminCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute shared admin account check."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -574,7 +575,7 @@ class SharedAdminCheck(BasePreflightCheck):
                         }
                     )
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             if shared_accounts:
                 critical_count = sum(1 for a in shared_accounts if a["has_critical_role"])
@@ -630,7 +631,7 @@ class SharedAdminCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,
@@ -672,7 +673,7 @@ class AdminComplianceGapCheck(BasePreflightCheck):
 
     async def _execute_check(self, tenant_id: str | None = None) -> CheckResult:
         """Execute compliance gap assessment."""
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         db: Session | None = None
 
         try:
@@ -686,7 +687,7 @@ class AdminComplianceGapCheck(BasePreflightCheck):
             users = query.all()
 
             if not users:
-                duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                duration_ms = (time.perf_counter() - start_time) * 1000
                 return CheckResult(
                     check_id=self.check_id,
                     name=self.name,
@@ -722,7 +723,7 @@ class AdminComplianceGapCheck(BasePreflightCheck):
             )
 
             # Inactive accounts
-            threshold_date = datetime.utcnow() - timedelta(days=INACTIVE_ADMIN_DAYS)
+            threshold_date = datetime.now(UTC) - timedelta(days=INACTIVE_ADMIN_DAYS)
             inactive_users = set()
             for user in users:
                 if user.last_sign_in and user.last_sign_in < threshold_date:
@@ -769,7 +770,7 @@ class AdminComplianceGapCheck(BasePreflightCheck):
                 status = CheckStatus.FAIL
                 severity = AdminRiskSeverity.CRITICAL
 
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             return CheckResult(
                 check_id=self.check_id,
@@ -808,7 +809,7 @@ class AdminComplianceGapCheck(BasePreflightCheck):
             )
 
         except Exception as e:
-            duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             return CheckResult(
                 check_id=self.check_id,
                 name=self.name,

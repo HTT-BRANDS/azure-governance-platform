@@ -6,7 +6,7 @@ deduplication purposes.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
@@ -56,7 +56,7 @@ class NotificationLog(Base):
         String(50), nullable=False, default="pending"
     )  # pending, sent, failed, retrying
     sent_at: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, nullable=False, index=True
+        DateTime, default=lambda: datetime.now(UTC), nullable=False, index=True
     )
     delivered_at: Mapped[datetime | None] = Column(DateTime, nullable=True)
 
@@ -104,7 +104,7 @@ class NotificationLog(Base):
             response_body: Response content from the channel
         """
         self.status = "sent"
-        self.delivered_at = datetime.utcnow()
+        self.delivered_at = datetime.now(UTC)
         if response_status:
             self.response_status = response_status
         if response_body:
@@ -123,4 +123,4 @@ class NotificationLog(Base):
         """Mark notification as being retried."""
         self.status = "retrying"
         self.retry_count += 1
-        self.last_retry_at = datetime.utcnow()
+        self.last_retry_at = datetime.now(UTC)

@@ -13,7 +13,8 @@ Example:
 
 import asyncio
 import logging
-from datetime import datetime
+import time
+from datetime import UTC, datetime
 
 from app.core.config import get_settings
 from app.core.database import SessionLocal
@@ -84,7 +85,7 @@ def _create_error_result(
         message=message,
         details={"error_code": error_code},
         duration_ms=0.0,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         recommendations=recommendations,
         tenant_id=tenant_id,
     )
@@ -107,7 +108,7 @@ async def check_tenant_connectivity(tenant_id: str) -> CheckResult:
         >>> result = await check_tenant_connectivity("12345678-1234-1234-1234-123456789012")
         >>> is_connected = result.status == CheckStatus.PASS
     """
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     check_id = "tenant_connectivity"
     name = "Tenant Connectivity"
 
@@ -126,8 +127,8 @@ async def check_tenant_connectivity(tenant_id: str) -> CheckResult:
                     "authentication_successful": True,
                     "auth_details": result.details,
                 },
-                duration_ms=(datetime.utcnow() - start_time).total_seconds() * 1000,
-                timestamp=datetime.utcnow(),
+                duration_ms=(time.perf_counter() - start_time) * 1000,
+                timestamp=datetime.now(UTC),
                 recommendations=[],
                 tenant_id=tenant_id,
             )
@@ -139,8 +140,8 @@ async def check_tenant_connectivity(tenant_id: str) -> CheckResult:
                 status=result.status,
                 message=f"Tenant connectivity issue: {result.message}",
                 details={"authentication_result": result.status.value},
-                duration_ms=(datetime.utcnow() - start_time).total_seconds() * 1000,
-                timestamp=datetime.utcnow(),
+                duration_ms=(time.perf_counter() - start_time) * 1000,
+                timestamp=datetime.now(UTC),
                 recommendations=result.recommendations,
                 tenant_id=tenant_id,
             )
@@ -217,7 +218,7 @@ async def check_single_tenant(
                 message="No subscriptions configured for this tenant",
                 details={"tenant_db_id": tenant.id},
                 duration_ms=0.0,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
                 recommendations=[
                     "Add subscriptions to the tenant configuration",
                     "Run subscription discovery to find available subscriptions",
@@ -281,7 +282,7 @@ async def check_all_tenants(
         >>> # Quick check without subscription details
         >>> results = await check_all_tenants(run_subscription_checks=False)
     """
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     logger.info("Starting multi-tenant preflight checks")
 
     # Get tenants to check
@@ -353,7 +354,7 @@ async def check_all_tenants(
                     )
                 ]
 
-    total_duration = (datetime.utcnow() - start_time).total_seconds() * 1000
+    total_duration = (time.perf_counter() - start_time) * 1000
 
     # Calculate summary statistics
     sum(len(checks) for checks in results.values())

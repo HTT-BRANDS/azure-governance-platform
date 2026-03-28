@@ -4,8 +4,9 @@ Provides parallel execution, progress tracking, and timeout handling.
 """
 
 import logging
+import time
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from app.core.database import SessionLocal
 from app.models.tenant import Tenant
@@ -128,7 +129,7 @@ class PreflightRunner:
         # Initialize report
         report = PreflightReport(
             id=str(uuid.uuid4()),
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
             categories_requested=check_categories or list(CheckCategory),
             fail_fast=self.fail_fast,
         )
@@ -202,7 +203,7 @@ class PreflightRunner:
                     break
 
         finally:
-            report.completed_at = datetime.utcnow()
+            report.completed_at = datetime.now(UTC)
             self._is_running = False
             self._current_report = None
 
@@ -274,12 +275,12 @@ class PreflightRunner:
         Returns:
             CheckResult from the check execution
         """
-        start_time = datetime.utcnow()
+        start_time = time.perf_counter()
         result = await check.run(tenant_id=tenant_id)
-        end_time = datetime.utcnow()
+        end_time = time.perf_counter()
 
         # Calculate duration
-        result.duration_ms = (end_time - start_time).total_seconds() * 1000
+        result.duration_ms = (end_time - start_time) * 1000
 
         return result
 

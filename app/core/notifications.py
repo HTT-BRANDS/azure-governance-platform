@@ -10,7 +10,7 @@ SECURITY: All webhook URLs are sanitized from logs to prevent credential leakage
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any
 
@@ -109,7 +109,7 @@ def should_notify(
 
     cooldown = timedelta(minutes=cooldown_minutes or settings.notification_cooldown_minutes)
     key = (alert_type, job_type)
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     last_sent = _notification_history.get(key)
     if last_sent and (now - last_sent) < cooldown:
@@ -133,7 +133,7 @@ def record_notification_sent(
         job_type: Optional job type
     """
     key = (alert_type, job_type)
-    _notification_history[key] = datetime.utcnow()
+    _notification_history[key] = datetime.now(UTC)
 
 
 def severity_meets_threshold(severity: Severity | str, threshold: Severity | str) -> bool:
@@ -195,7 +195,7 @@ def format_sync_alert(notification: Notification) -> dict[str, Any]:
         Adaptive Card JSON payload for Teams webhook
     """
     color = get_severity_color(notification.severity)
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
     # Build facts section with available details
     facts = []
@@ -578,7 +578,7 @@ async def send_webhook_notification(
         "title": notification.title,
         "message": notification.message,
         "severity": notification.severity.value,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "alert_id": notification.alert_id,
         "job_type": notification.job_type,
         "tenant_id": notification.tenant_id,

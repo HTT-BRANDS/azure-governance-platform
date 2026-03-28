@@ -4,7 +4,7 @@ Metrics API Routes
 Application metrics for monitoring and alerting.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -26,7 +26,7 @@ async def health_metrics():
     from app.core.config import settings
 
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "status": "healthy",
         "version": settings.app_version,
     }
@@ -37,7 +37,7 @@ async def cache_metrics():
     """Cache performance metrics."""
     stats = await cache_manager.get_stats()
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "hits": stats.get("hits", 0),
         "misses": stats.get("misses", 0),
         "hit_rate": stats.get("hit_rate", 0),
@@ -48,4 +48,4 @@ async def cache_metrics():
 @router.get("/database")
 async def database_metrics(db: Session = Depends(get_db)):
     """Database connection metrics."""
-    return {"timestamp": datetime.utcnow().isoformat(), "status": "connected"}
+    return {"timestamp": datetime.now(UTC).isoformat(), "status": "connected"}

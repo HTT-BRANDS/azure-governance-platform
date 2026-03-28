@@ -1,7 +1,7 @@
 """Riverside Service - Sync functions for Graph API integration."""
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func
 
@@ -31,7 +31,7 @@ async def sync_riverside_mfa(db) -> dict:
         Dict with sync results by tenant.
     """
     results = {}
-    snapshot_date = datetime.utcnow()
+    snapshot_date = datetime.now(UTC)
 
     tenants = db.query(Tenant).filter(Tenant.is_active == True).all()  # noqa: E712
 
@@ -147,7 +147,7 @@ async def sync_riverside_device_compliance(db) -> dict:
         Dict with sync results by tenant.
     """
     results = {}
-    snapshot_date = datetime.utcnow()
+    snapshot_date = datetime.now(UTC)
 
     tenants = db.query(Tenant).filter(Tenant.is_active == True).all()  # noqa: E712
 
@@ -313,7 +313,7 @@ async def sync_riverside_maturity_scores(db) -> dict:
         Dict with maturity scores by tenant.
     """
     results = {}
-    snapshot_date = datetime.utcnow()
+    snapshot_date = datetime.now(UTC)
 
     tenants = db.query(Tenant).filter(Tenant.is_active == True).all()  # noqa: E712
 

@@ -1,6 +1,6 @@
 """Sync job tracking model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped
@@ -19,7 +19,7 @@ class SyncJob(Base):
     )  # costs, compliance, resources, identity
     tenant_id: Mapped[str | None] = Column(String(36))  # NULL = all tenants
     status: Mapped[str] = Column(String(50), nullable=False)  # pending, running, completed, failed
-    started_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    started_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     completed_at: Mapped[datetime | None] = Column(DateTime)
     records_processed: Mapped[int] = Column(Integer, default=0)
     error_message: Mapped[str | None] = Column(Text)

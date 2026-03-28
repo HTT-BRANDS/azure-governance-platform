@@ -4,7 +4,7 @@ Models for managing Azure budgets, alert configurations, and threshold tracking.
 Integrates with Microsoft.CostManagement/budgets API.
 """
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
@@ -98,9 +98,9 @@ class Budget(Base):
     etag: Mapped[str | None] = Column(String(100))  # For optimistic concurrency
 
     # Sync tracking
-    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
     last_synced_at: Mapped[datetime | None] = Column(DateTime)
 
@@ -179,9 +179,9 @@ class BudgetThreshold(Base):
     trigger_count: Mapped[int] = Column(Integer, default=0)
 
     # Metadata
-    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Relationships
@@ -230,7 +230,7 @@ class BudgetAlert(Base):
     utilization_percentage: Mapped[float] = Column(Float, nullable=False)
 
     # Acknowledgment
-    triggered_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    triggered_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     acknowledged_at: Mapped[datetime | None] = Column(DateTime)
     acknowledged_by: Mapped[str | None] = Column(String(255))
     resolved_at: Mapped[datetime | None] = Column(DateTime)
@@ -254,12 +254,12 @@ class BudgetAlert(Base):
         """Mark alert as acknowledged by user."""
         self.status = AlertStatus.ACKNOWLEDGED
         self.acknowledged_by = user_id
-        self.acknowledged_at = datetime.utcnow()
+        self.acknowledged_at = datetime.now(UTC)
 
     def resolve(self, note: str | None = None) -> None:
         """Mark alert as resolved."""
         self.status = AlertStatus.RESOLVED
-        self.resolved_at = datetime.utcnow()
+        self.resolved_at = datetime.now(UTC)
         if note:
             self.resolution_note = note
 
@@ -287,9 +287,9 @@ class BudgetNotification(Base):
     is_enabled: Mapped[bool] = Column(Boolean, default=True)
 
     # Metadata
-    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Relationships
@@ -329,7 +329,7 @@ class BudgetSyncResult(Base):
     error_details: Mapped[str | None] = Column(Text)  # JSON array of errors
 
     # Timing
-    started_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    started_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     completed_at: Mapped[datetime | None] = Column(DateTime)
     duration_seconds: Mapped[float | None] = Column(Float)
 
@@ -339,6 +339,6 @@ class BudgetSyncResult(Base):
     def complete(self, status: str) -> None:
         """Mark sync as complete with status."""
         self.status = status
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(UTC)
         if self.started_at:
             self.duration_seconds = (self.completed_at - self.started_at).total_seconds()

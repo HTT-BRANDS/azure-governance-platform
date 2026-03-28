@@ -4,7 +4,7 @@ Database models for tracking email security configuration and compliance
 for Riverside Company tenants with the July 8, 2026 compliance deadline.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
@@ -60,7 +60,7 @@ class DMARCRecord(Base):
     sp: Mapped[str | None] = mapped_column(String(20))  # Subdomain policy
     is_valid: Mapped[bool] = mapped_column(Boolean, default=True)
     validation_errors: Mapped[str | None] = mapped_column(Text)
-    synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     __table_args__ = (
         Index("ix_dmarc_records_tenant_id", "tenant_id"),
@@ -105,7 +105,7 @@ class DKIMRecord(Base):
     selector_status: Mapped[str] = mapped_column(
         String(50), default="unknown"
     )  # active, expired, pending
-    synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     __table_args__ = (
         Index("ix_dkim_records_tenant_id", "tenant_id"),
@@ -123,7 +123,7 @@ class DKIMRecord(Base):
         """Days since last key rotation."""
         if not self.last_rotated:
             return None
-        return (datetime.utcnow() - self.last_rotated).days
+        return (datetime.now(UTC) - self.last_rotated).days
 
     @property
     def is_key_stale(self) -> bool:
@@ -163,7 +163,7 @@ class DMARCReport(Base):
     # Report metadata
     reporter: Mapped[str | None] = mapped_column(String(255))  # Who sent the report
     report_id: Mapped[str | None] = mapped_column(String(100))
-    synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    synced_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     __table_args__ = (
         Index("ix_dmarc_reports_tenant_id", "tenant_id"),
@@ -203,7 +203,7 @@ class DMARCAlert(Base):
     is_acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
     acknowledged_by: Mapped[str | None] = mapped_column(String(255))
     acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     __table_args__ = (
         Index("ix_dmarc_alerts_tenant_id", "tenant_id"),

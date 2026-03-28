@@ -6,7 +6,7 @@ results for MCA (Microsoft Customer Agreement) billing accounts.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import httpx
 
@@ -32,10 +32,10 @@ async def sync_costs():
     for all active tenants and their subscriptions, storing results in
     the CostSnapshot model grouped by resource group and service name.
     """
-    logger.info(f"Starting cost sync at {datetime.utcnow()}")
+    logger.info(f"Starting cost sync at {datetime.now(UTC)}")
 
     # Define time period (last 30 days)
-    end_date = datetime.utcnow()
+    end_date = datetime.now(UTC)
     start_date = end_date - timedelta(days=30)
     from_date = start_date.strftime("%Y-%m-%d")
     to_date = end_date.strftime("%Y-%m-%d")
@@ -119,7 +119,7 @@ async def sync_costs():
                                             currency=currency,
                                             resource_group=resource_group,
                                             service_name=service_name,
-                                            synced_at=datetime.utcnow(),
+                                            synced_at=datetime.now(UTC),
                                         )
 
                                         db.add(snapshot)

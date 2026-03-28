@@ -205,7 +205,7 @@ async def sync_dashboard(
             "alert_stats": alert_stats,
             "tenant_status": tenant_status,
             "metrics": metrics,
-            "last_refresh": datetime.utcnow(),
+            "last_refresh": datetime.now(UTC),
         },
     )
 
@@ -240,7 +240,7 @@ async def _get_tenant_sync_status(
 
             if last_log:
                 # Calculate staleness
-                hours_since_sync = (datetime.utcnow() - last_log.started_at).total_seconds() / 3600
+                hours_since_sync = (datetime.now(UTC) - last_log.started_at).total_seconds() / 3600
                 expected_interval = 24  # hours
 
                 if last_log.status == "failed":
@@ -314,7 +314,7 @@ async def sync_status_card_partial(request: Request, db: Session = Depends(get_d
         {
             "status": overall_status,
             "metrics": metrics,
-            "last_refresh": datetime.utcnow(),
+            "last_refresh": datetime.now(UTC),
         },
     )
 
@@ -332,7 +332,7 @@ async def sync_history_table_partial(
         "components/sync/sync_history_table.html",
         {
             "logs": recent_logs,
-            "last_refresh": datetime.utcnow(),
+            "last_refresh": datetime.now(UTC),
         },
     )
 
@@ -350,7 +350,7 @@ async def active_alerts_partial(request: Request, db: Session = Depends(get_db))
         {
             "alerts": active_alerts,
             "stats": alert_stats,
-            "last_refresh": datetime.utcnow(),
+            "last_refresh": datetime.now(UTC),
         },
     )
 
@@ -370,7 +370,7 @@ async def tenant_sync_status_partial(
         "components/sync/tenant_sync_grid.html",
         {
             "tenant_status": tenant_status,
-            "last_refresh": datetime.utcnow(),
+            "last_refresh": datetime.now(UTC),
         },
     )
 

@@ -1,6 +1,6 @@
 """Recommendation database models."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped
@@ -37,9 +37,9 @@ class Recommendation(Base):
     dismissed_by: Mapped[str | None] = Column(String(255))
     dismissed_at: Mapped[datetime | None] = Column(DateTime)
     dismiss_reason: Mapped[str | None] = Column(Text)
-    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     def __repr__(self) -> str:

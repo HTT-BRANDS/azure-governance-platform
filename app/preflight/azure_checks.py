@@ -21,7 +21,8 @@ Example:
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+import time
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -215,7 +216,7 @@ def _create_check_result(
     subscription_id: str | None,
     status: CheckStatus,
     message: str,
-    start_time: datetime,
+    start_time: float,
     details: dict[str, Any] | None = None,
     recommendations: list[str] | None = None,
     error_code: str | None = None,
@@ -240,7 +241,7 @@ def _create_check_result(
     Returns:
         Populated CheckResult instance
     """
-    duration_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+    duration_ms = (time.perf_counter() - start_time) * 1000
 
     if error:
         sanitized = _sanitize_error(error)
@@ -254,7 +255,7 @@ def _create_check_result(
         message=message,
         details=details or {},
         duration_ms=duration_ms,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
         recommendations=recommendations or [],
         tenant_id=tenant_id,
     )
@@ -606,7 +607,7 @@ async def check_azure_authentication(tenant_id: str) -> CheckResult:
     # Lazy import to avoid namespace package issues in tests
     from azure.core.exceptions import ClientAuthenticationError
 
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     check_id = "azure_authentication"
     name = "Azure AD Authentication"
     category = CheckCategory.AZURE_AUTH
@@ -617,7 +618,7 @@ async def check_azure_authentication(tenant_id: str) -> CheckResult:
 
         # Calculate token expiration time
         expires_at = datetime.fromtimestamp(token.expires_on)
-        expires_in_minutes = int((expires_at - datetime.utcnow()).total_seconds() / 60)
+        expires_in_minutes = int((expires_at - datetime.now(UTC)).total_seconds() / 60)
 
         details = {
             "token_acquired": True,
@@ -735,7 +736,7 @@ async def check_azure_subscriptions(tenant_id: str) -> CheckResult:
     # Lazy import to avoid namespace package issues in tests
     from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
 
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     check_id = "azure_subscriptions"
     name = "Azure Subscriptions Access"
     category = CheckCategory.AZURE_SUBSCRIPTIONS
@@ -900,7 +901,7 @@ async def check_cost_management_access(tenant_id: str, subscription_id: str) -> 
     # Lazy import to avoid namespace package issues in tests
     from azure.core.exceptions import HttpResponseError
 
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     check_id = "cost_management_access"
     name = "Cost Management API Access"
     category = CheckCategory.AZURE_COST_MANAGEMENT
@@ -909,8 +910,8 @@ async def check_cost_management_access(tenant_id: str, subscription_id: str) -> 
         client = azure_client_manager.get_cost_client(tenant_id, subscription_id)
 
         # Build a simple cost query for last 7 days
-        from_date = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
-        to_date = datetime.utcnow().strftime("%Y-%m-%d")
+        from_date = (datetime.now(UTC) - timedelta(days=7)).strftime("%Y-%m-%d")
+        to_date = datetime.now(UTC).strftime("%Y-%m-%d")
 
         # Query for a small amount of data to verify access
         # Using QueryDefinition from azure.mgmt.costmanagement.models
@@ -1064,7 +1065,7 @@ async def check_policy_access(tenant_id: str, subscription_id: str) -> CheckResu
     """
     from azure.core.exceptions import HttpResponseError
 
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     check_id = "policy_access"
     name = "Azure Policy Insights API Access"
     category = CheckCategory.AZURE_POLICY
@@ -1172,7 +1173,7 @@ async def check_resource_manager_access(tenant_id: str, subscription_id: str) ->
     """
     from azure.core.exceptions import HttpResponseError
 
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     check_id = "resource_manager_access"
     name = "Azure Resource Manager Access"
     category = CheckCategory.AZURE_RESOURCES
@@ -1275,7 +1276,7 @@ async def check_graph_api_access(tenant_id: str) -> CheckResult:
     """
     from azure.core.exceptions import ClientAuthenticationError
 
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     check_id = "graph_api_access"
     name = "Microsoft Graph API Access"
     category = CheckCategory.AZURE_GRAPH
@@ -1441,7 +1442,7 @@ async def check_security_center_access(tenant_id: str, subscription_id: str) -> 
     """
     from azure.core.exceptions import HttpResponseError
 
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     check_id = "security_center_access"
     name = "Azure Security Center Access"
     category = CheckCategory.AZURE_SECURITY
@@ -1587,7 +1588,7 @@ async def check_rbac_permissions(tenant_id: str, subscription_id: str) -> CheckR
     from azure.core.exceptions import HttpResponseError
     from azure.mgmt.authorization import AuthorizationManagementClient
 
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     check_id = "rbac_permissions"
     name = "Azure RBAC Permissions"
     category = CheckCategory.AZURE_SECURITY
@@ -1760,7 +1761,7 @@ async def run_all_azure_checks(
         >>> failed = [r for r in results if r.status == CheckStatus.FAIL]
         >>> print(f"Failed checks: {len(failed)}")
     """
-    start_time = datetime.utcnow()
+    start_time = time.perf_counter()
     logger.info(f"Starting preflight checks for tenant {tenant_id[:8]}...")
 
     results: list[CheckResult] = []
@@ -1787,7 +1788,7 @@ async def run_all_azure_checks(
                     message=f"Check failed with exception: {type(result).__name__}",
                     details={"error": str(result)},
                     duration_ms=0.0,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                     recommendations=["Check application logs for details"],
                 )
             )
@@ -1820,14 +1821,14 @@ async def run_all_azure_checks(
                         message=f"Check failed with exception: {type(result).__name__}",
                         details={"error": str(result)},
                         duration_ms=0.0,
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(UTC),
                         recommendations=["Check application logs for details"],
                     )
                 )
             else:
                 results.append(result)
 
-    total_duration = (datetime.utcnow() - start_time).total_seconds() * 1000
+    total_duration = (time.perf_counter() - start_time) * 1000
     logger.info(
         f"Completed {len(results)} preflight checks in {total_duration:.0f}ms "
         f"for tenant {tenant_id[:8]}..."

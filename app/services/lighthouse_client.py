@@ -19,7 +19,7 @@ Example:
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from azure.identity import DefaultAzureCredential
@@ -418,7 +418,7 @@ class LighthouseAzureClient:
 
         # Set default date range if not provided
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=30)
 
@@ -739,8 +739,8 @@ class LighthouseAzureClient:
         try:
             cost_data = await self.get_cost_data(
                 subscription_id=subscription_id,
-                start_date=datetime.utcnow() - timedelta(days=7),
-                end_date=datetime.utcnow(),
+                start_date=datetime.now(UTC) - timedelta(days=7),
+                end_date=datetime.now(UTC),
             )
             result["cost_accessible"] = True
             result["details"]["cost_sample"] = {

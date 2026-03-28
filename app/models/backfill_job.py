@@ -1,6 +1,6 @@
 """Backfill job tracking model with resumable processing support."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text
@@ -53,7 +53,7 @@ class BackfillJob(Base):
     error_count: Mapped[int] = Column(Integer, default=0)
 
     # Timestamps
-    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = Column(DateTime, default=lambda: datetime.now(UTC))
     started_at: Mapped[datetime | None] = Column(DateTime)
     completed_at: Mapped[datetime | None] = Column(DateTime)
     paused_at: Mapped[datetime | None] = Column(DateTime)
@@ -131,10 +131,10 @@ class BackfillJob(Base):
 
         if status == BackfillStatus.RUNNING:
             if not self.started_at:
-                self.started_at = datetime.utcnow()
+                self.started_at = datetime.now(UTC)
         elif status == BackfillStatus.COMPLETED:
-            self.completed_at = datetime.utcnow()
+            self.completed_at = datetime.now(UTC)
         elif status == BackfillStatus.PAUSED:
-            self.paused_at = datetime.utcnow()
+            self.paused_at = datetime.now(UTC)
         elif status == BackfillStatus.CANCELLED:
-            self.cancelled_at = datetime.utcnow()
+            self.cancelled_at = datetime.now(UTC)

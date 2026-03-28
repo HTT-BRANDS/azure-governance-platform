@@ -7,7 +7,7 @@ and synchronization with Azure Cost Management Budget API.
 import json
 import logging
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -170,8 +170,8 @@ class BudgetService:
             current_spend=0.0,
             status=BudgetStatus.ACTIVE,
             utilization_percentage=0.0,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         self.db.add(budget)
@@ -247,7 +247,7 @@ class BudgetService:
             if hasattr(budget, field):
                 setattr(budget, field, value)
 
-        budget.updated_at = datetime.utcnow()
+        budget.updated_at = datetime.now(UTC)
 
         # Recalculate utilization if amount changed
         if "amount" in update_fields and budget.amount > 0:
@@ -364,7 +364,7 @@ class BudgetService:
 
         alert.status = AlertStatus.ACKNOWLEDGED
         alert.acknowledged_by = user_id
-        alert.acknowledged_at = datetime.utcnow()
+        alert.acknowledged_at = datetime.now(UTC)
         if note:
             alert.resolution_note = note
 
@@ -407,7 +407,7 @@ class BudgetService:
             success=len(failed_ids) == 0,
             acknowledged_count=acknowledged_count,
             failed_ids=failed_ids,
-            acknowledged_at=datetime.utcnow(),
+            acknowledged_at=datetime.now(UTC),
         )
 
     # =========================================================================
@@ -508,7 +508,7 @@ class BudgetService:
             tenant_id=tenant_id,
             sync_type="incremental",
             status="running",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
         )
         self.db.add(sync_result)
         self.db.commit()
@@ -658,7 +658,7 @@ class BudgetService:
             existing.currency = currency
             existing.utilization_percentage = utilization
             existing.etag = etag
-            existing.last_synced_at = datetime.utcnow()
+            existing.last_synced_at = datetime.now(UTC)
             existing.update_status()
 
             result = "updated"
@@ -680,7 +680,7 @@ class BudgetService:
                 utilization_percentage=utilization,
                 azure_budget_id=azure_id,
                 etag=etag,
-                last_synced_at=datetime.utcnow(),
+                last_synced_at=datetime.now(UTC),
             )
             budget.update_status()
             self.db.add(budget)
@@ -753,7 +753,7 @@ class BudgetService:
 
                         # Update threshold trigger count
                         threshold.trigger_count += 1
-                        threshold.last_triggered_at = datetime.utcnow()
+                        threshold.last_triggered_at = datetime.now(UTC)
 
         self.db.commit()
         return alerts_triggered

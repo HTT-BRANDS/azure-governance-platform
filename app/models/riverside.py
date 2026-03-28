@@ -4,7 +4,7 @@ Database models for tracking Riverside Company compliance requirements
 with the July 8, 2026 deadline across HTT, BCC, FN, TLL tenants plus DCE standalone.
 """
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
@@ -65,9 +65,9 @@ class RiversideCompliance(Base):
     requirements_completed: Mapped[int] = mapped_column(Integer, default=0)
     requirements_total: Mapped[int] = mapped_column(Integer, default=0)
     last_assessment_date: Mapped[datetime | None] = mapped_column(DateTime)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Indexes for frequently queried fields
@@ -107,7 +107,7 @@ class RiversideMFA(Base):
     admin_mfa_percentage: Mapped[float] = mapped_column(default=0.0)
     unprotected_users: Mapped[int] = mapped_column(Integer, default=0)
     snapshot_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     # Indexes for frequently queried fields
     __table_args__ = (
@@ -153,9 +153,9 @@ class RiversideRequirement(Base):
     due_date: Mapped[date | None] = mapped_column(Date)
     completed_date: Mapped[date | None] = mapped_column(Date)
     owner: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Indexes for frequently queried fields

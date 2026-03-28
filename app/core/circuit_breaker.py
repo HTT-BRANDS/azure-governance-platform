@@ -2,9 +2,9 @@
 
 import logging
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
 from functools import wraps
 from typing import TypeVar
@@ -64,7 +64,7 @@ class CircuitBreaker:
         self._state = CircuitState.CLOSED
         self._failure_count = 0
         self._success_count = 0
-        self._last_failure_time: datetime | None = None
+        self._last_failure_time: float | None = None
         self._lock = threading.RLock()
 
     @property
@@ -95,7 +95,7 @@ class CircuitBreaker:
         """Check if enough time has passed to attempt recovery."""
         if self._last_failure_time is None:
             return False
-        elapsed = (datetime.utcnow() - self._last_failure_time).total_seconds()
+        elapsed = time.monotonic() - self._last_failure_time
         return elapsed >= self.config.recovery_timeout
 
     def record_success(self) -> None:
@@ -121,7 +121,7 @@ class CircuitBreaker:
         """Record a failed call."""
         with self._lock:
             self._failure_count += 1
-            self._last_failure_time = datetime.utcnow()
+            self._last_failure_time = time.monotonic()
 
             if self._state == CircuitState.HALF_OPEN:
                 # Any failure in half-open state opens the circuit again

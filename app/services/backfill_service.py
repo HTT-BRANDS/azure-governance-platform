@@ -15,7 +15,7 @@ import logging
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TypeVar
 
 from azure.core.exceptions import HttpResponseError
@@ -284,7 +284,7 @@ class CostDataProcessor(BackfillProcessor):
                             "resource_group": (str(row[3]) if len(row) > 3 and row[3] else None),
                             "service_name": (str(row[4]) if len(row) > 4 and row[4] else None),
                             "meter_category": None,
-                            "synced_at": datetime.utcnow(),
+                            "synced_at": datetime.now(UTC),
                         }
                     )
             except HttpResponseError as e:
@@ -334,7 +334,7 @@ class IdentityDataProcessor(BackfillProcessor):
                 logger.warning(f"Identity backfill: could not fetch MFA status: {e}")
 
             # Calculate active/stale users
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             stale_30d = now - timedelta(days=30)
             stale_90d = now - timedelta(days=90)
             active_count = 0
@@ -383,7 +383,7 @@ class IdentityDataProcessor(BackfillProcessor):
                     "stale_accounts_30d": stale_30d_count,
                     "stale_accounts_90d": stale_90d_count,
                     "service_principals": len(service_principals),
-                    "synced_at": datetime.utcnow(),
+                    "synced_at": datetime.now(UTC),
                 }
             ]
             logger.info(f"Identity backfill: {len(users)} users for {date.date()}")
@@ -453,7 +453,7 @@ class ComplianceDataProcessor(BackfillProcessor):
                         "compliant_resources": compliant,
                         "non_compliant_resources": non_compliant,
                         "exempt_resources": exempt,
-                        "synced_at": datetime.utcnow(),
+                        "synced_at": datetime.now(UTC),
                     }
                 )
             except HttpResponseError as e:
@@ -552,7 +552,7 @@ class ResourcesDataProcessor(BackfillProcessor):
                             "tags_json": tags_json,
                             "is_orphaned": is_orphaned,
                             "estimated_monthly_cost": None,
-                            "synced_at": datetime.utcnow(),
+                            "synced_at": datetime.now(UTC),
                         }
                     )
             except HttpResponseError as e:

@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from azure.core.exceptions import HttpResponseError
 
@@ -27,7 +27,7 @@ async def sync_resources():
     in the Resource model. Detects orphaned resources based on
     provisioning state and activity patterns.
     """
-    logger.info(f"Starting resource sync at {datetime.utcnow()}")
+    logger.info(f"Starting resource sync at {datetime.now(UTC)}")
 
     total_synced = 0
     total_errors = 0
@@ -175,7 +175,7 @@ async def sync_resources():
                                         existing.is_orphaned = is_orphaned
                                         if estimated_cost is not None:
                                             existing.estimated_monthly_cost = estimated_cost
-                                        existing.synced_at = datetime.utcnow()
+                                        existing.synced_at = datetime.now(UTC)
                                     else:
                                         # Create new resource
                                         new_resource = Resource(
@@ -191,7 +191,7 @@ async def sync_resources():
                                             tags_json=tags_json,
                                             is_orphaned=is_orphaned,
                                             estimated_monthly_cost=estimated_cost,
-                                            synced_at=datetime.utcnow(),
+                                            synced_at=datetime.now(UTC),
                                         )
                                         db.add(new_resource)
 

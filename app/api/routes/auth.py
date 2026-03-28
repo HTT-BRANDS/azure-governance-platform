@@ -10,7 +10,7 @@ import hmac
 import logging
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -221,7 +221,7 @@ async def login(
         expires_in=settings.jwt_access_token_expire_minutes * 60,
     )
 
-    return create_token_response_with_cookies(token_response, request)
+    return create_token_response_with_cookies(token_response, http_request)
 
 
 @router.post("/token", response_model=TokenResponse)
@@ -334,7 +334,7 @@ async def _handle_refresh_token(
             expires_in=settings.jwt_access_token_expire_minutes * 60,
         )
 
-        return create_token_response_with_cookies(token_response, request)
+        return create_token_response_with_cookies(token_response, http_request)
 
     except HTTPException:
         raise
@@ -643,7 +643,7 @@ async def azure_oauth_callback(
         expires_in=settings.jwt_access_token_expire_minutes * 60,
     )
 
-    return create_token_response_with_cookies(token_response, request)
+    return create_token_response_with_cookies(token_response, http_request)
 
 
 async def _sync_user_tenant_mappings(db: Session, token_data: TokenData) -> list[str]:
@@ -703,7 +703,7 @@ async def _sync_user_tenant_mappings(db: Session, token_data: TokenData) -> list
                     is_active=True,
                     can_view_costs=True,
                     granted_by="azure_ad_sync",
-                    granted_at=datetime.utcnow(),
+                    granted_at=datetime.now(UTC),
                 )
                 db.add(mapping)
                 db.commit()
