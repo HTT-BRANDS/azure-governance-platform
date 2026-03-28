@@ -7,7 +7,7 @@ Builds on the existing CostSnapshot / Tenant data model used by CostService.
 import csv
 import io
 import logging
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -245,7 +245,7 @@ class ChargebackService:
         return ChargebackReport(
             period_start=start_date,
             period_end=end_date,
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(UTC),
             tenants=entries,
             total_cost=round(grand_total, 4),
             currency="USD",

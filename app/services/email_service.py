@@ -10,7 +10,7 @@ is sanitized from log output.
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from enum import StrEnum
@@ -304,7 +304,7 @@ def render_email_template(
         Tuple of (plain_text, html_content)
     """
     theme = get_severity_colors(severity)
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
     # Build plain text version
     plain_text = f"""{subject}

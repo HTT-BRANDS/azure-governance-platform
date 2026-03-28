@@ -8,7 +8,7 @@ SECURITY: Webhook URLs are never logged and sanitized from all output.
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -129,7 +129,7 @@ def create_adaptive_card(card: TeamsCard) -> dict[str, Any]:
         Adaptive Card JSON payload
     """
     theme = get_severity_theme(card.severity)
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     icon_url = get_alert_icon(card.alert_type)
 
     # Build card body

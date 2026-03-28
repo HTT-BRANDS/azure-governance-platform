@@ -11,7 +11,7 @@ Usage::
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -56,7 +56,7 @@ class RetentionService:
     def cleanup_table(self, model, date_col, table_name: str) -> int:
         """Delete records older than the configured retention period."""
         days = self.retention.get(table_name, 365)
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(UTC) - timedelta(days=days)
         count = (
             self.db.query(model)
             .filter(date_col < cutoff)

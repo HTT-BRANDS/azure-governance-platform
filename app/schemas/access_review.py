@@ -10,7 +10,7 @@ Data models for:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -75,7 +75,7 @@ class AccessReview(BaseModel):
         description="Review status: pending | approved | revoked",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When the review was created",
     )
     resolved_at: datetime | None = Field(

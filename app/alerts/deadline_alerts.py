@@ -12,7 +12,7 @@ to track requirement statuses across tenants.
 
 import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -117,7 +117,7 @@ class DeadlineTrackingResult:
     high_count: int = 0
     critical_count: int = 0
     overdue_count: int = 0
-    checked_at: datetime = field(default_factory=datetime.utcnow)
+    checked_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class DeadlineTracker:
