@@ -123,7 +123,10 @@ class DKIMRecord(Base):
         """Days since last key rotation."""
         if not self.last_rotated:
             return None
-        return (datetime.now(UTC) - self.last_rotated).days
+        last = self.last_rotated
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=UTC)
+        return (datetime.now(UTC) - last).days
 
     @property
     def is_key_stale(self) -> bool:

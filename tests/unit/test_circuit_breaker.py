@@ -1,6 +1,5 @@
 """Unit tests for circuit breaker module."""
 
-from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -148,8 +147,8 @@ class TestCircuitBreakerOpenState:
         assert hasattr(exc_info.value, "breaker_name")
         assert exc_info.value.breaker_name == "my_circuit"
 
-    @patch("app.core.circuit_breaker.datetime")
-    def test_transitions_to_half_open_after_recovery_timeout(self, mock_datetime):
+    @patch("app.core.circuit_breaker.time")
+    def test_transitions_to_half_open_after_recovery_timeout(self, mock_time):
         """Test that circuit transitions to HALF_OPEN after recovery timeout."""
         config = CircuitBreakerConfig(
             failure_threshold=2,
@@ -157,9 +156,8 @@ class TestCircuitBreakerOpenState:
         )
         breaker = CircuitBreaker(name="test_breaker", config=config)
 
-        # Set initial time
-        initial_time = datetime(2025, 1, 1, 12, 0, 0)
-        mock_datetime.utcnow.return_value = initial_time
+        # Set initial time (monotonic returns float seconds)
+        mock_time.monotonic.return_value = 1000.0
 
         # Open the circuit
         for _ in range(2):
@@ -168,14 +166,14 @@ class TestCircuitBreakerOpenState:
         assert breaker.state == CircuitState.OPEN
 
         # Advance time by 30 seconds (less than recovery timeout)
-        mock_datetime.utcnow.return_value = initial_time + timedelta(seconds=30)
+        mock_time.monotonic.return_value = 1030.0
 
         # Circuit should still be OPEN and reject calls
         assert breaker.can_execute() is False
         assert breaker.state == CircuitState.OPEN
 
         # Advance time by 60+ seconds (past recovery timeout)
-        mock_datetime.utcnow.return_value = initial_time + timedelta(seconds=61)
+        mock_time.monotonic.return_value = 1061.0
 
         # Circuit should transition to HALF_OPEN on next check
         assert breaker.can_execute() is True
@@ -185,8 +183,8 @@ class TestCircuitBreakerOpenState:
 class TestCircuitBreakerHalfOpenState:
     """Test circuit breaker behavior in HALF_OPEN state."""
 
-    @patch("app.core.circuit_breaker.datetime")
-    def test_half_open_to_closed_after_success_threshold(self, mock_datetime):
+    @patch("app.core.circuit_breaker.time")
+    def test_half_open_to_closed_after_success_threshold(self, mock_time):
         """Test that circuit transitions from HALF_OPEN to CLOSED after success threshold."""
         config = CircuitBreakerConfig(
             failure_threshold=2,
@@ -196,15 +194,14 @@ class TestCircuitBreakerHalfOpenState:
         breaker = CircuitBreaker(name="test_breaker", config=config)
 
         # Set initial time and open the circuit
-        initial_time = datetime(2025, 1, 1, 12, 0, 0)
-        mock_datetime.utcnow.return_value = initial_time
+        mock_time.monotonic.return_value = 1000.0
         for _ in range(2):
             breaker.record_failure()
 
         assert breaker.state == CircuitState.OPEN
 
         # Advance time to trigger HALF_OPEN state
-        mock_datetime.utcnow.return_value = initial_time + timedelta(seconds=61)
+        mock_time.monotonic.return_value = 1061.0
         breaker.can_execute()  # This transitions to HALF_OPEN
 
         assert breaker.state == CircuitState.HALF_OPEN
@@ -222,8 +219,8 @@ class TestCircuitBreakerHalfOpenState:
         assert breaker.state == CircuitState.CLOSED
         assert breaker.is_closed is True
 
-    @patch("app.core.circuit_breaker.datetime")
-    def test_half_open_to_open_on_failure(self, mock_datetime):
+    @patch("app.core.circuit_breaker.time")
+    def test_half_open_to_open_on_failure(self, mock_time):
         """Test that circuit transitions from HALF_OPEN to OPEN on any failure."""
         config = CircuitBreakerConfig(
             failure_threshold=2,
@@ -233,13 +230,12 @@ class TestCircuitBreakerHalfOpenState:
         breaker = CircuitBreaker(name="test_breaker", config=config)
 
         # Set initial time and open the circuit
-        initial_time = datetime(2025, 1, 1, 12, 0, 0)
-        mock_datetime.utcnow.return_value = initial_time
+        mock_time.monotonic.return_value = 1000.0
         for _ in range(2):
             breaker.record_failure()
 
         # Transition to HALF_OPEN
-        mock_datetime.utcnow.return_value = initial_time + timedelta(seconds=61)
+        mock_time.monotonic.return_value = 1061.0
         breaker.can_execute()
 
         assert breaker.state == CircuitState.HALF_OPEN
@@ -255,20 +251,19 @@ class TestCircuitBreakerHalfOpenState:
         assert breaker.state == CircuitState.OPEN
         assert breaker.is_open is True
 
-    @patch("app.core.circuit_breaker.datetime")
-    def test_half_open_allows_call_execution(self, mock_datetime):
+    @patch("app.core.circuit_breaker.time")
+    def test_half_open_allows_call_execution(self, mock_time):
         """Test that calls are allowed in HALF_OPEN state."""
         config = CircuitBreakerConfig(failure_threshold=2, recovery_timeout=60.0)
         breaker = CircuitBreaker(name="test_breaker", config=config)
 
         # Open the circuit
-        initial_time = datetime(2025, 1, 1, 12, 0, 0)
-        mock_datetime.utcnow.return_value = initial_time
+        mock_time.monotonic.return_value = 1000.0
         for _ in range(2):
             breaker.record_failure()
 
         # Transition to HALF_OPEN
-        mock_datetime.utcnow.return_value = initial_time + timedelta(seconds=61)
+        mock_time.monotonic.return_value = 1061.0
         breaker.can_execute()
 
         # Should allow execution in HALF_OPEN state
@@ -430,8 +425,8 @@ class TestCircuitBreakerEdgeCases:
         assert breaker._failure_count == 15
         assert breaker.state == CircuitState.OPEN
 
-    @patch("app.core.circuit_breaker.datetime")
-    def test_multiple_recovery_attempts(self, mock_datetime):
+    @patch("app.core.circuit_breaker.time")
+    def test_multiple_recovery_attempts(self, mock_time):
         """Test multiple recovery attempts after repeated failures."""
         config = CircuitBreakerConfig(
             failure_threshold=2,
@@ -440,8 +435,7 @@ class TestCircuitBreakerEdgeCases:
         )
         breaker = CircuitBreaker(name="test_breaker", config=config)
 
-        initial_time = datetime(2025, 1, 1, 12, 0, 0)
-        mock_datetime.utcnow.return_value = initial_time
+        mock_time.monotonic.return_value = 1000.0
 
         # First failure cycle
         for _ in range(2):
@@ -449,7 +443,7 @@ class TestCircuitBreakerEdgeCases:
         assert breaker.state == CircuitState.OPEN
 
         # First recovery attempt
-        mock_datetime.utcnow.return_value = initial_time + timedelta(seconds=61)
+        mock_time.monotonic.return_value = 1061.0
         breaker.can_execute()
         assert breaker.state == CircuitState.HALF_OPEN
 
@@ -458,7 +452,7 @@ class TestCircuitBreakerEdgeCases:
         assert breaker.state == CircuitState.OPEN
 
         # Second recovery attempt
-        mock_datetime.utcnow.return_value = initial_time + timedelta(seconds=122)
+        mock_time.monotonic.return_value = 1122.0
         breaker.can_execute()
         assert breaker.state == CircuitState.HALF_OPEN
 

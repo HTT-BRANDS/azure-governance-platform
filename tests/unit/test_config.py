@@ -11,6 +11,19 @@ import pytest
 
 from app.core.config import Settings, get_settings
 
+
+@pytest.fixture(autouse=True)
+def _default_dev_env(monkeypatch):
+    """Default to development environment for config tests.
+
+    Prevents shell-level DEBUG=true from colliding with the
+    Settings default of environment='production'.
+    Tests that explicitly test production behavior override
+    this with their own monkeypatch.setenv("ENVIRONMENT", "production").
+    """
+    monkeypatch.setenv("ENVIRONMENT", "development")
+
+
 # ============================================================================
 # Settings Initialization Tests
 # ============================================================================

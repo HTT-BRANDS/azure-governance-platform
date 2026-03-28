@@ -151,7 +151,10 @@ class IdentityService:
 
         # No recent sign-in = potential stale account
         if user.last_sign_in:
-            days_since_signin = (datetime.now(UTC) - user.last_sign_in).days
+            _last_sign_in = user.last_sign_in
+            if _last_sign_in.tzinfo is None:
+                _last_sign_in = _last_sign_in.replace(tzinfo=UTC)
+            days_since_signin = (datetime.now(UTC) - _last_sign_in).days
             if days_since_signin > 30:
                 risk_score += 1
             if days_since_signin > 90:

@@ -108,7 +108,7 @@ class AccessReviewService:
         # Graph returns e.g. "2024-01-15T10:30:00Z"
         value = value.rstrip("Z")
         try:
-            return datetime.fromisoformat(value).replace(tzinfo=None)
+            return datetime.fromisoformat(value).replace(tzinfo=UTC)
         except (ValueError, TypeError):
             return None
 
@@ -117,6 +117,8 @@ class AccessReviewService:
         """Return True if *last_sign_in* is None or older than STALE_THRESHOLD_DAYS."""
         if last_sign_in is None:
             return True
+        if last_sign_in.tzinfo is None:
+            last_sign_in = last_sign_in.replace(tzinfo=UTC)
         threshold = datetime.now(UTC) - timedelta(days=STALE_THRESHOLD_DAYS)
         return last_sign_in < threshold
 
@@ -125,6 +127,8 @@ class AccessReviewService:
         """Return days since *last_sign_in*; None when last_sign_in is None (never signed in)."""
         if last_sign_in is None:
             return None
+        if last_sign_in.tzinfo is None:
+            last_sign_in = last_sign_in.replace(tzinfo=UTC)
         delta = datetime.now(UTC) - last_sign_in
         return max(0, delta.days)
 
