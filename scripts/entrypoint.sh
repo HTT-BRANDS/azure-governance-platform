@@ -39,8 +39,17 @@ fi
 
 # 3 — Optionally seed reference data (run once on fresh deployments)
 if [ "${SEED_ON_STARTUP:-false}" = "true" ]; then
-    echo "--- SEED_ON_STARTUP=true: Seeding Riverside tenants ---"
-    if python scripts/seed_riverside_tenants.py; then
+    SEED_ARGS=""
+    if [ "${SEED_RESET_ALL:-false}" = "true" ]; then
+        SEED_ARGS="--reset-all"
+        echo "--- SEED_ON_STARTUP=true, SEED_RESET_ALL=true: Seeding (purge + recreate) ---"
+    elif [ "${SEED_RESET:-false}" = "true" ]; then
+        SEED_ARGS="--reset"
+        echo "--- SEED_ON_STARTUP=true, SEED_RESET=true: Seeding (reset mode) ---"
+    else
+        echo "--- SEED_ON_STARTUP=true: Seeding Riverside tenants ---"
+    fi
+    if python scripts/seed_riverside_tenants.py ${SEED_ARGS}; then
         echo "--- Seed complete ---"
     else
         echo "WARNING: Seed script failed - app will still start"

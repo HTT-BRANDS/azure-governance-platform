@@ -46,7 +46,7 @@ def _build_tenant_record(config) -> dict:
     }
 
 
-def seed(dry_run: bool = False, reset: bool = False) -> None:
+def seed(dry_run: bool = False, reset: bool = False, reset_all: bool = False) -> None:
     """Upsert all 5 Riverside tenants into the database."""
     init_db()
     db = SessionLocal()
@@ -57,9 +57,27 @@ def seed(dry_run: bool = False, reset: bool = False) -> None:
         deleted = 0
 
         # ------------------------------------------------------------------
+        # Optional reset-all — remove ALL tenant records first.
+        # Use when migrating from placeholder to real tenant IDs.
+        # ------------------------------------------------------------------
+        if reset_all:
+            existing = db.query(Tenant).all()
+            for t in existing:
+                print(
+                    f"  \U0001f5d1  Would delete: {t.name} ({t.tenant_id})"
+                    if dry_run
+                    else f"  \U0001f5d1  Deleting: {t.name} ({t.tenant_id})"
+                )
+                if not dry_run:
+                    db.delete(t)
+                deleted += 1
+            if not dry_run:
+                db.commit()
+
+        # ------------------------------------------------------------------
         # Optional reset — remove existing Riverside records first
         # ------------------------------------------------------------------
-        if reset:
+        elif reset:
             riverside_tenant_ids = [c.tenant_id for c in RIVERSIDE_TENANTS.values()]
             existing = db.query(Tenant).filter(Tenant.tenant_id.in_(riverside_tenant_ids)).all()
             for t in existing:
@@ -114,7 +132,7 @@ def seed(dry_run: bool = False, reset: bool = False) -> None:
             print("  ── DRY RUN — no changes committed ──")
         print(f"  Created : {created}")
         print(f"  Updated : {updated}")
-        if reset:
+        if reset or reset_all:
             print(f"  Deleted : {deleted}")
 
         if not dry_run:
@@ -141,13 +159,19 @@ def main() -> None:
         action="store_true",
         help="Delete existing Riverside tenant records before re-creating them.",
     )
+    parser.add_argument(
+        "--reset-all",
+        action="store_true",
+        help="Delete ALL tenant records before re-creating from config. "
+        "Use when migrating from placeholder to real tenant IDs.",
+    )
     args = parser.parse_args()
 
     print("🌱 Seeding Riverside tenants...")
-    print(f"   dry_run={args.dry_run}  reset={args.reset}")
+    print(f"   dry_run={args.dry_run}  reset={args.reset}  reset_all={args.reset_all}")
     print()
 
-    seed(dry_run=args.dry_run, reset=args.reset)
+    seed(dry_run=args.dry_run, reset=args.reset, reset_all=args.reset_all)
 
     print()
     print("✅ Done!")
