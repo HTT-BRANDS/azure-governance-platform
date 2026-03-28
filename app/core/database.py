@@ -330,25 +330,32 @@ def bulk_insert_chunks(
     return total_inserted
 
 
+# Allowed table names — explicit whitelist prevents SQL injection
+# even if this list is ever dynamically populated in the future.
+ALLOWED_STAT_TABLES = frozenset({
+    "cost_snapshots",
+    "cost_anomalies",
+    "compliance_snapshots",
+    "policy_states",
+    "identity_snapshots",
+    "privileged_users",
+    "sync_jobs",
+    "tenants",
+})
+
+
 def get_db_stats(db: Session) -> dict[str, Any]:
     """Get database statistics for monitoring."""
     stats = {}
 
-    # Table counts
-    tables = [
-        "resources",
-        "cost_snapshots",
-        "cost_anomalies",
-        "compliance_snapshots",
-        "policy_states",
-        "identity_snapshots",
-        "privileged_users",
-        "sync_jobs",
-        "tenants",
-    ]
-
-    for table in tables:
+    for table in ALLOWED_STAT_TABLES:
+        if table not in ALLOWED_STAT_TABLES:
+            logger.warning(f"Skipping unknown table in get_db_stats: {table}")
+            continue
         try:
+            # SECURITY: table name is validated against ALLOWED_STAT_TABLES whitelist above.
+            # SQLAlchemy text() does not support table name parameterization,
+            # so whitelist validation is the correct mitigation.
             result = db.execute(text(f"SELECT COUNT(*) FROM {table}"))
             stats[f"{table}_count"] = result.scalar()
         except Exception:
