@@ -353,8 +353,23 @@ class Settings(BaseSettings):
 
     @property
     def allowed_redirect_uris(self) -> set[str]:
-        """Parse comma-separated redirect URIs into a set for O(1) lookup."""
-        return {uri.strip() for uri in self.allowed_redirect_uris_str.split(",") if uri.strip()}
+        """Parse comma-separated redirect URIs into a set for O(1) lookup.
+
+        Auto-includes the Azure App Service hostname if WEBSITE_HOSTNAME is set,
+        preventing misconfigured ALLOWED_REDIRECT_URIS from breaking login.
+        """
+        uris = {uri.strip() for uri in self.allowed_redirect_uris_str.split(",") if uri.strip()}
+
+        # Azure App Service always sets WEBSITE_HOSTNAME — auto-include it
+        import os
+
+        hostname = os.environ.get("WEBSITE_HOSTNAME")
+        if hostname:
+            base = f"https://{hostname}"
+            uris.add(f"{base}/login")
+            uris.add(f"{base}/auth/callback")
+
+        return uris
 
     @property
     def is_production(self) -> bool:
