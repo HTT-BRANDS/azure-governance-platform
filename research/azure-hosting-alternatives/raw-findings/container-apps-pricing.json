@@ -1,0 +1,64 @@
+{
+  "source": "https://azure.microsoft.com/en-us/pricing/details/container-apps/",
+  "retrieved": "2026-03-27",
+  "region": "Central US",
+  "currency": "USD",
+
+  "consumption_plan": {
+    "free_grants_per_subscription_per_month": {
+      "vcpu_seconds": 180000,
+      "gib_seconds": 360000,
+      "http_requests": 2000000
+    },
+
+    "active_usage_rates": {
+      "vcpu_per_second": 0.000024,
+      "memory_gib_per_second": 0.000003
+    },
+
+    "idle_usage_rates": {
+      "vcpu_per_second": 0.000003,
+      "memory_gib_per_second": 0.000003,
+      "note": "Idle rate applies when minReplicas >= 1 and replica is not processing requests"
+    },
+
+    "request_rates": {
+      "per_million_requests": 0.40,
+      "free_requests_per_month": 2000000
+    },
+
+    "savings_plan_discounts": {
+      "1_year": "~15% savings",
+      "3_year": "~17% savings"
+    }
+  },
+
+  "dedicated_plan": {
+    "management_per_hour": 0.10,
+    "vcpu_per_hour": 0.0571,
+    "memory_gib_per_hour": 0.0050,
+    "note": "Management charge applies for private endpoints and planned maintenance features"
+  },
+
+  "scale_to_zero": {
+    "confirmed": true,
+    "official_quote": "When a revision is scaled to zero replicas, no resource consumption charges are incurred.",
+    "source": "https://learn.microsoft.com/en-us/azure/container-apps/billing"
+  },
+
+  "scale_behavior": {
+    "polling_interval_seconds": 30,
+    "cool_down_period_seconds": 300,
+    "scale_up_stabilization_window_seconds": 0,
+    "scale_down_stabilization_window_seconds": 300,
+    "default_min_replicas": 0,
+    "default_max_replicas": 10,
+    "max_configurable_replicas": 1000
+  },
+
+  "active_billing_threshold": {
+    "vcpu_above": 0.01,
+    "data_received_above_bytes_per_second": 1000,
+    "note": "A replica is active when vCPU usage is above 0.01 cores or data received above 1000 bytes/sec"
+  }
+}

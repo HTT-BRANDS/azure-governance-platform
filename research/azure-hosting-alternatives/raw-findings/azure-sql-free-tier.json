@@ -1,0 +1,72 @@
+{
+  "source": "https://learn.microsoft.com/en-us/azure/azure-sql/database/free-offer",
+  "retrieved": "2026-03-27",
+  "last_updated": "2026-03-18",
+
+  "free_tier_offer": {
+    "compute": {
+      "model": "General Purpose Serverless",
+      "max_vcores": 4,
+      "free_vcores_seconds_per_month": 100000,
+      "equivalent_hours": 27.8,
+      "note": "100,000 vCore seconds = ~27.8 hours of continuous 1 vCore"
+    },
+
+    "storage": {
+      "max_data_size_gb": 32,
+      "backup_storage_free_gb": 32,
+      "backup_redundancy": "LRS only (no geo-redundancy)"
+    },
+
+    "limits": {
+      "max_databases_per_subscription": 10,
+      "pitr_retention_days": 7,
+      "long_term_retention": false,
+      "elastic_pools": false,
+      "failover_groups": false,
+      "data_sync": false,
+      "elastic_jobs": false,
+      "dns_alias": false
+    },
+
+    "behavior_when_limit_reached": {
+      "option_1": {
+        "name": "Auto-pause the database until next month",
+        "description": "Database pauses when vCore or storage limits hit. Resumes next calendar month.",
+        "reversible": true
+      },
+      "option_2": {
+        "name": "Continue using database for additional charges",
+        "description": "Charges standard GP serverless rates for usage beyond free limits.",
+        "reversible": false,
+        "note": "Cannot revert to auto-pause option once selected"
+      }
+    },
+
+    "auto_pause_behavior": {
+      "triggers_pause": [
+        "Number of sessions = 0",
+        "CPU = 0 for user workload"
+      ],
+      "auto_resume_latency": "~1 minute (official documentation)",
+      "auto_pause_latency": "1-10 minutes",
+      "error_on_resume": {
+        "code": 40613,
+        "description": "Database is unavailable (resuming from pause)",
+        "action": "Retry the connection"
+      },
+      "official_quote": "The latency is generally in the order of one minute to auto-resume and 1-10 minutes to auto-pause."
+    }
+  },
+
+  "this_workload_analysis": {
+    "estimated_queries_per_day": 1000,
+    "avg_query_duration_seconds": 0.05,
+    "daily_vcore_seconds": 50,
+    "monthly_vcore_seconds": 1500,
+    "percent_of_free_allowance": 1.5,
+    "database_size_mb": 6.25,
+    "percent_of_storage_limit": 0.02,
+    "verdict": "Free tier is wildly sufficient. Even at 10x growth, only 15% of allowance used."
+  }
+}
