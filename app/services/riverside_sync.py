@@ -247,11 +247,23 @@ async def sync_all_tenants(
 
                     # Check if ALL enabled sync ops failed for this tenant
                     tenant_failed = True
-                    if include_mfa and tenant_results["mfa"] and tenant_results["mfa"].get("status") != "error":
+                    if (
+                        include_mfa
+                        and tenant_results["mfa"]
+                        and tenant_results["mfa"].get("status") != "error"
+                    ):
                         tenant_failed = False
-                    if include_requirements and tenant_results["requirements"] and tenant_results["requirements"].get("status") != "error":
+                    if (
+                        include_requirements
+                        and tenant_results["requirements"]
+                        and tenant_results["requirements"].get("status") != "error"
+                    ):
                         tenant_failed = False
-                    if include_maturity and tenant_results["maturity"] and tenant_results["maturity"].get("status") != "error":
+                    if (
+                        include_maturity
+                        and tenant_results["maturity"]
+                        and tenant_results["maturity"].get("status") != "error"
+                    ):
                         tenant_failed = False
 
                     if tenant_failed:
@@ -282,7 +294,9 @@ async def sync_all_tenants(
             monitoring.complete_sync_job(
                 log_id=log_id,
                 status=status,
-                error_message="; ".join(e["error"][:100] for e in progress.errors) if progress.errors else None,
+                error_message="; ".join(e["error"][:100] for e in progress.errors)
+                if progress.errors
+                else None,
                 final_records={
                     "records_processed": progress.completed + progress.failed,
                     "errors_count": progress.failed,
