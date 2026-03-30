@@ -339,9 +339,12 @@ async def detailed_health_check():
     blacklist_backend = get_blacklist_backend()
     components["token_blacklist"] = blacklist_backend
 
+    # Valid non-error states: explicit health statuses, booleans, and backend names
+    _healthy_values = {"healthy", "running", "memory", "redis", True}
+
     return {
         "status": "healthy"
-        if all(v in ("healthy", "running", True) for v in components.values())
+        if all(v in _healthy_values for v in components.values())
         else "degraded",
         "version": settings.app_version,
         "components": components,
