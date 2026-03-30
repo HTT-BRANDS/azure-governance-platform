@@ -117,6 +117,10 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
 
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.69.3
+
       - name: Trivy filesystem scan (table — debug)
         run: |
           trivy fs . \
