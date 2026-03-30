@@ -248,13 +248,15 @@ app has admin consent.
 
 ## Calendar Reminders (for Phase A)
 
-Set these now if using client secrets:
+The **single** client secret (on the multi-tenant HTT app) expires **2027-03-04**.
 
 | Event | Date | Action |
 |-------|------|--------|
-| Secret rotation warning | 2027-09-01 | Rotate all 5 client secrets |
-| Secret expiry | 2028-03-31 | HARD DEADLINE — secrets expire |
 | Phase B evaluation | 2026-07-01 | Decide if multi-tenant app migration is worth it |
+| Secret rotation warning | 2027-01-04 | Rotate the client secret (60 days before expiry) |
+| **Secret expiry** | **2027-03-04** | **HARD DEADLINE — production outage if not rotated** |
+
+> **Better:** Set up Azure Key Vault expiry notifications via Action Group instead of calendar reminders.
 
 ---
 

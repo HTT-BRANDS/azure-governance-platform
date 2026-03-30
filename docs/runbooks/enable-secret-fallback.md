@@ -5,6 +5,11 @@
 **Time Required:** 30-60 minutes
 **Prerequisite:** Azure portal access + Global Admin in each tenant
 
+> **STATUS (2026-03-31):** Steps 1-5 are COMPLETE for HTT, BCC, FN, TLL.
+> Data is syncing hourly. Only **DCE needs admin consent re-grant**:
+> `https://login.microsoftonline.com/ce62e17d-2feb-4e67-a115-8ea4af68da30/adminconsent?client_id=1e3e8417-49f1-4d08-b7be-47045d8a12e9`
+> The multi-tenant app with a single client secret is used for ALL tenants.
+
 ---
 
 ## Why This Runbook Exists
