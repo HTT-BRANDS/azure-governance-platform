@@ -7,6 +7,12 @@
 # This resolves security audit finding LOW-1 (reconnaissance aid).
 #
 # The UUIDs below are valid-format PLACEHOLDERS — replace with your real values.
+#
+# Authentication modes:
+#   oidc_enabled: true   → OIDC Workload Identity Federation (zero secrets)
+#   oidc_enabled: false  → Client secret via Key Vault (key_vault_secret_name required)
+#
+# See docs/AUTH_TRANSITION_ROADMAP.md for migration guidance.
 
 tenants:
   HTT:
@@ -15,12 +21,13 @@ tenants:
     tenant_id: "00000000-0000-4000-a000-000000000001"
     app_id: "00000000-0000-4000-b000-000000000001"
     admin_email: "admin@example-htt.com"
+    key_vault_secret_name: "htt-client-secret"  # pragma: allowlist secret
     domains:
       - "example-htt.com"
     is_active: true
     is_riverside: true
     priority: 1
-    oidc_enabled: true
+    oidc_enabled: false
 
   BCC:
     name: "Bishops (BCC)"
@@ -28,12 +35,13 @@ tenants:
     tenant_id: "00000000-0000-4000-a000-000000000002"
     app_id: "00000000-0000-4000-b000-000000000002"
     admin_email: "admin@example-bcc.com"
+    key_vault_secret_name: "bcc-client-secret"  # pragma: allowlist secret
     domains:
       - "example-bcc.com"
     is_active: true
     is_riverside: true
     priority: 2
-    oidc_enabled: true
+    oidc_enabled: false
 
   FN:
     name: "Frenchies (FN)"
@@ -41,12 +49,13 @@ tenants:
     tenant_id: "00000000-0000-4000-a000-000000000003"
     app_id: "00000000-0000-4000-b000-000000000003"
     admin_email: "admin@example-fn.com"
+    key_vault_secret_name: "fn-client-secret"  # pragma: allowlist secret
     domains:
       - "example-fn.com"
     is_active: true
     is_riverside: true
     priority: 3
-    oidc_enabled: true
+    oidc_enabled: false
 
   TLL:
     name: "Lash Lounge (TLL)"
@@ -54,12 +63,13 @@ tenants:
     tenant_id: "00000000-0000-4000-a000-000000000004"
     app_id: "00000000-0000-4000-b000-000000000004"
     admin_email: "admin@example-tll.com"
+    key_vault_secret_name: "tll-client-secret"  # pragma: allowlist secret
     domains:
       - "example-tll.com"
     is_active: true
     is_riverside: true
     priority: 4
-    oidc_enabled: true
+    oidc_enabled: false
 
   DCE:
     name: "Delta Crown Extensions (DCE)"
@@ -67,9 +77,10 @@ tenants:
     tenant_id: "00000000-0000-4000-a000-000000000005"
     app_id: "00000000-0000-4000-b000-000000000005"
     admin_email: "admin@example-dce.com"
+    key_vault_secret_name: "dce-client-secret"  # pragma: allowlist secret
     domains:
       - "example-dce.com"
     is_active: true
     is_riverside: true
     priority: 5
-    oidc_enabled: true
+    oidc_enabled: false

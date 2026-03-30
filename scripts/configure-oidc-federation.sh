@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/opt/homebrew/bin/bash
 # ============================================================================
 # OIDC Cross-Tenant Federation Configuration Script
 # ============================================================================
@@ -86,7 +86,7 @@ configure_tenant() {
   
   # Step 1: Login to tenant
   log_info "Logging into ${code} tenant..."
-  if ! az login --tenant "${tenant_id}" 2>/dev/null; then
+  if ! az login --tenant "${tenant_id}" --use-device-code; then
     log_error "Failed to login to ${code} tenant"
     RESULTS[$code]="FAILED (login)"
     return 1

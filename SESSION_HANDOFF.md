@@ -1,16 +1,17 @@
 # Session Handoff — Azure Governance Platform
 
-## Current State (v1.8.0) ✅ FULLY DEPLOYED + HARDENED
+## Current State (v1.8.1) — Auth Transition In Progress
 
-**Date:** 2026-03-27
+**Date:** 2026-03-31
 **Branch:** main (clean, fully pushed)
+**Agent:** code-puppy-eb4bc4
 
 ### Live Environments
 
-| Environment | Version | DB | Scheduler | Cache | Azure |
-|-------------|---------|-------|-----------|-------|-------|
-| **Production** | 1.7.0 ✅ | ✅ healthy | ✅ running | ✅ memory | ✅ configured |
-| **Staging** | 1.7.0 ✅ | ✅ healthy | ✅ running | ✅ memory | ✅ configured |
+| Environment | Version | DB | Scheduler | Cache | Azure Auth |
+|-------------|---------|-------|-----------|-------|------------|
+| **Production** | 1.8.1 ✅ | ✅ healthy | ✅ running | ✅ memory | ⚠️ OIDC broken (AADSTS700236) |
+| **Staging** | 1.7.0 ✅ | ✅ healthy | ✅ running | ✅ memory | ⚠️ Same issue |
 
 ### Security Posture
 
@@ -21,29 +22,54 @@
 | pip-audit CVEs | **0** |
 | Security headers | 7/7 present |
 | Auth wall | All protected endpoints return 401 |
-| CSP nonces | Unique per request |
-| Cookie flags | HttpOnly + Secure + SameSite |
 
-### What Was Fixed This Session
+### Critical Path — Get Real Data Flowing
 
-1. **Production SQL firewall** — `publicNetworkAccess` was `Disabled`, blocking
-   all connections despite 25 App Service IP firewall rules. Re-enabled public
-   access; database now `healthy`.
+**Problem:** `AADSTS700236` — per-tenant OIDC federation is architecturally
+broken. Microsoft prohibits Entra ID-issued tokens as FIC assertions across
+tenants.
 
-2. **25 CodeQL alerts → 0** — All triaged:
-   - 10 HIGH/MEDIUM: Build tools (pip/setuptools/wheel/uv/ecdsa) leaked into
-     production image. Fixed via Dockerfile hardening (RUN rm -rf).
-   - 15 LOW: OS packages in base image (util-linux, ncurses, tar). Dismissed
-     as not exploitable in hardened container context.
+**Solution:** Flip `USE_OIDC_FEDERATION=false` and use client secrets via
+Key Vault. The fallback path is fully implemented and tested.
 
-### Production Deploy Status
-Production deploy triggered with hardened Dockerfile. Staging already
-verified successful (8m1s, all 74 validation tests passed).
+**Runbook:** `docs/runbooks/enable-secret-fallback.md`
+
+**Future roadmap:** `docs/AUTH_TRANSITION_ROADMAP.md`
+- Phase A: Client secrets (immediate fix) ← DO THIS NOW
+- Phase B: Multi-tenant app + single secret (3-6 months)
+- Phase C: UAMI zero-secrets (6-12 months)
+
+### Open Issues (7 total)
+
+| ID | Priority | Type | Title |
+|----|----------|------|-------|
+| `bn7` | P0 | task | Flip USE_OIDC_FEDERATION=false + configure secrets |
+| `oim` | P0 | task | Verify live data flow after auth fix |
+| `70l` | P0 | bug | AADSTS700236 cross-tenant token failure (workaround: bn7) |
+| `yfs` | P2 | task | Phase B: Multi-tenant app registration |
+| `9gl` | P3 | task | Migrate ACR to GHCR |
+| `sun` | P3 | task | Phase C: Zero-secrets via UAMI |
+| `l5i` | P4 | task | Evaluate Azure SQL Free Tier for staging |
+
+### What Was Done This Session
+
+1. **Full codebase analysis** — 65 route/service files, 40 core modules,
+   18 models, 2,975 tests, 239/239 roadmap tasks complete
+2. **Root cause identified** — AADSTS700236 is a platform limitation, not config
+3. **Created runbook** — `docs/runbooks/enable-secret-fallback.md` (step-by-step)
+4. **Created auth transition roadmap** — `docs/AUTH_TRANSITION_ROADMAP.md`
+   (3 phases: secrets → multi-tenant app → UAMI zero-secrets)
+5. **Updated tenants.yaml.example** — shows `oidc_enabled: false` + KV secret pattern
+6. **Filed 3 bd issues** — immediate fix (bn7), Phase B (yfs), Phase C (sun)
 
 ## Quick Resume Commands
+
 ```bash
 cd /Users/tygranlund/dev/azure-governance-platform
+# Follow the runbook to get data flowing:
+cat docs/runbooks/enable-secret-fallback.md
+# Check production health:
 curl -s https://app-governance-prod.azurewebsites.net/health/detailed | python3 -m json.tool
-gh run list --workflow=deploy-production.yml --limit=3
-gh api repos/HTT-BRANDS/azure-governance-platform/code-scanning/alerts --jq '[.[] | select(.state=="open")] | length'
+# View all open issues:
+bd ready
 ```
