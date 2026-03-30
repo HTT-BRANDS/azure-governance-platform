@@ -269,8 +269,8 @@ class ComplianceService:
 
         # Query compliance snapshots within the date range
         query = self.db.query(ComplianceSnapshot).filter(
-            ComplianceSnapshot.snapshot_date >= start_date.date(),
-            ComplianceSnapshot.snapshot_date <= end_date.date(),
+            ComplianceSnapshot.snapshot_date >= start_date,
+            ComplianceSnapshot.snapshot_date <= end_date,
         )
 
         if tenant_ids:

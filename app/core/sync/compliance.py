@@ -28,7 +28,7 @@ async def sync_compliance():
     """
     logger.info(f"Starting compliance sync at {datetime.now(UTC)}")
 
-    snapshot_date = datetime.now(UTC).date()
+    snapshot_date = datetime.now(UTC)
     total_snapshots = 0
     total_policy_states = 0
     total_errors = 0

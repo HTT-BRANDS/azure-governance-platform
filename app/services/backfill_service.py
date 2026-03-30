@@ -447,7 +447,7 @@ class ComplianceDataProcessor(BackfillProcessor):
                     {
                         "tenant_id": self.tenant_id,
                         "subscription_id": sub_id,
-                        "snapshot_date": date.date(),
+                        "snapshot_date": date,
                         "overall_compliance_percent": pct,
                         "secure_score": None,
                         "compliant_resources": compliant,

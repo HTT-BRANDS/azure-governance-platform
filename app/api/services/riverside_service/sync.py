@@ -3,7 +3,7 @@
 import logging
 from datetime import UTC, datetime
 
-from sqlalchemy import func
+from sqlalchemy import Date, cast
 
 from app.api.services.graph_client import GraphClient
 from app.api.services.riverside_service.constants import (
@@ -85,7 +85,7 @@ async def sync_riverside_mfa(db) -> dict:
                 db.query(RiversideMFA)
                 .filter(
                     RiversideMFA.tenant_id == tenant.tenant_id,
-                    func.date(RiversideMFA.snapshot_date) == snapshot_date.date(),
+                    cast(RiversideMFA.snapshot_date, Date) == snapshot_date.date(),
                 )
                 .first()
             )
@@ -189,7 +189,7 @@ async def sync_riverside_device_compliance(db) -> dict:
                 db.query(RiversideDeviceCompliance)
                 .filter(
                     RiversideDeviceCompliance.tenant_id == tenant.tenant_id,
-                    func.date(RiversideDeviceCompliance.snapshot_date) == snapshot_date.date(),
+                    cast(RiversideDeviceCompliance.snapshot_date, Date) == snapshot_date.date(),
                 )
                 .first()
             )
