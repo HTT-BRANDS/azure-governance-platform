@@ -26,6 +26,7 @@ from app.core.tenants_config import (
 # Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def sample_tenant_config():
     """Create a sample tenant configuration."""
@@ -108,6 +109,7 @@ def mock_phase_b_config(tmp_path):
 # Test Multi-Tenant App ID Resolution
 # ============================================================================
 
+
 class TestGetMultiTenantAppId:
     """Test the get_multi_tenant_app_id function."""
 
@@ -119,7 +121,9 @@ class TestGetMultiTenantAppId:
 
     def test_returns_app_id_when_phase_b_configured(self, sample_tenant_config_phase_b):
         """When multi_tenant_app_id is set, should return it."""
-        with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b):
+        with patch(
+            "app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b
+        ):
             result = get_multi_tenant_app_id("HTT")
             assert result == "00000000-0000-4000-c000-000000000000"
 
@@ -139,7 +143,9 @@ class TestGetMultiTenantAppId:
 
     def test_valid_uuid_format(self, sample_tenant_config_phase_b):
         """Returned app ID should be a valid UUID."""
-        with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b):
+        with patch(
+            "app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b
+        ):
             result = get_multi_tenant_app_id("HTT")
             # Should not raise ValueError
             parsed = uuid.UUID(result)
@@ -149,6 +155,7 @@ class TestGetMultiTenantAppId:
 # ============================================================================
 # Test Multi-Tenant Mode Detection
 # ============================================================================
+
 
 class TestIsMultiTenantModeEnabled:
     """Test the is_multi_tenant_mode_enabled function."""
@@ -160,7 +167,9 @@ class TestIsMultiTenantModeEnabled:
 
     def test_returns_true_in_phase_b(self, sample_tenant_config_phase_b):
         """In Phase B (with multi_tenant_app_id), should return True."""
-        with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b):
+        with patch(
+            "app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b
+        ):
             assert is_multi_tenant_mode_enabled("HTT") is True
 
     def test_returns_true_if_any_tenant_has_multi_tenant_app(self, sample_tenant_config_phase_b):
@@ -177,6 +186,7 @@ class TestIsMultiTenantModeEnabled:
 # ============================================================================
 # Test Credential Resolution
 # ============================================================================
+
 
 class TestGetCredentialForTenant:
     """Test the get_credential_for_tenant function."""
@@ -200,18 +210,25 @@ class TestGetCredentialForTenant:
 
     def test_phase_b_multi_tenant_credential(self, sample_tenant_config_phase_b):
         """In Phase B with prefer_multi_tenant=True, should use multi-tenant app_id."""
-        with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b):
+        with patch(
+            "app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b
+        ):
             result = get_credential_for_tenant("HTT", prefer_multi_tenant=True)
 
             assert result["app_id"] == sample_tenant_config_phase_b.multi_tenant_app_id
             assert result["tenant_id"] == sample_tenant_config_phase_b.tenant_id
-            assert result["key_vault_secret_name"] == sample_tenant_config_phase_b.key_vault_secret_name
+            assert (
+                result["key_vault_secret_name"]
+                == sample_tenant_config_phase_b.key_vault_secret_name
+            )
             assert result["is_multi_tenant"] is True
             assert result["oidc_enabled"] is False
 
     def test_phase_b_prefer_per_tenant_fallback(self, sample_tenant_config_phase_b):
         """With prefer_multi_tenant=False, should use per-tenant app_id even if multi-tenant available."""
-        with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b):
+        with patch(
+            "app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b
+        ):
             result = get_credential_for_tenant("HTT", prefer_multi_tenant=False)
 
             # Uses per-tenant app_id but flags that multi-tenant is available
@@ -228,7 +245,9 @@ class TestGetCredentialForTenant:
 
     def test_returns_correct_types(self, sample_tenant_config_phase_b):
         """All return values should be of expected types."""
-        with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b):
+        with patch(
+            "app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b
+        ):
             result = get_credential_for_tenant("HTT")
 
             assert isinstance(result["app_id"], str)
@@ -241,6 +260,7 @@ class TestGetCredentialForTenant:
 # ============================================================================
 # Test TenantConfig Dataclass
 # ============================================================================
+
 
 class TestTenantConfig:
     """Test the TenantConfig dataclass with multi_tenant_app_id field."""
@@ -289,6 +309,7 @@ class TestTenantConfig:
 # Test YAML Loading with Global multi_tenant_app_id
 # ============================================================================
 
+
 class TestYamlLoading:
     """Test loading tenants.yaml with global multi_tenant_app_id."""
 
@@ -317,6 +338,7 @@ class TestYamlLoading:
 # ============================================================================
 # Test Backward Compatibility
 # ============================================================================
+
 
 class TestBackwardCompatibility:
     """Ensure Phase B changes don't break Phase A deployments."""
@@ -362,10 +384,12 @@ class TestBackwardCompatibility:
 
         # Should load without errors
         import os
+
         with patch.dict(os.environ, {"TENANTS_CONFIG_PATH": str(config_file)}):
             import importlib
 
             import app.core.tenants_config as tc_module
+
             importlib.reload(tc_module)
 
             config = tc_module.get_tenant_by_code("HTT")
@@ -377,6 +401,7 @@ class TestBackwardCompatibility:
 # Integration-Style Tests
 # ============================================================================
 
+
 class TestCredentialResolutionScenarios:
     """Test realistic credential resolution scenarios."""
 
@@ -386,11 +411,11 @@ class TestCredentialResolutionScenarios:
 
         mock_tenants = {
             code: TenantConfig(
-                tenant_id=f"00000000-0000-4000-a000-00000000000{idx+1}",
+                tenant_id=f"00000000-0000-4000-a000-00000000000{idx + 1}",
                 name=f"Tenant {code}",
                 code=code,
                 admin_email=f"admin@{code.lower()}.com",
-                app_id=f"00000000-0000-4000-b000-00000000000{idx+1}",
+                app_id=f"00000000-0000-4000-b000-00000000000{idx + 1}",
                 key_vault_secret_name="multi-tenant-client-secret",  # pragma: allowlist secret
                 multi_tenant_app_id=shared_app_id,
                 oidc_enabled=False,
@@ -403,7 +428,9 @@ class TestCredentialResolutionScenarios:
                 creds = get_credential_for_tenant(code)
                 assert creds["app_id"] == shared_app_id
                 assert creds["is_multi_tenant"] is True
-                assert creds["key_vault_secret_name"] == "multi-tenant-client-secret"  # pragma: allowlist secret
+                assert (
+                    creds["key_vault_secret_name"] == "multi-tenant-client-secret"
+                )  # pragma: allowlist secret
 
     def test_mixed_phase_a_and_b_tenants(self):
         """Some tenants in Phase A, some in Phase B should work correctly."""
@@ -446,6 +473,7 @@ class TestCredentialResolutionScenarios:
 # Edge Cases
 # ============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -486,6 +514,7 @@ class TestEdgeCases:
 # ============================================================================
 # Performance Tests
 # ============================================================================
+
 
 class TestPerformance:
     """Basic performance tests for credential resolution."""

@@ -265,8 +265,9 @@ def test_security_headers_configured():
         if header not in security_content:
             missing_headers.append(header)
 
-    assert not missing_headers, "Missing security headers in app/core/security_headers.py:\n" + "\n".join(
-        f"  - {h}" for h in missing_headers
+    assert not missing_headers, (
+        "Missing security headers in app/core/security_headers.py:\n"
+        + "\n".join(f"  - {h}" for h in missing_headers)
     )
 
     # Check CORS configuration

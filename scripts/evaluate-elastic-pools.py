@@ -227,7 +227,7 @@ class ElasticPoolEvaluator:
 
             databases.append(
                 DatabaseMetrics(
-                    database_name=f"tenant_{i+1:03d}",
+                    database_name=f"tenant_{i + 1:03d}",
                     avg_cpu_percent=min(100, base.avg_cpu_percent * variation * load_factor),
                     max_cpu_percent=min(100, base.max_cpu_percent * variation * load_factor),
                     avg_data_io_percent=min(

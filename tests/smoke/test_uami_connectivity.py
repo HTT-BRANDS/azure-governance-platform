@@ -45,6 +45,7 @@ def is_running_in_azure() -> bool:
 # Smoke Tests
 # ============================================================================
 
+
 @pytest.mark.skipif(not is_running_in_azure(), reason="Not running in Azure environment")
 class TestUAMIAvailability:
     """Test UAMI is available and configured correctly."""
@@ -82,9 +83,9 @@ class TestUAMIAvailability:
         assert env_info["can_use_uami"] is True, "Cannot use UAMI"
 
         # Should be in App Service or GitHub Actions
-        assert (
-            env_info["is_app_service"] or env_info["is_github_actions"]
-        ), "Not in supported Azure environment"
+        assert env_info["is_app_service"] or env_info["is_github_actions"], (
+            "Not in supported Azure environment"
+        )
 
 
 @pytest.mark.skipif(not is_running_in_azure(), reason="Not running in Azure environment")
@@ -135,9 +136,9 @@ class TestUAMICredentialCreation:
             client_id=tenant_config.app_id,
         )
 
-        assert isinstance(
-            credential, ClientAssertionCredential
-        ), "Credential is not ClientAssertionCredential"
+        assert isinstance(credential, ClientAssertionCredential), (
+            "Credential is not ClientAssertionCredential"
+        )
 
 
 @pytest.mark.skipif(not is_running_in_azure(), reason="Not running in Azure environment")
@@ -252,9 +253,7 @@ class TestUAMICaching:
 
         # Check cache grew
         final_stats = provider.get_cache_stats()
-        assert (
-            final_stats["token_cache_size"] > initial_size
-        ), "Token was not cached"
+        assert final_stats["token_cache_size"] > initial_size, "Token was not cached"
 
     def test_cache_can_be_cleared(self):
         """Cache should be clearable."""
@@ -370,6 +369,7 @@ class TestMultiTenantSupport:
 # Configuration Validation Tests
 # ============================================================================
 
+
 class TestConfigurationValidation:
     """Validate UAMI configuration without requiring Azure connection."""
 
@@ -382,9 +382,9 @@ class TestConfigurationValidation:
         # These settings should exist
         assert hasattr(settings, "use_uami_auth"), "use_uami_auth setting missing"
         assert hasattr(settings, "uami_client_id"), "uami_client_id setting missing"
-        assert hasattr(
-            settings, "federated_identity_credential_id"
-        ), "federated_identity_credential_id setting missing"
+        assert hasattr(settings, "federated_identity_credential_id"), (
+            "federated_identity_credential_id setting missing"
+        )
 
     def test_uami_credential_module_imports(self):
         """UAMI credential module should import successfully."""
@@ -412,6 +412,7 @@ class TestConfigurationValidation:
 # ============================================================================
 # Fallback Tests (when not in Azure)
 # ============================================================================
+
 
 class TestFallbackBehavior:
     """Test behavior when not in Azure environment."""
@@ -445,6 +446,7 @@ class TestFallbackBehavior:
 # Health Check Test
 # ============================================================================
 
+
 def test_uami_health_check():
     """Comprehensive health check for UAMI configuration."""
     from app.core.config import get_settings
@@ -465,6 +467,7 @@ def test_uami_health_check():
     if settings.uami_client_id:
         try:
             import uuid
+
             uuid.UUID(str(settings.uami_client_id))
             health["uami_client_id_valid"] = True
         except ValueError:

@@ -184,7 +184,9 @@ class KeyVaultSecretRotator:
             logger.error(f"Failed to backup {secret_name}: {e}")
             return False
 
-    def generate_secure_value(self, secret_type: str = "password", length: int = 32) -> str:  # pragma: allowlist secret
+    def generate_secure_value(
+        self, secret_type: str = "password", length: int = 32
+    ) -> str:  # pragma: allowlist secret
         """Generate a secure secret value."""
         if secret_type == "password":  # pragma: allowlist secret
             return secrets.token_urlsafe(length)
@@ -490,14 +492,14 @@ Examples:
 
     # Summary
     report = rotator.generate_rotation_report()
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print("Rotation Summary")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     print(f"Total: {report['total_rotations']}")
     print(f"Successful: {report['successful']}")
     print(f"Failed: {report['failed']}")
     print(f"Success Rate: {report['success_rate']}")
-    print(f"{'='*50}\n")
+    print(f"{'=' * 50}\n")
 
     # Exit with error code if any rotations failed
     sys.exit(0 if report["failed"] == 0 else 1)

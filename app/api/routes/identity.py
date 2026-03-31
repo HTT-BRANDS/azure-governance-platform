@@ -58,7 +58,9 @@ async def get_identity_summary(
 async def get_users(
     tenant_id: str | None = Query(default=None, description="Filter by specific tenant"),
     tenant_ids: list[str] | None = Query(default=None, description="Filter by multiple tenants"),
-    user_type: str | None = Query(default=None, pattern="^(Member|Guest)$", description="Filter by user type"),
+    user_type: str | None = Query(
+        default=None, pattern="^(Member|Guest)$", description="Filter by user type"
+    ),
     account_enabled: bool | None = Query(default=None, description="Filter by account status"),
     mfa_enabled: bool | None = Query(default=None, description="Filter by MFA status"),
     search: str | None = Query(default=None, description="Search by display name or UPN"),

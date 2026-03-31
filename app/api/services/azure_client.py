@@ -411,7 +411,7 @@ class AzureClientManager:
                 tenant_id, oidc_client_id
             )
             logger.debug(
-                "OIDC credential created for tenant %s " "(client_id: %s...)",
+                "OIDC credential created for tenant %s (client_id: %s...)",
                 tenant_id,
                 oidc_client_id[:8],
             )

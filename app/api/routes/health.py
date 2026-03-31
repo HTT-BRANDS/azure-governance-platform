@@ -227,7 +227,9 @@ async def api_health_check_detailed(
                         "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
                     }
                     for job in jobs[:10]  # Limit job details
-                ] if has_auth else "redacted (auth required)",
+                ]
+                if has_auth
+                else "redacted (auth required)",
             }
         else:
             checks["scheduler"] = {"status": "degraded", "error": "Scheduler not running"}

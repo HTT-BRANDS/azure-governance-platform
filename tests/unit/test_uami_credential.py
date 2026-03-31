@@ -26,6 +26,7 @@ from app.core.uami_credential import (
 # Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def sample_uami_config():
     """Create sample UAMI configuration."""
@@ -65,6 +66,7 @@ def mock_token():
 # Test CachedToken
 # ============================================================================
 
+
 class TestCachedToken:
     """Test the CachedToken dataclass."""
 
@@ -87,9 +89,7 @@ class TestCachedToken:
         import time
 
         now = time.time()
-        cached = CachedToken(
-            token="test", created_at=now - 7200, expires_at=now - 3600
-        )
+        cached = CachedToken(token="test", created_at=now - 7200, expires_at=now - 3600)
 
         assert cached.is_expired() is True
 
@@ -108,9 +108,7 @@ class TestCachedToken:
 
         now = time.time()
         # Token expires in 4 minutes (within 5 minute default buffer)
-        cached = CachedToken(
-            token="test", created_at=now, expires_at=now + 240
-        )
+        cached = CachedToken(token="test", created_at=now, expires_at=now + 240)
 
         assert cached.should_refresh() is True
 
@@ -120,9 +118,7 @@ class TestCachedToken:
 
         now = time.time()
         # Token expires in 10 minutes (outside 5 minute default buffer)
-        cached = CachedToken(
-            token="test", created_at=now, expires_at=now + 600
-        )
+        cached = CachedToken(token="test", created_at=now, expires_at=now + 600)
 
         assert cached.should_refresh() is False
 
@@ -130,6 +126,7 @@ class TestCachedToken:
 # ============================================================================
 # Test UAMICredentialProvider Initialization
 # ============================================================================
+
 
 class TestUAMICredentialProviderInit:
     """Test UAMI credential provider initialization."""
@@ -177,6 +174,7 @@ class TestUAMICredentialProviderInit:
 # ============================================================================
 # Test Environment Detection
 # ============================================================================
+
 
 class TestEnvironmentDetection:
     """Test environment detection methods."""
@@ -237,9 +235,7 @@ class TestEnvironmentDetection:
     def test_can_use_uami_in_app_service_with_uami(self, monkeypatch):
         """Should be able to use UAMI in App Service when UAMI is configured."""
         monkeypatch.setenv("WEBSITE_SITE_NAME", "my-app")
-        provider = UAMICredentialProvider(
-            uami_client_id="00000000-0000-0000-0000-000000000001"
-        )
+        provider = UAMICredentialProvider(uami_client_id="00000000-0000-0000-0000-000000000001")
 
         assert provider._can_use_uami() is True
 
@@ -262,6 +258,7 @@ class TestEnvironmentDetection:
 # ============================================================================
 # Test Token Caching
 # ============================================================================
+
 
 class TestTokenCaching:
     """Test token caching functionality."""
@@ -370,6 +367,7 @@ class TestTokenCaching:
 # Test Credential Creation
 # ============================================================================
 
+
 class TestCredentialCreation:
     """Test credential creation and token acquisition."""
 
@@ -439,6 +437,7 @@ class TestCredentialCreation:
 # Test OIDC Assertion
 # ============================================================================
 
+
 class TestOIDCAssertion:
     """Test OIDC assertion token acquisition."""
 
@@ -477,6 +476,7 @@ class TestOIDCAssertion:
 # ============================================================================
 # Test Module-Level Functions
 # ============================================================================
+
 
 class TestModuleLevelFunctions:
     """Test module-level singleton and helper functions."""
@@ -520,15 +520,14 @@ class TestModuleLevelFunctions:
 # Test Public Interface
 # ============================================================================
 
+
 class TestPublicInterface:
     """Test public methods and properties."""
 
     def test_is_available_returns_true_when_configured(self, monkeypatch):
         """is_available should return True when UAMI is configured."""
         monkeypatch.setenv("WEBSITE_SITE_NAME", "my-app")
-        provider = UAMICredentialProvider(
-            uami_client_id="00000000-0000-0000-0000-000000000001"
-        )
+        provider = UAMICredentialProvider(uami_client_id="00000000-0000-0000-0000-000000000001")
 
         assert provider.is_available() is True
 
@@ -541,9 +540,7 @@ class TestPublicInterface:
     def test_get_environment_info_in_app_service(self, monkeypatch):
         """Should return accurate environment info in App Service."""
         monkeypatch.setenv("WEBSITE_SITE_NAME", "my-app")
-        provider = UAMICredentialProvider(
-            uami_client_id="00000000-0000-0000-0000-000000000001"
-        )
+        provider = UAMICredentialProvider(uami_client_id="00000000-0000-0000-0000-000000000001")
 
         info = provider.get_environment_info()
 
@@ -615,6 +612,7 @@ class TestPublicInterface:
 # Test Integration with Configuration
 # ============================================================================
 
+
 class TestConfigurationIntegration:
     """Test integration with application configuration."""
 
@@ -644,6 +642,7 @@ class TestConfigurationIntegration:
 # ============================================================================
 # Test Edge Cases
 # ============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and error handling."""
@@ -691,6 +690,7 @@ class TestEdgeCases:
 # Test Backward Compatibility
 # ============================================================================
 
+
 class TestBackwardCompatibility:
     """Ensure Phase C can fall back to Phase B."""
 
@@ -714,9 +714,7 @@ class TestBackwardCompatibility:
     def test_uami_client_id_prefix_in_env_info(self, monkeypatch):
         """Should include masked UAMI client ID in environment info."""
         monkeypatch.setenv("WEBSITE_SITE_NAME", "my-app")
-        provider = UAMICredentialProvider(
-            uami_client_id="12345678-1234-1234-1234-123456789abc"
-        )
+        provider = UAMICredentialProvider(uami_client_id="12345678-1234-1234-1234-123456789abc")
 
         info = provider.get_environment_info()
 

@@ -319,10 +319,10 @@ AZURE_REDIS_CONNECTION_TIMEOUT=10
 AZURE_REDIS_SOCKET_TIMEOUT=10
 AZURE_REDIS_HEALTH_CHECK_INTERVAL=30
 AZURE_REDIS_MAX_CONNECTIONS=50
-AZURE_REDIS_CLUSTER_ENABLED={'true' if is_cluster else 'false'}
+AZURE_REDIS_CLUSTER_ENABLED={"true" if is_cluster else "false"}
 
 # SKU: {sku}
-# Cluster Mode: {'Enabled' if is_cluster else 'Disabled'}
+# Cluster Mode: {"Enabled" if is_cluster else "Disabled"}
 """
 
     with open(output_path, "w") as f:
@@ -345,14 +345,14 @@ def check_redis_health(name: str, resource_group: str) -> bool:
     port = info.get("port", 6379)
     ssl_port = info.get("sslPort", 6380)
 
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"Redis Cache: {name}")
     print(f"Status: {status}")
     print(f"Host: {host}")
     print(f"Port: {port} (SSL: {ssl_port})")
     print(f"SKU: {info.get('sku', {}).get('name', 'Unknown')}")
     print(f"Shard Count: {info.get('shardCount', 'N/A')}")
-    print(f"{'='*50}\n")
+    print(f"{'=' * 50}\n")
 
     if status == "Succeeded":
         logger.info("✅ Redis cache is healthy")

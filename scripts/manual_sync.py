@@ -150,7 +150,9 @@ def validate_sync_history(client: httpx.Client) -> list:
                 status_icon = {"success": "✅", "partial": "⚠️", "failed": "❌"}.get(
                     log.get("status", ""), "❓"
                 )
-                tenant_code = TENANT_NAMES.get(log.get("tenant_id", ""), log.get("tenant_id", "—")[:8])
+                tenant_code = TENANT_NAMES.get(
+                    log.get("tenant_id", ""), log.get("tenant_id", "—")[:8]
+                )
                 duration = log.get("duration_ms", 0)
                 records = log.get("records_processed", 0)
                 errors = log.get("errors_count", 0)
@@ -183,7 +185,9 @@ def validate_riverside_data(client: httpx.Client) -> dict:
                 for code, info in tenants.items():
                     mfa = info.get("mfa_coverage", info.get("mfa_coverage_pct", "?"))
                     users = info.get("total_users", info.get("user_count", "?"))
-                    print(f"  {'✅' if mfa != '?' else '❓'} {code}: {mfa}% MFA coverage, {users} users")
+                    print(
+                        f"  {'✅' if mfa != '?' else '❓'} {code}: {mfa}% MFA coverage, {users} users"
+                    )
             elif isinstance(tenants, list):
                 for t in tenants:
                     code = t.get("code", t.get("tenant_code", "?"))
@@ -273,8 +277,12 @@ def validate_alerts(client: httpx.Client) -> list:
                 print("  ✅ No active alerts!")
             for alert in alerts:
                 sev = alert.get("severity", "?")
-                icon = {"critical": "🔴", "error": "🟠", "warning": "🟡", "info": "🔵"}.get(sev, "❓")
-                print(f"  {icon} [{sev}] {alert.get('title', '?')} — {alert.get('message', '')[:80]}")
+                icon = {"critical": "🔴", "error": "🟠", "warning": "🟡", "info": "🔵"}.get(
+                    sev, "❓"
+                )
+                print(
+                    f"  {icon} [{sev}] {alert.get('title', '?')} — {alert.get('message', '')[:80]}"
+                )
             return alerts
         else:
             print(f"  ❌ {resp.status_code}")
@@ -293,7 +301,9 @@ def main():
     parser = argparse.ArgumentParser(description="Manual sync trigger + validation")
     parser.add_argument("--sync-only", action="store_true", help="Only trigger syncs")
     parser.add_argument("--validate-only", action="store_true", help="Only validate data")
-    parser.add_argument("--wait", type=int, default=60, help="Seconds to wait after triggering syncs (default: 60)")
+    parser.add_argument(
+        "--wait", type=int, default=60, help="Seconds to wait after triggering syncs (default: 60)"
+    )
     args = parser.parse_args()
 
     print("=" * 60)

@@ -743,14 +743,14 @@ Examples:
         alerts = analyzer.check_cost_thresholds(Decimal(str(args.alert_threshold)))
 
         if alerts:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print("COST ALERTS")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
             for alert in alerts:
                 emoji = "🔴" if alert.severity == "critical" else "🟡"
                 print(f"{emoji} {alert.message}")
                 print(f"   Recommendation: {alert.recommendation}\n")
-            print(f"{'='*60}\n")
+            print(f"{'=' * 60}\n")
 
             # Send notifications
             analyzer.send_alert_notifications(args.webhook)
@@ -763,9 +763,9 @@ Examples:
     )
 
     # Display summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"AZURE COST REPORT: {report['report_period']['days']} Days")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Total Cost:        ${report['summary']['total_cost_usd']:.2f}")
     print(f"Daily Average:     ${report['summary']['daily_average']:.2f}")
     print(f"Projected Monthly: ${report['summary']['projected_monthly']:.2f}")
@@ -778,7 +778,7 @@ Examples:
         print(f"\n⚠️  Idle Resources Found: {len(report['idle_resources'])}")
         print(f"💰 Potential Annual Savings: ${report['summary']['potential_annual_savings']:.2f}")
 
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # Export if requested
     if args.export_csv:

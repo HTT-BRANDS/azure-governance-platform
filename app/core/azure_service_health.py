@@ -241,7 +241,6 @@ class AzureServiceHealthMonitor:
     def get_active_incidents(self) -> list[ServiceHealthIncident]:
         """Get currently active Service Health incidents."""
         try:
-
             client = self._get_service_health_client()
 
             # List active events for subscription
@@ -640,7 +639,6 @@ class AzureServiceHealthMonitor:
     ) -> list[ServiceHealthIncident]:
         """Get historical incident data."""
         try:
-
             client = self._get_service_health_client()
 
             # Calculate date range
