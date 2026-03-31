@@ -24,6 +24,7 @@ from app.api.routes import (
     dashboard_router,
     dmarc_router,
     exports_router,
+    health_router,
     identity_router,
     metrics_router,
     monitoring_router,
@@ -379,6 +380,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(audit_logs_router)
 app.include_router(quotas_router)
 app.include_router(auth_router)
+app.include_router(health_router)  # Health endpoint for load balancers
 
 # Onboarding router (public for self-service)
 app.include_router(onboarding_router)

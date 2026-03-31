@@ -75,5 +75,23 @@ class StaleAccount(BaseModel):
     has_privileged_roles: bool
 
 
+class UserAccount(BaseModel):
+    """Basic user account details."""
+
+    id: str = Field(description="Azure AD user object ID")
+    tenant_id: str
+    tenant_name: str
+    user_principal_name: str
+    display_name: str
+    user_type: str = Field(default="Member", description="Member or Guest")
+    account_enabled: bool = True
+    mfa_enabled: bool = False
+    last_sign_in: datetime | None = None
+    created_at: datetime | None = None
+    job_title: str | None = None
+    department: str | None = None
+    office_location: str | None = None
+
+
 # Update forward references
 IdentitySummary.model_rebuild()

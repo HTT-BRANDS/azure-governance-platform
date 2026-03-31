@@ -13,6 +13,7 @@ from app.api.routes.dashboard import public_router
 from app.api.routes.dashboard import router as dashboard_router
 from app.api.routes.dmarc import router as dmarc_router
 from app.api.routes.exports import router as exports_router
+from app.api.routes.health import router as health_router
 from app.api.routes.identity import router as identity_router
 from app.api.routes.metrics import router as metrics_router
 from app.api.routes.monitoring import router as monitoring_router
@@ -44,6 +45,7 @@ __all__ = [
     "dashboard_router",
     "dmarc_router",
     "exports_router",
+    "health_router",
     "identity_router",
     "metrics_router",
     "monitoring_router",

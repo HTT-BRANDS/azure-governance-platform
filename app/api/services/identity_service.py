@@ -15,6 +15,7 @@ from app.schemas.identity import (
     PrivilegedAccount,
     StaleAccount,
     TenantIdentitySummary,
+    UserAccount,
 )
 
 logger = logging.getLogger(__name__)
@@ -166,6 +167,99 @@ class IdentityService:
         elif risk_score >= 3:
             return "Medium"
         return "Low"
+
+    async def get_users(
+        self,
+        tenant_id: str | None = None,
+        tenant_ids: list[str] | None = None,
+        user_type: str | None = None,
+        account_enabled: bool | None = None,
+        mfa_enabled: bool | None = None,
+        search: str | None = None,
+        sort_by: str = "display_name",
+        sort_order: str = "asc",
+    ) -> list[UserAccount]:
+        """Get user accounts with filtering and sorting.
+
+        Args:
+            tenant_id: Filter by specific tenant
+            tenant_ids: Filter by multiple tenants
+            user_type: Filter by user type (Member or Guest)
+            account_enabled: Filter by account enabled status
+            mfa_enabled: Filter by MFA status
+            search: Search in display name or UPN
+            sort_by: Field to sort by
+            sort_order: Sort direction (asc or desc)
+
+        Returns:
+            List of UserAccount objects matching the filters
+        """
+        # Build base query from PrivilegedUser as a proxy for user data
+        # In production, this would query a dedicated User table populated by sync
+        query = self.db.query(PrivilegedUser)
+
+        # Apply tenant filters
+        if tenant_id:
+            query = query.filter(PrivilegedUser.tenant_id == tenant_id)
+        elif tenant_ids:
+            query = query.filter(PrivilegedUser.tenant_id.in_(tenant_ids))
+
+        # Apply user type filter
+        if user_type:
+            query = query.filter(PrivilegedUser.user_type == user_type)
+
+        # Apply MFA filter
+        if mfa_enabled is not None:
+            query = query.filter(PrivilegedUser.mfa_enabled == mfa_enabled)
+
+        # Apply search filter
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                (PrivilegedUser.display_name.ilike(search_term))
+                | (PrivilegedUser.user_principal_name.ilike(search_term))
+            )
+
+        # Get tenant names for mapping
+        tenants = {t.id: t.name for t in self.db.query(Tenant).all()}
+
+        # Execute query
+        users = query.all()
+
+        # Convert to UserAccount schema
+        user_accounts = []
+        for u in users:
+            user_accounts.append(
+                UserAccount(
+                    id=u.id if hasattr(u, "id") else u.user_principal_name,
+                    tenant_id=u.tenant_id,
+                    tenant_name=tenants.get(u.tenant_id, "Unknown"),
+                    user_principal_name=u.user_principal_name,
+                    display_name=u.display_name or "",
+                    user_type=u.user_type or "Member",
+                    account_enabled=getattr(u, "account_enabled", True),
+                    mfa_enabled=bool(u.mfa_enabled),
+                    last_sign_in=u.last_sign_in,
+                    created_at=getattr(u, "created_at", None),
+                    job_title=getattr(u, "job_title", None),
+                    department=getattr(u, "department", None),
+                    office_location=getattr(u, "office_location", None),
+                )
+            )
+
+        # Apply sorting
+        reverse = sort_order == "desc"
+        if sort_by == "display_name":
+            user_accounts.sort(key=lambda x: x.display_name or "", reverse=reverse)
+        elif sort_by == "user_principal_name":
+            user_accounts.sort(key=lambda x: x.user_principal_name or "", reverse=reverse)
+        elif sort_by == "last_sign_in":
+            user_accounts.sort(
+                key=lambda x: x.last_sign_in or datetime.min.replace(tzinfo=UTC),
+                reverse=reverse,
+            )
+
+        return user_accounts
 
     def get_guest_accounts(
         self, tenant_id: str | None = None, stale_only: bool = False

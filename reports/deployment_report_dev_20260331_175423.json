@@ -1,0 +1,32 @@
+{
+    "metadata": {
+        "timestamp": "2026-03-31T17:54:29Z",
+        "environment": "dev",
+        "url": "https://app-governance-dev-001.azurewebsites.net",
+        "duration_seconds": 6,
+        "script_version": "1.0.0"
+    },
+    "azure_resources": {
+        "resource_group": "",
+        "app_service": "",
+        "sql_server": "",
+        "sql_database": "governance",
+        "redis_cache": "",
+        "key_vault": ""
+    },
+    "test_summary": {
+        "total": 12,
+        "passed": 5,
+        "failed": 2,
+        "skipped": 5,
+        "warnings": 0,
+        "success_rate": 71
+    },
+    "deployment_status": "unhealthy",
+    "flags": {
+        "skip_migrations": false,
+        "skip_seeding": false,
+        "skip_api_tests": false,
+        "verbose": true
+    }
+}

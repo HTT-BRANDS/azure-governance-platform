@@ -22,6 +22,7 @@ from app.schemas.identity import (
     IdentitySummary,
     PrivilegedAccount,
     StaleAccount,
+    UserAccount,
 )
 from app.schemas.license import UserLicense, UserLicenseSummary
 
@@ -51,6 +52,67 @@ async def get_identity_summary(
     service = IdentityService(db)
     filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
     return await service.get_identity_summary(tenant_ids=filtered_tenant_ids)
+
+
+@router.get("/users", response_model=list[UserAccount])
+async def get_users(
+    tenant_id: str | None = Query(default=None, description="Filter by specific tenant"),
+    tenant_ids: list[str] | None = Query(default=None, description="Filter by multiple tenants"),
+    user_type: str | None = Query(default=None, pattern="^(Member|Guest)$", description="Filter by user type"),
+    account_enabled: bool | None = Query(default=None, description="Filter by account status"),
+    mfa_enabled: bool | None = Query(default=None, description="Filter by MFA status"),
+    search: str | None = Query(default=None, description="Search by display name or UPN"),
+    limit: int = Query(default=100, ge=1, le=500, description="Maximum results to return"),
+    offset: int = Query(default=0, ge=0, description="Pagination offset"),
+    sort_by: str = Query(default="display_name", description="Field to sort by"),
+    sort_order: str = Query(default="asc", pattern="^(asc|desc)$", description="Sort direction"),
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
+):
+    """Get list of user accounts across accessible tenants.
+
+    Returns a paginated list of user accounts with basic identity information.
+    Results are filtered to only show users from tenants the caller has access to.
+
+    Args:
+        tenant_id: Filter by a specific tenant (deprecated, use tenant_ids)
+        tenant_ids: Filter by multiple tenant IDs
+        user_type: Filter by user type (Member or Guest)
+        account_enabled: Filter by account enabled status
+        mfa_enabled: Filter by MFA enrollment status
+        search: Search filter for display name or user principal name
+        limit: Maximum number of results to return (1-500)
+        offset: Pagination offset
+        sort_by: Field to sort results by
+        sort_order: Sort direction (asc or desc)
+    """
+    authz.ensure_at_least_one_tenant()
+
+    # Validate tenant access
+    if tenant_id:
+        authz.validate_access(tenant_id)
+
+    # Filter tenant_ids to only accessible ones
+    filtered_tenant_ids = authz.filter_tenant_ids(tenant_ids)
+
+    # Get users from service
+    service = IdentityService(db)
+    users = await service.get_users(
+        tenant_id=tenant_id,
+        tenant_ids=filtered_tenant_ids,
+        user_type=user_type,
+        account_enabled=account_enabled,
+        mfa_enabled=mfa_enabled,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
+
+    # Apply pagination
+    total = len(users)
+    paginated_users = users[offset : offset + limit]
+
+    return paginated_users
 
 
 @router.get("/privileged", response_model=list[PrivilegedAccount])
