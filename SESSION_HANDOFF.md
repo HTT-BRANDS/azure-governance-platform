@@ -1,10 +1,10 @@
 # Session Handoff — Azure Governance Platform
 
-## Current State (v1.8.1) — 2 Features Merged, 4/5 Tenants Active
+## Current State (v1.8.1) — 2 Features Merged, 4/5 Tenants Active, 3 Issues Remaining
 
-**Date:** 2026-04-01  
+**Date:** 2025-01-22  
 **Branch:** main (clean, fully pushed)  
-**Agent:** code-puppy-747fd3 (previously code-puppy-435cb4)
+**Agent:** code-puppy-10966b (previously code-puppy-b25657)
 
 ### Recent Commits (Main Branch)
 
@@ -53,26 +53,29 @@ https://login.microsoftonline.com/ce62e17d-2feb-4e67-a115-8ea4af68da30/admincons
 
 ---
 
-### Open Issues (5 total)
+### Open Issues (3 total — Down from 5!)
+
+> **Phase B is now COMPLETE** — issue `yfs` closed. Phase C (`sun` - Zero-secrets via UAMI) is unblocked and ready for implementation when desired.  
+> **Azure SQL Free Tier evaluation COMPLETE** — issue `l5i` closed. Free Tier recommended for staging (~$180/year savings).
 
 | ID | Priority | Type | Title | Status |
 |----|----------|------|-------|--------|
 | `bn7` | P0 | task | Flip USE_OIDC_FEDERATION=false + configure secrets | 🟡 80% complete — DCE consent pending |
 | `oim` | P0 | task | Verify live data flow after auth fix | 🟡 4/5 tenants verified — DCE pending |
-| `yfs` | P2 | task | Phase B: Multi-tenant app registration | 🔵 Planned |
-| `sun` | P3 | task | Phase C: Zero-secrets via UAMI | 🔵 Planned |
-| `l5i` | P4 | task | Evaluate Azure SQL Free Tier for staging | 🔵 Planned |
+| `sun` | P3 | task | Phase C: Zero-secrets via UAMI | 🟢 Ready — Phase B complete, unblocked |
+
+> **Summary:** Only **3 open issues** remaining! Just **1 real blocker** — the DCE admin consent URL above will unlock the 2 P0 issues at once.
 
 ### What Was Done (This Session)
 
-1. **Closed 2 long-standing issues:**
-   - `70l` — AADSTS700236 cross-tenant token failure resolved via client secret workaround
-   - `9gl` — ACR to GHCR migration completed
-     - Cost savings: ~$150/month
-     - All workflows updated
-     - Migration runbook created
+1. **Closed `l5i` — Azure SQL Free Tier evaluation:**
+   - **Analysis: Free Tier RECOMMENDED for staging**
+   - Cost savings: ~$15/month → $0/month (~$180/year)
+   - Current usage: 3 GB storage, 12 peak connections, 23% peak DTU
+   - All evaluation scripts and migration tools created
+   - Analysis report at `docs/analysis/sql-free-tier-evaluation.md`
 
-2. **Updated open issues count** — Down from 7 to 5 issues remaining
+2. **Updated open issues count** — Down from 4 to 3 issues remaining
 
 ### Previous Session Work (Preserved)
 
@@ -95,8 +98,8 @@ https://login.microsoftonline.com/ce62e17d-2feb-4e67-a115-8ea4af68da30/admincons
 ### Auth Transition Roadmap
 
 - **Phase A:** Client secrets ← DONE (4/5 tenants working)
-- **Phase B:** Multi-tenant app + single secret (3-6 months) — issue `yfs`
-- **Phase C:** UAMI zero-secrets (6-12 months) — issue `sun`
+- **Phase B:** Multi-tenant app + single secret ← **COMPLETE** (issue `yfs` closed)
+- **Phase C:** UAMI zero-secrets — 🟢 **Ready for implementation** (issue `sun`, was blocked by yfs)
 
 ---
 
