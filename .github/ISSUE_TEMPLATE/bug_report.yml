@@ -1,0 +1,133 @@
+name: 🐛 Bug Report
+description: Report a bug to help us improve the Azure Governance Platform
+title: "[BUG] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us diagnose and fix the issue quickly.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I am running the latest version (v1.9.0 or later)
+          required: true
+        - label: I have read the [Common Pitfalls](./docs/COMMON_PITFALLS.md) documentation
+          required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - 🔴 Critical — Production outage, data loss, security breach
+        - 🟠 High — Major feature broken, significant performance degradation
+        - 🟡 Medium — Feature partially broken, workaround available
+        - 🟢 Low — Cosmetic issue, minor inconvenience
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where is this bug occurring?
+      options:
+        - Production (app-governance-prod.azurewebsites.net)
+        - Staging (app-governance-staging-xnczpwyv.azurewebsites.net)
+        - Development (local)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: |
+        When I try to [action], I see [unexpected result] instead of [expected result].
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: I expected the system to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: The system actually...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs & Error Messages
+      description: Paste any relevant logs, stack traces, or error messages
+      render: shell
+      placeholder: |
+        Traceback (most recent call last):
+          File "app/api/routes/costs.py", line 42, in get_costs
+            ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem (screenshots, related issues, etc.)
+      placeholder: |
+        - Browser: Chrome 120
+        - OS: Windows 11
+        - Tenant: HTT
+        - Time of issue: 2026-04-01 14:30 UTC
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: workarounds
+    attributes:
+      label: Workarounds
+      description: Is there a workaround for this issue?
+      options:
+        - label: I have found a workaround (describe below)
+        - label: No workaround available
+
+  - type: textarea
+    id: workaround_details
+    attributes:
+      label: Workaround Details
+      description: If you found a workaround, please describe it here
+      placeholder: I was able to work around this by...
+    validations:
+      required: false

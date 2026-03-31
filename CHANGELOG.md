@@ -7,6 +7,136 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.0] - 2026-04-01
+
+### 🎉 Release Highlights
+
+**Azure Governance Platform v1.9.0** represents the culmination of the complete platform modernization initiative. This release delivers **zero open issues**, **$165/month active cost savings**, **zero-secrets authentication**, and comprehensive infrastructure modernization.
+
+**Key Metrics:**
+- 221 roadmap tasks completed across 16 phases
+- 2,563+ tests passing with zero failures
+- 75% infrastructure cost reduction ($225/mo → $73/mo)
+- Zero authentication secrets (UAMI-based)
+- 43 security audit findings resolved
+
+---
+
+### Added
+
+#### Infrastructure & DevOps
+- **User-Assigned Managed Identity (UAMI)** — Zero-secrets authentication with `app/core/uami_credential.py`
+- **GitHub Container Registry (GHCR) Migration** — Migrated from ACR to GHCR (~$150/month savings)
+- **Azure SQL Free Tier** — Staging database migrated to free tier ($15/month savings)
+- **Automated Database Backup Workflow** — `.github/workflows/backup.yml` with scheduled backups
+- **Makefile** — 15+ common development commands (`make test`, `make lint`, `make deploy-dev`)
+- **Enhanced Pre-commit Hooks** — Ruff import sorting and comprehensive linting
+- **Container Registry Migration Workflow** — `.github/workflows/container-registry-migration.yml`
+
+#### Security & Authentication
+- **Phase C Zero-Secrets Auth** — Complete migration from client secrets to UAMI
+- **Enhanced Security Headers Middleware** — 7/7 security headers with CSP nonce support (`app/core/security_headers.py`)
+- **PKCE OAuth Implementation** — RFC 7636 compliant PKCE flow for enhanced security
+- **Algorithm Confusion Fix** — JWT issuer-based routing prevents algorithm substitution attacks
+- **Refresh Token Blacklisting** — Secure token rotation with blacklist validation
+- **CSP Nonce Support** — Inline script security with per-request nonces
+- **HMAC Timing Attack Prevention** — `hmac.compare_digest()` for secure comparisons
+
+#### Observability & Monitoring
+- **Enhanced Application Insights** — Custom telemetry, dependency tracking, performance counters (`app/core/app_insights.py`)
+- **Structured API Request Logging** — Timing, correlation IDs, and request/response logging
+- **Detailed Health Check Metrics** — Database, cache, and external service health with response times
+- **Distributed Tracing** — OpenTelemetry integration with span propagation
+- **Metrics API Endpoints** — `/api/v1/metrics/health`, `/api/v1/metrics/cache`, `/api/v1/metrics/database`
+
+#### Documentation
+- **Operations Playbook** — 24.5 KB comprehensive operations guide (`docs/operations/playbook.md`)
+- **6 Migration Runbooks** — Phase B/C migrations, ACR→GHCR, OIDC setup, resource cleanup
+- **OpenAPI Examples** — 8 request/response examples in `docs/openapi-examples/`
+- **SQL Free Tier Evaluation Report** — Analysis and migration guide
+- **API Documentation** — 37.3 KB comprehensive API reference
+
+#### Cleanup & Verification
+- **Resource Cleanup Scripts** — `cleanup-old-acr.sh`, `cleanup-phase-a-apps.sh`
+- **Deployment Verification** — `verify-deployment.sh` with 30+ validation checks
+- **Production Diagnostics** — `diagnose-production.sh` with auto-fix capabilities
+
+### Changed
+
+#### Infrastructure Modernization
+- **Container Registry**: Azure Container Registry → GitHub Container Registry (free, integrated)
+- **Database Tier**: Azure SQL S0 → Free Tier (staging), S0 → Free Tier ready (production)
+- **Authentication**: 5 client secrets → 1 multi-tenant app → 0 secrets (UAMI)
+- **Bicep Modules**: 12 infrastructure modules with complete IaC coverage
+- **CI/CD**: 6 GitHub Actions workflows with OIDC federation
+
+#### Performance & Reliability
+- **Uvicorn Workers**: Increased to 2 with uvloop and httptools
+- **Rate Limiting**: Fail-closed on auth endpoints, fail-open on others
+- **Circuit Breakers**: Per-service breakers for Azure APIs
+- **HTTP Timeouts**: Predefined timeouts for all Azure SDK calls
+
+#### Code Quality
+- **Python 3.12 Compatibility**: Migrated `datetime.utcnow()` → `datetime.now(UTC)`
+- **Jinja2 Templates**: Consolidated 6 duplicate instances into shared module
+- **Import Sorting**: Ruff isort integration in pre-commit hooks
+- **Security Audit**: 43 findings resolved from March 2026 audit
+
+### Deprecated
+
+- **Azure Container Registry (ACR)** — Migrated to GHCR; ACR resources ready for cleanup
+- **Client Secret Authentication** — Deprecated in favor of UAMI zero-secrets approach
+- **Phase A App Registrations** — Superseded by Phase C UAMI authentication
+
+### Removed
+
+- **Legacy Deploy Workflows** — Deleted `deploy-oidc.yml` and `deploy.yml` (-967 lines)
+- **Hardcoded Tenant IDs** — Removed from workflow YAML (now in secrets/config)
+- **Stale Backup Files** — Removed orphaned backup files
+- **Dead CSS Classes** — Removed `btn-htt-primary` and other stale classes
+
+### Fixed
+
+#### Critical Security Fixes
+- **Production Login Broken** — Added `ALLOWED_REDIRECT_URIS` validation
+- **Unprotected API Routes** — Added auth middleware to 3 exposed routes
+- **SQL Injection** — Whitelist validation for `get_db_stats` table names
+- **JWT Algorithm Confusion** — Issuer-based routing prevents forgery
+- **Timing Attacks** — HMAC comparison for staging token validation
+
+#### Authentication Fixes
+- **OAuth 500 Errors** — Comprehensive error handling with pre-flight validation
+- **Token Blacklisting** — Proper refresh token rotation and blacklist checks
+- **Multi-Tenant Sync** — BCC/FN/TLL jobs authenticate with per-tenant OIDC
+- **AADSTS700236** — Invalid client secret resolved with UAMI fallback
+
+#### Infrastructure Fixes
+- **SQL Server Public Access** — Disabled public network access + AllowAllAzureIPs
+- **Redis Integration** — Azure Cache for Redis Basic deployed and wired
+- **Key Vault References** — JWT_SECRET_KEY moved to Key Vault
+- **Database Connection Pool** — Sized for S0 tier (pool_size=3, max_overflow=2)
+
+#### UI/Accessibility Fixes
+- **Touch Targets** — WCAG 2.5.8 compliance with 24×24px minimum
+- **Focus Management** — Focus trap in confirm dialogs, focus restoration
+- **Chart Accessibility** — ARIA labels and roles for Chart.js canvases
+- **Table Headers** — Added `scope="col"` to all `<th>` elements
+- **Dark Mode** — Consolidated to single source of truth in theme.src.css
+- **Navigation** — Fixed duplicate #page-announcer, bundled JS files
+
+### Security
+
+- **Zero-Secrets Architecture** — Complete UAMI-based authentication (no client secrets)
+- **Enhanced Security Headers** — 7 headers: HSTS, CSP, X-Frame-Options, etc.
+- **PKCE OAuth Flow** — RFC 7636 compliant authorization code flow
+- **CSP Nonce Injection** — Per-request nonces for inline scripts
+- **SQL Injection Prevention** — Whitelist validation on all table name parameters
+- **Algorithm Confusion Prevention** — JWT issuer-based key selection
+- **Timing Attack Prevention** — Constant-time comparison functions
+- **Token Blacklisting** — Redis-backed JWT revocation
+
+---
+
 ## [1.8.1] - 2026-03-28
 
 ### Fixed

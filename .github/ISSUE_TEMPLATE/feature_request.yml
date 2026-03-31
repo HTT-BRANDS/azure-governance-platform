@@ -1,0 +1,181 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for the Azure Governance Platform
+title: "[FEATURE] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please provide as much detail as possible to help us understand and evaluate your request.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: This feature aligns with the project's goal of Azure/M365 governance
+          required: true
+        - label: I have read the [Roadmap](./README.md#roadmap) to understand current priorities
+          required: false
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What area does this feature relate to?
+      options:
+        - 🔐 Security & Authentication
+        - 💰 Cost Management
+        - 📊 Compliance & Governance
+        - 👤 Identity Management
+        - 🔧 Resource Management
+        - 📈 Monitoring & Observability
+        - 🎨 UI/UX & Accessibility
+        - ⚡ Performance & Scalability
+        - 🔌 API & Integrations
+        - 📚 Documentation
+        - 🛠️ Developer Experience
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How would you prioritize this feature?
+      options:
+        - 🔴 Critical — Blocking production use
+        - 🟠 High — Significant value, many users affected
+        - 🟡 Medium — Nice to have, moderate impact
+        - 🟢 Low — Minor improvement, limited scope
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What is the user pain point?
+      placeholder: |
+        As a [type of user], I struggle with [current limitation] because [reason].
+        This causes [impact on workflow/operations].
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see
+      placeholder: |
+        I would like the platform to [specific capability].
+        This should work by [high-level approach].
+        The result would be [expected outcome].
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Describe any alternative solutions or features you've considered
+      placeholder: |
+        I also considered:
+        1. [Alternative approach 1]
+        2. [Alternative approach 2]
+        
+        However, these alternatives don't work as well because [reasons].
+    validations:
+      required: false
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use Case Details
+      description: Provide specific use cases or scenarios where this feature would be valuable
+      placeholder: |
+        **Scenario 1:** [Describe scenario]
+        - User: [Who needs this]
+        - Action: [What they want to do]
+        - Value: [Benefit gained]
+
+        **Scenario 2:** [Describe another scenario if applicable]
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups / Wireframes
+      description: If applicable, add mockups, diagrams, or wireframes to help explain your feature
+      placeholder: |
+        You can paste images here or describe the UI:
+        
+        [UI Element 1]: [Description]
+        [UI Element 2]: [Description]
+    validations:
+      required: false
+
+  - type: textarea
+    id: api_design
+    attributes:
+      label: API Design (if applicable)
+      description: If this feature involves API changes, propose the endpoint design
+      render: yaml
+      placeholder: |
+        # Example API design:
+        GET /api/v1/costs/forecast?horizon=30d
+        
+        Response:
+        {
+          "forecast_period": "30d",
+          "predicted_cost": 1234.56,
+          "confidence_interval": { "lower": 1100.00, "upper": 1400.00 },
+          "model_version": "v1.2.0"
+        }
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Requirements Checklist
+      description: Check any requirements that apply to this feature
+      options:
+        - label: This feature requires new Azure API permissions
+        - label: This feature requires database schema changes
+        - label: This feature requires infrastructure changes (Bicep/Terraform)
+        - label: This feature affects the UI/UX
+        - label: This feature requires third-party integrations
+        - label: This feature requires compliance/legal review (GDPR, CCPA, SOC2)
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, references, or information about the feature request
+      placeholder: |
+        Related Azure APIs:
+        - [Azure API documentation link]
+        
+        Similar features in other tools:
+        - [Tool name]: [Feature description]
+        
+        Additional notes:
+        - [Any other relevant information]
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: willing_to_contribute
+    attributes:
+      label: Contribution
+      description: Are you willing to contribute to the implementation of this feature?
+      options:
+        - label: I am willing to submit a PR for this feature
+        - label: I can help with testing and validation
+        - label: I can provide domain expertise on this topic
