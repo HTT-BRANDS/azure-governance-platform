@@ -73,7 +73,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl gnupg2 apt-transport-https ca-certificates \
     # ODBC runtime — provides libodbc.so.2 required by pyodbc at startup
-    libodbc2 libodbccr2 unixodbc \
+    libodbc2 libodbccr2 odbcinst unixodbc \
     && curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
        | gpg --dearmor > /usr/share/keyrings/microsoft.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" \
@@ -85,10 +85,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Refresh dynamic linker cache after installing ODBC libraries
     && ldconfig
 
+# Set LD_LIBRARY_PATH to ensure ODBC libraries are found
+ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/lib:/lib
+
 # Create non-root user for security
 RUN groupadd --gid 1000 ${APP_GROUP} && \
     useradd --uid 1000 --gid ${APP_GROUP} \
     --shell /bin/bash --create-home ${APP_USER}
+
+# Ensure ODBC libraries are accessible - create symlinks in common locations
+RUN mkdir -p /usr/local/lib && \
+    if [ -f /usr/lib/x86_64-linux-gnu/libodbc.so.2 ]; then \
+        ln -sf /usr/lib/x86_64-linux-gnu/libodbc.so.2 /usr/local/lib/libodbc.so.2; \
+        chmod 755 /usr/lib/x86_64-linux-gnu/libodbc.so.2; \
+    fi && \
+    if [ -f /usr/lib/x86_64-linux-gnu/libodbccr.so.2 ]; then \
+        ln -sf /usr/lib/x86_64-linux-gnu/libodbccr.so.2 /usr/local/lib/libodbccr.so.2; \
+        chmod 755 /usr/lib/x86_64-linux-gnu/libodbccr.so.2; \
+    fi && \
+    ldconfig && \
+    # Ensure library directory permissions
+    chmod 755 /usr/lib/x86_64-linux-gnu 2>/dev/null || true && \
+    chmod 755 /usr/local/lib 2>/dev/null || true && \
+    ls -la /usr/lib/x86_64-linux-gnu/ | grep odbc || echo "No odbc libs in x86_64-linux-gnu" && \
+    ls -la /usr/local/lib/ | grep odbc || echo "No odbc symlinks in local/lib"
 
 # Set work directory
 WORKDIR ${APP_HOME}

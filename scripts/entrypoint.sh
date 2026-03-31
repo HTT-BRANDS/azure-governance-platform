@@ -19,6 +19,20 @@ echo "Environment : ${ENVIRONMENT:-development}"
 DB_HOST=$(echo "${DATABASE_URL:-sqlite}" | sed 's|.*@||' | cut -d'/' -f1)
 echo "DB host     : ${DB_HOST}"
 
+# Ensure ODBC libraries are found - refresh library cache
+echo "--- Refreshing library cache for ODBC ---"
+if command -v ldconfig &> /dev/null; then
+    ldconfig 2>/dev/null || echo "Note: ldconfig not available (expected for non-root users)"
+fi
+
+# Set library path if not already set
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-/usr/lib/x86_64-linux-gnu:/usr/lib:/lib}"
+echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+
+# Test pyodbc import
+echo "--- Testing database driver ---"
+python -c "import pyodbc; print(f'pyodbc version: {pyodbc.version}')" 2>&1 || echo "WARNING: pyodbc import failed - database may not be accessible"
+
 # 1 — Create base schema tables (idempotent — skips tables that exist)
 echo "--- Initialising base schema ---"
 python - <<'PYEOF'
