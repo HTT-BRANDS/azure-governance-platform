@@ -1,0 +1,112 @@
+#!/bin/sh
+# =============================================================================
+# prepare-commit-msg hook: Auto-link issues and suggest prefixes
+# =============================================================================
+# Automatically adds issue references from branch names.
+# Suggests conventional commit prefixes based on changed files.
+#
+# Supports branch naming patterns:
+#   feature/123-description  -> refs #123
+#   fix/456-bug-fix         -> fixes #456
+#   issue/789-something     -> refs #789
+#   123-description         -> refs #123
+# =============================================================================
+
+set -e
+
+COMMIT_MSG_FILE="$1"
+COMMIT_SOURCE="$2"
+BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+
+# Skip for merge commits, squash, etc.
+if [ -n "$COMMIT_SOURCE" ] && [ "$COMMIT_SOURCE" != "message" ]; then
+    exit 0
+fi
+
+# Extract issue number from branch name
+ISSUE_NUM=""
+if echo "$BRANCH_NAME" | grep -qE '^[a-z]+/([0-9]+)-'; then
+    ISSUE_NUM=$(echo "$BRANCH_NAME" | sed -E 's/^[a-z]+\/([0-9]+)-.*/\1/')
+elif echo "$BRANCH_NAME" | grep -qE '^[0-9]+-'; then
+    ISSUE_NUM=$(echo "$BRANCH_NAME" | sed -E 's/^([0-9]+)-.*/\1/')
+fi
+
+# Suggest conventional commit type based on files changed
+SUGGESTED_TYPE=""
+STAGED_FILES=$(git diff --cached --name-only 2>/dev/null || echo "")
+
+if echo "$STAGED_FILES" | grep -qE 'test_.*\.py$|_test\.py$|tests/'; then
+    SUGGESTED_TYPE="test"
+elif echo "$STAGED_FILES" | grep -qE '\.md$|docs/'; then
+    SUGGESTED_TYPE="docs"
+elif echo "$STAGED_FILES" | grep -qE '\.yml$|\.yaml$|\.github/workflows/'; then
+    SUGGESTED_TYPE="ci"
+elif echo "$STAGED_FILES" | grep -qE 'Dockerfile|docker-compose|\.docker'; then
+    SUGGESTED_TYPE="build"
+elif echo "$STAGED_FILES" | grep -qE 'app/(api|routes)/'; then
+    SUGGESTED_TYPE="feat"
+elif echo "$STAGED_FILES" | grep -qE 'app/(core|services)/'; then
+    SUGGESTED_TYPE="refactor"
+fi
+
+# Read original commit message
+ORIGINAL_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Skip if message already has a prefix or is a special commit
+if echo "$ORIGINAL_MSG" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(|\:)' || \
+   echo "$ORIGINAL_MSG" | grep -qE '^(Merge|squash!|fixup!|Revert|WIP)'; then
+    # Just add issue reference if missing
+    if [ -n "$ISSUE_NUM" ] && ! echo "$ORIGINAL_MSG" | grep -q "#$ISSUE_NUM"; then
+        echo "" >> "$COMMIT_MSG_FILE"
+        echo "Refs #$ISSUE_NUM" >> "$COMMIT_MSG_FILE"
+    fi
+    exit 0
+fi
+
+# Create commit message template
+TEMPLATE=""
+
+# Add suggested type prefix if detected
+if [ -n "$SUGGESTED_TYPE" ]; then
+    TEMPLATE="${SUGGESTED_TYPE}: "
+fi
+
+# Add original message
+if [ -n "$ORIGINAL_MSG" ] && [ "$ORIGINAL_MSG" != "$(echo -e '\n# Please enter the commit message...' | head -1)" ]; then
+    TEMPLATE="${TEMPLATE}${ORIGINAL_MSG}"
+fi
+
+# Add issue reference if found
+if [ -n "$ISSUE_NUM" ]; then
+    if ! echo "$TEMPLATE" | grep -q "#$ISSUE_NUM"; then
+        TEMPLATE="${TEMPLATE}
+
+Refs #$ISSUE_NUM"
+    fi
+fi
+
+# Add help text
+HELP_TEXT="
+# ─────────────────────────────────────────
+# Branch: $BRANCH_NAME"
+
+if [ -n "$SUGGESTED_TYPE" ]; then
+    HELP_TEXT="${HELP_TEXT}
+# Suggested prefix: ${SUGGESTED_TYPE}"
+fi
+
+if [ -n "$ISSUE_NUM" ]; then
+    HELP_TEXT="${HELP_TEXT}
+# Issue: #$ISSUE_NUM"
+fi
+
+HELP_TEXT="${HELP_TEXT}
+# ─────────────────────────────────────────
+# Types: feat, fix, docs, style, refactor,
+#        perf, test, build, ci, chore, revert"
+
+# Write the template
+echo "$TEMPLATE" > "$COMMIT_MSG_FILE"
+echo "$HELP_TEXT" >> "$COMMIT_MSG_FILE"
+
+exit 0

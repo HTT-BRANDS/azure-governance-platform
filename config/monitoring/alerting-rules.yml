@@ -1,0 +1,489 @@
+# =============================================================================
+# Azure Governance Platform — Prometheus Alerting Rules
+# =============================================================================
+# These rules define when alerts should fire based on metric thresholds.
+# Deploy to your Prometheus instance or use with Alertmanager.
+#
+# Severity levels:
+#   critical - Page immediately, requires immediate action
+#   warning  - Notify on-call, investigate soon
+#   info     - Log for awareness, no immediate action needed
+#
+# Usage:
+#   Copy to your Prometheus rules directory:
+#     /etc/prometheus/rules.d/azure-governance-alerts.yml
+#
+#   Or include in prometheus.yml:
+#     rule_files:
+#       - '/etc/prometheus/rules.d/*.yml'
+# =============================================================================
+
+groups:
+  # ===========================================================================
+  # Group: Performance Alerts
+  # ===========================================================================
+  - name: performance
+    interval: 30s
+    rules:
+      # Critical: P95 response time > 1s for 5 minutes
+      - alert: HighP95ResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High P95 response time"
+          description: "P95 response time is {{ $value }}s (> 1s) for 5 minutes"
+          runbook_url: "https://wiki.internal/runbooks/high-response-time"
+
+      # Critical: P99 response time > 2s for 2 minutes
+      - alert: CriticalP99ResponseTime
+        expr: |
+          histogram_quantile(0.99,
+            rate(http_request_duration_seconds_bucket[2m])
+          ) > 2.0
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Critical P99 response time"
+          description: "P99 response time is {{ $value }}s (> 2s) for 2 minutes"
+          runbook_url: "https://wiki.internal/runbooks/critical-response-time"
+
+      # Warning: Error rate > 1% for 5 minutes
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} (> 1%)"
+
+      # Critical: Error rate > 5% for 2 minutes
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[2m]))
+            /
+            sum(rate(http_requests_total[2m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Critical error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} (> 5%)"
+
+      # Info: Slow request detected
+      - alert: SlowRequestDetected
+        expr: |
+          http_request_duration_seconds{quantile="0.99"} > 5
+        for: 1m
+        labels:
+          severity: info
+          service: api
+        annotations:
+          summary: "Slow request detected"
+          description: "Requests taking > 5s (p99 = {{ $value }}s)"
+
+  # ===========================================================================
+  # Group: Sync Operation Alerts
+  # ===========================================================================
+  - name: sync_operations
+    interval: 1m
+    rules:
+      # Critical: Sync job duration > 10 minutes
+      - alert: SyncJobTooSlow
+        expr: |
+          governance_sync_duration_seconds_bucket{le="+Inf"}
+          - ignoring(le)
+          governance_sync_duration_seconds_bucket{le="600"} > 0
+        for: 0m
+        labels:
+          severity: warning
+          service: sync
+        annotations:
+          summary: "Sync job too slow"
+          description: "{{ $labels.sync_type }} sync taking > 10 minutes"
+
+      # Critical: Sync job failed
+      - alert: SyncJobFailed
+        expr: |
+          increase(governance_sync_duration_seconds_count{status="failure"}[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: sync
+        annotations:
+          summary: "Sync job failed"
+          description: "{{ $labels.sync_type }} sync job failed"
+
+      # Warning: No successful sync in 2 hours
+      - alert: NoRecentSync
+        expr: |
+          time() - governance_sync_last_success_timestamp > 7200
+        for: 5m
+        labels:
+          severity: warning
+          service: sync
+        annotations:
+          summary: "No recent sync"
+          description: "No successful {{ $labels.sync_type }} sync for 2+ hours"
+
+      # Critical: No successful sync in 4 hours
+      - alert: StaleSyncData
+        expr: |
+          time() - governance_sync_last_success_timestamp > 14400
+        for: 5m
+        labels:
+          severity: critical
+          service: sync
+        annotations:
+          summary: "Stale sync data"
+          description: "{{ $labels.sync_type }} data is 4+ hours old"
+
+      # Warning: Too many active sync jobs
+      - alert: TooManyActiveSyncJobs
+        expr: |
+          governance_sync_active_jobs > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: sync
+        annotations:
+          summary: "Too many active sync jobs"
+          description: "{{ $value }} sync jobs active (max 5)"
+
+  # ===========================================================================
+  # Group: Authentication Alerts
+  # ===========================================================================
+  - name: authentication
+    interval: 1m
+    rules:
+      # Warning: High auth failure rate
+      - alert: HighAuthFailureRate
+        expr: |
+          (
+            sum(rate(governance_auth_attempts_total{result!="success"}[5m]))
+            /
+            sum(rate(governance_auth_attempts_total[5m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: auth
+        annotations:
+          summary: "High auth failure rate"
+          description: "{{ $value | humanizePercentage }} of auth attempts failing"
+
+      # Critical: Auth latency too high
+      - alert: AuthLatencyTooHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(governance_auth_latency_seconds_bucket[5m])
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: critical
+          service: auth
+        annotations:
+          summary: "Auth latency too high"
+          description: "P95 auth latency is {{ $value }}s (> 2s)"
+
+      # Warning: Many expired tokens
+      - alert: ManyExpiredTokens
+        expr: |
+          increase(governance_auth_attempts_total{result="expired_token"}[1h]) > 50
+        for: 0m
+        labels:
+          severity: warning
+          service: auth
+        annotations:
+          summary: "Many expired token errors"
+          description: "{{ $value }} expired token errors in last hour"
+
+  # ===========================================================================
+  # Group: Database Alerts
+  # ===========================================================================
+  - name: database
+    interval: 30s
+    rules:
+      # Critical: DB query too slow
+      - alert: SlowDBQuery
+        expr: |
+          histogram_quantile(0.95,
+            rate(governance_db_query_duration_seconds_bucket[5m])
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Slow database queries"
+          description: "P95 DB query time is {{ $value }}s (> 1s)"
+
+      # Critical: DB connection errors
+      - alert: DBConnectionErrors
+        expr: |
+          increase(governance_db_errors_total{error_type="connection_error"}[5m]) > 5
+        for: 5m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database connection errors"
+          description: "{{ $value }} DB connection errors in 5 minutes"
+
+      # Warning: DB deadlock detected
+      - alert: DBDeadlockDetected
+        expr: |
+          increase(governance_db_errors_total{error_type="deadlock"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Database deadlock detected"
+          description: "DB deadlock occurred"
+
+      # Warning: DB pool exhaustion
+      - alert: DBPoolExhaustion
+        expr: |
+          governance_db_pool_size{pool_type="used"}
+          /
+          governance_db_pool_size{pool_type="total"} > 0.9
+        for: 2m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "DB connection pool nearly exhausted"
+          description: "{{ $value | humanizePercentage }} of DB pool in use"
+
+  # ===========================================================================
+  # Group: Cache Alerts
+  # ===========================================================================
+  - name: cache
+    interval: 1m
+    rules:
+      # Warning: Cache hit rate too low
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            sum(rate(governance_cache_operations_total{result="hit"}[10m]))
+            /
+            sum(rate(governance_cache_operations_total{operation="get"}[10m]))
+          ) < 0.5
+        for: 5m
+        labels:
+          severity: info
+          service: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (< 50%)"
+
+      # Warning: Cache errors increasing
+      - alert: CacheErrorsIncreasing
+        expr: |
+          increase(governance_cache_operations_total{result="error"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "Cache errors increasing"
+          description: "{{ $value }} cache errors in 5 minutes"
+
+  # ===========================================================================
+  # Group: External API Alerts
+  # ===========================================================================
+  - name: external_api
+    interval: 1m
+    rules:
+      # Warning: External API latency high
+      - alert: ExternalAPILatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(governance_external_api_latency_seconds_bucket[10m])
+          ) > 5.0
+        for: 5m
+        labels:
+          severity: warning
+          service: external_api
+        annotations:
+          summary: "External API latency high"
+          description: "P95 {{ $labels.service }} latency is {{ $value }}s (> 5s)"
+
+      # Critical: External API errors
+      - alert: ExternalAPIErrors
+        expr: |
+          increase(governance_external_api_errors_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: critical
+          service: external_api
+        annotations:
+          summary: "External API errors"
+          description: "{{ $value }} errors from {{ $labels.service }} in 5 minutes"
+
+      # Warning: Rate limit approaching
+      - alert: RateLimitApproaching
+        expr: |
+          governance_external_api_rate_limit_remaining < 100
+        for: 5m
+        labels:
+          severity: warning
+          service: external_api
+        annotations:
+          summary: "Rate limit approaching"
+          description: "{{ $labels.service }} rate limit: {{ $value }} remaining"
+
+      # Info: Azure API authentication errors
+      - alert: AzureAuthErrors
+        expr: |
+          increase(governance_external_api_errors_total{service=~"azure_.*",error_type="auth_error"}[10m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+          service: external_api
+        annotations:
+          summary: "Azure API auth errors"
+          description: "{{ $value }} Azure auth errors in 10 minutes"
+
+  # ===========================================================================
+  # Group: Business Logic Alerts
+  # ===========================================================================
+  - name: business_logic
+    interval: 5m
+    rules:
+      # Critical: Compliance score dropped
+      - alert: ComplianceScoreDrop
+        expr: |
+          (
+            governance_compliance_score offset 1h
+            - governance_compliance_score
+          ) / governance_compliance_score offset 1h > 0.2
+        for: 5m
+        labels:
+          severity: critical
+          service: compliance
+        annotations:
+          summary: "Compliance score dropped significantly"
+          description: "{{ $labels.framework }} score dropped by > 20%"
+
+      # Warning: Low compliance score
+      - alert: LowComplianceScore
+        expr: |
+          governance_compliance_score < 50
+        for: 10m
+        labels:
+          severity: warning
+          service: compliance
+        annotations:
+          summary: "Low compliance score"
+          description: "{{ $labels.framework }} score is {{ $value }} (< 50%)"
+
+      # Info: Cost anomaly detected
+      - alert: CostAnomalyDetected
+        expr: |
+          increase(governance_cost_anomalies_total{severity=~"warning|critical"}[1h]) > 0
+        for: 0m
+        labels:
+          severity: info
+          service: cost_management
+        annotations:
+          summary: "Cost anomaly detected"
+          description: "{{ $value }} cost anomalies detected"
+
+  # ===========================================================================
+  # Group: Rate Limiting Alerts
+  # ===========================================================================
+  - name: rate_limiting
+    interval: 1m
+    rules:
+      # Warning: Rate limit hits increasing
+      - alert: RateLimitHitsIncreasing
+        expr: |
+          increase(governance_rate_limit_hits_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: rate_limit
+        annotations:
+          summary: "Rate limit hits increasing"
+          description: "{{ $value }} rate limit hits in 5 minutes"
+
+  # ===========================================================================
+  # Group: Infrastructure Alerts
+  # ===========================================================================
+  - name: infrastructure
+    interval: 30s
+    rules:
+      # Critical: Instance down
+      - alert: InstanceDown
+        expr: |
+          up{job="azure-governance-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: "Instance down"
+          description: "{{ $labels.instance }} is down"
+
+      # Warning: High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            process_resident_memory_bytes{job="azure-governance-api"}
+            /
+            1024 / 1024 / 1024
+          ) > 1.5
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}GB (> 1.5GB)"
+
+      # Warning: High CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% (> 80%)"
+
+      # Critical: Disk space low
+      - alert: DiskSpaceLow
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"}
+            /
+            node_filesystem_size_bytes{mountpoint="/"}
+          ) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: "Disk space low"
+          description: "Disk space is {{ $value | humanizePercentage }} (< 10%)"

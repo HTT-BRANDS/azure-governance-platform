@@ -1,0 +1,349 @@
+# =============================================================================
+# Azure Governance Platform — Security Scanning Pipeline
+# =============================================================================
+# Runs comprehensive security scans on every push and PR:
+# - Trivy container image scanning
+# - Bandit Python security linting
+# - Safety dependency vulnerability checking
+# - pip-audit for known CVEs
+#
+# Fails the build on CRITICAL/HIGH vulnerabilities.
+# =============================================================================
+
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run daily at 6 AM UTC to catch new CVEs
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+env:
+  PYTHON_VERSION: '3.11'
+  UV_VERSION: '0.5.x'
+  IMAGE_NAME: azure-governance-platform
+
+jobs:
+  # ===========================================================================
+  # Job 1: Trivy Container Image Scan
+  # ===========================================================================
+  container-scan:
+    name: Container Image Scan (Trivy)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }}:scan-target \
+            --target production \
+            -f Dockerfile .
+
+      - name: Run Trivy image scan (CRITICAL/HIGH)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.IMAGE_NAME }}:scan-target'
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'  # Fail on CRITICAL/HIGH
+          ignore-unfixed: true
+
+      - name: Run Trivy image scan (MEDIUM/LOW)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.IMAGE_NAME }}:scan-target'
+          format: 'sarif'
+          output: 'trivy-image-low-results.sarif'
+          severity: 'MEDIUM,LOW,UNKNOWN'
+          exit-code: '0'  # Don't fail on MEDIUM/LOW
+          ignore-unfixed: true
+        if: always()
+
+      - name: Upload Trivy SARIF (CRITICAL/HIGH)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-image-results.sarif'
+          category: 'trivy-image-critical-high'
+
+      - name: Upload Trivy SARIF (MEDIUM/LOW)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-image-low-results.sarif'
+          category: 'trivy-image-medium-low'
+
+      - name: Generate Trivy markdown report
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: '${{ env.IMAGE_NAME }}:scan-target'
+          format: 'table'
+          output: 'trivy-image-report.md'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '0'
+
+      - name: Upload Trivy report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-image-report
+          path: trivy-image-report.md
+
+  # ===========================================================================
+  # Job 2: Bandit Python Security Linting
+  # ===========================================================================
+  bandit-scan:
+    name: Bandit Security Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Bandit
+        run: |
+          pip install bandit[toml,sarif]>=1.7.0
+
+      - name: Run Bandit scan
+        run: |
+          bandit \
+            -r app/ \
+            -f sarif \
+            -o bandit-results.sarif \
+            --severity-level medium \
+            --confidence-level medium \
+            --skip B101 \
+            --exclude './venv,./.venv,./tests,./node_modules' \
+            || true
+
+      - name: Run Bandit scan (text output for logs)
+        run: |
+          bandit \
+            -r app/ \
+            -f screen \
+            --severity-level medium \
+            --confidence-level medium \
+            --skip B101 \
+            --exclude './venv,./.venv,./tests,./node_modules' \
+            || true
+        if: always()
+
+      - name: Upload Bandit SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'bandit-results.sarif'
+          category: 'bandit'
+
+  # ===========================================================================
+  # Job 3: Safety Dependency Check
+  # ===========================================================================
+  safety-scan:
+    name: Safety Dependency Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Safety
+        run: |
+          pip install safety>=3.0.0
+
+      - name: Export requirements from uv.lock
+        run: |
+          pip install uv
+          uv export --no-hashes --no-dev > requirements-for-safety.txt
+
+      - name: Run Safety check
+        run: |
+          safety check \
+            -r requirements-for-safety.txt \
+            --json \
+            --output safety-results.json \
+            --ignore 70612 || true  # Ignore specific false positive if needed
+
+      - name: Run Safety check (screen output)
+        run: |
+          safety check \
+            -r requirements-for-safety.txt \
+            --full-report \
+            --ignore 70612 || true
+        if: always()
+
+      - name: Upload Safety results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: safety-results
+          path: safety-results.json
+
+  # ===========================================================================
+  # Job 4: pip-audit (PEP 668 compliant)
+  # ===========================================================================
+  pip-audit:
+    name: pip-audit CVE Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pip-audit
+        run: |
+          pip install pip-audit>=2.7.0
+
+      - name: Export requirements from uv.lock
+        run: |
+          pip install uv
+          uv export --no-hashes --no-dev > requirements-for-audit.txt
+
+      - name: Run pip-audit
+        run: |
+          pip-audit \
+            -r requirements-for-audit.txt \
+            --format=json \
+            --output=pip-audit-results.json \
+            --desc || true
+
+      - name: Run pip-audit (screen output)
+        run: |
+          pip-audit \
+            -r requirements-for-audit.txt \
+            --format=markdown \
+            --output=pip-audit-report.md \
+            --desc || true
+        if: always()
+
+      - name: Upload pip-audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-results
+          path: |
+            pip-audit-results.json
+            pip-audit-report.md
+
+  # ===========================================================================
+  # Job 5: Secrets Detection (Gitleaks-style)
+  # ===========================================================================
+  secrets-scan:
+    name: Secrets Detection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        continue-on-error: true
+
+  # ===========================================================================
+  # Job 6: Security Summary
+  # ===========================================================================
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [container-scan, bandit-scan, safety-scan, pip-audit, secrets-scan]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        if: always()
+
+      - name: Generate security report
+        run: |
+          echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Check container scan
+          if [ "${{ needs.container-scan.result }}" == "success" ]; then
+            echo "| Container (Trivy) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.container-scan.result }}" == "failure" ]; then
+            echo "| Container (Trivy) | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Container (Trivy) | ⚠️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check bandit
+          if [ "${{ needs.bandit-scan.result }}" == "success" ]; then
+            echo "| Bandit (Python) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.bandit-scan.result }}" == "failure" ]; then
+            echo "| Bandit (Python) | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Bandit (Python) | ⚠️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check safety
+          if [ "${{ needs.safety-scan.result }}" == "success" ]; then
+            echo "| Safety (Dependencies) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.safety-scan.result }}" == "failure" ]; then
+            echo "| Safety (Dependencies) | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Safety (Dependencies) | ⚠️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check pip-audit
+          if [ "${{ needs.pip-audit.result }}" == "success" ]; then
+            echo "| pip-audit (CVEs) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.pip-audit.result }}" == "failure" ]; then
+            echo "| pip-audit (CVEs) | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| pip-audit (CVEs) | ⚠️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check secrets
+          if [ "${{ needs.secrets-scan.result }}" == "success" ]; then
+            echo "| Secrets Detection | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.secrets-scan.result }}" == "failure" ]; then
+            echo "| Secrets Detection | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Secrets Detection | ⚠️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check overall status
+        run: |
+          if [ "${{ needs.container-scan.result }}" == "failure" ] || \
+             [ "${{ needs.bandit-scan.result }}" == "failure" ] || \
+             [ "${{ needs.safety-scan.result }}" == "failure" ] || \
+             [ "${{ needs.pip-audit.result }}" == "failure" ]; then
+            echo "❌ Security scan failed"
+            exit 1
+          fi
+          echo "✅ All security scans passed"

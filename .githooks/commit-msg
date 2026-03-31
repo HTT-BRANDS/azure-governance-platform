@@ -1,0 +1,82 @@
+#!/bin/sh
+# =============================================================================
+# commit-msg hook: Enforce Conventional Commits
+# =============================================================================
+# Validates that commit messages follow the Conventional Commits specification.
+# See: https://www.conventionalcommits.org/
+#
+# Format: <type>[optional scope]: <description>
+#
+# Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+# =============================================================================
+
+set -e
+
+COMMIT_MSG_FILE="$1"
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Conventional Commit regex pattern
+# Matches: type(scope): description or type: description
+CONVENTIONAL_COMMIT_REGEX='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z-]+\))?!?: .{1,}'
+
+# Skip validation for:
+# - Merge commits
+# - Squash commits
+# - Revert commits with original message
+# - WIP commits
+SKIP_PATTERNS='^(Merge|squash!|fixup!|Revert|WIP)'
+
+if echo "$COMMIT_MSG" | grep -qE "$SKIP_PATTERNS"; then
+    echo "ℹ️  Skipping conventional commit check (special commit type)"
+    exit 0
+fi
+
+if ! echo "$COMMIT_MSG" | grep -qE "$CONVENTIONAL_COMMIT_REGEX"; then
+    echo ""
+    echo "❌ INVALID COMMIT MESSAGE"
+    echo "======================="
+    echo ""
+    echo "Your commit message does not follow the Conventional Commits format."
+    echo ""
+    echo "Expected format: <type>[optional scope]: <description>"
+    echo ""
+    echo "Allowed types:"
+    echo "  feat      - New feature"
+    echo "  fix       - Bug fix"
+    echo "  docs      - Documentation only changes"
+    echo "  style     - Code style (formatting, semicolons, etc)"
+    echo "  refactor  - Code refactoring"
+    echo "  perf      - Performance improvements"
+    echo "  test      - Adding or fixing tests"
+    echo "  build     - Build system changes"
+    echo "  ci        - CI/CD changes"
+    echo "  chore     - Other changes (deps, config, etc)"
+    echo "  revert    - Revert a previous commit"
+    echo ""
+    echo "Examples:"
+    echo "  feat(auth): add Azure AD integration"
+    echo "  fix(api): resolve rate limiting issue"
+    echo "  docs: update deployment instructions"
+    echo "  perf(cache): reduce DB queries by 50%"
+    echo ""
+    echo "Your message was:"
+    echo "  $COMMIT_MSG"
+    echo ""
+    exit 1
+fi
+
+# Check line length (subject line should be <= 72 chars)
+SUBJECT_LINE=$(echo "$COMMIT_MSG" | head -n 1)
+if [ ${#SUBJECT_LINE} -gt 72 ]; then
+    echo "⚠️  WARNING: Commit subject is ${#SUBJECT_LINE} characters (max 72 recommended)"
+    echo "   Consider shortening: ${SUBJECT_LINE:0:72}..."
+    # Don't fail, just warn
+fi
+
+# Check for issue references (optional but recommended)
+if ! echo "$COMMIT_MSG" | grep -qE '#[0-9]+|closes?|fixes?|resolves?'; then
+    echo "ℹ️  Tip: Consider referencing an issue (e.g., 'fixes #123')"
+fi
+
+echo "✅ Commit message follows Conventional Commits format"
+exit 0

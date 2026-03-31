@@ -1,0 +1,255 @@
+# =============================================================================
+# Azure Governance Platform — Alertmanager Configuration
+# =============================================================================
+# Routes alerts to appropriate notification channels based on severity
+# and service type.
+#
+# Routing:
+#   critical → PagerDuty (immediately) + Slack (high priority)
+#   warning  → Slack (standard priority)
+#   info     → Slack (low priority) - optional
+#
+# Features:
+#   - Grouping by alertname and service
+#   - Inhibition (warning suppressed if critical exists)
+#   - Silence management
+# =============================================================================
+
+global:
+  # Resolve timeout: alerts auto-resolve after this duration
+  resolve_timeout: 5m
+
+  # Slack API configuration
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+  # PagerDuty configuration
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+  # SMTP for email notifications (optional)
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_from: 'alerts@governance.example.com'
+  smtp_auth_username: '${SMTP_USER}'
+  smtp_auth_password: '${SMTP_PASS}'
+
+# Default route - everything goes here unless matched
+route:
+  group_by: ['alertname', 'severity', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'slack-default'
+  
+  # Routes for different severity levels
+  routes:
+    # Critical alerts → PagerDuty + Slack
+    - match:
+        severity: critical
+      receiver: 'pagerduty-critical'
+      continue: true  # Also send to Slack
+      group_wait: 0s  # Immediate for critical
+      group_interval: 2m
+      repeat_interval: 1h
+
+    # Warning alerts → Slack only
+    - match:
+        severity: warning
+      receiver: 'slack-warning'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+
+    # Info alerts → Slack only (lower priority channel)
+    - match:
+        severity: info
+      receiver: 'slack-info'
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 24h
+
+    # Service-specific routing
+    - match_re:
+        service: sync|database
+      receiver: 'slack-ops'
+      continue: true
+
+    - match_re:
+        service: auth
+      receiver: 'slack-security'
+      continue: true
+
+# Inhibit rules - suppress warnings when critical exists
+inhibit_rules:
+  # Don't send 'warning' if 'critical' exists for same alert
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service', 'instance']
+
+  # Don't send 'info' if 'warning' or 'critical' exists
+  - source_match_re:
+      severity: 'critical|warning'
+    target_match:
+      severity: 'info'
+    equal: ['alertname', 'service']
+
+# Receivers - notification targets
+receivers:
+  # --------------------------------------------------------------------------
+  # PagerDuty - Critical alerts
+  # --------------------------------------------------------------------------
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        severity: '{{ .GroupLabels.severity }}'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          resolved: '{{ .Alerts.Resolved | len }}'
+          service: '{{ .GroupLabels.service }}'
+          runbook: '{{ .CommonAnnotations.runbook_url }}'
+        links:
+          - href: '{{ .CommonAnnotations.runbook_url }}'
+            text: 'Runbook'
+
+  # --------------------------------------------------------------------------
+  # Slack - Default channel
+  # --------------------------------------------------------------------------
+  - name: 'slack-default'
+    slack_configs:
+      - channel: '#governance-alerts'
+        title: '{{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Severity:* {{ .Labels.severity }}
+          *Service:* {{ .Labels.service }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        actions:
+          - type: button
+            text: 'View Runbook'
+            url: '{{ .CommonAnnotations.runbook_url }}'
+
+  # --------------------------------------------------------------------------
+  # Slack - Warning channel
+  # --------------------------------------------------------------------------
+  - name: 'slack-warning'
+    slack_configs:
+      - channel: '#governance-warnings'
+        title: '⚠️ {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Service:* {{ .Labels.service }}
+          *Instance:* {{ .Labels.instance }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: 'warning'
+
+  # --------------------------------------------------------------------------
+  # Slack - Critical channel
+  # --------------------------------------------------------------------------
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#governance-critical'
+        title: '🚨 {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *CRITICAL ALERT*
+          *Alert:* {{ .Annotations.summary }}
+          *Service:* {{ .Labels.service }}
+          *Instance:* {{ .Labels.instance }}
+          *Description:* {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+          {{ end }}
+        color: 'danger'
+
+  # --------------------------------------------------------------------------
+  # Slack - Info channel (low priority)
+  # --------------------------------------------------------------------------
+  - name: 'slack-info'
+    slack_configs:
+      - channel: '#governance-info'
+        title: 'ℹ️ {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.description }}
+          {{ end }}
+        color: 'good'
+
+  # --------------------------------------------------------------------------
+  # Slack - Operations team
+  # --------------------------------------------------------------------------
+  - name: 'slack-ops'
+    slack_configs:
+      - channel: '#ops-platform'
+        title: '{{ .GroupLabels.severity | toUpper }}: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Service:* {{ .Labels.service }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+  # --------------------------------------------------------------------------
+  # Slack - Security team
+  # --------------------------------------------------------------------------
+  - name: 'slack-security'
+    slack_configs:
+      - channel: '#security-alerts'
+        title: '🔒 {{ .GroupLabels.severity | toUpper }}: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Security Alert:* {{ .Annotations.summary }}
+          *Service:* {{ .Labels.service }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        color: '{{ if eq .GroupLabels.severity "critical" }}danger{{ else }}warning{{ end }}'
+
+  # --------------------------------------------------------------------------
+  # Email notifications (optional)
+  # --------------------------------------------------------------------------
+  - name: 'email-ops'
+    email_configs:
+      - to: 'ops@governance.example.com'
+        from: 'alerts@governance.example.com'
+        subject: '[{{ .GroupLabels.severity | toUpper }}] {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Severity: {{ .Labels.severity }}
+          Service: {{ .Labels.service }}
+          
+          Description:
+          {{ .Annotations.description }}
+          
+          {{ if .Annotations.runbook_url }}Runbook: {{ .Annotations.runbook_url }}{{ end }}
+          ---
+          {{ end }}
+
+# Time intervals for silence management
+time_intervals:
+  - name: business_hours
+    time_intervals:
+      - times:
+          - start_time: '09:00'
+            end_time: '17:00'
+        weekdays: ['monday:tuesday:wednesday:thursday:friday']
+        location: 'America/Los_Angeles'
+
+  - name: off_hours
+    time_intervals:
+      - times:
+          - start_time: '17:00'
+            end_time: '09:00'
+        weekdays: ['monday:tuesday:wednesday:thursday:friday']
+        location: 'America/Los_Angeles'
+      - weekdays: ['saturday', 'sunday']
+        location: 'America/Los_Angeles'
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
