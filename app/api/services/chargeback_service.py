@@ -1,322 +1,316 @@
-"""Chargeback / Showback reporting service (CO-010).
+"""Chargeback / showback reporting service.
 
-Provides per-tenant cost allocation reports with CSV and JSON export support.
-Builds on the existing CostSnapshot / Tenant data model used by CostService.
+Builds per-tenant cost allocation reports from the existing
+:class:`~app.models.cost.CostSnapshot` data that has already been
+synchronised from Azure Cost Management.  Does **not** re-call Azure —
+it operates entirely on the local database.
+
+CO-010: Chargeback/Showback Reporting.
 """
+
+from __future__ import annotations
 
 import csv
 import io
 import logging
-from datetime import UTC, date, datetime
-from typing import Any
+from datetime import date
 
-from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.models.cost import CostSnapshot
 from app.models.tenant import Tenant
+from app.schemas.chargeback import (
+    ChargebackReport,
+    ExportedReport,
+    ResourceGroupCost,
+    ResourceTypeCost,
+)
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Azure service-name → normalised billing category mapping
-# ---------------------------------------------------------------------------
-
-_CATEGORY_MAP: dict[str, str] = {
-    # Compute
-    "virtual machines": "compute",
-    "app service": "compute",
-    "azure kubernetes service": "compute",
-    "azure functions": "compute",
-    "container instances": "compute",
-    "azure container apps": "compute",
-    "azure batch": "compute",
-    "azure spring apps": "compute",
-    # Storage
-    "storage": "storage",
-    "azure blob storage": "storage",
-    "azure files": "storage",
-    "azure data lake storage": "storage",
-    "azure disk storage": "storage",
-    "azure backup": "storage",
-    # Network
-    "vpn gateway": "network",
-    "azure firewall": "network",
-    "load balancer": "network",
-    "azure cdn": "network",
-    "bandwidth": "network",
-    "virtual network": "network",
-    "azure dns": "network",
-    "azure front door": "network",
-    "azure expressroute": "network",
-    # Database
-    "azure sql database": "database",
-    "cosmos db": "database",
-    "azure database for postgresql": "database",
-    "azure database for mysql": "database",
-    "azure cache for redis": "database",
-    "azure synapse analytics": "database",
-    # Monitoring & Management
-    "azure monitor": "monitoring",
-    "log analytics": "monitoring",
-    "application insights": "monitoring",
-    "azure security center": "monitoring",
-}
+_UNKNOWN_TENANT = "Unknown Tenant"
+_UNKNOWN_SERVICE = "Unknown"
+_UNKNOWN_RG = "Unknown"
 
 
-def _normalize_category(
-    service_name: str | None,
-    meter_category: str | None,
-) -> str:
-    """Map an Azure service / meter name to a normalised billing category.
-
-    Tries meter_category first (more specific), then service_name.  Falls
-    back to ``"other"`` for anything unrecognised.
-    """
-    for raw in (meter_category, service_name):
-        if raw:
-            key = raw.strip().lower()
-            if key in _CATEGORY_MAP:
-                return _CATEGORY_MAP[key]
-    return "other"
-
-
-# ---------------------------------------------------------------------------
-# Pydantic response models
-# ---------------------------------------------------------------------------
-
-
-class TenantChargebackEntry(BaseModel):
-    """Cost allocation entry for a single tenant."""
-
-    tenant_id: str
-    tenant_name: str
-    total_cost: float
-    percentage_of_total: float = Field(
-        ..., description="Percentage of the grand total attributed to this tenant"
-    )
-    breakdown: dict[str, float] = Field(
-        default_factory=dict,
-        description="Cost broken down by category (compute, storage, network, etc.)",
-    )
-    cost_per_resource: float | None = Field(
-        None,
-        description="Average cost per tracked resource group / subscription unit",
-    )
-    resource_count: int = Field(
-        ...,
-        description=(
-            "Number of distinct resource-group / subscription units observed in this period"
-        ),
-    )
-
-
-class ChargebackReport(BaseModel):
-    """Full chargeback / showback report for one billing period."""
-
-    period_start: date
-    period_end: date
-    generated_at: datetime
-    tenants: list[TenantChargebackEntry]
-    total_cost: float
-    currency: str = "USD"
-
-
-# ---------------------------------------------------------------------------
-# Service
-# ---------------------------------------------------------------------------
+class ChargebackServiceError(Exception):
+    """Raised when a chargeback operation cannot be completed."""
 
 
 class ChargebackService:
-    """Service for generating chargeback / showback reports.
+    """Service for generating chargeback and showback reports.
 
-    Aggregates :class:`~app.models.cost.CostSnapshot` data into per-tenant
-    cost attribution reports and supports CSV / JSON export.
+    Args:
+        db: SQLAlchemy synchronous session (injected via FastAPI ``Depends``).
     """
 
     def __init__(self, db: Session) -> None:
         self.db = db
 
     # ------------------------------------------------------------------
-    # Core report builder
+    # Public API
     # ------------------------------------------------------------------
 
-    async def get_chargeback_report(
+    async def get_tenant_report(
         self,
-        tenant_ids: list[str] | None,
+        tenant_id: str,
         start_date: date,
         end_date: date,
-        include_breakdown: bool = True,
     ) -> ChargebackReport:
-        """Build a chargeback report for the requested tenants and period.
+        """Aggregate CostSnapshot records into a chargeback report.
+
+        Queries the local database for all :class:`~app.models.cost.CostSnapshot`
+        rows that belong to *tenant_id* and fall within [*start_date*, *end_date*]
+        (both inclusive), then groups costs by resource type and resource group.
 
         Args:
-            tenant_ids: Optional list of tenant IDs to include.  When
-                ``None`` all tenants are included.
-            start_date: First day of the billing period (inclusive).
-            end_date: Last day of the billing period (inclusive).
-            include_breakdown: When ``True`` the per-category cost breakdown
-                is computed and included in each entry.
+            tenant_id: Internal tenant identifier (``tenants.id`` FK value).
+            start_date: Inclusive start of the reporting period.
+            end_date: Inclusive end of the reporting period.
 
         Returns:
-            A :class:`ChargebackReport` with one entry per tenant that has
-            cost data in the requested period.
+            A fully populated :class:`~app.schemas.chargeback.ChargebackReport`.
         """
-        # ----------------------------------------------------------------
-        # Fetch cost snapshots
-        # ----------------------------------------------------------------
-        snap_query = self.db.query(CostSnapshot).filter(
-            CostSnapshot.date >= start_date,
-            CostSnapshot.date <= end_date,
+        if start_date > end_date:
+            raise ChargebackServiceError(
+                f"start_date ({start_date}) must not be after end_date ({end_date})"
+            )
+
+        tenant = self.db.query(Tenant).filter(Tenant.id == tenant_id).first()
+        tenant_name = tenant.name if tenant else _UNKNOWN_TENANT
+
+        snapshots = (
+            self.db.query(CostSnapshot)
+            .filter(
+                CostSnapshot.tenant_id == tenant_id,
+                CostSnapshot.date >= start_date,
+                CostSnapshot.date <= end_date,
+            )
+            .all()
         )
-        if tenant_ids:
-            snap_query = snap_query.filter(CostSnapshot.tenant_id.in_(tenant_ids))
-        snapshots: list[CostSnapshot] = snap_query.all()
 
-        # ----------------------------------------------------------------
-        # Fetch tenant name lookup (all relevant tenants)
-        # ----------------------------------------------------------------
-        tenant_name_lookup: dict[str, str] = {}
-        all_tenant_ids = list({s.tenant_id for s in snapshots})
-        if all_tenant_ids:
-            db_tenants = self.db.query(Tenant).filter(Tenant.id.in_(all_tenant_ids)).all()
-            tenant_name_lookup = {t.id: t.name for t in db_tenants}
+        total_cost = sum(s.total_cost for s in snapshots)
+        currency = snapshots[0].currency if snapshots else "USD"
 
-        # ----------------------------------------------------------------
-        # Aggregate per-tenant data
-        # ----------------------------------------------------------------
-        tenant_costs: dict[str, float] = {}
-        tenant_breakdowns: dict[str, dict[str, float]] = {}
-        # Track unique (subscription_id, resource_group) pairs per tenant
-        tenant_resource_keys: dict[str, set[str]] = {}
-
-        for snap in snapshots:
-            tid = snap.tenant_id
-
-            # Accumulate total cost
-            tenant_costs[tid] = tenant_costs.get(tid, 0.0) + snap.total_cost
-
-            # Accumulate breakdown by category
-            if include_breakdown:
-                category = _normalize_category(snap.service_name, snap.meter_category)
-                tenant_breakdowns.setdefault(tid, {})
-                tenant_breakdowns[tid][category] = (
-                    tenant_breakdowns[tid].get(category, 0.0) + snap.total_cost
-                )
-
-            # Track resource key for resource_count proxy
-            tenant_resource_keys.setdefault(tid, set())
-            resource_key = (
-                f"{snap.subscription_id}::{snap.resource_group}"
-                if snap.resource_group
-                else snap.subscription_id
-            )
-            tenant_resource_keys[tid].add(resource_key)
-
-        # ----------------------------------------------------------------
-        # Build TenantChargebackEntry list
-        # ----------------------------------------------------------------
-        grand_total = sum(tenant_costs.values())
-
-        entries: list[TenantChargebackEntry] = []
-        for tid, cost in tenant_costs.items():
-            resource_count = len(tenant_resource_keys.get(tid, set()))
-            cost_per_resource = cost / resource_count if resource_count > 0 else None
-            percentage = (cost / grand_total * 100.0) if grand_total > 0 else 0.0
-            breakdown = tenant_breakdowns.get(tid, {}) if include_breakdown else {}
-
-            entries.append(
-                TenantChargebackEntry(
-                    tenant_id=tid,
-                    tenant_name=tenant_name_lookup.get(tid, "Unknown"),
-                    total_cost=round(cost, 4),
-                    percentage_of_total=round(percentage, 4),
-                    breakdown={k: round(v, 4) for k, v in breakdown.items()},
-                    cost_per_resource=(
-                        round(cost_per_resource, 4) if cost_per_resource is not None else None
-                    ),
-                    resource_count=resource_count,
-                )
-            )
-
-        # Sort descending by cost so the biggest spenders come first
-        entries.sort(key=lambda e: e.total_cost, reverse=True)
+        by_resource_type = self._aggregate_by_resource_type(snapshots, total_cost)
+        by_resource_group = self._aggregate_by_resource_group(snapshots, total_cost)
 
         return ChargebackReport(
+            tenant_id=tenant_id,
+            tenant_name=tenant_name,
             period_start=start_date,
             period_end=end_date,
-            generated_at=datetime.now(UTC),
-            tenants=entries,
-            total_cost=round(grand_total, 4),
-            currency="USD",
+            total_cost=round(total_cost, 6),
+            currency=currency,
+            by_resource_type=by_resource_type,
+            by_resource_group=by_resource_group,
         )
 
-    # ------------------------------------------------------------------
-    # Export helpers
-    # ------------------------------------------------------------------
+    async def export_report(
+        self,
+        tenant_id: str,
+        start_date: date,
+        end_date: date,
+        format: str = "json",  # noqa: A002  — matches the API parameter name
+    ) -> ExportedReport:
+        """Return a chargeback report serialised to *format* (``"json"`` or ``"csv"``).
 
-    def export_chargeback_csv(self, report: ChargebackReport) -> str:
-        """Serialise a :class:`ChargebackReport` to a CSV string.
+        For ``"json"``: the ``content`` field is a compact JSON string of the
+        :class:`~app.schemas.chargeback.ChargebackReport`, and ``report`` is
+        also populated for convenient programmatic access.
 
-        Each row represents one tenant.  Dynamic breakdown categories are
-        expanded into individual columns, sorted alphabetically after the
-        fixed base columns.
+        For ``"csv"``: the ``content`` field is a CSV string with one allocation
+        row per (resource_type, resource_group) combination, suitable for
+        spreadsheet import.  ``report`` is set to ``None`` to keep the response
+        lean.
 
         Args:
-            report: The report to serialise.
+            tenant_id: Internal tenant identifier.
+            start_date: Inclusive period start.
+            end_date: Inclusive period end.
+            format: ``"json"`` (default) or ``"csv"``.
 
         Returns:
-            A UTF-8 CSV string ready to write to a file or HTTP response.
+            :class:`~app.schemas.chargeback.ExportedReport`.
+
+        Raises:
+            :class:`ChargebackServiceError`: When *format* is not supported.
+        """
+        if format not in {"json", "csv"}:
+            raise ChargebackServiceError(
+                f"Unsupported export format: {format!r}. Must be 'json' or 'csv'."
+            )
+
+        report = await self.get_tenant_report(tenant_id, start_date, end_date)
+        period_tag = f"{start_date.isoformat()}_{end_date.isoformat()}"
+        filename_stem = f"chargeback-{tenant_id}-{period_tag}"
+
+        if format == "json":
+            content = report.model_dump_json(indent=2)
+            return ExportedReport(
+                format="json",
+                filename=f"{filename_stem}.json",
+                content=content,
+                report=report,
+            )
+
+        # CSV export
+        content = self._build_csv(report)
+        return ExportedReport(
+            format="csv",
+            filename=f"{filename_stem}.csv",
+            content=content,
+            report=None,
+        )
+
+    async def get_multi_tenant_report(
+        self,
+        tenant_ids: list[str],
+        start_date: date,
+        end_date: date,
+    ) -> list[ChargebackReport]:
+        """Produce chargeback reports for multiple tenants (showback view).
+
+        Intended for admin users who need a cross-tenant cost overview.
+        Each tenant is processed independently so per-tenant breakdowns
+        remain intact.
+
+        Args:
+            tenant_ids: List of internal tenant IDs to include.
+            start_date: Inclusive period start.
+            end_date: Inclusive period end.
+
+        Returns:
+            List of :class:`~app.schemas.chargeback.ChargebackReport` sorted by
+            *total_cost* descending (highest spender first).
+        """
+        reports: list[ChargebackReport] = []
+        for tid in tenant_ids:
+            try:
+                report = await self.get_tenant_report(tid, start_date, end_date)
+                reports.append(report)
+            except ChargebackServiceError:
+                logger.warning("Skipping tenant %s during multi-tenant report", tid)
+
+        return sorted(reports, key=lambda r: r.total_cost, reverse=True)
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _aggregate_by_resource_type(
+        snapshots: list[CostSnapshot],
+        total_cost: float,
+    ) -> list[ResourceTypeCost]:
+        """Group snapshots by service_name and compute percentages."""
+        buckets: dict[str, float] = {}
+        for snap in snapshots:
+            key = snap.service_name or _UNKNOWN_SERVICE
+            buckets[key] = buckets.get(key, 0.0) + snap.total_cost
+
+        return sorted(
+            [
+                ResourceTypeCost(
+                    resource_type=name,
+                    cost_amount=round(cost, 6),
+                    percentage=round((cost / total_cost * 100) if total_cost > 0 else 0.0, 4),
+                )
+                for name, cost in buckets.items()
+            ],
+            key=lambda x: x.cost_amount,
+            reverse=True,
+        )
+
+    @staticmethod
+    def _aggregate_by_resource_group(
+        snapshots: list[CostSnapshot],
+        total_cost: float,
+    ) -> list[ResourceGroupCost]:
+        """Group snapshots by resource_group and compute percentages."""
+        buckets: dict[str, float] = {}
+        for snap in snapshots:
+            key = snap.resource_group or _UNKNOWN_RG
+            buckets[key] = buckets.get(key, 0.0) + snap.total_cost
+
+        return sorted(
+            [
+                ResourceGroupCost(
+                    resource_group=name,
+                    cost_amount=round(cost, 6),
+                    percentage=round((cost / total_cost * 100) if total_cost > 0 else 0.0, 4),
+                )
+                for name, cost in buckets.items()
+            ],
+            key=lambda x: x.cost_amount,
+            reverse=True,
+        )
+
+    @staticmethod
+    def _build_csv(report: ChargebackReport) -> str:
+        """Serialise a ChargebackReport to a CSV string.
+
+        Columns: tenant_id, tenant_name, period_start, period_end,
+                 dimension, name, cost_amount, percentage, currency.
+
+        Each ``by_resource_type`` and ``by_resource_group`` breakdown item
+        becomes its own row.  When there are no breakdowns a single summary
+        row is emitted instead.
         """
         output = io.StringIO()
-
-        # Collect all unique breakdown keys across all tenants
-        all_categories: list[str] = []
-        seen_categories: set[str] = set()
-        for entry in report.tenants:
-            for cat in entry.breakdown:
-                if cat not in seen_categories:
-                    all_categories.append(cat)
-                    seen_categories.add(cat)
-        all_categories.sort()
-
-        base_fields: list[str] = [
+        fieldnames = [
             "tenant_id",
             "tenant_name",
-            "total_cost",
-            "percentage_of_total",
-            "resource_count",
-            "cost_per_resource",
+            "period_start",
+            "period_end",
+            "dimension",
+            "name",
+            "cost_amount",
+            "percentage",
+            "currency",
         ]
-        fieldnames = base_fields + all_categories
-
-        writer = csv.DictWriter(output, fieldnames=fieldnames, restval="0.0")
+        writer = csv.DictWriter(output, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
 
-        for entry in report.tenants:
-            row: dict[str, Any] = {
-                "tenant_id": entry.tenant_id,
-                "tenant_name": entry.tenant_name,
-                "total_cost": entry.total_cost,
-                "percentage_of_total": entry.percentage_of_total,
-                "resource_count": entry.resource_count,
-                "cost_per_resource": (
-                    entry.cost_per_resource if entry.cost_per_resource is not None else ""
-                ),
-            }
-            for cat in all_categories:
-                row[cat] = entry.breakdown.get(cat, 0.0)
-            writer.writerow(row)
+        base = {
+            "tenant_id": report.tenant_id,
+            "tenant_name": report.tenant_name,
+            "period_start": report.period_start.isoformat(),
+            "period_end": report.period_end.isoformat(),
+            "currency": report.currency,
+        }
+
+        if not report.by_resource_type and not report.by_resource_group:
+            # Emit a summary-only row when no breakdowns exist
+            writer.writerow(
+                {
+                    **base,
+                    "dimension": "total",
+                    "name": "total",
+                    "cost_amount": report.total_cost,
+                    "percentage": 100.0,
+                }
+            )
+        else:
+            for item in report.by_resource_type:
+                writer.writerow(
+                    {
+                        **base,
+                        "dimension": "resource_type",
+                        "name": item.resource_type,
+                        "cost_amount": item.cost_amount,
+                        "percentage": item.percentage,
+                    }
+                )
+            for item in report.by_resource_group:
+                writer.writerow(
+                    {
+                        **base,
+                        "dimension": "resource_group",
+                        "name": item.resource_group,
+                        "cost_amount": item.cost_amount,
+                        "percentage": item.percentage,
+                    }
+                )
 
         return output.getvalue()
-
-    def export_chargeback_json(self, report: ChargebackReport) -> str:
-        """Serialise a :class:`ChargebackReport` to a JSON string.
-
-        Args:
-            report: The report to serialise.
-
-        Returns:
-            A pretty-printed JSON string.
-        """
-        return report.model_dump_json(indent=2)
