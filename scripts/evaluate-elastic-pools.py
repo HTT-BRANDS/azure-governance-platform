@@ -136,7 +136,7 @@ class ElasticPoolEvaluator:
         try:
             # Query resource stats from Query Store or DMVs
             query = text("""
-                SELECT 
+                SELECT
                     DB_NAME() as database_name,
                     AVG(avg_cpu_percent) as avg_cpu,
                     MAX(avg_cpu_percent) as max_cpu,

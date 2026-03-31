@@ -210,7 +210,7 @@ class KeyVaultSecretRotator:
         tags: dict[str, str] | None = None,
     ) -> RotationResult:
         """Rotate a secret with safety checks."""
-        start_time = time.time()
+        time.time()
 
         try:
             client = self._get_client()
@@ -387,16 +387,16 @@ def main():
 Examples:
   # Rotate single secret with generated value
   %(prog)s --vault my-kv --secret my-secret --generate
-  
+
   # Rotate with specific value
   %(prog)s --vault my-kv --secret my-secret --value "my-new-value"
-  
+
   # Rotate from file
   %(prog)s --vault my-kv --secret my-secret --from-file value.txt
-  
+
   # Rotate all matching secrets
   %(prog)s --vault my-kv --pattern "api-key-*" --generate
-  
+
   # Dry run (see what would happen)
   %(prog)s --vault my-kv --secret my-secret --generate --dry-run
         """,

@@ -109,7 +109,6 @@ async def get_users(
     )
 
     # Apply pagination
-    total = len(users)
     paginated_users = users[offset : offset + limit]
 
     return paginated_users

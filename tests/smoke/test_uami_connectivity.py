@@ -16,7 +16,6 @@ Skip Conditions:
 """
 
 import os
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -94,11 +93,9 @@ class TestUAMICredentialCreation:
 
     def test_credential_created_for_tenant(self):
         """Should successfully create credential for a tenant."""
-        from app.core.uami_credential import get_uami_provider
-        from app.core.tenants_config import get_credential_for_tenant
-
         # Get first active tenant
         from app.core.tenants_config import get_active_tenants
+        from app.core.uami_credential import get_uami_provider
 
         active_tenants = get_active_tenants()
         if not active_tenants:
@@ -121,8 +118,9 @@ class TestUAMICredentialCreation:
     def test_credential_is_client_assertion_type(self):
         """Created credential should be ClientAssertionCredential."""
         from azure.identity import ClientAssertionCredential
-        from app.core.uami_credential import get_uami_provider
+
         from app.core.tenants_config import get_active_tenants
+        from app.core.uami_credential import get_uami_provider
 
         active_tenants = get_active_tenants()
         if not active_tenants:
@@ -148,8 +146,8 @@ class TestUAMITokenAcquisition:
 
     def test_can_get_token_for_graph_api(self):
         """Should successfully get token for Microsoft Graph API."""
-        from app.core.uami_credential import get_uami_provider
         from app.core.tenants_config import get_active_tenants
+        from app.core.uami_credential import get_uami_provider
 
         active_tenants = get_active_tenants()
         if not active_tenants:
@@ -180,8 +178,8 @@ class TestUAMITokenAcquisition:
         import base64
         import json
 
-        from app.core.uami_credential import get_uami_provider
         from app.core.tenants_config import get_active_tenants
+        from app.core.uami_credential import get_uami_provider
 
         active_tenants = get_active_tenants()
         if not active_tenants:
@@ -226,8 +224,8 @@ class TestUAMICaching:
 
     def test_token_is_cached(self):
         """Token should be cached after first acquisition."""
-        from app.core.uami_credential import get_uami_provider
         from app.core.tenants_config import get_active_tenants
+        from app.core.uami_credential import get_uami_provider
 
         active_tenants = get_active_tenants()
         if not active_tenants:
@@ -260,8 +258,8 @@ class TestUAMICaching:
 
     def test_cache_can_be_cleared(self):
         """Cache should be clearable."""
-        from app.core.uami_credential import get_uami_provider
         from app.core.tenants_config import get_active_tenants
+        from app.core.uami_credential import get_uami_provider
 
         active_tenants = get_active_tenants()
         if not active_tenants:
@@ -341,8 +339,8 @@ class TestMultiTenantSupport:
 
     def test_all_tenants_can_get_credentials(self):
         """All active tenants should be able to get UAMI credentials."""
-        from app.core.uami_credential import get_uami_provider
         from app.core.tenants_config import get_active_tenants
+        from app.core.uami_credential import get_uami_provider
 
         active_tenants = get_active_tenants()
         if not active_tenants:
@@ -392,9 +390,9 @@ class TestConfigurationValidation:
         """UAMI credential module should import successfully."""
         try:
             from app.core.uami_credential import (
-                UAMICredentialError,
-                UAMICredentialProvider,
-                get_uami_provider,
+                UAMICredentialError,  # noqa: F401
+                UAMICredentialProvider,  # noqa: F401
+                get_uami_provider,  # noqa: F401
             )
         except ImportError as e:
             pytest.fail(f"Failed to import UAMI credential module: {e}")
@@ -449,8 +447,8 @@ class TestFallbackBehavior:
 
 def test_uami_health_check():
     """Comprehensive health check for UAMI configuration."""
-    from app.core.uami_credential import get_uami_provider
     from app.core.config import get_settings
+    from app.core.uami_credential import get_uami_provider
 
     settings = get_settings()
     provider = get_uami_provider()

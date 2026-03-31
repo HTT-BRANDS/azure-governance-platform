@@ -61,12 +61,9 @@ from app.core.database import (
     get_db_context,
     get_db_stats,
     get_db_with_retry,
-    get_pool_stats,
     init_db,
     query_with_timing,
-    reset_pool,
 )
-from app.core.azure_sql_pool import with_azure_sql_retry
 from app.core.monitoring import (
     PerformanceMonitor,
     SyncJobMetrics,
@@ -175,8 +172,6 @@ __all__ = [
     # Azure SQL Pool
     "AzureSQLRetryContext",
     "is_azure_sql",
-    "reset_pool",
-    "with_azure_sql_retry",
     # Cache
     "cache_manager",
     "cached",

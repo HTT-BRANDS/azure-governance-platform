@@ -233,7 +233,7 @@ class KeyVaultSecretManager:
     def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         with self._lock:
-            now = time.time()
+            time.time()
             active = sum(1 for c in self._cache.values() if not c.is_expired)
             expired = len(self._cache) - active
 

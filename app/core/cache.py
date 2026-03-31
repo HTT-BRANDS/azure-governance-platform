@@ -1,10 +1,20 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import hashlib
 import json
+import logging
+import os
+import random
 import time
-from typing import Any, Optional, Union
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any, TypeVar
+
+from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class InMemoryCache:
@@ -94,43 +104,6 @@ class InMemoryCache:
                 del self._cache[key]
             return len(expired)
 
-
-"""Caching utility with Redis or in-memory fallback.
-
-Provides a unified caching interface that uses Redis when available,
-falling back to in-memory dictionary storage for local development.
-
-Azure Cache for Redis Features:
-- Azure Redis Enterprise and Premium tier support
-- Connection multiplexing for high-throughput scenarios
-- Clustering support with automatic shard detection
-- Azure-specific retry logic with exponential backoff
-- Connection diagnostics and health monitoring
-- Azure Redis AUTH token refresh for managed identity
-
-Features:
-- Cache decorator for expensive operations
-- Tenant-isolated cache keys
-- Configurable TTL per data type
-- Cache invalidation on sync completion
-- Hit/miss metrics tracking
-"""
-
-import asyncio
-import functools
-import hashlib
-import json
-import logging
-import os
-import random
-import time
-from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Any, TypeVar
-
-from app.core.config import get_settings
-
-logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -261,7 +234,7 @@ def azure_redis_retry(max_retries: int = AZURE_REDIS_MAX_RETRIES):
                         for err in ["authentication", "unauthorized", "invalid password"]
                     ):
                         logger.error(f"Azure Redis auth error (not retrying): {e}")
-                        raise
+                        raise e from None
 
                     if attempt < max_retries:
                         # Exponential backoff with jitter
@@ -282,7 +255,7 @@ def azure_redis_retry(max_retries: int = AZURE_REDIS_MAX_RETRIES):
                         )
                         if hasattr(self, "_metrics"):
                             self._metrics.connection_failures += 1
-                        raise last_exception
+                        raise last_exception from e
 
             raise last_exception
 

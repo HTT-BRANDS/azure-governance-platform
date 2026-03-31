@@ -221,7 +221,7 @@ def calculate_metrics(
     max_cpu = max(cpu_values) if cpu_values else 0
 
     # Get connection metrics
-    conn_values = get_metrics(resource_group, server_name, database_name, "connection_failed", "Total", 168)
+    get_metrics(resource_group, server_name, database_name, "connection_failed", "Total", 168)
     # Get active connections instead
     active_conn = get_metrics(resource_group, server_name, database_name, "sessions_count", "Maximum", 168)
     avg_connections = sum(active_conn) / len(active_conn) if active_conn else 0

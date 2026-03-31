@@ -99,7 +99,7 @@ class AzureSQLMonitor:
 
             result = self.db.execute(
                 text("""
-                    SELECT actual_state_desc 
+                    SELECT actual_state_desc
                     FROM sys.database_query_store_options
                 """)
             ).scalar()
@@ -212,7 +212,7 @@ class AzureSQLMonitor:
 
         try:
             query = text("""
-                SELECT 
+                SELECT
                     q.query_id,
                     t.query_sql_text,
                     SUM(rs.count_executions) as execution_count,
@@ -314,7 +314,7 @@ class AzureSQLMonitor:
 
         try:
             query = text("""
-                SELECT 
+                SELECT
                     COUNT(*) as total_connections,
                     SUM(CASE WHEN status = 'sleeping' THEN 1 ELSE 0 END) as idle_connections,
                     SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END) as active_connections,

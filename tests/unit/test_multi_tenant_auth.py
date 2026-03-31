@@ -10,7 +10,7 @@ Phase B: Single multi-tenant app registration (AzureADMultipleOrgs)
 """
 
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -19,10 +19,8 @@ from app.core.tenants_config import (
     TenantConfig,
     get_credential_for_tenant,
     get_multi_tenant_app_id,
-    get_tenant_by_code,
     is_multi_tenant_mode_enabled,
 )
-
 
 # ============================================================================
 # Fixtures
@@ -98,11 +96,11 @@ def mock_phase_b_config(tmp_path):
             },
         },
     }
-    
+
     config_file = tmp_path / "tenants.yaml"
     with open(config_file, "w") as f:
         yaml.dump(config_data, f)
-    
+
     return str(config_file)
 
 
@@ -128,7 +126,7 @@ class TestGetMultiTenantAppId:
     def test_returns_first_available_when_no_tenant_specified(self, sample_tenant_config_phase_b):
         """When tenant_code is None, should return first available multi_tenant_app_id."""
         mock_tenants = {"HTT": sample_tenant_config_phase_b}
-        
+
         with patch("app.core.tenants_config.RIVERSIDE_TENANTS", mock_tenants):
             result = get_multi_tenant_app_id()
             assert result == "00000000-0000-4000-c000-000000000000"
@@ -171,7 +169,7 @@ class TestIsMultiTenantModeEnabled:
             "HTT": sample_tenant_config_phase_b,
             "BCC": sample_tenant_config,  # No multi-tenant
         }
-        
+
         with patch("app.core.tenants_config.RIVERSIDE_TENANTS", mock_tenants):
             assert is_multi_tenant_mode_enabled() is True
 
@@ -193,7 +191,7 @@ class TestGetCredentialForTenant:
         """In Phase A, should use per-tenant app_id."""
         with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config):
             result = get_credential_for_tenant("HTT")
-            
+
             assert result["app_id"] == sample_tenant_config.app_id
             assert result["tenant_id"] == sample_tenant_config.tenant_id
             assert result["key_vault_secret_name"] == sample_tenant_config.key_vault_secret_name
@@ -204,7 +202,7 @@ class TestGetCredentialForTenant:
         """In Phase B with prefer_multi_tenant=True, should use multi-tenant app_id."""
         with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b):
             result = get_credential_for_tenant("HTT", prefer_multi_tenant=True)
-            
+
             assert result["app_id"] == sample_tenant_config_phase_b.multi_tenant_app_id
             assert result["tenant_id"] == sample_tenant_config_phase_b.tenant_id
             assert result["key_vault_secret_name"] == sample_tenant_config_phase_b.key_vault_secret_name
@@ -215,7 +213,7 @@ class TestGetCredentialForTenant:
         """With prefer_multi_tenant=False, should use per-tenant app_id even if multi-tenant available."""
         with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b):
             result = get_credential_for_tenant("HTT", prefer_multi_tenant=False)
-            
+
             # Uses per-tenant app_id but flags that multi-tenant is available
             assert result["app_id"] == sample_tenant_config_phase_b.app_id
             assert result["is_multi_tenant"] is True  # Still available, just not preferred
@@ -224,7 +222,7 @@ class TestGetCredentialForTenant:
         """In Phase A without multi-tenant configured, is_multi_tenant should be False."""
         with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config):
             result = get_credential_for_tenant("HTT", prefer_multi_tenant=True)
-            
+
             assert result["is_multi_tenant"] is False
             assert result["app_id"] == sample_tenant_config.app_id
 
@@ -232,7 +230,7 @@ class TestGetCredentialForTenant:
         """All return values should be of expected types."""
         with patch("app.core.tenants_config.get_tenant_by_code", return_value=sample_tenant_config_phase_b):
             result = get_credential_for_tenant("HTT")
-            
+
             assert isinstance(result["app_id"], str)
             assert isinstance(result["tenant_id"], str)
             assert isinstance(result["key_vault_secret_name"], str)
@@ -257,7 +255,7 @@ class TestTenantConfig:
             app_id="00000000-0000-4000-b000-000000000001",
             multi_tenant_app_id="00000000-0000-4000-c000-000000000000",
         )
-        
+
         assert hasattr(config, "multi_tenant_app_id")
         assert config.multi_tenant_app_id == "00000000-0000-4000-c000-000000000000"
 
@@ -270,7 +268,7 @@ class TestTenantConfig:
             admin_email="test@test.com",
             app_id="00000000-0000-4000-b000-000000000001",
         )
-        
+
         assert config.multi_tenant_app_id is None
 
     def test_is_frozen_dataclass(self):
@@ -282,7 +280,7 @@ class TestTenantConfig:
             admin_email="test@test.com",
             app_id="00000000-0000-4000-b000-000000000001",
         )
-        
+
         with pytest.raises(AttributeError):
             config.multi_tenant_app_id = "new-value"
 
@@ -297,20 +295,21 @@ class TestYamlLoading:
     def test_global_multi_tenant_app_id_inherited(self, mock_phase_b_config, tmp_path):
         """All tenants should inherit global multi_tenant_app_id."""
         import os
-        
+
         # Mock the module-level loading
         with patch.dict(os.environ, {"TENANTS_CONFIG_PATH": mock_phase_b_config}):
             # Force reimport by clearing cache
             import importlib
+
             import app.core.tenants_config as tc_module
-            
+
             # Reload with new config
             importlib.reload(tc_module)
-            
+
             # Both tenants should have the same multi_tenant_app_id
             htt_config = tc_module.get_tenant_by_code("HTT")
             bcc_config = tc_module.get_tenant_by_code("BCC")
-            
+
             assert htt_config.multi_tenant_app_id == "00000000-0000-4000-c000-000000000000"
             assert bcc_config.multi_tenant_app_id == "00000000-0000-4000-c000-000000000000"
 
@@ -333,7 +332,7 @@ class TestBackwardCompatibility:
             app_id="00000000-0000-4000-b000-000000000001",
             # multi_tenant_app_id defaults to None
         )
-        
+
         # Should not raise any errors
         assert config.multi_tenant_app_id is None
         assert is_multi_tenant_mode_enabled("TST") is False
@@ -356,18 +355,19 @@ class TestBackwardCompatibility:
                 }
             }
         }
-        
+
         config_file = tmp_path / "tenants_old.yaml"
         with open(config_file, "w") as f:
             yaml.dump(old_config, f)
-        
+
         # Should load without errors
         import os
         with patch.dict(os.environ, {"TENANTS_CONFIG_PATH": str(config_file)}):
             import importlib
+
             import app.core.tenants_config as tc_module
             importlib.reload(tc_module)
-            
+
             config = tc_module.get_tenant_by_code("HTT")
             assert config.multi_tenant_app_id is None
             assert config.app_id == "00000000-0000-4000-b000-000000000001"
@@ -383,7 +383,7 @@ class TestCredentialResolutionScenarios:
     def test_all_five_tenants_share_same_multi_tenant_app(self):
         """All 5 Riverside tenants should resolve to the same multi-tenant app."""
         shared_app_id = "00000000-0000-4000-c000-000000000000"
-        
+
         mock_tenants = {
             code: TenantConfig(
                 tenant_id=f"00000000-0000-4000-a000-00000000000{idx+1}",
@@ -397,7 +397,7 @@ class TestCredentialResolutionScenarios:
             )
             for idx, code in enumerate(["HTT", "BCC", "FN", "TLL", "DCE"])
         }
-        
+
         with patch("app.core.tenants_config.RIVERSIDE_TENANTS", mock_tenants):
             for code in mock_tenants:
                 creds = get_credential_for_tenant(code)
@@ -429,13 +429,13 @@ class TestCredentialResolutionScenarios:
                 oidc_enabled=False,
             ),
         }
-        
+
         with patch("app.core.tenants_config.RIVERSIDE_TENANTS", mock_tenants):
             # HTT should use multi-tenant app
             htt_creds = get_credential_for_tenant("HTT")
             assert htt_creds["app_id"] == "00000000-0000-4000-c000-000000000000"
             assert htt_creds["is_multi_tenant"] is True
-            
+
             # BCC should use per-tenant app
             bcc_creds = get_credential_for_tenant("BCC")
             assert bcc_creds["app_id"] == "00000000-0000-4000-b000-000000000002"
@@ -459,7 +459,7 @@ class TestEdgeCases:
             app_id="00000000-0000-4000-b000-000000000001",
             multi_tenant_app_id="",  # Empty string
         )
-        
+
         # Empty string is falsy, so should be treated as None
         assert not config.multi_tenant_app_id
 
@@ -473,9 +473,9 @@ class TestEdgeCases:
             app_id="00000000-0000-4000-b000-000000000001",
             multi_tenant_app_id="00000000-0000-4000-c000-000000000000",
         )
-        
+
         mock_tenants = {"HTT": config}
-        
+
         with patch("app.core.tenants_config.RIVERSIDE_TENANTS", mock_tenants):
             # Should work with various cases
             assert get_credential_for_tenant("HTT")["app_id"] == config.multi_tenant_app_id
@@ -493,7 +493,7 @@ class TestPerformance:
     def test_credential_resolution_is_fast(self):
         """Credential resolution should be fast (no I/O)."""
         import time
-        
+
         config = TenantConfig(
             tenant_id="00000000-0000-4000-a000-000000000001",
             name="Test",
@@ -502,17 +502,17 @@ class TestPerformance:
             app_id="00000000-0000-4000-b000-000000000001",
             multi_tenant_app_id="00000000-0000-4000-c000-000000000000",
         )
-        
+
         mock_tenants = {"TST": config}
-        
+
         with patch("app.core.tenants_config.RIVERSIDE_TENANTS", mock_tenants):
             start = time.perf_counter()
-            
+
             # Run 1000 iterations
             for _ in range(1000):
                 get_credential_for_tenant("TST")
-            
+
             elapsed = time.perf_counter() - start
-            
+
             # Should complete in under 100ms (very generous)
             assert elapsed < 0.1, f"Credential resolution too slow: {elapsed:.3f}s for 1000 calls"

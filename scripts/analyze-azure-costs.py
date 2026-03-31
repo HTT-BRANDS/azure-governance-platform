@@ -702,16 +702,16 @@ def main():
 Examples:
   # Basic cost analysis
   %(prog)s --subscription $AZURE_SUBSCRIPTION_ID
-  
+
   # With tenant breakdown
   %(prog)s --subscription $SUB_ID --by-tenant
-  
+
   # Find idle resources
   %(prog)s --subscription $SUB_ID --find-idle
-  
+
   # Cost alerts
   %(prog)s --subscription $SUB_ID --alert-threshold 1000
-  
+
   # Export to CSV
   %(prog)s --subscription $SUB_ID --export-csv costs.csv
         """,

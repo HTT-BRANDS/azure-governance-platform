@@ -106,7 +106,7 @@ class AzureSQLTuningManager:
             # Get current automatic tuning settings
             result = self.db.execute(
                 text("""
-                    SELECT 
+                    SELECT
                         desired_state,
                         desired_state_reason,
                         actual_state
@@ -121,7 +121,7 @@ class AzureSQLTuningManager:
             # Get all options
             all_options = self.db.execute(
                 text("""
-                    SELECT 
+                    SELECT
                         name,
                         desired_state,
                         actual_state,
@@ -222,7 +222,7 @@ class AzureSQLTuningManager:
         try:
             result = self.db.execute(
                 text("""
-                    SELECT 
+                    SELECT
                         tr.type,
                         tr.state,
                         tr.state_desc,
@@ -247,7 +247,7 @@ class AzureSQLTuningManager:
             for row in result:
                 try:
                     details = json.loads(row.details) if row.details else {}
-                except:
+                except Exception:
                     details = {"raw": row.details}
 
                 recommendations.append(
@@ -284,7 +284,7 @@ class AzureSQLTuningManager:
         try:
             result = self.db.execute(
                 text("""
-                    SELECT 
+                    SELECT
                         actual_state,
                         actual_state_desc,
                         readonly_reason,

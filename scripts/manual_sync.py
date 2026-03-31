@@ -322,10 +322,10 @@ def main():
         print("=" * 60)
 
         print("\n📡 Infrastructure syncs:")
-        infra_results = trigger_infrastructure_syncs(client)
+        trigger_infrastructure_syncs(client)
 
         print("\n🏢 Riverside sync:")
-        riverside_results = trigger_riverside_sync(client)
+        trigger_riverside_sync(client)
 
         if not args.sync_only:
             print(f"\n⏳ Waiting {args.wait}s for syncs to complete...")
