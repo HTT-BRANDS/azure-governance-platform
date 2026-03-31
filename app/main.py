@@ -1,7 +1,6 @@
 """Azure Multi-Tenant Governance Platform - Main Application."""
 
 import logging
-import secrets
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -50,6 +49,7 @@ from app.core.gpc_middleware import GPCMiddleware
 from app.core.logging_config import log_api_request, set_correlation_id, set_request_start_time
 from app.core.rate_limit import rate_limiter
 from app.core.scheduler import init_scheduler
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.token_blacklist import get_blacklist_backend, get_blacklist_size
 from app.core.tracing import setup_tracing
 
@@ -134,6 +134,10 @@ tracer = setup_tracing(app) if settings.enable_tracing else None
 # GPC (Global Privacy Control) middleware - Legal compliance for CCPA/GDPR
 # Must be after CORS but before security headers to properly set privacy-related headers
 app.add_middleware(GPCMiddleware, log_all_requests=False)
+
+# Enhanced Security Headers middleware
+# SECURITY: Adds comprehensive security headers (CSP, Permissions-Policy, CORP, COOP, etc.)
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.middleware("http")
@@ -245,49 +249,6 @@ async def rate_limit_middleware(request: Request, call_next):
             )
         # Fail-open for non-auth endpoints (availability)
         return await call_next(request)
-
-
-@app.middleware("http")
-async def security_headers_middleware(request: Request, call_next):
-    """Add security response headers to all responses.
-
-    SECURITY: Protects against clickjacking, XSS, MIME sniffing,
-    and enforces HTTPS via HSTS.
-
-    CSP nonce is generated per-request and stored on request.state so
-    Jinja2 templates can render it via request.state.csp_nonce.
-    """
-    # Generate a cryptographic nonce for CSP -- available to templates
-    # via request.state before the response is rendered.
-    nonce = secrets.token_urlsafe(32)
-    request.state.csp_nonce = nonce
-
-    response = await call_next(request)
-    # Prevent clickjacking
-    response.headers["X-Frame-Options"] = "DENY"
-    # Prevent XSS via MIME type sniffing
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    # XSS Protection (legacy browsers)
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    # Referrer policy
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    # Permissions policy (restrict browser features)
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    # Content Security Policy -- nonce replaces 'unsafe-inline' for script-src.
-    # 'unsafe-inline' is kept ONLY for style-src (brand CSS variables).
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        f"script-src 'self' 'nonce-{nonce}' https://unpkg.com https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' data:; "
-        "connect-src 'self' https://cdn.jsdelivr.net; "
-        "frame-ancestors 'none'"
-    )
-    # HSTS (only in production to avoid dev issues)
-    if not settings.is_development:
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    return response
 
 
 # Prometheus metrics

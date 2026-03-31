@@ -85,6 +85,14 @@ from app.core.resilience import (
     resilient_api_call,
 )
 from app.core.scheduler import get_scheduler, init_scheduler, trigger_manual_sync
+from app.core.security_headers import (
+    BalancedSecurityHeadersMiddleware,
+    RelaxedSecurityHeadersMiddleware,
+    SecurityHeadersConfig,
+    SecurityHeadersMiddleware,
+    StrictSecurityHeadersMiddleware,
+    create_security_middleware,
+)
 from app.core.tenant_context import (
     DEFAULT_BRAND,
     BrandColors,
@@ -172,6 +180,13 @@ __all__ = [
     "get_scheduler",
     "init_scheduler",
     "trigger_manual_sync",
+    # Security Headers
+    "SecurityHeadersMiddleware",
+    "SecurityHeadersConfig",
+    "StrictSecurityHeadersMiddleware",
+    "BalancedSecurityHeadersMiddleware",
+    "RelaxedSecurityHeadersMiddleware",
+    "create_security_middleware",
     # Notifications
     "Notification",
     "NotificationChannel",
