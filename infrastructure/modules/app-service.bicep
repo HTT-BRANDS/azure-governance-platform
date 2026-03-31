@@ -28,8 +28,11 @@ param enableAzureSql bool = false
 @description('Container image tag')
 param containerImage string = 'latest'
 
-@description('Azure Container Registry name (optional)')
+@description('Azure Container Registry name (optional, for reference)')
 param acrName string = ''
+
+@description('Container registry URL for private registries like GHCR')
+param containerRegistryUrl string = 'https://ghcr.io'
 
 @description('Environment name')
 param environment string
@@ -187,7 +190,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: useContainerDeployment ? 'https://ghcr.io' : ''
+          value: useContainerDeployment ? containerRegistryUrl : ''
         }
         {
           name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
