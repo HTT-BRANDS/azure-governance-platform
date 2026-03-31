@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import json
+import time
+from typing import Any, Optional, Union
+
+
 class InMemoryCache:
     """In-memory cache implementation with TTL support."""
 

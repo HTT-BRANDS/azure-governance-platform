@@ -65,8 +65,8 @@ from app.core.database import (
     init_db,
     query_with_timing,
     reset_pool,
-    with_azure_sql_retry,
 )
+from app.core.azure_sql_pool import with_azure_sql_retry
 from app.core.monitoring import (
     PerformanceMonitor,
     SyncJobMetrics,
