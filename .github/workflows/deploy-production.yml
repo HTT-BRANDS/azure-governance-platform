@@ -44,7 +44,7 @@ env:
   UV_VERSION:     '0.5.x'
   # GHCR Configuration — free for public repos, uses GITHUB_TOKEN
   GHCR_REGISTRY:    ghcr.io
-  GHCR_REPOSITORY:  tygranlund/azure-governance-platform
+  GHCR_REPOSITORY:  htt-brands/azure-governance-platform
   IMAGE_TAG:        latest
   # Production App Service (populated after infra deploy)
   AZURE_APP_NAME:       app-governance-prod
