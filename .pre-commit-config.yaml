@@ -2,6 +2,24 @@
 # See https://pre-commit.com for more information
 
 repos:
+  # Ruff: Fast Python linter and formatter with import sorting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      # Run import sorting (isort equivalent)
+      - id: ruff
+        name: ruff-import-sort
+        args: [--select, I, --fix, --exit-non-zero-on-fix]
+        stages: [pre-commit]
+      # Run general linting
+      - id: ruff
+        name: ruff-lint
+        args: [--exit-non-zero-on-fix]
+        stages: [pre-commit]
+      # Run formatter
+      - id: ruff-format
+        stages: [pre-commit]
+
   # detect-secrets: Scan for secrets/credentials in codebase
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
