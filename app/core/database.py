@@ -1,13 +1,22 @@
 """Database configuration and session management — supports SQLite and Azure SQL Server.
 
 Dialect-aware: SQLite pragmas and path setup only activate when DATABASE_URL
-starts with "sqlite". Azure SQL (mssql+pyodbc) uses connection pooling.
+starts with "sqlite". Azure SQL (mssql+pyodbc) uses cloud-native optimizations
+including connection pooling, retry logic, and Query Store monitoring.
+
+Azure SQL Optimizations:
+- NullPool for Azure Functions (serverless scenarios)
+- pool_pre_ping=True for connection resiliency
+- Optimal pool sizing for DTU/vCore tiers
+- Exponential backoff retry for transient faults
+- Query Store integration for performance monitoring
 
 Features:
 - Connection pooling with configurable settings
 - Query performance monitoring and slow query logging
 - Database indexes for common queries
 - Eager loading helpers to prevent N+1 queries
+- Azure SQL transient fault handling
 """
 
 import logging
@@ -20,6 +29,11 @@ from typing import Any
 from sqlalchemy import Index, create_engine, event, text
 from sqlalchemy.orm import Session, declarative_base
 
+from app.core.azure_sql_pool import (
+    AzureSQLRetryContext,
+    get_azure_sql_engine_args,
+    is_azure_sql,
+)
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -42,16 +56,8 @@ if _IS_SQLITE:
     # SQLite: single-file, needs thread safety override
     _engine_args["connect_args"] = {"check_same_thread": False}
 else:
-    # SQL Server / PostgreSQL: use connection pool
-    _engine_args.update(
-        {
-            "pool_size": settings.database_pool_size,
-            "max_overflow": settings.database_max_overflow,
-            "pool_timeout": settings.database_pool_timeout,
-            "pool_pre_ping": True,  # Verify connections before using
-            "pool_recycle": 1800,  # Recycle connections after 30 min (Azure SQL timeout safe)
-        }
-    )
+    # SQL Server: Apply Azure SQL optimizations
+    _engine_args = get_azure_sql_engine_args(_engine_args)
 
 # Lazy engine: pyodbc is NOT imported until first actual DB use.
 # This prevents ImportError: libodbc.so.2 at module load time.
@@ -76,6 +82,17 @@ def _get_engine():
             total_time = (time.perf_counter() - start_time) * 1000
             if total_time > settings.slow_query_threshold_ms:
                 logger.warning(f"Slow query detected ({total_time:.2f}ms): {statement[:200]}...")
+                # Track in Application Insights if available
+                if settings.app_insights_enabled:
+                    from app.core.app_insights import track_dependency
+
+                    track_dependency(
+                        name="slow_query",
+                        data=statement[:100],
+                        duration=total_time,
+                        success=False,
+                        properties={"query_time_ms": total_time},
+                    )
             if settings.debug and settings.enable_query_logging:
                 logger.debug(f"Query executed in {total_time:.2f}ms: {statement[:100]}...")
 
@@ -91,6 +108,15 @@ def _get_engine():
                 cursor.execute("PRAGMA temp_store=MEMORY")
                 cursor.execute("PRAGMA mmap_size=30000000000")
                 cursor.close()
+
+        # Azure SQL specific: Handle connection resets
+        elif is_azure_sql():
+
+            @event.listens_for(eng, "engine_connect")
+            def on_engine_connect(conn, branch):
+                """Log connection events for monitoring."""
+                if settings.debug:
+                    logger.debug("Azure SQL connection established")
 
         _engine_instance = eng
     return _engine_instance
@@ -124,16 +150,55 @@ def SessionLocal():
     return _session_factory()
 
 
+def get_db_with_retry(
+    max_attempts: int | None = None,
+    base_delay: float | None = None,
+) -> Generator[Session, None, None]:
+    """Get database session with Azure SQL retry logic.
+
+    Use this for operations that might hit transient Azure SQL faults.
+
+    Example:
+        with get_db_with_retry(max_attempts=5) as db:
+            return db.query(Model).all()
+    """
+    retry_context = AzureSQLRetryContext(
+        session_factory=SessionLocal,
+        max_attempts=max_attempts,
+        base_delay=base_delay,
+    )
+    with retry_context as db:
+        yield db
+
+
 Base = declarative_base()
 
 
 def get_db() -> Generator[Session, None, None]:
-    """FastAPI dependency for database sessions."""
+    """FastAPI dependency for database sessions.
+
+    For Azure SQL production: use get_db_with_retry() in background tasks
+    to handle transient faults gracefully.
+    """
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+def get_db_azure() -> Generator[Session, None, None]:
+    """FastAPI dependency with Azure SQL retry for transient faults.
+
+    Use this for endpoints that may experience high load or failover scenarios.
+
+    Example:
+        @router.get("/expensive-query")
+        def expensive_query(db: Session = Depends(get_db_azure)):
+            return db.query(Model).all()
+    """
+    with get_db_with_retry() as db:
+        yield db
 
 
 @contextmanager
@@ -374,3 +439,34 @@ def get_db_stats(db: Session) -> dict[str, Any]:
             stats["db_size_bytes"] = None
 
     return stats
+
+
+def get_pool_stats() -> dict[str, Any]:
+    """Get connection pool statistics for Azure SQL monitoring.
+
+    Returns pool metrics including:
+    - Pool size and overflow
+    - Checked-in and checked-out connections
+    - For Azure SQL: helps identify connection exhaustion
+
+    Returns:
+        Dict with pool statistics or empty dict if using NullPool
+    """
+    from app.core.azure_sql_pool import get_pool_stats as _get_pool_stats
+
+    return _get_pool_stats(_engine_instance)
+
+
+def reset_pool() -> None:
+    """Reset the connection pool (useful after Azure SQL failover).
+
+    This disposes of all connections and recreates the pool,
+    ensuring fresh connections after a geo-failover event.
+    """
+    global _engine_instance
+    from app.core.azure_sql_pool import reset_pool as _reset_pool
+
+    _reset_pool(_engine_instance)
+    _engine_instance = None
+    # Force recreation on next use
+    _get_engine()

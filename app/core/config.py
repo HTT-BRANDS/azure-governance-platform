@@ -2,13 +2,22 @@
 
 Centralized configuration using Pydantic Settings for environment
 variable management with sensible defaults.
+
+Azure Key Vault Integration:
+- Auto-refresh of secrets with TTL-based caching
+- Soft-delete protection verification
+- Secret rotation support
+- Access policy management helpers
 """
 
 import logging
 import os
 import secrets
+import threading
+import time
+from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,6 +25,279 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from app import __version__
 
 logger = logging.getLogger(__name__)
+
+# Azure Key Vault caching configuration
+KEY_VAULT_CACHE_TTL_SECONDS = int(
+    os.environ.get("KEY_VAULT_CACHE_TTL_SECONDS", "300")
+)  # 5 min default
+KEY_VAULT_REFRESH_BUFFER_SECONDS = int(
+    os.environ.get("KEY_VAULT_REFRESH_BUFFER", "60")
+)  # Refresh 1 min before expiry
+KEY_VAULT_SOFT_DELETE_ENABLED = (
+    os.environ.get("KEY_VAULT_SOFT_DELETE_ENABLED", "true").lower() == "true"
+)
+
+
+@dataclass
+class KeyVaultSecretCache:
+    """Cache entry for a Key Vault secret with TTL."""
+
+    value: str
+    fetched_at: float
+    ttl_seconds: int
+    secret_name: str
+    version: str | None = None
+
+    @property
+    def is_expired(self) -> bool:
+        """Check if the cached secret has expired."""
+        return time.time() > self.fetched_at + self.ttl_seconds
+
+    @property
+    def expires_in_seconds(self) -> float:
+        """Seconds until cache entry expires."""
+        expiry = self.fetched_at + self.ttl_seconds
+        remaining = expiry - time.time()
+        return max(0, remaining)
+
+    @property
+    def needs_refresh(self) -> bool:
+        """Check if cache needs refresh (with buffer time)."""
+        return self.expires_in_seconds < KEY_VAULT_REFRESH_BUFFER_SECONDS
+
+
+@dataclass
+class KeyVaultMetadata:
+    """Azure Key Vault metadata and configuration status."""
+
+    vault_url: str | None = None
+    is_configured: bool = False
+    soft_delete_enabled: bool = True
+    purge_protection_enabled: bool = False
+    last_access_time: float = field(default_factory=time.time)
+    access_policy_count: int = 0
+    secret_count: int = 0
+    cached_secrets: list[str] = field(default_factory=list)
+    failed_secrets: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert metadata to dictionary for diagnostics."""
+        return {
+            "vault_url": self.vault_url,
+            "is_configured": self.is_configured,
+            "soft_delete_enabled": self.soft_delete_enabled,
+            "purge_protection_enabled": self.purge_protection_enabled,
+            "last_access_time": self.last_access_time,
+            "access_policy_count": self.access_policy_count,
+            "secret_count": self.secret_count,
+            "cached_secrets": self.cached_secrets,
+            "failed_secrets": self.failed_secrets,
+        }
+
+
+class KeyVaultSecretManager:
+    """Manages Azure Key Vault secrets with caching and auto-refresh.
+
+    Features:
+    - TTL-based secret caching to reduce API calls
+    - Auto-refresh before expiry with configurable buffer
+    - Soft-delete protection awareness
+    - Thread-safe concurrent access
+    - Detailed metadata tracking
+    """
+
+    def __init__(self):
+        self._cache: dict[str, KeyVaultSecretCache] = {}
+        self._lock = threading.RLock()
+        self._metadata = KeyVaultMetadata()
+        self._client: Any = None
+
+    def _get_client(self, vault_url: str | None = None) -> Any:
+        """Get or create Azure Key Vault client."""
+        if self._client is None:
+            try:
+                from azure.identity import DefaultAzureCredential
+                from azure.keyvault.secrets import SecretClient
+
+                credential = DefaultAzureCredential()
+                url = vault_url or os.environ.get("KEY_VAULT_URL", "")
+
+                if not url:
+                    raise ValueError("Key Vault URL not configured")
+
+                self._client = SecretClient(vault_url=url, credential=credential)
+                self._metadata.vault_url = url
+                self._metadata.is_configured = True
+
+            except ImportError:
+                logger.warning("Azure Key Vault SDK not available")
+                raise
+
+        return self._client
+
+    def get_secret(
+        self, secret_name: str, vault_url: str | None = None, force_refresh: bool = False
+    ) -> str | None:
+        """Get secret from cache or Key Vault with auto-refresh.
+
+        Args:
+            secret_name: Name of the secret to retrieve
+            vault_url: Optional Key Vault URL (uses env var if not provided)
+            force_refresh: Force refresh from Key Vault even if cached
+
+        Returns:
+            Secret value or None if not found/error
+        """
+        cache_key = f"{vault_url or 'default'}:{secret_name}"
+
+        with self._lock:
+            # Check cache first
+            cached = self._cache.get(cache_key)
+
+            if not force_refresh and cached and not cached.needs_refresh:
+                logger.debug(f"Key Vault cache hit for {secret_name}")
+                self._metadata.last_access_time = time.time()
+                return cached.value
+
+            # Need to fetch from Key Vault
+            try:
+                client = self._get_client(vault_url)
+                secret = client.get_secret(secret_name)
+
+                # Cache the secret
+                self._cache[cache_key] = KeyVaultSecretCache(
+                    value=secret.value,
+                    fetched_at=time.time(),
+                    ttl_seconds=KEY_VAULT_CACHE_TTL_SECONDS,
+                    secret_name=secret_name,
+                    version=secret.properties.version,
+                )
+
+                # Update metadata
+                if secret_name not in self._metadata.cached_secrets:
+                    self._metadata.cached_secrets.append(secret_name)
+                if secret_name in self._metadata.failed_secrets:
+                    self._metadata.failed_secrets.remove(secret_name)
+
+                logger.debug(f"Key Vault secret fetched and cached: {secret_name}")
+                return secret.value
+
+            except Exception as e:
+                logger.warning(f"Failed to fetch Key Vault secret {secret_name}: {e}")
+
+                # Return stale cache if available (graceful degradation)
+                if cached:
+                    logger.info(f"Returning stale cached value for {secret_name}")
+                    if secret_name not in self._metadata.failed_secrets:
+                        self._metadata.failed_secrets.append(secret_name)
+                    return cached.value
+
+                if secret_name not in self._metadata.failed_secrets:
+                    self._metadata.failed_secrets.append(secret_name)
+                return None
+
+    def get_secret_with_version(
+        self, secret_name: str, version: str, vault_url: str | None = None
+    ) -> str | None:
+        """Get specific version of a secret."""
+        try:
+            client = self._get_client(vault_url)
+            secret = client.get_secret(secret_name, version)
+            return secret.value
+        except Exception as e:
+            logger.warning(f"Failed to fetch secret version {secret_name}/{version}: {e}")
+            return None
+
+    def invalidate_secret(self, secret_name: str, vault_url: str | None = None) -> bool:
+        """Invalidate cached secret to force refresh on next access."""
+        cache_key = f"{vault_url or 'default'}:{secret_name}"
+
+        with self._lock:
+            if cache_key in self._cache:
+                del self._cache[cache_key]
+                if secret_name in self._metadata.cached_secrets:
+                    self._metadata.cached_secrets.remove(secret_name)
+                logger.debug(f"Invalidated Key Vault cache for {secret_name}")
+                return True
+            return False
+
+    def invalidate_all(self) -> int:
+        """Clear all cached secrets."""
+        with self._lock:
+            count = len(self._cache)
+            self._cache.clear()
+            self._metadata.cached_secrets.clear()
+            logger.info(f"Cleared all {count} Key Vault cached secrets")
+            return count
+
+    def get_cache_stats(self) -> dict[str, Any]:
+        """Get cache statistics."""
+        with self._lock:
+            now = time.time()
+            active = sum(1 for c in self._cache.values() if not c.is_expired)
+            expired = len(self._cache) - active
+
+            return {
+                "total_cached": len(self._cache),
+                "active": active,
+                "expired": expired,
+                "cache_ttl_seconds": KEY_VAULT_CACHE_TTL_SECONDS,
+                "refresh_buffer_seconds": KEY_VAULT_REFRESH_BUFFER_SECONDS,
+            }
+
+    def get_metadata(self) -> KeyVaultMetadata:
+        """Get Key Vault metadata."""
+        return self._metadata
+
+    def verify_soft_delete(self, vault_url: str | None = None) -> bool:
+        """Verify soft-delete is enabled on the Key Vault."""
+        try:
+            from azure.identity import DefaultAzureCredential
+            from azure.mgmt.keyvault import KeyVaultManagementClient
+
+            credential = DefaultAzureCredential()
+            subscription_id = os.environ.get("AZURE_SUBSCRIPTION_ID")
+
+            if not subscription_id:
+                logger.warning("AZURE_SUBSCRIPTION_ID not set, cannot verify soft-delete")
+                return True  # Assume enabled for safety
+
+            kv_client = KeyVaultManagementClient(credential, subscription_id)
+
+            # Extract vault name from URL
+            url = vault_url or self._metadata.vault_url or os.environ.get("KEY_VAULT_URL", "")
+            if not url:
+                return True
+
+            vault_name = url.split(".")[0].replace("https://", "")
+            resource_group = os.environ.get("AZURE_RESOURCE_GROUP", "")
+
+            if not resource_group:
+                logger.warning("AZURE_RESOURCE_GROUP not set, cannot verify soft-delete")
+                return True
+
+            vault = kv_client.vaults.get(resource_group, vault_name)
+
+            self._metadata.soft_delete_enabled = vault.properties.enable_soft_delete or False
+            self._metadata.purge_protection_enabled = (
+                vault.properties.enable_purge_protection or False
+            )
+
+            if not self._metadata.soft_delete_enabled and KEY_VAULT_SOFT_DELETE_ENABLED:
+                logger.warning(
+                    f"Key Vault {vault_name} does not have soft-delete enabled! "
+                    "This is a security risk for secret recovery."
+                )
+
+            return self._metadata.soft_delete_enabled
+
+        except Exception as e:
+            logger.warning(f"Could not verify Key Vault soft-delete status: {e}")
+            return True  # Assume enabled for safety
+
+
+# Global Key Vault secret manager instance
+key_vault_manager = KeyVaultSecretManager()
 
 
 class Settings(BaseSettings):
@@ -211,6 +493,23 @@ class Settings(BaseSettings):
     # Key Vault (for multi-tenant credentials and secrets)
     key_vault_url: str | None = None
 
+    # Key Vault Caching Configuration
+    key_vault_cache_ttl_seconds: int = Field(
+        default=300,
+        alias="KEY_VAULT_CACHE_TTL_SECONDS",
+        description="TTL for cached Key Vault secrets in seconds",
+    )
+    key_vault_auto_refresh: bool = Field(
+        default=True,
+        alias="KEY_VAULT_AUTO_REFRESH",
+        description="Auto-refresh secrets before TTL expiry",
+    )
+    key_vault_soft_delete_check: bool = Field(
+        default=True,
+        alias="KEY_VAULT_SOFT_DELETE_CHECK",
+        description="Verify soft-delete is enabled on Key Vault",
+    )
+
     # Multi-tenant configuration
     # Comma-separated list of tenant IDs to manage
     managed_tenant_ids: list[str] = Field(default_factory=list)
@@ -266,12 +565,98 @@ class Settings(BaseSettings):
     cors_allowed_origins: str = ""
     rate_limit_default: int = 100
 
-    # Database Configuration
+    # Database Configuration - General
     database_pool_size: int = Field(default=3, alias="DB_POOL_SIZE")
     database_max_overflow: int = Field(default=2, alias="DB_MAX_OVERFLOW")
     database_pool_timeout: int = Field(default=30, alias="DB_POOL_TIMEOUT")
     slow_query_threshold_ms: float = Field(default=500.0, alias="SLOW_QUERY_THRESHOLD_MS")
     enable_query_logging: bool = Field(default=False, alias="ENABLE_QUERY_LOGGING")
+
+    # =========================================================================
+    # Azure SQL Specific Configuration
+    # =========================================================================
+    # Connection Pool Optimization for Azure SQL
+    azure_sql_pool_size: int = Field(
+        default=5,
+        alias="AZURE_SQL_POOL_SIZE",
+        description="Number of connections to keep in pool. 5-10 is optimal for most Azure SQL workloads",
+    )
+    azure_sql_max_overflow: int = Field(
+        default=10,
+        alias="AZURE_SQL_MAX_OVERFLOW",
+        description="Extra connections beyond pool_size when needed",
+    )
+    azure_sql_pool_timeout: int = Field(
+        default=30,
+        alias="AZURE_SQL_POOL_TIMEOUT",
+        description="Seconds to wait for connection from pool",
+    )
+    azure_sql_pool_pre_ping: bool = Field(
+        default=True,
+        alias="AZURE_SQL_POOL_PRE_PING",
+        description="Verify connections before use (critical for Azure SQL)",
+    )
+    azure_sql_pool_recycle: int = Field(
+        default=1800,
+        alias="AZURE_SQL_POOL_RECYCLE",
+        description="Seconds before recycling connections (Azure SQL timeout is ~30 min)",
+    )
+    azure_sql_use_null_pool: bool = Field(
+        default=False,
+        alias="AZURE_SQL_USE_NULL_POOL",
+        description="Use NullPool for serverless scenarios (Azure Functions)",
+    )
+
+    # Connection Retry Configuration
+    azure_sql_connection_retry_attempts: int = Field(
+        default=5,
+        alias="AZURE_SQL_CONNECTION_RETRY_ATTEMPTS",
+        description="Max retry attempts for transient Azure SQL faults",
+    )
+    azure_sql_connection_retry_delay: float = Field(
+        default=1.0,
+        alias="AZURE_SQL_CONNECTION_RETRY_DELAY",
+        description="Initial retry delay in seconds (uses exponential backoff)",
+    )
+
+    # Query Store and Monitoring
+    azure_sql_enable_query_store: bool = Field(
+        default=True,
+        alias="AZURE_SQL_ENABLE_QUERY_STORE",
+        description="Enable Query Store for performance monitoring",
+    )
+    azure_sql_query_store_max_size_mb: int = Field(
+        default=100,
+        alias="AZURE_SQL_QUERY_STORE_MAX_SIZE_MB",
+        description="Max storage for Query Store data",
+    )
+    azure_sql_query_store_retention_days: int = Field(
+        default=30,
+        alias="AZURE_SQL_QUERY_STORE_RETENTION_DAYS",
+        description="Days to retain Query Store data",
+    )
+
+    # Azure Functions / Serverless Detection
+    is_azure_functions: bool = Field(
+        default=False,
+        alias="AZURE_FUNCTIONS_ENVIRONMENT",
+        description="True when running in Azure Functions",
+    )
+
+    @field_validator("is_azure_functions", mode="before")
+    @classmethod
+    def detect_azure_functions(cls, v: bool | None) -> bool:
+        """Auto-detect Azure Functions environment."""
+        if v:
+            return True
+        # Auto-detect from Azure Functions environment variables
+        return any(
+            [
+                os.getenv("FUNCTIONS_WORKER_RUNTIME") is not None,
+                os.getenv("FUNCTIONS_EXTENSION_VERSION") is not None,
+                os.getenv("AZURE_FUNCTIONS_ENVIRONMENT") is not None,
+            ]
+        )
 
     # Performance & Bulk Operations
     bulk_batch_size: int = Field(default=1000, alias="BULK_BATCH_SIZE")
@@ -494,6 +879,50 @@ class Settings(BaseSettings):
     def app_insights_connection_string(self) -> str | None:
         """Get Application Insights connection string."""
         return os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
+
+    @property
+    def key_vault_health(self) -> dict[str, Any]:
+        """Get Key Vault health status and metadata."""
+        metadata = key_vault_manager.get_metadata()
+        cache_stats = key_vault_manager.get_cache_stats()
+
+        return {
+            "is_configured": metadata.is_configured and bool(self.key_vault_url),
+            "vault_url": self.key_vault_url,
+            "soft_delete_enabled": metadata.soft_delete_enabled,
+            "purge_protection_enabled": metadata.purge_protection_enabled,
+            "cached_secrets_count": len(metadata.cached_secrets),
+            "failed_secrets": metadata.failed_secrets,
+            "cache_stats": cache_stats,
+        }
+
+    def get_key_vault_secret(self, secret_name: str, force_refresh: bool = False) -> str | None:
+        """Get secret from Key Vault with caching and auto-refresh.
+
+        This method provides:
+        - Automatic caching with TTL
+        - Auto-refresh before expiry
+        - Graceful fallback to stale cache on errors
+        - Thread-safe concurrent access
+
+        Args:
+            secret_name: Name of the secret to retrieve
+            force_refresh: Force refresh from Key Vault even if cached
+
+        Returns:
+            Secret value or None if not found/error
+        """
+        if not self.key_vault_url:
+            logger.debug(f"Key Vault not configured, cannot fetch {secret_name}")
+            return None
+
+        return key_vault_manager.get_secret(
+            secret_name=secret_name, vault_url=self.key_vault_url, force_refresh=force_refresh
+        )
+
+    def invalidate_key_vault_secret(self, secret_name: str) -> bool:
+        """Invalidate cached Key Vault secret."""
+        return key_vault_manager.invalidate_secret(secret_name, self.key_vault_url)
 
     def get_cache_ttl(self, data_type: str) -> int:
         """Get TTL for a specific data type, clamped to max."""

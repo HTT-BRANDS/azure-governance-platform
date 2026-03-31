@@ -18,6 +18,13 @@ from app.core.app_insights import (
     track_sync_failed,
     track_sync_operation,
 )
+from app.core.azure_sql_pool import (
+    AzureSQLRetryContext,
+    get_pool_stats,
+    is_azure_sql,
+    reset_pool,
+    with_azure_sql_retry,
+)
 from app.core.cache import (
     cache_manager,
     cached,
@@ -53,8 +60,12 @@ from app.core.database import (
     get_db_bulk_context,
     get_db_context,
     get_db_stats,
+    get_db_with_retry,
+    get_pool_stats,
     init_db,
     query_with_timing,
+    reset_pool,
+    with_azure_sql_retry,
 )
 from app.core.monitoring import (
     PerformanceMonitor,
@@ -151,12 +162,21 @@ __all__ = [
     "get_db",
     "get_db_context",
     "get_db_bulk_context",
+    "get_db_with_retry",
     "init_db",
     "eager_load_options",
     "query_with_timing",
     "batch_query",
     "bulk_insert_chunks",
     "get_db_stats",
+    "get_pool_stats",
+    "reset_pool",
+    "with_azure_sql_retry",
+    # Azure SQL Pool
+    "AzureSQLRetryContext",
+    "is_azure_sql",
+    "reset_pool",
+    "with_azure_sql_retry",
     # Cache
     "cache_manager",
     "cached",
