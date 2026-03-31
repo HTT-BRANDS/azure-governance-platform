@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app.core.cache import cached, invalidate_on_sync_completion
+from app.core.cache import cached, get_tenant_name, invalidate_on_sync_completion
 from app.models.resource import IdleResource, Resource
 from app.models.tenant import Subscription, Tenant
 from app.schemas.resource import (
@@ -51,8 +51,8 @@ class ResourceService:
 
         resources = query.limit(limit).all()
 
-        # Get tenant names for display
-        tenants = {t.id: t.name for t in self.db.query(Tenant).all()}
+        # Get tenant names using cache (eliminates N+1 query)
+        # OLD: tenants = {t.id: t.name for t in self.db.query(Tenant).all()}
 
         # Get subscription display names for lookup
         subscriptions = {
@@ -75,8 +75,8 @@ class ResourceService:
             # Location aggregation
             by_location[r.location] = by_location.get(r.location, 0) + 1
 
-            # Tenant aggregation
-            tenant_name = tenants.get(r.tenant_id, "Unknown")
+            # Tenant aggregation (using cache - O(1) lookup)
+            tenant_name = get_tenant_name(str(r.tenant_id)) or "Unknown"
             by_tenant[tenant_name] = by_tenant.get(tenant_name, 0) + 1
 
             # Orphaned tracking
@@ -96,7 +96,7 @@ class ResourceService:
                 ResourceItem(
                     id=r.id,
                     tenant_id=r.tenant_id,
-                    tenant_name=tenant_name,
+                    tenant_name=get_tenant_name(str(r.tenant_id)) or "Unknown",
                     subscription_id=r.subscription_id,
                     subscription_name=subscriptions.get(r.subscription_id, r.subscription_id),
                     resource_group=r.resource_group,
@@ -133,7 +133,8 @@ class ResourceService:
             .all()
         )
 
-        tenants = {t.id: t.name for t in self.db.query(Tenant).all()}
+        # Get tenant names using cache (eliminates N+1 query)
+        # OLD: tenants = {t.id: t.name for t in self.db.query(Tenant).all()}
 
         # Get subscription display names for lookup
         subscriptions = {
@@ -163,7 +164,7 @@ class ResourceService:
                 resource_id=r.id,
                 resource_name=r.name,
                 resource_type=r.resource_type,
-                tenant_name=tenants.get(r.tenant_id, "Unknown"),
+                tenant_name=get_tenant_name(str(r.tenant_id)) or "Unknown",
                 subscription_name=subscriptions.get(r.subscription_id, r.subscription_id),
                 estimated_monthly_cost=r.estimated_monthly_cost,
                 days_inactive=_get_inactive_days(r),
@@ -266,15 +267,14 @@ class ResourceService:
         # Apply pagination
         idle_resources = query.offset(offset).limit(limit).all()
 
-        # Get tenant names for display
-        tenant_names = {t.id: t.name for t in self.db.query(Tenant).all()}
+        # OLD (N+1 query): tenant_names = {t.id: t.name for t in self.db.query(Tenant).all()}
 
         return [
             IdleResourceSchema(
                 id=r.id,
                 resource_id=r.resource_id,
                 tenant_id=r.tenant_id,
-                tenant_name=tenant_names.get(r.tenant_id, "Unknown"),
+                tenant_name=get_tenant_name(str(r.tenant_id)) or "Unknown",
                 subscription_id=r.subscription_id,
                 detected_at=r.detected_at,
                 idle_type=r.idle_type,
@@ -312,11 +312,11 @@ class ResourceService:
         for r in idle_resources:
             by_type[r.idle_type] = by_type.get(r.idle_type, 0) + 1
 
-        # By tenant
+        # By tenant (using cache - eliminates N+1 query)
+        # OLD: tenant_names = {t.id: t.name for t in self.db.query(Tenant).all()}
         by_tenant: dict[str, int] = {}
-        tenant_names = {t.id: t.name for t in self.db.query(Tenant).all()}
         for r in idle_resources:
-            tenant_name = tenant_names.get(r.tenant_id, "Unknown")
+            tenant_name = get_tenant_name(str(r.tenant_id)) or "Unknown"
             by_tenant[tenant_name] = by_tenant.get(tenant_name, 0) + 1
 
         return IdleResourceSummary(

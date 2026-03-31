@@ -453,8 +453,9 @@ def record_external_api_call(
 
     Example:
         with record_external_api_call("azure_graph", "/users") as ctx:
-            response = requests.get(url)
-            ctx.set_status_code(response.status_code)
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+                ctx.set_status_code(response.status_code)
     """
     ctx = ExternalApiContext(service, endpoint)
     start_time = time.perf_counter()
