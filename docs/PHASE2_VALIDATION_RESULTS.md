@@ -48,22 +48,32 @@ Statistics:
 - All files under 600 line limit ✓
 ```
 
-### 3. Application Insights
+### 3. Application Insights ✅ CORRECTED
+
+**Status: PASS** - App Insights was found in HTT-CORE subscription
+
 | Check | Expected | Actual | Status |
 |-------|----------|--------|--------|
-| Resource exists | Yes | ❌ Not found | FAIL |
-| Key Vault secret | Exists | ⏳ TBD | PENDING |
-| App Service config | Set | ⏳ TBD | PENDING |
+| Resource exists | Yes | ✅ governance-appinsights | **PASS** |
+| Location | westus2 | ✅ westus2 | **PASS** |
+| Subscription | Any | ✅ HTT-CORE | **PASS** |
+| Instrumentation Key | Valid | ✅ ebdd7066-8502... | **PASS** |
+| Key Vault Secret | Exists | ✅ app-insights-connection | **PASS** |
+| App Service Config | Set | ✅ 3 settings configured | **PASS** |
 
-**Infrastructure Status:**
-```
-Azure Resource Check:
-- Application Insights: ❌ Not found in resource group
-- Key Vault secret 'appinsights-connection': ⏳ Pending verification
-- App Service app settings: ⏳ Pending configuration
+**Resource Details:**
+- Name: governance-appinsights
+- Resource Group: rg-governance-production
+- Subscription: HTT-CORE
+- Location: westus2
+- Instrumentation Key: ebdd7066-8502-4b03-91cd-f54c80bcade2
 
-Action Required: Husky is creating/fixing App Insights resource
-```
+**Portal URLs:**
+- Overview: https://portal.azure.com/#@/resource/...
+- Live Metrics: https://portal.azure.com/#@/resource/.../liveMetricsStream
+
+**Root Cause of Initial Failure:**
+Validation script was checking "Dev/Test workloads" subscription, but App Insights exists in "HTT-CORE" subscription.
 
 ### 4. Testing Infrastructure
 | Tool | Expected | Actual | Status |
