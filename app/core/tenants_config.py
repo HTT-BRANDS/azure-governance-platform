@@ -343,25 +343,33 @@ def is_multi_tenant_mode_enabled(tenant_code: str | None = None) -> bool:
 def get_credential_for_tenant(
     tenant_code: str,
     prefer_multi_tenant: bool = True,
+    prefer_uami: bool = True,
 ) -> dict[str, str | None]:
     """Get credential configuration for a tenant.
 
-    This function resolves the appropriate app ID and secret configuration
-    for authenticating to a specific tenant. It supports both Phase A
-    (per-tenant apps) and Phase B (multi-tenant app) modes.
+    This function resolves the appropriate app ID and credential configuration
+    for authenticating to a specific tenant. It supports three phases:
 
-    Resolution order when prefer_multi_tenant=True (default):
+    Phase C (Zero-Secrets): UAMI with Federated Identity Credential
+    Phase B: Multi-tenant app with single secret
+    Phase A: Per-tenant app with individual secrets
+
+    Resolution order when prefer_uami=True and prefer_multi_tenant=True (default):
+        1. UAMI with Federated Identity Credential (Phase C) - zero secrets
+        2. Use multi_tenant_app_id if configured (Phase B) - single secret
+        3. Fall back to per-tenant app_id (Phase A) - per-tenant secrets
+
+    Resolution order when prefer_uami=False:
         1. Use multi_tenant_app_id if configured (Phase B)
         2. Fall back to per-tenant app_id (Phase A)
-
-    Resolution order when prefer_multi_tenant=False:
-        1. Use per-tenant app_id (Phase A)
-        2. Fall back to multi_tenant_app_id if available
+        3. UAMI is not considered
 
     Args:
         tenant_code: The tenant code (e.g., "HTT", "BCC").
         prefer_multi_tenant: Whether to prefer multi-tenant app over
             per-tenant app when both are configured.
+        prefer_uami: Whether to prefer UAMI (Phase C) over client secrets.
+            UAMI provides zero-secrets authentication when available.
 
     Returns:
         Dictionary with credential configuration:
@@ -370,6 +378,8 @@ def get_credential_for_tenant(
         - key_vault_secret_name: Secret name if using client secret auth
         - is_multi_tenant: Whether using multi-tenant app mode
         - oidc_enabled: Whether OIDC federation is enabled for this tenant
+        - use_uami: Whether UAMI authentication should be used
+        - uami_client_id: UAMI client ID if use_uami is True
 
     Raises:
         ValueError: If the tenant code is not recognized.
@@ -379,16 +389,43 @@ def get_credential_for_tenant(
         {
             "app_id": "multi-tenant-app-id",
             "tenant_id": "htt-tenant-id",
-            "key_vault_secret_name": None,  # Uses global secret
+            "key_vault_secret_name": None,  # No secret needed with UAMI
             "is_multi_tenant": True,
             "oidc_enabled": False,
+            "use_uami": True,
+            "uami_client_id": "uami-client-id",
         }
     """
     config = get_tenant_by_code(tenant_code)
     if not config:
         raise ValueError(f"Unknown tenant code: {tenant_code}")
 
-    # Determine which app_id to use
+    # Check for UAMI configuration (Phase C - highest priority)
+    use_uami = False
+    uami_client_id = None
+
+    if prefer_uami:
+        # Check if UAMI is configured globally via environment
+        import os
+
+        uami_client_id = os.environ.get("UAMI_CLIENT_ID")
+        use_uami_auth_flag = os.environ.get("USE_UAMI_AUTH", "false").lower() == "true"
+
+        # Also check if we can dynamically import settings to verify
+        try:
+            from app.core.config import get_settings
+
+            settings = get_settings()
+            if hasattr(settings, "use_uami_auth") and settings.use_uami_auth:
+                use_uami_auth_flag = True
+            if hasattr(settings, "uami_client_id") and settings.uami_client_id:
+                uami_client_id = settings.uami_client_id
+        except Exception:
+            pass  # Fall back to env vars
+
+        use_uami = use_uami_auth_flag and bool(uami_client_id)
+
+    # Determine which app_id to use (Phase A vs Phase B)
     multi_tenant_app_id = config.multi_tenant_app_id
     per_tenant_app_id = config.app_id
 
@@ -408,6 +445,8 @@ def get_credential_for_tenant(
         "key_vault_secret_name": config.key_vault_secret_name,
         "is_multi_tenant": is_multi_tenant,
         "oidc_enabled": config.oidc_enabled,
+        "use_uami": use_uami,
+        "uami_client_id": uami_client_id,
     }
 
 
@@ -451,9 +490,7 @@ def validate_tenant_config() -> list[str]:
 
     # Check for consistent multi_tenant_app_id across all tenants (Phase B)
     multi_tenant_ids = {
-        cfg.multi_tenant_app_id
-        for cfg in RIVERSIDE_TENANTS.values()
-        if cfg.multi_tenant_app_id
+        cfg.multi_tenant_app_id for cfg in RIVERSIDE_TENANTS.values() if cfg.multi_tenant_app_id
     }
     if len(multi_tenant_ids) > 1:
         issues.append(

@@ -298,12 +298,15 @@ class AzureClientManager:
     def get_credential(self, tenant_id: str, force_refresh: bool = False) -> TokenCredential:
         """Get or create credential for a tenant with TTL-based caching.
 
-        Supports two credential modes controlled by ``settings.use_oidc_federation``:
+        Supports three credential modes controlled by settings:
 
-        * **OIDC mode** (``use_oidc_federation=True``): returns a
+        * **UAMI mode** (``use_uami_auth=True``): Returns a
+          ``ClientAssertionCredential`` backed by the User-Assigned Managed
+          Identity via Federated Identity Credential. No client secrets required.
+        * **OIDC mode** (``use_oidc_federation=True``): Returns a
           ``ClientAssertionCredential`` backed by the App Service Managed Identity.
-          No client secret is required.
-        * **Secret mode** (default): resolves credentials via Key Vault / env vars
+          No client secrets required.
+        * **Secret mode** (default): Resolves credentials via Key Vault / env vars
           and returns a ``ClientSecretCredential``.
 
         SECURITY: Credentials are cached with TTL and auto-refreshed before expiry.
@@ -313,8 +316,7 @@ class AzureClientManager:
             force_refresh: If True, ignore cache and create new credential
 
         Returns:
-            TokenCredential for the tenant (ClientAssertionCredential in OIDC mode,
-            ClientSecretCredential in secret mode)
+            TokenCredential for the tenant
 
         Raises:
             ValueError: If credentials cannot be resolved
@@ -322,8 +324,52 @@ class AzureClientManager:
         now = time.time()
 
         # Create new credential
-        if self._settings.use_oidc_federation:
-            # OIDC path: resolve app_id from tenants_config, fall back to DB record.
+        if self._settings.use_uami_auth:
+            # Phase C: UAMI with Federated Identity Credential (zero secrets)
+            from app.core.uami_credential import get_uami_provider  # lazy - avoids circular
+
+            uami_provider = get_uami_provider()
+
+            # Get the multi-tenant app ID for this tenant
+            uami_client_id = self._settings.uami_client_id
+            app_id = get_app_id_for_tenant(tenant_id)
+
+            if not uami_client_id:
+                raise ValueError(
+                    "USE_UAMI_AUTH is true but UAMI_CLIENT_ID is not configured. "
+                    "Set UAMI_CLIENT_ID to the User-Assigned Managed Identity client ID."
+                )
+
+            if not app_id:
+                tenant_record = self._get_tenant_from_db(tenant_id)
+                app_id = tenant_record.client_id if tenant_record else None
+
+            if not app_id:
+                raise ValueError(
+                    f"Could not resolve app_id for tenant {tenant_id} in UAMI mode. "
+                    "Add it to tenants_config.py or the tenants DB table."
+                )
+
+            cache_key = f"uami:{tenant_id}:{app_id}"
+            cached = self._credentials.get(cache_key)
+
+            # Check if we can use cached credential
+            if not force_refresh and cached and not cached.is_expired():
+                if not cached.should_refresh():
+                    return cached.credential
+
+            new_credential = uami_provider.get_credential_for_tenant(
+                tenant_id=tenant_id,
+                client_id=app_id,
+            )
+            logger.debug(
+                "UAMI credential created for tenant %s (client_id: %s...)",
+                tenant_id,
+                app_id[:8],
+            )
+
+        elif self._settings.use_oidc_federation:
+            # Phase C (legacy OIDC): resolve app_id from tenants_config, fall back to DB record.
             # Cache key is composite (tenant_id:client_id) so a client_id rotation
             # immediately invalidates the stale entry rather than waiting for TTL.
             oidc_client_id = get_app_id_for_tenant(tenant_id)
@@ -341,33 +387,35 @@ class AzureClientManager:
             cache_key = tenant_id
             cached = self._credentials.get(cache_key)
 
-        # Check if we can use cached credential
-        if not force_refresh and cached:
-            if not cached.is_expired():
-                if not cached.should_refresh():
-                    # Credential is valid and doesn't need refresh yet
-                    return cached.credential
+        # Check if we can use cached credential for non-UAMI paths
+        if not self._settings.use_uami_auth:
+            if not force_refresh and cached:
+                if not cached.is_expired():
+                    if not cached.should_refresh():
+                        # Credential is valid and doesn't need refresh yet
+                        return cached.credential
+                    else:
+                        # Credential is valid but approaching expiry - refresh in background
+                        logger.debug(
+                            "Credential for tenant %s approaching expiry, refreshing", tenant_id
+                        )
                 else:
-                    # Credential is valid but approaching expiry - refresh in background
-                    logger.debug(
-                        f"Credential for tenant {tenant_id} approaching expiry, refreshing"
-                    )
-            else:
-                logger.debug(f"Credential for tenant {tenant_id} expired, refreshing")
-        elif force_refresh:
-            logger.debug(f"Force refreshing credential for tenant {tenant_id}")
+                    logger.debug("Credential for tenant %s expired, refreshing", tenant_id)
+            elif force_refresh:
+                logger.debug("Force refreshing credential for tenant %s", tenant_id)
 
-        if self._settings.use_oidc_federation:
+        if self._settings.use_oidc_federation and not self._settings.use_uami_auth:
             from app.core.oidc_credential import get_oidc_provider  # lazy — avoids circular
 
             new_credential = get_oidc_provider().get_credential_for_tenant(
                 tenant_id, oidc_client_id
             )
             logger.debug(
-                f"OIDC credential created for tenant {tenant_id} "
-                f"(client_id: {oidc_client_id[:8]}...)"
+                "OIDC credential created for tenant %s " "(client_id: %s...)",
+                tenant_id,
+                oidc_client_id[:8],
             )
-        else:
+        elif not self._settings.use_uami_auth:
             # Secret path: resolve via Key Vault / env vars
             client_id, client_secret, _ = self._resolve_credentials(tenant_id)
             new_credential = ClientSecretCredential(
@@ -376,18 +424,43 @@ class AzureClientManager:
                 client_secret=client_secret,
                 connection_timeout=10,
             )
+            logger.debug("ClientSecretCredential created for tenant %s", tenant_id)
+            # Fall through to caching below
 
-        # Cache with expiration
+        # Cache with expiration (only for non-UAMI or if we reached here for UAMI)
+        if self._settings.use_uami_auth:
+            # UAMI path already created the credential above
+            cache_key = f"uami:{tenant_id}:{app_id}"
+            new_credential_to_cache = new_credential
+        elif self._settings.use_oidc_federation:
+            from app.core.oidc_credential import get_oidc_provider
+
+            new_credential_to_cache = get_oidc_provider().get_credential_for_tenant(
+                tenant_id, oidc_client_id
+            )
+            cache_key = f"{tenant_id}:{oidc_client_id}"
+        else:
+            client_id, client_secret, _ = self._resolve_credentials(tenant_id)
+            new_credential_to_cache = ClientSecretCredential(
+                tenant_id=tenant_id,
+                client_id=client_id,
+                client_secret=client_secret,
+                connection_timeout=10,
+            )
+            cache_key = tenant_id
+
         self._credentials[cache_key] = CachedCredential(
-            credential=new_credential,
+            credential=new_credential_to_cache,
             created_at=now,
             expires_at=now + self._credential_ttl,
         )
 
         logger.debug(
-            f"Created new credential for tenant {tenant_id}, expires in {self._credential_ttl}s"
+            "Cached new credential for tenant %s, expires in %ds",
+            tenant_id,
+            self._credential_ttl,
         )
-        return new_credential
+        return new_credential_to_cache
 
     def get_default_credential(self) -> DefaultAzureCredential:
         """Get default credential for Lighthouse scenarios."""

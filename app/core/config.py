@@ -147,7 +147,7 @@ class Settings(BaseSettings):
         description=(
             "Client secret for the multi-tenant app (Phase B). "
             "In production, this should be a Key Vault reference like "
-            '@Microsoft.KeyVault(SecretUri=https://...).'
+            "@Microsoft.KeyVault(SecretUri=https://...)."
         ),
     )
     use_multi_tenant_app: bool = Field(
@@ -157,6 +157,42 @@ class Settings(BaseSettings):
             "Enable Phase B multi-tenant app authentication. "
             "When true, uses AZURE_MULTI_TENANT_APP_ID for all tenants. "
             "Requires admin consent in each tenant."
+        ),
+    )
+
+    # Phase C: Zero-Secrets UAMI Authentication (no secrets required)
+    use_uami_auth: bool = Field(
+        default=False,
+        alias="USE_UAMI_AUTH",
+        description=(
+            "Enable Phase C zero-secrets authentication via User-Assigned Managed Identity. "
+            "When true, uses UAMI with Federated Identity Credential instead of client secrets. "
+            "This is the most secure authentication option with zero secrets in configuration."
+        ),
+    )
+    uami_client_id: str | None = Field(
+        default=None,
+        alias="UAMI_CLIENT_ID",
+        description=(
+            "Client ID of the User-Assigned Managed Identity for Phase C. "
+            "The UAMI should have a Federated Identity Credential attached to the multi-tenant app. "
+            "Required when USE_UAMI_AUTH=true."
+        ),
+    )
+    uami_principal_id: str | None = Field(
+        default=None,
+        alias="UAMI_PRINCIPAL_ID",
+        description=(
+            "Principal ID (Object ID) of the User-Assigned Managed Identity. "
+            "Used for role assignments and RBAC configuration."
+        ),
+    )
+    federated_identity_credential_id: str | None = Field(
+        default="github-actions-federation",
+        alias="FEDERATED_IDENTITY_CREDENTIAL_ID",
+        description=(
+            "Name/ID of the Federated Identity Credential on the multi-tenant app. "
+            "Links the UAMI to the app registration for OIDC federation."
         ),
     )
 
