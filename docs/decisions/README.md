@@ -156,6 +156,10 @@ adr-NNNN-short-title-with-dashes.md
 | [0003](adr-0003-local-first-issue-tracking.md) | Use bd for local-first issue tracking | accepted | 2026-03-06 |
 | [0004](adr-0004-research-first-protocol.md) | Mandate research-first protocol for all ADRs | accepted | 2026-03-06 |
 | [0005](adr-0005-compliance-rule-engine.md) | Use JSON Schema for custom compliance rule definitions | proposed | 2026-03-19 |
+| [0006](adr-0006-regulatory-framework-mapping.md) | Map compliance findings to SOC2 and NIST CSF controls | proposed | 2026-03-20 |
+| [0007](adr-0007-auth-evolution.md) | Authentication Architecture Evolution: Phase A→B→C | accepted | 2025-02-15 |
+| [0008](adr-0008-container-registry.md) | Container Registry Migration: ACR → GHCR | accepted | 2025-01-28 |
+| [0009](adr-0009-database-tier.md) | Database Tier Selection: Standard → Free Tier | accepted | 2025-02-10 |
 
 ## References
 
@@ -167,5 +171,5 @@ adr-NNNN-short-title-with-dashes.md
 ---
 
 **Maintained By:** Solutions Architect 🏛️  
-**Last Updated:** March 6, 2026  
+**Last Updated:** March 2025  
 **Template Version:** MADR 4.0 with STRIDE Security Analysis
