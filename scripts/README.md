@@ -67,6 +67,40 @@ Get up and running with GitHub CLI automation in 4 steps:
 - ✅ JSON output support
 - ✅ Per-tenant or all-tenants mode
 
+## 📋 Deployment Verification Scripts
+
+| Script | Purpose | Key Features |
+|--------|---------|--------------|
+| `verify-and-test-deployment.sh` | **Comprehensive deployment verification** | Azure resource checks, health endpoints, DB migrations, test data seeding, API tests, detailed reports |
+| `verify-deployment.sh` | Production deployment verification | 13 test categories, Azure CLI integration, JSON output |
+| `verify-dev-deployment.sh` | Dev deployment health checks | Basic health, dashboard, API accessibility |
+| `smoke_test.py` | API smoke testing | Python-based endpoint testing, auth verification |
+| `diagnose-production.sh` | Production auth diagnostics | Settings validation, automated fixes, troubleshooting |
+
+### verify-and-test-deployment.sh Usage
+
+```bash
+# Full verification with all steps
+./scripts/verify-and-test-deployment.sh --environment prod --url https://app-governance-prod.azurewebsites.net
+
+# Quick check without migrations/seeding
+./scripts/verify-and-test-deployment.sh --environment dev --skip-migrations --skip-seeding
+
+# Generate report for CI/CD
+./scripts/verify-and-test-deployment.sh --environment staging --generate-report --verbose
+```
+
+**Features:**
+- ✅ Azure resource verification (App Service, SQL Server, Redis, Key Vault)
+- ✅ Database migrations via Alembic
+- ✅ Test data seeding
+- ✅ Health endpoint checks (basic, detailed, auth)
+- ✅ API smoke tests
+- ✅ JSON and text report generation
+- ✅ Exit codes for CI/CD integration (0=healthy, 1=unhealthy, 2=error)
+
+---
+
 ## 📋 Other Scripts
 
 | Script | Purpose |
