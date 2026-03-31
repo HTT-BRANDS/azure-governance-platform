@@ -235,18 +235,23 @@ def test_security_headers_configured():
     - HSTS is enabled in production
     """
     main_py = Path("app/main.py")
+    security_headers_py = Path("app/core/security_headers.py")
     if not main_py.exists():
         pytest.skip("app/main.py not found")
+    if not security_headers_py.exists():
+        pytest.skip("app/core/security_headers.py not found")
 
     with open(main_py) as f:
         main_content = f.read()
+    with open(security_headers_py) as f:
+        security_content = f.read()
 
-    # Check for security headers middleware
-    assert "security_headers_middleware" in main_content, (
+    # Check for security headers middleware (class-based pattern)
+    assert "SecurityHeadersMiddleware" in main_content, (
         "Security headers middleware not found in app/main.py"
     )
 
-    # Check for required security headers
+    # Check for required security headers in the security_headers module
     required_headers = [
         "X-Frame-Options",
         "X-Content-Type-Options",
@@ -257,10 +262,10 @@ def test_security_headers_configured():
 
     missing_headers = []
     for header in required_headers:
-        if header not in main_content:
+        if header not in security_content:
             missing_headers.append(header)
 
-    assert not missing_headers, "Missing security headers in app/main.py:\n" + "\n".join(
+    assert not missing_headers, "Missing security headers in app/core/security_headers.py:\n" + "\n".join(
         f"  - {h}" for h in missing_headers
     )
 
@@ -276,7 +281,7 @@ def test_security_headers_configured():
         )
 
     # Check that HSTS is conditionally enabled (production only)
-    assert "Strict-Transport-Security" in main_content, (
+    assert "Strict-Transport-Security" in security_content, (
         "HSTS header not configured (should be enabled in production)"
     )
 

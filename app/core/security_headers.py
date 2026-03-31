@@ -92,7 +92,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         hsts_max_age: int = 31536000,
         hsts_include_subdomains: bool = True,
         hsts_preload: bool = False,
-        skip_paths: tuple[str, ...] = ("/health", "/health/detailed", "/metrics"),
+        skip_paths: tuple[str, ...] = ("/metrics",),
     ):
         """Initialize security headers middleware.
 
