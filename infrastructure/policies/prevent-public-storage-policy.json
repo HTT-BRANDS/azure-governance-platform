@@ -1,0 +1,104 @@
+{
+  "type": "Microsoft.Authorization/policyDefinitions",
+  "apiVersion": "2021-06-01",
+  "name": "governance-prevent-public-storage",
+  "properties": {
+    "displayName": "Governance: Prevent Public Access to Storage Accounts",
+    "description": "Prevents creating storage accounts that allow public blob access or have overly permissive network rules. Protects against data exposure.",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Security",
+      "source": "Azure Governance Platform"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "Audit",
+          "Deny",
+          "Disabled"
+        ],
+        "defaultValue": "Deny"
+      },
+      "allowedNetworkAcls": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Allowed Network ACL Actions",
+          "description": "List of allowed default network ACL actions"
+        },
+        "allowedValues": [
+          "Deny"
+        ],
+        "defaultValue": [
+          "Deny"
+        ]
+      },
+      "exemptions": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Exempted Storage Accounts",
+          "description": "List of storage account names exempted from this policy"
+        },
+        "defaultValue": []
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Storage/storageAccounts"
+          },
+          {
+            "field": "name",
+            "notIn": "[parameters('exemptions')]"
+          },
+          {
+            "anyOf": [
+              {
+                "field": "Microsoft.Storage/storageAccounts/allowBlobPublicAccess",
+                "exists": "true",
+                "equals": "true"
+              },
+              {
+                "field": "Microsoft.Storage/storageAccounts/networkAcls.defaultAction",
+                "notEquals": "Deny"
+              },
+              {
+                "field": "Microsoft.Storage/storageAccounts/publicNetworkAccess",
+                "equals": "Enabled"
+              },
+              {
+                "allOf": [
+                  {
+                    "field": "Microsoft.Storage/storageAccounts/networkAcls.ipRules",
+                    "exists": "true"
+                  },
+                  {
+                    "count": {
+                      "field": "Microsoft.Storage/storageAccounts/networkAcls.ipRules[*]",
+                      "where": {
+                        "field": "Microsoft.Storage/storageAccounts/networkAcls.ipRules[*].value",
+                        "equals": "0.0.0.0/0"
+                      }
+                    },
+                    "greater": 0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  }
+}

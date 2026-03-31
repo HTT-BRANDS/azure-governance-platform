@@ -1,0 +1,120 @@
+{
+  "type": "Microsoft.Authorization/policyDefinitions",
+  "apiVersion": "2021-06-01",
+  "name": "governance-enforce-encryption",
+  "properties": {
+    "displayName": "Governance: Enforce Encryption at Rest and in Transit",
+    "description": "Ensures all storage accounts use encryption and SQL databases have TDE enabled. Prevents unencrypted data storage.",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Security",
+      "source": "Azure Governance Platform"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "The effect determines what happens when the policy rule is evaluated to match"
+        },
+        "allowedValues": [
+          "Audit",
+          "Deny",
+          "DeployIfNotExists",
+          "Disabled"
+        ],
+        "defaultValue": "Deny"
+      },
+      "minimumTlsVersion": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Minimum TLS Version",
+          "description": "Minimum TLS version for encrypted connections"
+        },
+        "allowedValues": [
+          "TLS1_2",
+          "TLS1_3"
+        ],
+        "defaultValue": "TLS1_2"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "anyOf": [
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Storage/storageAccounts"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "Microsoft.Storage/storageAccounts/enableBlobEncryption",
+                    "exists": "true",
+                    "equals": "false"
+                  },
+                  {
+                    "field": "Microsoft.Storage/storageAccounts/enableFileEncryption",
+                    "exists": "true",
+                    "equals": "false"
+                  },
+                  {
+                    "field": "Microsoft.Storage/storageAccounts/minimumTlsVersion",
+                    "notEquals": "[parameters('minimumTlsVersion')]"
+                  },
+                  {
+                    "field": "Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly",
+                    "equals": "false"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Sql/servers"
+              },
+              {
+                "field": "Microsoft.Sql/servers/version",
+                "notEquals": "12.0"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Sql/servers/databases"
+              },
+              {
+                "field": "Microsoft.Sql/servers/databases/transparentDataEncryption/state",
+                "notEquals": "Enabled"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Compute/disks"
+              },
+              {
+                "field": "Microsoft.Compute/disks/encryptionSettingsCollection/enabled",
+                "exists": "true",
+                "equals": "false"
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  }
+}

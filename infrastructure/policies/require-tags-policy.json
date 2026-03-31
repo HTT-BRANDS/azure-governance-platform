@@ -1,0 +1,96 @@
+{
+  "type": "Microsoft.Authorization/policyDefinitions",
+  "apiVersion": "2021-06-01",
+  "name": "governance-require-tags",
+  "properties": {
+    "displayName": "Governance: Require Mandatory Tags",
+    "description": "Ensures all resources have required tags for governance: Application, Environment, Owner, CostCenter, and DataClassification",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Governance",
+      "source": "Azure Governance Platform"
+    },
+    "parameters": {
+      "requiredTags": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Required Tags",
+          "description": "List of tags that must be present on all resources"
+        },
+        "defaultValue": [
+          "Application",
+          "Environment",
+          "Owner",
+          "CostCenter",
+          "DataClassification"
+        ]
+      },
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "Audit",
+          "Deny",
+          "Disabled"
+        ],
+        "defaultValue": "Audit"
+      },
+      "excludedResourceTypes": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Excluded Resource Types",
+          "description": "Resource types to exclude from this policy"
+        },
+        "defaultValue": [
+          "Microsoft.Compute/virtualMachines/extensions",
+          "Microsoft.Sql/servers/databases"
+        ]
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "notIn": "[parameters('excludedResourceTypes')]"
+          },
+          {
+            "anyOf": [
+              {
+                "field": "tags['Application']",
+                "exists": "false"
+              },
+              {
+                "field": "tags['Environment']",
+                "exists": "false"
+              },
+              {
+                "field": "tags['Owner']",
+                "exists": "false"
+              },
+              {
+                "field": "tags['CostCenter']",
+                "exists": "false"
+              },
+              {
+                "field": "tags['DataClassification']",
+                "exists": "false"
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]",
+        "details": {
+          "missingFields": "[parameters('requiredTags')]"
+        }
+      }
+    }
+  }
+}

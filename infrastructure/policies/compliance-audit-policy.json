@@ -1,0 +1,167 @@
+{
+  "type": "Microsoft.Authorization/policyDefinitions",
+  "apiVersion": "2021-06-01",
+  "name": "governance-compliance-audit",
+  "properties": {
+    "displayName": "Governance: Compliance Audit and Reporting",
+    "description": "Audits resources for compliance with organizational standards and generates compliance reports. Tracks encryption, backup, monitoring, and patch status.",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Governance",
+      "source": "Azure Governance Platform"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "The effect determines what happens when the policy rule is evaluated to match"
+        },
+        "allowedValues": [
+          "Audit",
+          "AuditIfNotExists",
+          "Disabled"
+        ],
+        "defaultValue": "AuditIfNotExists"
+      },
+      "requiredDiagnosticsEnabled": {
+        "type": "Boolean",
+        "metadata": {
+          "displayName": "Require Diagnostics",
+          "description": "Whether to audit for diagnostic settings being enabled"
+        },
+        "defaultValue": true
+      },
+      "requiredBackupEnabled": {
+        "type": "Boolean",
+        "metadata": {
+          "displayName": "Require Backup",
+          "description": "Whether to audit for backup configuration on supported resources"
+        },
+        "defaultValue": true
+      }
+    },
+    "policyRule": {
+      "if": {
+        "anyOf": [
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Compute/virtualMachines"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "Microsoft.Compute/virtualMachines/osProfile.linuxConfiguration",
+                    "exists": "true"
+                  },
+                  {
+                    "field": "Microsoft.Compute/virtualMachines/osProfile.windowsConfiguration",
+                    "exists": "true"
+                  }
+                ]
+              },
+              {
+                "field": "Microsoft.Compute/virtualMachines/instanceView.patchStatus",
+                "exists": "false"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "anyOf": [
+                  {
+                    "field": "type",
+                    "equals": "Microsoft.Sql/servers"
+                  },
+                  {
+                    "field": "type",
+                    "equals": "Microsoft.Sql/servers/databases"
+                  }
+                ]
+              },
+              {
+                "field": "Microsoft.Sql/servers/auditingSettings/state",
+                "notEquals": "Enabled"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.KeyVault/vaults"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "Microsoft.KeyVault/vaults/enableSoftDelete",
+                    "notEquals": "true"
+                  },
+                  {
+                    "field": "Microsoft.KeyVault/vaults/enablePurgeProtection",
+                    "notEquals": "true"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "anyOf": [
+                  {
+                    "field": "type",
+                    "equals": "Microsoft.Web/sites"
+                  },
+                  {
+                    "field": "type",
+                    "equals": "Microsoft.ContainerInstance/containerGroups"
+                  }
+                ]
+              },
+              {
+                "field": "tags['MonitoringEnabled']",
+                "exists": "false"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Storage/storageAccounts"
+              },
+              {
+                "field": "Microsoft.Storage/storageAccounts/blobServices/deleteRetentionPolicy.enabled",
+                "notEquals": "true"
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]",
+        "details": {
+          "type": "Microsoft.Insights/diagnosticSettings",
+          "existenceCondition": {
+            "allOf": [
+              {
+                "field": "Microsoft.Insights/diagnosticSettings/logs.enabled",
+                "equals": "true"
+              },
+              {
+                "field": "Microsoft.Insights/diagnosticSettings/metrics.enabled",
+                "equals": "true"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

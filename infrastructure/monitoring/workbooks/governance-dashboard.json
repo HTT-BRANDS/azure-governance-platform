@@ -1,0 +1,587 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Azure Governance Platform Dashboard\n\nReal-time monitoring of tenant health, sync status, costs, and compliance across all managed tenants."
+      },
+      "name": "Title"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "tenant-selector",
+            "version": "KqlParameterItem/1.0",
+            "name": "Tenant",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "AppTraces\n| where TimeGenerated > ago(24h)\n| extend TenantId = tostring(Properties.TenantId)\n| distinct TenantId\n| where isnotempty(TenantId)",
+            "crossComponentResources": [
+              "{Workspace}"
+            ],
+            "value": ["value::all"],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "selectAllValue": "*"
+            },
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces"
+          },
+          {
+            "id": "time-range",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 86400000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                }
+              ],
+              "allowCustom": true
+            }
+          },
+          {
+            "id": "workspace",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspace",
+            "type": 5,
+            "isRequired": true,
+            "isHiddenWhenLocked": true,
+            "typeSettings": {
+              "resourceTypeFilter": {
+                "microsoft.operationalinsights/workspaces": true
+              }
+            },
+            "value": "/subscriptions/{SubscriptionId}/resourceGroups/{ResourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{LogAnalyticsWorkspace}"
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "Parameters"
+    },
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "links": [
+          {
+            "id": "overview-tab",
+            "cellValue": "tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Overview",
+            "subTarget": "overview",
+            "style": "link"
+          },
+          {
+            "id": "sync-tab",
+            "cellValue": "tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Sync Status",
+            "subTarget": "sync",
+            "style": "link"
+          },
+          {
+            "id": "costs-tab",
+            "cellValue": "tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Cost Analysis",
+            "subTarget": "costs",
+            "style": "link"
+          },
+          {
+            "id": "compliance-tab",
+            "cellValue": "tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Compliance",
+            "subTarget": "compliance",
+            "style": "link"
+          },
+          {
+            "id": "health-tab",
+            "cellValue": "tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Tenant Health",
+            "subTarget": "health",
+            "style": "link"
+          }
+        ]
+      },
+      "name": "Navigation"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > ago(24h)\n| extend TenantId = tostring(Properties.TenantId)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| summarize TotalTenants = dcount(TenantId),\n            HealthyTenants = countif(Message contains \"sync completed\"),\n            FailedSyncs = countif(Message contains \"sync failed\"),\n            Alerts = countif(SeverityLevel == 3)\n            by bin(TimeGenerated, 1h)\n| summarize arg_max(TimeGenerated, *)\n| project TotalTenants, HealthyTenants, FailedSyncs, Alerts",
+              "size": 3,
+              "title": "Current Status",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "tiles",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "TotalTenants",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "showIcon": true
+                  }
+                },
+                "leftContent": {
+                  "columnMatch": "HealthyTenants",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "showIcon": true
+                  }
+                },
+                "rightContent": {
+                  "columnMatch": "Alerts",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "showIcon": true
+                  }
+                }
+              }
+            },
+            "name": "Status Tiles"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > {TimeRange}\n| extend TenantId = tostring(Properties.TenantId), Operation = tostring(Properties.OperationName)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| summarize Operations = count() by TenantId, bin(TimeGenerated, 1h)\n| render timechart",
+              "size": 0,
+              "title": "Operations Over Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "timechart"
+            },
+            "name": "Operations Chart"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "overview"
+      },
+      "name": "Overview Section"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > {TimeRange}\n| extend TenantId = tostring(Properties.TenantId), SyncType = tostring(Properties.SyncType), Duration = todouble(Properties.Duration)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| where Message contains \"sync\"\n| summarize LastSync = max(TimeGenerated), AvgDuration = avg(Duration), TotalSyncs = count(), Failed = countif(Message contains \"failed\") by TenantId, SyncType\n| extend Status = iif(Failed > 0, \"Failed\", \"Success\")\n| project TenantId, SyncType, Status, LastSync, AvgDuration, TotalSyncs\n| order by LastSync desc",
+              "size": 0,
+              "title": "Sync Status by Tenant",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Status",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Success",
+                          "representation": "green",
+                          "text": "✅ Success"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Failed",
+                          "representation": "red",
+                          "text": "❌ Failed"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "LastSync",
+                    "formatter": 6,
+                    "formatOptions": {
+                      "showUtc": false
+                    }
+                  },
+                  {
+                    "columnMatch": "AvgDuration",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "blue"
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "Sync Status Table"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > {TimeRange}\n| extend TenantId = tostring(Properties.TenantId), SyncType = tostring(Properties.SyncType)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| where Message contains \"sync\"\n| summarize Success = countif(Message contains \"completed\"), Failed = countif(Message contains \"failed\"), InProgress = countif(Message contains \"started\") by SyncType\n| render piechart with (title=\"Sync Outcomes by Type\")",
+              "size": 0,
+              "title": "Sync Distribution",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "piechart"
+            },
+            "name": "Sync Distribution Chart"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "sync"
+      },
+      "name": "Sync Section"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > {TimeRange}\n| extend TenantId = tostring(Properties.TenantId), Cost = todouble(Properties.Cost), Currency = tostring(Properties.Currency)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| where Message contains \"cost\"\n| summarize TotalCost = sum(Cost), AvgDailyCost = avg(Cost), MaxDailyCost = max(Cost) by TenantId\n| project TenantId, TotalCost, AvgDailyCost, MaxDailyCost\n| order by TotalCost desc",
+              "size": 0,
+              "title": "Cost Summary by Tenant",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "TotalCost",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "redGreen",
+                      "unit": 2
+                    }
+                  },
+                  {
+                    "columnMatch": "AvgDailyCost",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "unit": 2
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "Cost Summary Table"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > {TimeRange}\n| extend TenantId = tostring(Properties.TenantId), Cost = todouble(Properties.Cost)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| where Message contains \"cost\"\n| summarize TotalCost = sum(Cost) by bin(TimeGenerated, 1d), TenantId\n| render columnchart with (title=\"Daily Costs\")",
+              "size": 0,
+              "title": "Daily Cost Trends",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "columnchart"
+            },
+            "name": "Daily Cost Chart"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "costs"
+      },
+      "name": "Cost Section"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > {TimeRange}\n| extend TenantId = tostring(Properties.TenantId), Framework = tostring(Properties.ComplianceFramework), Score = todouble(Properties.ComplianceScore)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| where Message contains \"compliance\"\n| summarize ComplianceScore = avg(Score), LastCheck = max(TimeGenerated) by TenantId, Framework\n| extend Grade = case(ComplianceScore >= 90, \"A\", ComplianceScore >= 80, \"B\", ComplianceScore >= 70, \"C\", ComplianceScore >= 60, \"D\", \"F\")\n| project TenantId, Framework, ComplianceScore, Grade, LastCheck\n| order by ComplianceScore asc",
+              "size": 0,
+              "title": "Compliance Scorecard",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "ComplianceScore",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "90",
+                          "representation": "success"
+                        },
+                        {
+                          "operator": ">=",
+                          "thresholdValue": "70",
+                          "representation": "warning"
+                        },
+                        {
+                          "operator": "<",
+                          "thresholdValue": "70",
+                          "representation": "failed"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Grade",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "A",
+                          "representation": "green",
+                          "text": "🟢 A"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "B",
+                          "representation": "lightGreen",
+                          "text": "🟡 B"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "C",
+                          "representation": "yellow",
+                          "text": "🟠 C"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "D",
+                          "representation": "orange",
+                          "text": "🔴 D"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "F",
+                          "representation": "red",
+                          "text": "⛔ F"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "Compliance Scorecard Table"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > {TimeRange}\n| extend TenantId = tostring(Properties.TenantId), Framework = tostring(Properties.ComplianceFramework), Score = todouble(Properties.ComplianceScore)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| where Message contains \"compliance\"\n| summarize AvgScore = avg(Score) by Framework, bin(TimeGenerated, 1d)\n| render timechart with (title=\"Compliance Trends\")",
+              "size": 0,
+              "title": "Compliance Trends Over Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "timechart"
+            },
+            "name": "Compliance Trends Chart"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "compliance"
+      },
+      "name": "Compliance Section"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > ago(1h)\n| extend TenantId = tostring(Properties.TenantId), ResponseTime = todouble(Properties.ResponseTime), ErrorRate = todouble(Properties.ErrorRate)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| summarize AvgResponse = avg(ResponseTime), ErrorCount = countif(SeverityLevel >= 3), TotalRequests = count() by TenantId\n| extend HealthStatus = case(ErrorCount == 0 and AvgResponse < 500, \"Healthy\", ErrorCount < 5 and AvgResponse < 1000, \"Degraded\", \"Unhealthy\")\n| project TenantId, HealthStatus, AvgResponse, ErrorCount, TotalRequests\n| order by ErrorCount desc",
+              "size": 0,
+              "title": "Tenant Health Status",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "HealthStatus",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Healthy",
+                          "representation": "green",
+                          "text": "✅ Healthy"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Degraded",
+                          "representation": "yellow",
+                          "text": "⚠️ Degraded"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Unhealthy",
+                          "representation": "red",
+                          "text": "❌ Unhealthy"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "AvgResponse",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "redGreen",
+                      "unit": 23
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "Health Status Table"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated > {TimeRange}\n| extend TenantId = tostring(Properties.TenantId)\n| where TenantId in ({Tenant}) or '*' in ({Tenant})\n| where SeverityLevel >= 3\n| summarize ErrorCount = count() by TenantId, Message\n| order by ErrorCount desc\n| take 20",
+              "size": 0,
+              "title": "Recent Errors",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table"
+            },
+            "name": "Recent Errors Table"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "tab",
+        "comparison": "isEqualTo",
+        "value": "health"
+      },
+      "name": "Health Section"
+    }
+  ],
+  "fallbackResourceIds": [],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
