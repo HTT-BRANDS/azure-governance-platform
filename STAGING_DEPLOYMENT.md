@@ -24,9 +24,11 @@
 
 | Component | Name | Status |
 |-----------|------|--------|
-| Resource Group | rg-governance-staging | ✅ Created (eastus) |
+| Resource Group | rg-governance-staging | ✅ Created (westus2) |
 | App Service Plan | asp-governance-staging-xnczpwyvwsaba | ✅ B1 tier |
 | App Service | app-governance-staging-xnczpwyv | ✅ Running |
+| SQL Database | governance | ✅ **Free Tier** (32MB limit) |
+| SQL Server | sql-governance-staging-77zfjyem | ✅ Created |
 | ACR | acrgovstaging19859.azurecr.io | ✅ Standard SKU, anonymous pull |
 | Key Vault | kv-gov-staging-77zfjyem | ✅ Created |
 | Storage Account | stgovstaging77zfjyem | ✅ Created |
@@ -79,6 +81,16 @@ az webapp restart --name app-governance-staging-xnczpwyv --resource-group rg-gov
 
 ## 🐛 Known Issues
 
+### SQL Database - Free Tier Limitations
+- **Max Size**: 32 MB limit per database
+- **Current Usage**: ~21 MB (67% of limit) - monitor growth
+- **Compute**: 5 DTUs (auto-pauses after inactivity)
+- **Cannot migrate existing DBs to Free**: Must create new database
+- **Actions if limit approached**:
+  1. Run data cleanup (remove old sync logs)
+  2. Upgrade to Basic tier (~$5/month for 2GB)
+  3. Use Azure Data Studio to export/import to Basic tier
+
 ### Tenant Licensing
 - **DCE (Delta Crown)** lacks Entra ID Premium P1 — `signInActivity` and MFA registration reports return 403
 - Code gracefully degrades: users/guests/admins/SPs sync, just without signInActivity and MFA data
@@ -90,10 +102,48 @@ az webapp restart --name app-governance-staging-xnczpwyv --resource-group rg-gov
 
 ---
 
+## 📝 SQL Free Tier Migration (2026-03-31)
+
+Successfully migrated staging database from Standard S0 tier to Azure SQL Free Tier:
+
+### Migration Summary
+- **Old Database**: `governance` on Standard tier (250GB max, ~$15/month)
+- **New Database**: `governance` on Free tier (32MB max, $0/month)
+- **Migration Method**: Create new Free tier DB → Switch connection string → Delete old DB
+- **Downtime**: ~2 minutes (App Service restart)
+- **Data**: Fresh database (application re-syncs from Azure APIs)
+
+### Key Findings
+1. **Cannot update existing databases to Free tier** - Azure limitation
+2. **Free tier max size is 32 MB**, not 32 GB as some documentation suggests
+3. **Database auto-pauses** after inactivity (auto-resumes on next connection)
+4. **Suitable for staging** with light workloads and data cleanup
+
+### Commands Used
+```bash
+# Create new Free tier database
+az sql db create -g rg-governance-staging -s sql-governance-staging-77zfjyem \
+  -n governance-free --edition Free --capacity 5 --max-size 32MB
+
+# Update connection string
+az webapp config appsettings set -g rg-governance-staging \
+  -n app-governance-staging-xnczpwyv \
+  --settings "DATABASE_URL=.../governance-free?..."
+
+# Restart app
+az webapp restart -g rg-governance-staging -n app-governance-staging-xnczpwyv
+
+# Rename to original name
+az sql db rename -g rg-governance-staging -s sql-governance-staging-77zfjyem \
+  --name governance-free --new-name governance
+```
+
+---
+
 ## 📝 Root Cause History
 
 The original staging 503 (2026-03-13 → 2026-03-16) was caused by missing `config/`, `alembic/`, and `alembic.ini` COPY directives in the Dockerfile production stage. `app/core/design_tokens.py` loads `config/brands.yaml` at startup — missing file caused an instant crash. Fixed and redeployed.
 
 ---
 
-*Last updated: 2026-03-19 — Staging operational, v1.8.0*
+*Last updated: 2026-03-31 — Staging operational on SQL Free Tier, v1.8.1*
