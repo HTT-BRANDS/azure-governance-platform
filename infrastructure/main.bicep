@@ -38,6 +38,7 @@ param appServiceSku string = 'B1'
 
 @description('Azure SQL Database SKU')
 @allowed([
+  'Free'
   'Basic'
   'Standard_S0'
   'Standard_S1'

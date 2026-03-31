@@ -15,13 +15,17 @@
       "value": "B1"
     },
     "sqlDatabaseSku": {
-      "value": "Standard_S0"
+      "value": "Standard_S0",
+      "allowedValues": ["Free", "Basic", "Standard_S0", "Standard_S1"]
     },
     "acrName": {
       "value": "acrgovprod"
     },
     "enableAzureSql": {
-      "value": false
+      "value": false,
+      "metadata": {
+        "description": "Set to true when using Azure SQL. Options: Free (staging only), Basic, Standard_S0, Standard_S1"
+      }
     },
     "enableAppInsights": {
       "value": true
