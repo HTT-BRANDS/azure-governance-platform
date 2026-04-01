@@ -1,0 +1,11 @@
+# Playwright test results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Screenshots (except baseline)
+screenshots/*.png
+!screenshots/.gitkeep
+
+# Node modules
+node_modules/
