@@ -1,0 +1,159 @@
+name: GitHub Pages Cross-Browser Tests
+
+on:
+  # Run on push to docs directory
+  push:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/gh-pages-tests.yml'
+      - 'tests/e2e/github-pages/**'
+  
+  # Run on PRs that touch docs
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'tests/e2e/github-pages/**'
+  
+  # Weekly scheduled run (Sundays at 3 AM UTC)
+  schedule:
+    - cron: '0 3 * * 0'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Base URL to test (defaults to deployed site)'
+        required: false
+        default: ''
+
+jobs:
+  cross-browser-tests:
+    name: Cross-Browser Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        viewport: [desktop, tablet, mobile]
+        include:
+          - viewport: desktop
+            width: 1280
+            height: 720
+          - viewport: tablet
+            width: 768
+            height: 1024
+          - viewport: mobile
+            width: 375
+            height: 667
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: tests/e2e/github-pages
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+        working-directory: tests/e2e/github-pages
+
+      - name: Run Playwright tests
+        run: npx playwright test --project=${{ matrix.browser }}-${{ matrix.viewport }}
+        working-directory: tests/e2e/github-pages
+        env:
+          GH_PAGES_URL: ${{ github.event.inputs.base_url || 'https://htt-brands.github.io/azure-governance-platform/' }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.browser }}-${{ matrix.viewport }}
+          path: |
+            tests/e2e/github-pages/test-results/
+            tests/e2e/github-pages/screenshots/
+          retention-days: 7
+
+  generate-report:
+    name: Generate Test Report
+    needs: cross-browser-tests
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results
+          pattern: test-results-*
+          merge-multiple: false
+
+      - name: Generate summary report
+        run: |
+          echo "# GitHub Pages Cross-Browser Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Browser | Viewport | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          for browser in chromium firefox webkit; do
+            for viewport in desktop tablet mobile; do
+              artifact="test-results-${browser}-${viewport}"
+              if [ -d "test-results/${artifact}" ]; then
+                echo "| ${browser} | ${viewport} | ✅ |" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "| ${browser} | ${viewport} | ❌ |" >> $GITHUB_STEP_SUMMARY
+              fi
+            done
+          done
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Screenshots" >> $GITHUB_STEP_SUMMARY
+          echo "Screenshots are available as artifacts for failed tests." >> $GITHUB_STEP_SUMMARY
+
+  update-snapshots:
+    name: Update Baseline Screenshots
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: tests/e2e/github-pages
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        working-directory: tests/e2e/github-pages
+
+      - name: Update screenshots
+        run: npx playwright test --update-snapshots
+        working-directory: tests/e2e/github-pages
+
+      - name: Commit updated screenshots
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add tests/e2e/github-pages/screenshots/
+          git diff --staged --quiet || git commit -m "chore: update baseline screenshots [skip ci]"
+          git push

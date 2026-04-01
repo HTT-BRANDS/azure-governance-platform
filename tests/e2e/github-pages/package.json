@@ -1,0 +1,25 @@
+{
+  "name": "azure-governance-platform-gh-pages-tests",
+  "version": "1.0.0",
+  "description": "Cross-browser Playwright tests for GitHub Pages site",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:chromium": "playwright test --project=chromium-*",
+    "test:firefox": "playwright test --project=firefox-*",
+    "test:webkit": "playwright test --project=webkit-*",
+    "test:desktop": "playwright test --project=*-desktop",
+    "test:tablet": "playwright test --project=*-tablet",
+    "test:mobile": "playwright test --project=*-mobile",
+    "install:browsers": "playwright install",
+    "install:browsers:with-deps": "playwright install --with-deps",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
