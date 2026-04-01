@@ -10,143 +10,152 @@
 ### Status
 | Setting | Value |
 |---------|-------|
-| **Status** | 🟢 ACTIVE - Currently Building |
+| **Status** | 🟡 ACTIVE - Build Errors (investigating) |
 | **URL** | https://htt-brands.github.io/azure-governance-platform/ |
 | **Source** | `/docs` folder on `main` branch |
 | **Build Type** | Jekyll (legacy) |
 | **Theme** | Minima |
 
-### Configuration Files
+### Current Issue
+The GitHub Pages site is configured but experiencing **Jekyll build errors**. The status shows `"status": "errored"`.
 
-#### docs/_config.yml
-- **Title:** Azure Governance Platform
-- **Description:** Technical Architecture & Operations Guide
-- **URL:** https://htt-brands.github.io
-- **BaseURL:** /azure-governance-platform
-- **Theme:** minima
-- **Plugins:** jekyll-feed, jekyll-sitemap, jekyll-seo-tag
+**Source Configuration (Correct):**
+```json
+{
+  "branch": "main",
+  "path": "/docs"
+}
+```
 
-#### docs/Gemfile
-- GitHub Pages gem installed
-- Compatible plugins configured
-- Local Jekyll testing support
+---
 
-#### docs/index.md
-- Jekyll frontmatter configured
-- Layout: default
-- Serves as homepage
+## 🔧 Troubleshooting Steps Taken
+
+### 1. ✅ Repository Setup
+- [x] GitHub Pages enabled
+- [x] Source set to `/docs` folder on `main` branch
+- [x] Homepage URL configured: `https://htt-brands.github.io/azure-governance-platform/`
+
+### 2. ✅ Configuration Files Created
+- [x] `docs/_config.yml` - Jekyll configuration
+- [x] `docs/index.md` - Homepage with frontmatter
+- [x] `docs/Gemfile` - Ruby dependencies
+- [x] `docs/.gitignore` - Jekyll build artifacts
+
+### 3. 🔄 Configuration Simplifications
+The following changes were made to isolate the build error:
+- [x] Removed `plugins` section (jekyll-feed, jekyll-sitemap, jekyll-seo-tag)
+- [x] Removed `paginate` settings (not in default GitHub Pages)
+- [x] Removed `show_excerpts` setting
+- [x] Removed `collections` configuration
+- [x] Removed `defaults` configuration
+- [x] Removed `layout: default` from index.md frontmatter
+- [x] Simplified to minimal config: `title`, `description`, `url`, `baseurl`, `theme`, `markdown`
+
+### 4. ❌ GitHub Actions Approach
+- [x] Created `.github/workflows/pages.yml` for GitHub Actions deployment
+- [x] Failed due to bundler permissions
+- [x] Removed workflow in favor of legacy build
+
+---
+
+## 📋 How to View Build Errors
+
+Since the API only shows "errored" status without details, check build errors using these methods:
+
+### Method 1: GitHub Settings (Recommended)
+1. Go to: https://github.com/HTT-BRANDS/azure-governance-platform/settings/pages
+2. Look for the **"Source"** section
+3. Any build errors will be displayed in a warning box
+
+### Method 2: Repository Owner Email
+GitHub sends build error emails to the repository owner's email address.
+
+### Method 3: Push a Test File
+Create a simple `docs/test.md` without any frontmatter:
+```bash
+cat > docs/test.md << 'EOF'
+# Test Page
+
+This is a simple test page.
+EOF
+git add docs/test.md && git commit -m "test: add simple markdown file" && git push
+```
+
+If this builds successfully, the issue is with Jekyll theme/configuration.
+If this also fails, the issue is with the docs/ folder setup.
 
 ---
 
 ## 📁 Documentation Structure
 
-The GitHub Pages site is built from the `docs/` folder:
-
 ```
 docs/
-├── _config.yml          # Jekyll configuration
+├── _config.yml          # Minimal Jekyll configuration
 ├── Gemfile              # Ruby dependencies
-├── index.md             # Homepage
-├── architecture/        # Architecture docs (collection)
-├── operations/          # Operations docs (collection)
-├── api/                 # API reference (collection)
+├── .gitignore           # Jekyll build artifacts
+├── index.md             # Homepage (no layout specified)
+├── architecture/        # Architecture docs
+├── operations/          # Operations docs
+├── api/                 # API reference
 ├── decisions/           # ADRs
 ├── runbooks/            # Operational runbooks
-├── security/            # Security documentation
-├── governance/          # Governance docs
-├── patterns/            # Design patterns
-├── testing/             # Testing guides
-├── validation/          # Validation reports
-└── archive/             # Archived docs (excluded)
+└── ...
 ```
 
 ---
 
-## 🚀 Accessing the Site
+## 🚀 Alternative: Disable Jekyll
 
-### Live URL
-```
-https://htt-brands.github.io/azure-governance-platform/
-```
+If Jekyll continues to cause issues, you can bypass it entirely:
 
-### Repository Homepage
-The repository homepage is now set to the GitHub Pages URL:
-```
-https://htt-brands.github.io/azure-governance-platform/
-```
-
----
-
-## 🔧 How It Works
-
-### Automatic Deployment
-1. Push changes to `main` branch
-2. GitHub detects changes in `/docs` folder
-3. Jekyll builds the site (uses `_config.yml`)
-4. Site is deployed to GitHub Pages
-5. Changes are live within 1-2 minutes
-
-### Local Testing (Optional)
+### Option 1: Add `.nojekyll` file
 ```bash
-cd docs/
-bundle install
-bundle exec jekyll serve
-# Visit http://localhost:4000/azure-governance-platform/
+# In the docs/ folder
+touch docs/.nojekyll
+git add docs/.nojekyll && git commit -m "chore: disable Jekyll" && git push
 ```
+
+This will serve files as static content without Jekyll processing.
+
+### Option 2: Rename `index.md` to `index.html`
+Convert the markdown homepage to HTML manually.
 
 ---
 
-## 📋 Maintenance Tasks
+## 📊 Summary
 
-### Adding New Documentation
-1. Create markdown file in `docs/` or appropriate subdirectory
-2. Add frontmatter if needed:
-   ```yaml
-   ---
-   layout: default
-   title: Your Page Title
-   ---
-   ```
-3. Commit and push to `main`
-4. Site will rebuild automatically
-
-### Collections
-Three Jekyll collections are configured:
-- `/architecture/` - Architecture documentation
-- `/operations/` - Operations guides
-- `/api/` - API reference docs
-
-Files in these folders get special permalinks.
+| Item | Status |
+|------|--------|
+| GitHub Pages Enabled | ✅ Yes |
+| Source Configured | ✅ `/docs` on `main` |
+| URL Set | ✅ https://htt-brands.github.io/azure-governance-platform/ |
+| Jekyll Config | ✅ Present |
+| Homepage | ✅ index.md |
+| **Build Status** | ❌ **Errored** |
+| **Site Accessible** | ❌ **404** |
 
 ---
 
-## 🔍 Verification Commands
+## 🎯 Next Steps
 
-### Check GitHub Pages Status
-```bash
-gh api repos/HTT-BRANDS/azure-governance-platform/pages | jq .
-```
+1. **Check GitHub Settings**: Visit https://github.com/HTT-BRANDS/azure-governance-platform/settings/pages to see detailed error message
 
-### Check Build Status
-Visit: https://github.com/HTT-BRANDS/azure-governance-platform/settings/pages
+2. **Try `.nojekyll` approach**: If Jekyll errors persist, disable it with `touch docs/.nojekyll`
 
-### Test Local Build
-```bash
-cd docs/
-bundle exec jekyll build
-```
+3. **Verify file structure**: Ensure `docs/index.md` is at the root of the docs folder
+
+4. **Test with minimal file**: Push a simple `docs/test.md` to verify the docs folder is being processed
 
 ---
 
-## 📝 Notes
+## 📞 Reference
 
-- **Excluded from build:** `scripts/`, `tests/`, `archive/`, `infrastructure/terraform/`
-- **404 page:** Not configured (uses default)
-- **Custom domain:** Not configured (using default github.io domain)
-- **HTTPS:** Enabled by default
-- **CNAME:** Not required (using default domain)
+- **GitHub Pages Documentation**: https://docs.github.com/en/pages
+- **Jekyll on GitHub Pages**: https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll
+- **Troubleshooting**: https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/troubleshooting-jekyll-build-errors-for-github-pages-sites
 
 ---
 
 **Last Updated:** April 1, 2026  
-**Status:** ✅ GitHub Pages Active and Configured
+**Status:** 🔧 Configuration Complete - Build Issues Under Investigation
