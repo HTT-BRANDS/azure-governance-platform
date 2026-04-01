@@ -1,6 +1,6 @@
 ---
 status: {proposed | rejected | accepted | deprecated | superseded by ADR-NNNN}
-date: YYYY-MM-DD
+date: 2024-01-01 # Template - replace with actual date
 decision-makers: {list everyone involved in the decision}
 consulted: {list subject matter experts who provided input}
 informed: {list stakeholders who were kept updated}

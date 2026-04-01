@@ -44,14 +44,52 @@ nav:
 mermaid:
   src: 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js'
 
-# Exclude problematic files
+# COMPREHENSIVE EXCLUSIONS - These files/folders cause build errors
 exclude:
-  - README.md
-  - CHANGELOG.md
-  - decisions/
-  - openapi-examples/
-  - security/
-  - design-system.md
+  # Documentation templates with placeholders
+  - "decisions/adr-template.md"
+  - "decisions/"
+
+  # Files with Jinja2/Liquid syntax that conflicts
+  - "design-system.md"
+  - "adr-template.md"
+
+  # Security docs with complex code
+  - "security/"
+  - "openapi-examples/"
+
+  # Build artifacts
+  - "README.md"
+  - "CHANGELOG.md"
+  - "LICENSE"
+  - "Dockerfile"
+  - "docker-compose.yml"
+
+  # Config files
+  - "package.json"
+  - "package-lock.json"
+  - "requirements.txt"
+  - "pyproject.toml"
+
+  # Scripts and tools
+  - "scripts/"
+  - "tools/"
+  - "tests/"
+  - ".github/"
+
+  # Hidden files
+  - ".gitignore"
+  - ".env"
+  - ".env.example"
+  - ".flake8"
+  - ".pre-commit-config.yaml"
+
+  # Temporary files
+  - "*.log"
+  - "*.tmp"
+  - "*.swp"
+  - "*.swo"
+  - "*~"
 
 # Collections
 collections:
