@@ -10,12 +10,11 @@ import time
 from azure.core.exceptions import HttpResponseError
 
 from app.api.services.azure_client import azure_client_manager
-from app.preflight.base import BasePreflightCheck
-from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 from app.preflight.azure.base import (
     _create_check_result,
-    _get_credential,
 )
+from app.preflight.base import BasePreflightCheck
+from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 
 logger = logging.getLogger(__name__)
 

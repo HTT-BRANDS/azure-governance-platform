@@ -19,7 +19,7 @@ from datetime import UTC, datetime
 from app.core.config import get_settings
 from app.core.database import SessionLocal
 from app.models.tenant import Subscription, Tenant
-from app.preflight.azure_checks import (
+from app.preflight.azure.azure_checks import (
     check_azure_authentication,
     run_all_azure_checks,
 )

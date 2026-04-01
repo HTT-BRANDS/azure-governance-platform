@@ -14,22 +14,34 @@ Example usage:
     >>> from app.preflight.azure import AzureAuthCheck, NetworkChecks
     >>> auth_check = AzureAuthCheck()
     >>> result = await auth_check.run(tenant_id="...")
-    
+
     >>> from app.preflight.azure.azure_checks import run_all_azure_checks
     >>> results = await run_all_azure_checks(tenant_id="...")
 """
 
 # Import all check classes for convenient access
-from app.preflight.azure.identity import AzureAuthCheck, check_azure_authentication
-from app.preflight.azure.network import (
-    AzureSubscriptionsCheck,
-    AzureGraphCheck,
-    check_azure_subscriptions,
-    check_graph_api_access,
+from app.preflight.azure.azure_checks import run_all_azure_checks
+from app.preflight.azure.base import (
+    REQUIRED_AZURE_ROLES,
+    REQUIRED_GRAPH_PERMISSIONS,
+    AzureCheckError,
 )
 from app.preflight.azure.compute import (
     AzureResourcesCheck,
     check_resource_manager_access,
+)
+from app.preflight.azure.identity import AzureAuthCheck, check_azure_authentication
+from app.preflight.azure.network import (
+    AzureGraphCheck,
+    AzureSubscriptionsCheck,
+    check_azure_subscriptions,
+    check_graph_api_access,
+)
+from app.preflight.azure.security import (
+    AzureRBACCheck,
+    AzureSecurityCheck,
+    check_rbac_permissions,
+    check_security_center_access,
 )
 from app.preflight.azure.storage import (
     AzureCostManagementCheck,
@@ -37,23 +49,13 @@ from app.preflight.azure.storage import (
     check_cost_management_access,
     check_policy_access,
 )
-from app.preflight.azure.security import (
-    AzureSecurityCheck,
-    AzureRBACCheck,
-    check_security_center_access,
-    check_rbac_permissions,
-)
-from app.preflight.azure.base import (
-    AzureCheckError,
-    REQUIRED_GRAPH_PERMISSIONS,
-    REQUIRED_AZURE_ROLES,
-)
+
 
 # For the requested interface in the task, provide NetworkChecks, ComputeChecks, etc.
 # These are convenience aliases that group related checks
 class NetworkChecks:
     """Network-related Azure preflight checks (subscriptions and Graph API)."""
-    
+
     def __init__(self) -> None:
         self.subscriptions_check = AzureSubscriptionsCheck()
         self.graph_check = AzureGraphCheck()
@@ -61,14 +63,14 @@ class NetworkChecks:
 
 class ComputeChecks:
     """Compute-related Azure preflight checks (Resource Manager)."""
-    
+
     def __init__(self) -> None:
         self.resources_check = AzureResourcesCheck()
 
 
 class StorageChecks:
     """Storage-related Azure preflight checks (Cost Management and Policy)."""
-    
+
     def __init__(self) -> None:
         self.cost_management_check = AzureCostManagementCheck()
         self.policy_check = AzurePolicyCheck()
@@ -76,21 +78,17 @@ class StorageChecks:
 
 class IdentityChecks:
     """Identity-related Azure preflight checks (Azure AD Authentication)."""
-    
+
     def __init__(self) -> None:
         self.auth_check = AzureAuthCheck()
 
 
 class SecurityChecks:
     """Security-related Azure preflight checks (Security Center and RBAC)."""
-    
+
     def __init__(self) -> None:
         self.security_check = AzureSecurityCheck()
         self.rbac_check = AzureRBACCheck()
-
-
-# Re-export run_all_azure_checks from the main module
-from app.preflight.azure.azure_checks import run_all_azure_checks
 
 
 __all__ = [

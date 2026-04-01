@@ -10,18 +10,15 @@ import time
 from datetime import UTC, datetime
 
 from app.core.config import get_settings
-from app.preflight.base import BasePreflightCheck
-from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 from app.preflight.azure.base import (
+    AZURE_MANAGEMENT_SCOPE,
+    AzureCheckError,
     _create_check_result,
     _get_credential,
     _parse_aad_error,
-    AZURE_MANAGEMENT_SCOPE,
-    GRAPH_API_BASE,
-    GRAPH_SCOPES,
-    REQUIRED_GRAPH_PERMISSIONS,
-    AzureCheckError,
 )
+from app.preflight.base import BasePreflightCheck
+from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

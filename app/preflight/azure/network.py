@@ -4,6 +4,7 @@ This module provides checks for Azure subscription access, Microsoft Graph API
 connectivity, and network-related permissions.
 """
 
+import asyncio
 import logging
 import time
 from typing import Any
@@ -11,16 +12,16 @@ from typing import Any
 import httpx
 
 from app.api.services.azure_client import azure_client_manager
-from app.preflight.base import BasePreflightCheck
-from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 from app.preflight.azure.base import (
-    _create_check_result,
-    _get_credential,
-    _parse_aad_error,
     GRAPH_API_BASE,
     GRAPH_SCOPES,
     REQUIRED_GRAPH_PERMISSIONS,
+    _create_check_result,
+    _get_credential,
+    _parse_aad_error,
 )
+from app.preflight.base import BasePreflightCheck
+from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 
 logger = logging.getLogger(__name__)
 
@@ -392,10 +393,6 @@ async def check_graph_api_access(tenant_id: str) -> CheckResult:
             error_code="graph_api_error",
             error=e,
         )
-
-
-# Import asyncio at module level for the function above
-import asyncio
 
 
 __all__ = [

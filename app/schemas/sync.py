@@ -1,7 +1,6 @@
 """Sync-related Pydantic schemas."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,8 +13,8 @@ class SyncJob(BaseModel):
     sync_type: str
     status: str  # "pending", "running", "completed", "failed"
     created_at: datetime
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
 
 
 class SyncStatus(BaseModel):
@@ -25,7 +24,7 @@ class SyncStatus(BaseModel):
     status: str
     progress_percent: float = Field(..., ge=0, le=100)
     current_step: str
-    estimated_completion: Optional[datetime] = None
+    estimated_completion: datetime | None = None
 
 
 class SyncResult(BaseModel):

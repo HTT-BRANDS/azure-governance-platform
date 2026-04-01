@@ -380,12 +380,12 @@ class ComplianceService:
             last_updated=latest.synced_at,
         )
 
-    async def get_compliance_trends(
+    async def get_compliance_trends_for_tenant(
         self,
         tenant_id: str,
         months: int = 6
     ) -> list[ComplianceTrend]:
-        """Get compliance trends over time.
+        """Get compliance trends over time for a specific tenant.
 
         Args:
             tenant_id: The tenant ID to get trends for

@@ -26,9 +26,16 @@ import asyncio
 import logging
 import time
 from datetime import UTC, datetime
-from typing import Any
 
-from app.preflight.models import CheckCategory, CheckResult, CheckStatus
+from app.preflight.azure.base import (
+    REQUIRED_AZURE_ROLES,
+    REQUIRED_GRAPH_PERMISSIONS,
+    AzureCheckError,
+)
+from app.preflight.azure.compute import (
+    AzureResourcesCheck,
+    check_resource_manager_access,
+)
 
 # Import all check classes and functions from modular sub-packages
 from app.preflight.azure.identity import (
@@ -36,14 +43,16 @@ from app.preflight.azure.identity import (
     check_azure_authentication,
 )
 from app.preflight.azure.network import (
-    AzureSubscriptionsCheck,
     AzureGraphCheck,
+    AzureSubscriptionsCheck,
     check_azure_subscriptions,
     check_graph_api_access,
 )
-from app.preflight.azure.compute import (
-    AzureResourcesCheck,
-    check_resource_manager_access,
+from app.preflight.azure.security import (
+    AzureRBACCheck,
+    AzureSecurityCheck,
+    check_rbac_permissions,
+    check_security_center_access,
 )
 from app.preflight.azure.storage import (
     AzureCostManagementCheck,
@@ -51,17 +60,7 @@ from app.preflight.azure.storage import (
     check_cost_management_access,
     check_policy_access,
 )
-from app.preflight.azure.security import (
-    AzureSecurityCheck,
-    AzureRBACCheck,
-    check_security_center_access,
-    check_rbac_permissions,
-)
-from app.preflight.azure.base import (
-    AzureCheckError,
-    REQUIRED_GRAPH_PERMISSIONS,
-    REQUIRED_AZURE_ROLES,
-)
+from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 
 logger = logging.getLogger(__name__)
 

@@ -3,13 +3,12 @@
 import json
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 from sqlalchemy.orm import Session
 
 from app.core.cache import cached, get_tenant_name, invalidate_on_sync_completion
 from app.models.resource import IdleResource, Resource
-from app.models.tenant import Subscription, Tenant
+from app.models.tenant import Subscription
 from app.schemas.resource import (
     IdleResource as IdleResourceSchema,
 )

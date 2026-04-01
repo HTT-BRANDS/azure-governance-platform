@@ -9,8 +9,6 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
-import httpx
-
 from app.api.services.azure_client import azure_client_manager
 from app.core.config import get_settings
 from app.preflight.models import CheckCategory, CheckResult, CheckStatus

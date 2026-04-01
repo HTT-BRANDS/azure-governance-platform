@@ -10,8 +10,8 @@ from app.core.cache import cached, invalidate_on_sync_completion
 from app.models.identity import IdentitySnapshot, PrivilegedUser
 from app.models.tenant import Tenant
 from app.schemas.identity import (
-    GuestAccount,
     GroupSummary,
+    GuestAccount,
     IdentityStats,
     IdentitySummary,
     PrivilegedAccount,

@@ -10,9 +10,12 @@ import random
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any, TypeVar
 
 from app.core.config import get_settings
+from app.core.database import SessionLocal
+from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
@@ -1134,19 +1137,13 @@ async def delete_cached(key: str) -> bool:
 # Tenant Caching Utilities (N+1 Query Fix)
 # =============================================================================
 
-from functools import lru_cache
-from typing import Dict
-
-from app.core.database import SessionLocal
-from app.models.tenant import Tenant
-
 
 @lru_cache(maxsize=1)
-def get_tenant_name_map() -> Dict[str, str]:
+def get_tenant_name_map() -> dict[str, str]:
     """
     Cached tenant ID to name mapping.
     Cache expires every 5 minutes or when explicitly cleared.
-    
+
     This eliminates the N+1 query problem where we query all tenants
     for each resource lookup.
     """
@@ -1164,19 +1161,19 @@ def clear_tenant_cache():
 
 def get_tenant_name(tenant_id: str) -> str | None:
     """Get tenant name by ID (cached).
-    
+
     Args:
         tenant_id: The tenant ID to look up
-        
+
     Returns:
         Tenant name or None if not found
-        
+
     Example:
         # OLD (N+1 problem):
         # for t in db.query(Tenant).all():
         #     if t.id == resource.tenant_id:
         #         tenant_name = t.name
-        
+
         # NEW (cached):
         tenant_name = get_tenant_name(str(resource.tenant_id))
     """

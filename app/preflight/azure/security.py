@@ -6,18 +6,19 @@ RBAC permissions validation, and security-related operations.
 
 import logging
 import time
+from typing import Any
 
 from azure.core.exceptions import HttpResponseError
 from azure.mgmt.authorization import AuthorizationManagementClient
 
-from app.preflight.base import BasePreflightCheck
-from app.preflight.models import CheckCategory, CheckResult, CheckStatus
+from app.api.services.azure_client import azure_client_manager
 from app.preflight.azure.base import (
+    REQUIRED_AZURE_ROLES,
     _create_check_result,
     _get_credential,
-    REQUIRED_AZURE_ROLES,
 )
-from app.api.services.azure_client import azure_client_manager
+from app.preflight.base import BasePreflightCheck
+from app.preflight.models import CheckCategory, CheckResult, CheckStatus
 
 logger = logging.getLogger(__name__)
 
@@ -415,10 +416,6 @@ async def check_rbac_permissions(tenant_id: str, subscription_id: str) -> CheckR
             error_code="rbac_check_error",
             error=e,
         )
-
-
-# Import Any for type hints
-from typing import Any
 
 
 __all__ = [
