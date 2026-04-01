@@ -48,7 +48,7 @@ mermaid:
 exclude:
   - README.md
   - CHANGELOG.md
-  - adr-template.md
+  - decisions/
   - openapi-examples/
   - security/
 
