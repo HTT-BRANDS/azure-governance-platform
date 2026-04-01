@@ -5,43 +5,34 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-# Mock Azure SDK modules before importing
-azure_mock = MagicMock()
-sys.modules["azure"] = azure_mock
-sys.modules["azure.mgmt"] = azure_mock
-sys.modules["azure.mgmt.resource"] = azure_mock
-sys.modules["azure.mgmt.costmanagement"] = azure_mock
-sys.modules["azure.mgmt.policyinsights"] = azure_mock
-sys.modules["azure.mgmt.security"] = azure_mock
-sys.modules["azure.identity"] = azure_mock
-sys.modules["azure.core"] = azure_mock
-sys.modules["azure.core.exceptions"] = azure_mock
+# Import Azure modules BEFORE any app imports to ensure namespace packages work
+try:
+    from azure.core.exceptions import HttpResponseError
+    from azure.mgmt.costmanagement import CostManagementClient
+    from azure.mgmt.policyinsights import PolicyInsightsClient
+    from azure.mgmt.security import SecurityCenter
+    from azure.identity import ClientSecretCredential
+except ImportError:
+    # Create a proper mock exception class if Azure SDK not available
+    class HttpResponseError(Exception):
+        def __init__(self, message="", status_code=None, **kwargs):
+            super().__init__(message)
+            self.status_code = status_code
+            self.message = message
+    
+    # Mock classes
+    class CostManagementClient:
+        pass
+    
+    class PolicyInsightsClient:
+        pass
+    
+    class SecurityCenter:
+        pass
+    
+    class ClientSecretCredential:
+        pass
 
-
-# Make HttpResponseError a real exception so except clause works
-class MockHttpResponseError(Exception):
-    def __init__(self, message="", status_code=None, **kwargs):
-        super().__init__(message)
-        self.status_code = status_code
-        self.message = message
-
-
-azure_mock.HttpResponseError = MockHttpResponseError
-sys.modules["azure.core.exceptions"].HttpResponseError = MockHttpResponseError
-
-
-# Make HttpResponseError a real exception so 'except HttpResponseError' works
-class MockHttpResponseError(Exception):
-    """Mock Azure HttpResponseError that is a real exception subclass."""
-
-    def __init__(self, message="", status_code=None, **kwargs):
-        super().__init__(message)
-        self.status_code = status_code
-        self.message = message
-
-
-azure_mock.HttpResponseError = MockHttpResponseError
-sys.modules["azure.core.exceptions"].HttpResponseError = MockHttpResponseError
 
 from app.models.riverside import (  # noqa: E402
     RequirementStatus,

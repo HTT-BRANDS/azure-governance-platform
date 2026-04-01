@@ -1,21 +1,21 @@
 """Shared fixtures for sync tests."""
 
 import sys
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
-# Mock Azure SDK modules before importing sync modules
-azure_mock = MagicMock()
-sys.modules["azure"] = azure_mock
-sys.modules["azure.mgmt"] = azure_mock
-sys.modules["azure.mgmt.resource"] = azure_mock
-sys.modules["azure.mgmt.resource.subscriptions"] = azure_mock
-sys.modules["azure.mgmt.costmanagement"] = azure_mock
-sys.modules["azure.mgmt.costmanagement.models"] = azure_mock
-sys.modules["azure.mgmt.policyinsights"] = azure_mock
-sys.modules["azure.mgmt.security"] = azure_mock
-sys.modules["azure.identity"] = azure_mock
-sys.modules["azure.core"] = azure_mock
-sys.modules["azure.core.exceptions"] = azure_mock
+# Import Azure modules BEFORE mocking to ensure namespace packages work properly
+try:
+    import azure.identity
+    import azure.mgmt.resource
+    import azure.mgmt.costmanagement
+    import azure.mgmt.policyinsights
+    import azure.mgmt.security
+    import azure.mgmt.compute  # noqa: F401 - needed for quota_service
+    import azure.core.exceptions
+    AZURE_AVAILABLE = True
+except ImportError:
+    AZURE_AVAILABLE = False
+    raise  # Re-raise the error since Azure SDK should be installed
 
 import uuid  # noqa: E402
 from datetime import datetime, timedelta  # noqa: E402

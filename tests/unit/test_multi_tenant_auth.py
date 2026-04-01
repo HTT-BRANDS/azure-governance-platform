@@ -545,3 +545,35 @@ class TestPerformance:
 
             # Should complete in under 100ms (very generous)
             assert elapsed < 0.1, f"Credential resolution too slow: {elapsed:.3f}s for 1000 calls"
+
+
+# ============================================================================
+# Cleanup Fixture - Restore original tenant config after tests that reload module
+# ============================================================================
+
+
+@pytest.fixture(autouse=True)
+def restore_tenants_config():
+    """Restore original tenants config after each test.
+    
+    Some tests use importlib.reload() to test config loading, which modifies
+    the global RIVERSIDE_TENANTS. This fixture ensures the module is reloaded
+    with the original config after such tests.
+    """
+    import os
+    import importlib
+    import app.core.tenants_config as tc_module
+    
+    # Store original env var
+    original_config_path = os.environ.get("TENANTS_CONFIG_PATH")
+    
+    yield
+    
+    # Cleanup: reload with original config
+    if original_config_path:
+        os.environ["TENANTS_CONFIG_PATH"] = original_config_path
+    elif "TENANTS_CONFIG_PATH" in os.environ:
+        del os.environ["TENANTS_CONFIG_PATH"]
+    
+    # Force reload to restore original config
+    importlib.reload(tc_module)

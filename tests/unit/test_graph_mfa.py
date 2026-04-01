@@ -9,12 +9,24 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Mock Azure SDK before imports
-azure_mock = MagicMock()
-sys.modules["azure"] = azure_mock
-sys.modules["azure.identity"] = azure_mock
-sys.modules["azure.core"] = azure_mock
-sys.modules["azure.core.exceptions"] = azure_mock
+# Import Azure modules BEFORE any app imports to ensure namespace packages work
+try:
+    from azure.identity import ClientSecretCredential
+    from azure.core.credentials import TokenCredential
+    from azure.core.exceptions import HttpResponseError
+except ImportError:
+    # Mock classes if Azure SDK not available
+    class ClientSecretCredential:
+        pass
+    
+    class TokenCredential:
+        pass
+    
+    class HttpResponseError(Exception):
+        def __init__(self, message="", status_code=None, **kwargs):
+            super().__init__(message)
+            self.status_code = status_code
+            self.message = message
 
 from app.api.services.graph_client import (  # noqa: E402
     ADMIN_ROLE_TEMPLATE_IDS,

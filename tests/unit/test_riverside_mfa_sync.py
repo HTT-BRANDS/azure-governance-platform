@@ -9,22 +9,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-# Mock Azure SDK before imports
-azure_mock = MagicMock()
-sys.modules["azure"] = azure_mock
-sys.modules["azure.core"] = azure_mock
-sys.modules["azure.core.exceptions"] = azure_mock
+# Import Azure modules BEFORE any app imports to ensure namespace packages work
+try:
+    from azure.core.exceptions import HttpResponseError
+except ImportError:
+    # Create a proper mock exception class if Azure SDK not available
+    class HttpResponseError(Exception):
+        def __init__(self, message="", status_code=None, **kwargs):
+            super().__init__(message)
+            self.status_code = status_code
+            self.message = message
 
-
-class MockHttpResponseError(Exception):
-    def __init__(self, message="", status_code=None, **kwargs):
-        super().__init__(message)
-        self.status_code = status_code
-        self.message = message
-
-
-azure_mock.HttpResponseError = MockHttpResponseError
-sys.modules["azure.core.exceptions"].HttpResponseError = MockHttpResponseError
 
 from app.services.riverside_sync import (  # noqa: E402
     SyncError,

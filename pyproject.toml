@@ -54,6 +54,7 @@ dependencies = [
     "opentelemetry-sdk>=1.40.0",
     "opentelemetry-instrumentation-fastapi>=0.61b0",
     "opentelemetry-exporter-otlp>=1.40.0",
+    "azure-mgmt-compute>=37.2.0",
 ]
 
 [project.optional-dependencies]

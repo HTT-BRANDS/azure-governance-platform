@@ -398,10 +398,13 @@ class TestCredentialCreation:
             assert call_kwargs["tenant_id"] == "00000000-0000-0000-0000-000000000001"
             assert call_kwargs["client_id"] == "00000000-0000-0000-0000-000000000002"
 
-    def test_get_credential_raises_when_uami_unavailable(self, provider):
+    def test_get_credential_raises_when_uami_unavailable(self):
         """Should raise UAMICredentialError when UAMI cannot be used."""
+        # Create provider without UAMI client_id to simulate unavailable UAMI
+        provider_without_uami = UAMICredentialProvider(uami_client_id="")
+        
         with pytest.raises(UAMICredentialError) as exc_info:
-            provider.get_credential_for_tenant(
+            provider_without_uami.get_credential_for_tenant(
                 tenant_id="00000000-0000-0000-0000-000000000001",
                 client_id="00000000-0000-0000-0000-000000000002",
             )
@@ -494,12 +497,12 @@ class TestModuleLevelFunctions:
         """Should read configuration from settings."""
         reset_provider()
 
-        # Mock settings
+        # Mock settings - patch where it's defined, not where it's imported
         mock_settings = MagicMock()
         mock_settings.uami_client_id = "settings-uami-id"
         mock_settings.federated_identity_credential_id = "settings-fic-id"
 
-        with patch("app.core.uami_credential.get_settings", return_value=mock_settings):
+        with patch("app.core.config.get_settings", return_value=mock_settings):
             provider = get_uami_provider()
 
             assert provider._uami_client_id == "settings-uami-id"
@@ -648,10 +651,10 @@ class TestEdgeCases:
     """Test edge cases and error handling."""
 
     def test_empty_uami_client_id_treated_as_none(self):
-        """Empty string UAMI client ID should be treated as not configured."""
+        """Empty string UAMI client ID should be treated as not configured (None)."""
         provider = UAMICredentialProvider(uami_client_id="")
 
-        assert provider._uami_client_id == ""
+        assert provider._uami_client_id is None
         assert not provider._uami_client_id  # Falsy
 
     def test_fic_id_defaults_when_not_set(self):
