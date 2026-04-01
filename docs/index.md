@@ -1,248 +1,119 @@
 ---
 layout: default
-title: Home
-nav_order: 1
+title: Azure Governance Platform
 ---
 
-# Azure Governance Platform
-
-## Technical Architecture & Operations Guide
-
-**Version:** 1.8.1  
-**Last Updated:** March 31, 2026  
-**Status:** ✅ Production Certified - Rock Solid
-
----
+<div class="hero">
+  <h1>Azure Governance Platform</h1>
+  <p class="subtitle">Enterprise-grade Azure governance, cost optimization, and compliance management</p>
+  <div class="grade-badge">A+ Grade (98/100) - Production Certified</div>
+</div>
 
 ## 🎯 System Overview
 
 The Azure Governance Platform is a **production-ready, enterprise-grade SaaS application** providing comprehensive Azure resource governance, cost optimization, and compliance monitoring for multi-tenant environments.
 
-### At a Glance
+## 📊 At a Glance
 
-| Metric | Value |
-|--------|-------|
-| **Grade** | A+ (98/100) |
-| **Full Send Score** | 94.75% |
-| **Infrastructure Score** | 95/100 |
-| **Test Pass Rate** | 100% (2,563/2,563) |
-| **Type Coverage** | 84% |
-| **Cost Savings** | 77% (~$492/year) |
-| **Documentation** | 52 documents |
-| **Issue Tracker** | 0 issues (pristine) |
+<table>
+  <thead>
+    <tr>
+      <th>Metric</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Grade</strong></td>
+      <td>A+ (98/100)</td>
+    </tr>
+    <tr>
+      <td><strong>Full Send Score</strong></td>
+      <td>94.75%</td>
+    </tr>
+    <tr>
+      <td><strong>Infrastructure Score</strong></td>
+      <td>95/100</td>
+    </tr>
+    <tr>
+      <td><strong>Test Pass Rate</strong></td>
+      <td>100% (2,563/2,563)</td>
+    </tr>
+    <tr>
+      <td><strong>Type Coverage</strong></td>
+      <td>84%</td>
+    </tr>
+    <tr>
+      <td><strong>Cost Savings</strong></td>
+      <td>77% (~$492/year)</td>
+    </tr>
+    <tr>
+      <td><strong>Documentation</strong></td>
+      <td>52 documents</td>
+    </tr>
+  </tbody>
+</table>
 
-### Key Capabilities
+## 🏗️ Architecture
 
-- 🔐 **Multi-Tenant Identity Management** - Azure AD B2C with OIDC
-- 💰 **Cost Optimization** - Automated analysis and recommendations
-- 📊 **Compliance Monitoring** - Continuous governance assessment
-- 🔍 **Resource Discovery** - Automated Azure resource inventory
-- 📈 **Analytics & Reporting** - Custom dashboards and insights
-- 🚨 **Alerting & Monitoring** - Real-time anomaly detection
+<div class="mermaid">
+flowchart TB
+    subgraph Client["Client Layer"]
+        Web[React Web App]
+        Mobile[Mobile Clients]
+    end
+    
+    subgraph Platform["Azure Governance Platform"]
+        API[FastAPI Application]
+        Cache[(Redis Cache)]
+        SQL[(Azure SQL)]
+    end
+    
+    subgraph Azure["Azure Services"]
+        ARM[Azure ARM API]
+        Cost[Cost Management]
+        AD[Azure AD B2C]
+    end
+    
+    Web -->|HTTPS| API
+    Mobile -->|HTTPS| API
+    API -->|Query| SQL
+    API -->|Cache| Cache
+    API -->|Auth| AD
+    API -->|Resources| ARM
+    API -->|Costs| Cost
+</div>
 
----
+## 📚 Documentation
 
-## 🏗️ Architecture Overview
+<div class="metrics-grid">
+  <div class="metric-card">
+    <h3><a href="./architecture/authentication/">Authentication</a></h3>
+    <p>Azure AD B2C integration, role-based access, personas</p>
+  </div>
+  <div class="metric-card">
+    <h3><a href="./architecture/data-flow/">Data Flow</a></h3>
+    <p>System architecture, connections, performance metrics</p>
+  </div>
+  <div class="metric-card">
+    <h3><a href="./operations/cost-analysis/">Cost Analysis</a></h3>
+    <p>Current costs, scaling projections, ROI calculator</p>
+  </div>
+  <div class="metric-card">
+    <h3><a href="./api/">API Reference</a></h3>
+    <p>Endpoints, authentication, examples</p>
+  </div>
+</div>
 
-### High-Level Architecture
+## 🚀 Quick Links
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENTS                                  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │   Web UI    │  │  Mobile App │  │   API Clients            │
-│  │  (React)    │  │  (Future)   │  │  (Integrations)          │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
-└─────────┼────────────────┼────────────────┼────────────────────┘
-          │                │                │
-          └────────────────┴────────────────┘
-                           │
-          ┌────────────────┴────────────────┐
-          │     AZURE FRONT DOOR / CDN      │
-          │    (HTTPS, Caching, WAF)       │
-          └────────────────┬────────────────┘
-                           │
-┌──────────────────────────┴──────────────────────────────────────┐
-│              AZURE GOVERNANCE PLATFORM                          │
-│                        (App Service)                           │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │                    FASTAPI APPLICATION                   │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │  │
-│  │  │  API Layer  │  │  Services   │  │  Background │       │  │
-│  │  │  (REST)     │←→│  (Business) │←→│  Workers    │       │  │
-│  │  └──────┬──────┘  └──────┬──────┘  └─────────────┘       │  │
-│  │         │                │                                 │  │
-│  │  ┌──────┴──────┐  ┌──────┴──────┐                       │  │
-│  │  │   Schemas   │  │    Data     │                       │  │
-│  │  │ (Pydantic)  │  │   Access    │                       │  │
-│  │  └─────────────┘  └──────┬──────┘                       │  │
-│  └─────────────────────────┼────────────────────────────────┘  │
-└────────────────────────────┼────────────────────────────────────┘
-                             │
-          ┌──────────────────┼──────────────────┐
-          │                  │                  │
-┌─────────┴────────┐ ┌──────┴──────┐ ┌────────┴────────┐
-│   SQL Database   │ │   Redis     │ │  Azure Key      │
-│   (Azure SQL)    │ │  (Cache)    │ │  Vault          │
-│  Tenant Data     │ │  Sessions   │ │  Secrets        │
-└──────────────────┘ └─────────────┘ └─────────────────┘
-```
-
-### Technology Stack
-
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Frontend** | React + TypeScript | User interface |
-| **API** | FastAPI (Python 3.11) | REST API endpoints |
-| **Auth** | Azure AD B2C + OIDC | Identity & access |
-| **Database** | Azure SQL (S2 tier) | Primary data store |
-| **Cache** | Azure Cache for Redis | Session & query cache |
-| **Secrets** | Azure Key Vault | Secure configuration |
-| **Queue** | Azure Service Bus | Background jobs |
-| **Storage** | Azure Blob Storage | File uploads |
-| **Monitoring** | App Insights + Log Analytics | APM & logging |
-| **CI/CD** | GitHub Actions | Build & deploy |
-| **IaC** | Azure CLI + Bicep | Infrastructure |
-
----
-
-## 📁 Documentation Structure
-
-### Quick Navigation
-
-- **[Architecture Guide](./architecture/overview)** - System design, components, data flow
-- **[Operations Guide](./operations/runbook)** - Daily operations, monitoring, troubleshooting
-- **[API Reference](./api/overview)** - Endpoints, schemas, authentication
-- **[GitHub Repository](https://github.com/HTT-BRANDS/azure-governance-platform)** - Source code
-
----
-
-## 🚀 Getting Started
-
-### For Developers
-
-```bash
-# Clone repository
-git clone https://github.com/HTT-BRANDS/azure-governance-platform.git
-cd azure-governance-platform
-
-# Setup environment
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Run locally
-make dev
-# or
-uvicorn app.main:app --reload
-```
-
-### For Operations
-
-See the [Operations Guide](./operations/runbook) for:
-- Daily health checks
-- Alert response procedures
-- Deployment procedures
-- Incident response
-
-### For API Consumers
-
-Base URL: `https://app-governance-prod.azurewebsites.net`
-
-Health Check: `GET /health`
-API Documentation: `GET /docs` (Swagger UI)
-OpenAPI Spec: `GET /openapi.json`
-
----
-
-## 📊 Current Status
-
-### Production Metrics (Live Data)
-
-| Metric | Current | Target | Status |
-|--------|---------|--------|--------|
-| **Availability** | 99.9% | 99.9% | ✅ On Target |
-| **Response Time (p95)** | ~532ms | <500ms | ✅ Excellent |
-| **Error Rate** | <0.1% | <1% | ✅ Excellent |
-| **Cost** | ~$12/mo | <$15/mo | ✅ Optimized |
-
-### Monitoring Status
-
-- ✅ 4 Alert Rules Active
-- ✅ Availability Tests (3 locations)
-- ✅ Application Insights Receiving
-- ✅ Log Analytics Ingesting
-- ✅ 0 Active Alerts (All Clear)
-
----
-
-## 🏆 Certifications & Achievements
-
-### Rock Solid Certification
-- **Full Send Score:** 94.75% (exceeds 85% threshold)
-- **Live Tests:** 30/30 passed
-- **Grade:** A+ (98/100)
-- **Status:** Production Certified
-
-### Cost Optimization
-- **Savings:** 77% (~$492/year)
-- **Infrastructure Improvement:** 58% (60→95 score)
-- **Cold Start Elimination:** 5-30s → <1s
-
-### Quality Metrics
-- **Type Coverage:** 84% (2,275 functions typed)
-- **Test Pass Rate:** 100% (2,563/2,563)
-- **Documentation:** 52 comprehensive documents
-- **Issue Tracker:** 0 issues (pristine)
-
----
-
-## 📞 Support & Contact
-
-### Team Contacts
-
-| Role | Contact | Responsibility |
-|------|---------|----------------|
-| 🐺 **Infrastructure** | Husky | Azure resources, monitoring |
-| 🐶 **Engineering** | Code-puppy | Code quality, architecture |
-| 🐱 **Testing** | QA-kitten | Validation, quality gates |
-| 🐕‍🦺 **Security** | Bloodhound | Security, compliance |
-
-### Resources
-
-- **Production URL:** https://app-governance-prod.azurewebsites.net
-- **Health Check:** https://app-governance-prod.azurewebsites.net/health
-- **API Docs:** https://app-governance-prod.azurewebsites.net/docs
-- **Azure Portal:** https://portal.azure.com
-
----
-
-## 📝 Release Notes
-
-### v1.8.1 (Current)
-- ✅ Rock Solid certification achieved
-- ✅ 50+ test failures resolved
-- ✅ Security headers fully configured
-- ✅ Operations automation implemented
-- ✅ 20 documentation deliverables
-
----
-
-## 🎓 Project History
-
-This platform underwent a comprehensive **4-phase optimization initiative**:
-
-1. **Phase 1:** Infrastructure optimization (73% cost savings)
-2. **Phase 2:** Monitoring foundation (APM, logging, alerting)
-3. **Phase 3:** Production hardening (security, type hints)
-4. **Phase 4:** Advanced observability (dashboards, automation)
-
-**Result:** Rock Solid certification with 94.75% Full Send score.
+- **Authentication Deep-Dive**: [Learn about B2C integration, 3 tenant options, RBAC matrix](./architecture/authentication/)
+- **Cost Analysis**: [Current $33/mo, scaling to 100x users, integration costs](./operations/cost-analysis/)
+- **Data Flow**: [9-step request lifecycle, connections, performance metrics](./architecture/data-flow/)
+- **Runbook**: [Daily operations, procedures, troubleshooting](./operations/runbook/)
 
 ---
 
 <p align="center">
-  <strong>Azure Governance Platform</strong><br>
-  <em>Production Certified • Rock Solid • Enterprise Grade</em><br>
-  <small>🐺🐶🐱🐕‍🦺 Pack Agents Collective</small>
+  <small>Azure Governance Platform v1.8.1 | Production Certified - Rock Solid</small>
 </p>
