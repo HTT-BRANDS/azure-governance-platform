@@ -1,7 +1,54 @@
-# Jekyll Configuration for GitHub Pages
+# GitHub Pages Configuration for Azure Governance Platform
 title: Azure Governance Platform
-description: Technical Architecture & Operations Guide
-url: "https://htt-brands.github.io"
-baseurl: "/azure-governance-platform"
+subtitle: Technical Architecture & Operations Guide
+version: 1.8.1
+description: >-
+  Comprehensive technical documentation for the Azure Governance Platform.
+  Architecture, deployment, operations, and API reference.
+
+# GitHub metadata (auto-populated by GitHub)
+github_username: HTT-BRANDS
+repository_name: azure-governance-platform
+
+# Build settings
 theme: minima
 markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  hard_wrap: false
+
+# Plugins
+plugins:
+  - jekyll-sitemap
+  - jekyll-feed
+  - jekyll-seo-tag
+
+# Exclude files from processing
+exclude:
+  - "scripts/"
+  - "tests/"
+  - "infrastructure/terraform/"
+  - ".git/"
+  - ".github/"
+  - "Makefile"
+  - "*.py"
+  - "*.sh"
+  - "requirements.txt"
+  - "pyproject.toml"
+  - "Gemfile"
+  - "Gemfile.lock"
+
+# Navigation
+nav:
+  - title: Home
+    url: /
+  - title: Architecture
+    url: /architecture/
+  - title: Operations
+    url: /operations/
+  - title: API Reference
+    url: /api/
+  - title: GitHub
+    url: https://github.com/HTT-BRANDS/azure-governance-platform
+

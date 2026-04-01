@@ -1,5 +1,7 @@
 ---
-title: Azure Governance Platform
+layout: default
+title: Home
+nav_order: 1
 ---
 
 # Azure Governance Platform
@@ -14,7 +16,7 @@ title: Azure Governance Platform
 
 ## 🎯 System Overview
 
-The Azure Governance Platform is a **production-ready, enterprise-grade SaaS application** that provides comprehensive Azure resource governance, cost optimization, and compliance monitoring for multi-tenant environments.
+The Azure Governance Platform is a **production-ready, enterprise-grade SaaS application** providing comprehensive Azure resource governance, cost optimization, and compliance monitoring for multi-tenant environments.
 
 ### At a Glance
 
@@ -108,26 +110,10 @@ The Azure Governance Platform is a **production-ready, enterprise-grade SaaS app
 
 ### Quick Navigation
 
-- **[Architecture Guide](./architecture/)** - System design, components, data flow
-- **[Operations Guide](./operations/)** - Daily operations, monitoring, troubleshooting
-- **[API Reference](./api/)** - Endpoints, schemas, authentication
+- **[Architecture Guide](./architecture/overview)** - System design, components, data flow
+- **[Operations Guide](./operations/runbook)** - Daily operations, monitoring, troubleshooting
+- **[API Reference](./api/overview)** - Endpoints, schemas, authentication
 - **[GitHub Repository](https://github.com/HTT-BRANDS/azure-governance-platform)** - Source code
-
-### Full Documentation Index
-
-| Document | Description |
-|----------|-------------|
-| [Architecture Overview](./architecture/overview) | High-level system architecture |
-| [Azure Infrastructure](./architecture/infrastructure) | Azure resources and configuration |
-| [Application Architecture](./architecture/application) | Code organization and patterns |
-| [Data Flow](./architecture/data-flow) | Request/response lifecycle |
-| [Security Architecture](./architecture/security) | Authentication, authorization, encryption |
-| [Monitoring & Observability](./architecture/monitoring) | Alerts, dashboards, logging |
-| [Deployment Architecture](./architecture/deployment) | CI/CD, blue-green, rollback |
-| [Operations Runbook](./operations/runbook) | Daily/weekly/monthly procedures |
-| [Troubleshooting](./operations/troubleshooting) | Common issues and resolutions |
-| [API Reference](./api/endpoints) | Complete API documentation |
-| [Project History](./project/retrospective) | Optimization journey and lessons |
 
 ---
 
@@ -142,7 +128,7 @@ cd azure-governance-platform
 
 # Setup environment
 python3 -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
 
 # Run locally
@@ -153,7 +139,7 @@ uvicorn app.main:app --reload
 
 ### For Operations
 
-See the [Operations Runbook](./operations/runbook) for:
+See the [Operations Guide](./operations/runbook) for:
 - Daily health checks
 - Alert response procedures
 - Deployment procedures
@@ -228,7 +214,6 @@ OpenAPI Spec: `GET /openapi.json`
 - **Health Check:** https://app-governance-prod.azurewebsites.net/health
 - **API Docs:** https://app-governance-prod.azurewebsites.net/docs
 - **Azure Portal:** https://portal.azure.com
-- **GitHub Issues:** https://github.com/HTT-BRANDS/azure-governance-platform/issues
 
 ---
 
@@ -240,12 +225,6 @@ OpenAPI Spec: `GET /openapi.json`
 - ✅ Security headers fully configured
 - ✅ Operations automation implemented
 - ✅ 20 documentation deliverables
-
-### Previous Releases
-- **v1.8.0** - Phase 4: Advanced observability
-- **v1.7.0** - Phase 3: Production hardening
-- **v1.6.0** - Phase 2: Monitoring foundation
-- **v1.5.0** - Phase 1: Infrastructure optimization
 
 ---
 
@@ -259,8 +238,6 @@ This platform underwent a comprehensive **4-phase optimization initiative**:
 4. **Phase 4:** Advanced observability (dashboards, automation)
 
 **Result:** Rock Solid certification with 94.75% Full Send score.
-
-[Read the full retrospective](./project/retrospective)
 
 ---
 
