@@ -9,7 +9,7 @@ url: "https://htt-brands.github.io"
 # Build Settings
 markdown: kramdown
 highlighter: rouge
-theme: minima
+# theme: minima
 plugins:
   - jekyll-feed
   - jekyll-sitemap
