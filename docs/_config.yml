@@ -1,51 +1,75 @@
-# GitHub Pages Configuration for Azure Governance Platform
+# Azure Governance Platform - GitHub Pages Configuration
+
+# Site Settings
 title: Azure Governance Platform
-subtitle: Technical Architecture & Operations Guide
-version: 1.8.1
-description: >-
-  Comprehensive technical documentation for the Azure Governance Platform.
-  Architecture, deployment, operations, and API reference.
+description: Enterprise-grade Azure governance, cost optimization, and compliance management
+baseurl: "/azure-governance-platform"
+url: "https://htt-brands.github.io"
 
-# GitHub metadata (auto-populated by GitHub)
-github_username: HTT-BRANDS
-repository_name: azure-governance-platform
-
-# Build settings
-# theme removed - using custom layouts
+# Build Settings
 markdown: kramdown
 highlighter: rouge
-kramdown:
-  input: GFM
-  hard_wrap: false
-
-# Plugins
+theme: minima
 plugins:
-  - jekyll-sitemap
   - jekyll-feed
-  - jekyll-seo-tag
+  - jekyll-sitemap
 
-# Exclude files from processing
+# SCSS and Assets
+sass:
+  sass_dir: assets/css
+  style: compressed
+
+# Custom Styles and Scripts
+custom_css: /assets/css/custom.css
+custom_js: /assets/js/interactive.js
+
+# Navigation Structure
+nav:
+  - title: Home
+    url: /
+  - title: Architecture
+    url: /architecture/
+    children:
+      - title: Authentication
+        url: /architecture/authentication/
+      - title: Data Flow
+        url: /architecture/data-flow/
+  - title: Operations
+    url: /operations/
+    children:
+      - title: Cost Analysis
+        url: /operations/cost-analysis/
+
+# Include Mermaid for diagrams
+mermaid:
+  src: 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js'
+
+# Exclude problematic files
 exclude:
-  - "scripts/"
-  - "tests/"
-  - "infrastructure/terraform/"
-  - ".git/"
-  - ".github/"
-  - "Makefile"
-  - "*.py"
-  - "*.sh"
-  - "requirements.txt"
-  - "pyproject.toml"
-  - "Gemfile"
-  - "Gemfile.lock"
-  - "decisions/adr-template.md"
-  - "openapi-examples/"
-  - "security/"
-  - "design-system.md"
+  - README.md
+  - CHANGELOG.md
+  - adr-template.md
+  - openapi-examples/
+  - security/
 
 # Collections
 collections:
-  pages:
+  architecture:
     output: true
-    permalink: /:path/
+    permalink: /:collection/:name/
+  operations:
+    output: true
+    permalink: /:collection/:name/
 
+# Author Info
+author:
+  name: HTT Brands Engineering
+  email: engineering@httbrands.com
+
+# Social Links
+social:
+  github: HTT-BRANDS
+
+# GitHub Pages Settings
+github:
+  repository_url: https://github.com/HTT-BRANDS/azure-governance-platform
