@@ -100,5 +100,3 @@ navigation:
 
 # Custom settings
 show_excerpts: true
-paginate: 10
-paginate_path: "/page:num/"
