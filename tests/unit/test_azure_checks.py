@@ -23,12 +23,12 @@ from app.preflight.azure.azure_checks import (
     AzureResourcesCheck,
     AzureSecurityCheck,
     AzureSubscriptionsCheck,
-    _parse_aad_error,
-    _sanitize_error,
 )
 from app.preflight.azure.base import (
     AZURE_MANAGEMENT_SCOPE,
     GRAPH_API_BASE,
+    _parse_aad_error,
+    _sanitize_error,
 )
 from app.preflight.models import CheckCategory, CheckStatus
 
