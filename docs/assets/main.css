@@ -1,4 +1,47 @@
 /* ============================================================
+   Viewport fixes - MUST be first
+   ============================================================ */
+@viewport {
+  width: device-width;
+  initial-scale: 1;
+}
+
+html {
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Container with responsive padding */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 12px;
+  }
+}
+
+/* ============================================================
    Azure Governance Platform — HTT Brands Design System
    Fresh rebuild: burgundy #500711, gold #ffc957, cream #fdfaf3
    Fonts: Montserrat (headings), Inter (body)
@@ -25,10 +68,10 @@
   --green: #059669;
   --font-heading: 'Montserrat', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
 }
 
 /* --- Reset & Base --- */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body {
   font-family: var(--font-body);
@@ -144,7 +187,7 @@ a:hover { color: var(--burgundy-light); }
 }
 .hero-title {
   font-family: var(--font-heading);
-  font-size: 3.2rem;
+  font-size: clamp(1.8rem, 8vw, 3.2rem); /* Fluid scaling */
   font-weight: 800;
   line-height: 1.1;
   margin-bottom: 1rem;
@@ -612,15 +655,19 @@ pre code { background: none; padding: 0; color: #e2e8f0; }
     border-bottom: 1px solid var(--gray-200);
     flex-direction: column;
     padding: .75rem;
-    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    box-shadow: var(--shadow-md);
+    z-index: 99;
   }
   .nav-links.open { display: flex; }
   .nav-links a { padding: .65rem 1rem; }
 
   .hero { padding: 3.5rem 1.25rem 3rem; }
-  .hero-title { font-size: 2.2rem; }
+  .hero-title { font-size: clamp(1.8rem, 8vw, 3.2rem); }
   .hero-subtitle { font-size: 1rem; }
-  .hero-metrics { gap: 1.25rem; }
+  .hero-metrics { 
+    gap: 1rem; 
+    flex-direction: column;
+  }
   .metric-value { font-size: 1.4rem; }
 
   .grid--2, .grid--3 { grid-template-columns: 1fr; }
@@ -634,8 +681,11 @@ pre code { background: none; padding: 0; color: #e2e8f0; }
 
 /* --- Responsive: 480px --- */
 @media (max-width: 480px) {
-  .hero-title { font-size: 1.8rem; }
-  .hero-metrics { gap: 1rem; }
+  .hero-title { font-size: clamp(1.5rem, 10vw, 2rem); }
+  .hero-metrics { 
+    gap: 1rem; 
+    flex-direction: column;
+  }
   .metric-value { font-size: 1.2rem; }
   .tech-grid { grid-template-columns: 1fr; }
   .footer-inner { flex-direction: column; text-align: center; }
