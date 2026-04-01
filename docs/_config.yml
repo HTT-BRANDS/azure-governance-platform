@@ -11,7 +11,7 @@ github_username: HTT-BRANDS
 repository_name: azure-governance-platform
 
 # Build settings
-theme: minima
+# theme removed - using custom layouts
 markdown: kramdown
 highlighter: rouge
 kramdown:
@@ -39,16 +39,9 @@ exclude:
   - "Gemfile"
   - "Gemfile.lock"
 
-# Navigation
-nav:
-  - title: Home
-    url: /
-  - title: Architecture
-    url: /architecture/
-  - title: Operations
-    url: /operations/
-  - title: API Reference
-    url: /api/
-  - title: GitHub
-    url: https://github.com/HTT-BRANDS/azure-governance-platform
+# Collections
+collections:
+  pages:
+    output: true
+    permalink: /:path/
 

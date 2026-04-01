@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if page.title %}{{ page.title | escape }} - {{ site.title | escape }}{% else %}{{ site.title | escape }}{% endif %}</title>
+  <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 | escape }}">
+  <link rel="stylesheet" href="{{ "/assets/main.css" | relative_url }}">
+  {% seo %}
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="wrapper">
+      <a class="site-title" href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
+      <nav class="site-nav">
+        <div class="trigger">
+          <a class="page-link" href="{{ "/" | relative_url }}">Home</a>
+          <a class="page-link" href="{{ "/architecture/" | relative_url }}">Architecture</a>
+          <a class="page-link" href="{{ "/operations/" | relative_url }}">Operations</a>
+          <a class="page-link" href="{{ "/api/" | relative_url }}">API</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-content" aria-label="Content">
+    <div class="wrapper">
+      {{ content }}
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrapper">
+      <div class="footer-col-wrapper">
+        <div class="footer-col">
+          <p>{{ site.description | escape }}</p>
+        </div>
+        <div class="footer-col">
+          <p><a href="https://github.com/{{ site.github_username }}/{{ site.repository_name }}">View on GitHub</a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
