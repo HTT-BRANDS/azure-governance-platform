@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADR-0009: Database Tier — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Decisions</a><span>›</span>
+        ADR-0009: Database Tier
+      </div>
+      <h1 class="page-title">ADR-0009: Database Tier</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<hr>
+<h2>status: accepted
+date: 2025-02-10
+decision-makers: Solutions Architect 🏛️, Python Programmer 🐍, Pack Leader 🐺
+consulted: Code Puppy 🐶 (migration implementation), Web Puppy 🕵️ (pricing research)
+informed: All engineering teams, Finance
+relates-to: DB-002, COST-001</h2>
+<h2>Context and Problem Statement</h2>
+<p>The Azure Governance Platform requires a relational database for storing:</p>
+<ul>
+<li>Azure resource metadata and lifecycle state</li>
+<li>Compliance snapshots and policy states</li>
+<li>User identity and audit logs</li>
+<li>Tenant configurations and multi-tenant isolation data</li>
+</ul>
+<p>Initially, we provisioned Azure SQL Database <strong>Standard S2 tier</strong> (50 DTU, 250GB storage) at approximately $30/month. As the platform evolved and transaction patterns became clear, we recognized this was over-provisioned for current needs.</p>
+<p><strong>Current Workload Characteristics</strong>:</p>
+<ul>
+<li>&lt; 10 concurrent connections during peak sync operations</li>
+<li>&lt; 100GB data volume (with 90-day retention policies)</li>
+<li>Primarily batch operations (sync cycles every 15 minutes)</li>
+<li>No complex analytical queries; mostly CRUD + indexed lookups</li>
+<li>Acceptable latency: &lt; 5 seconds for bulk inserts, &lt; 100ms for point queries</li>
+</ul>
+<p><strong>Cost Pressure</strong>: With container registry savings (see ADR-0008), we identified database infrastructure as the next optimization target. $30/month is acceptable for production, but unnecessary for development/staging environments and early customer pilots.</p>
+<p>How should we optimize database costs while maintaining production reliability?</p>
+<h2>Decision Drivers</h2>
+<ul>
+<li><strong>Cost (K.O. criterion for pre-revenue scale)</strong>: Must reduce or eliminate database infrastructure costs for non-production environments</li>
+<li><strong>Production safety</strong>: Production deployment must maintain 99.9% availability target</li>
+<li><strong>Operational simplicity</strong>: Same database technology across all environments (no polyglot persistence)</li>
+<li><strong>Migration effort</strong>: Must be achievable without schema changes or application rewrites</li>
+<li><strong>Azure alignment</strong>: Prefer Azure-native solutions for easier support and integration</li>
+<li><strong>Growth path</strong>: Must have clear upgrade path as data volume grows</li>
+</ul>
+<h2>Considered Options</h2>
+<ol>
+<li><strong>Azure SQL Free Tier</strong> — 32GB storage, 5 DTU, $0 cost, single database per Azure subscription</li>
+<li><strong>Azure SQL Serverless</strong> — Pay-per-use billing, auto-pauses after inactivity (30-second resume penalty)</li>
+<li><strong>Azure SQL Hyperscale</strong> — 100TB limit, rapid scaling, but higher minimum cost</li>
+<li><strong>Azure SQL Elastic Pool</strong> — Share DTU across multiple databases, better for multi-tenant scenarios</li>
+<li><strong>PostgreSQL on Azure (Flexible Server)</strong> — Alternative engine with Burstable tier at lower cost</li>
+</ol>
+<h2>Decision Outcome</h2>
+<p><strong>Chosen approach: Hybrid tier strategy with Azure SQL Free Tier for non-production and Serverless for production</strong>:</p>
+<ul>
+<li><strong>Development/Staging</strong>: Azure SQL Free Tier (32GB, 5 DTU, $0)</li>
+<li><strong>Production</strong>: Azure SQL Serverless (auto-pause enabled, ~$10-15/month at current workload)</li>
+</ul>
+<p>Option 3 (Hyperscale) was <strong>deferred</strong> — we don&#39;t need 100TB capacity or rapid scaling.</p>
+<p>Option 4 (Elastic Pool) was <strong>rejected</strong> — single-tenant-per-database model doesn&#39;t benefit from resource sharing.</p>
+<p>Option 5 (PostgreSQL) was <strong>rejected</strong> — unnecessary engine change; application built on SQL Server features.</p>
+<h3>Free Tier Evaluation</h3>
+<p>Comprehensive evaluation performed: <code>docs/analysis/sql-free-tier-evaluation.md</code></p>
+<p><strong>Capacity Analysis</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Free Tier Limit</th>
+<th>Current Usage</th>
+<th>Headroom</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Storage</td>
+<td>32GB</td>
+<td>~8GB</td>
+<td>24GB (300%)</td>
+</tr>
+<tr>
+<td>DTU</td>
+<td>5</td>
+<td>2-3 avg, 5 peak</td>
+<td>0-2 (adequate)</td>
+</tr>
+<tr>
+<td>Concurrent connections</td>
+<td>30</td>
+<td>&lt; 10</td>
+<td>20 (200%)</td>
+</tr>
+<tr>
+<td>Database size limit</td>
+<td>32GB</td>
+<td>8GB growing 100MB/day</td>
+<td>~240 days</td>
+</tr>
+</tbody></table>
+<p><strong>Performance Testing</strong>:</p>
+<ul>
+<li>Sync operation latency: 2.8s average (vs 1.9s on Standard S2) — acceptable degradation</li>
+<li>Dashboard query latency: 85ms average (vs 72ms on Standard S2) — acceptable</li>
+<li>Concurrent sync test: 5 simultaneous tenants, no failures, max 4.5s latency</li>
+</ul>
+<p><strong>Conclusion</strong>: Free Tier is adequate for development and staging workloads through at least end of 2025.</p>
+<h3>Architecture</h3>
+<p><strong>Hybrid Deployment Model</strong>:</p>
+<pre><code>┌─────────────────────────────────────────────────────────────────────┐
+│                          Environment Matrix                           │
+├──────────────┬────────────────────┬─────────────────────────────────┤
+│ Environment  │ Database Tier      │ Cost (Monthly)                  │
+├──────────────┼────────────────────┼─────────────────────────────────┤
+│ Development  │ Free Tier          │ $0                              │
+│ Staging      │ Free Tier          │ $0                              │
+│ Production   │ Serverless (S0)    │ ~$10-15 (auto-pause after 1hr)  │
+└──────────────┴────────────────────┴─────────────────────────────────┘
+</code></pre>
+<p><strong>Serverless Production Configuration</strong>:</p>
+<pre><code class="language-json">{
+  &quot;computeModel&quot;: &quot;Serverless&quot;,
+  &quot;autoPauseDelay&quot;: 60,  // minutes of inactivity before pause
+  &quot;minVcores&quot;: 0.5,
+  &quot;maxVcores&quot;: 2,
+  &quot;storageAccountType&quot;: &quot;Standard&quot;
+}
+</code></pre>
+<p><strong>Connection String Management</strong>:</p>
+<pre><code class="language-python"># Application-level tier detection via connection string parsing
+def get_tier_from_connection_string(url: str) -&gt; str:
+    if &quot;database.windows.net&quot; in url:
+        return &quot;azure_sql&quot;
+    elif &quot;:memory:&quot; in url or url.startswith(&quot;sqlite&quot;):
+        return &quot;sqlite&quot;
+    return &quot;unknown&quot;
+</code></pre>
+<h3>Migration Path</h3>
+<p><strong>Standard S2 → Free Tier</strong> (for dev/staging):</p>
+<ol>
+<li><p><strong>Export/Import</strong>: <code>scripts/migrate-to-sql-free-tier.sh</code></p>
+<pre><code class="language-bash"># Export from Standard tier
+sqlpackage /a:Export /tf:backup.bacpac /sdn:source-db ...
+
+# Import to Free Tier (with 32GB limit check)
+sqlpackage /a:Import /sf:backup.bacpac /tdn:target-db ...
+</code></pre>
+</li>
+<li><p><strong>Size Validation</strong>: Pre-migration check ensures &lt; 32GB source</p>
+</li>
+<li><p><strong>Connection String Update</strong>: Environment-specific configs updated</p>
+</li>
+<li><p><strong>Smoke Test</strong>: <code>scripts/smoke_test.py</code> validates connectivity and basic operations</p>
+</li>
+</ol>
+<p><strong>Production Path</strong>: Standard S2 → Serverless</p>
+<ol>
+<li><strong>In-place tier change</strong>: Azure Portal or CLI, no data movement</li>
+<li><strong>Auto-pause configuration</strong>: 60-minute delay (avoids pause during business hours)</li>
+<li><strong>Monitoring</strong>: Alert on &quot;resume from pause&quot; events</li>
+</ol>
+<h3>Consequences</h3>
+<p><strong>Good</strong>:</p>
+<ul>
+<li><strong>Cost reduction</strong>: $30→$0 (dev/staging), $30→~$12 (production) = ~$360/year savings</li>
+<li><strong>Same technology</strong>: No SQL dialect changes, same backup/restore procedures</li>
+<li><strong>Production ready</strong>: Serverless tier maintains 99.9% SLA</li>
+<li><strong>Growth path</strong>: Easy upgrade to higher tiers without migration</li>
+<li><strong>Eco-friendly</strong>: Auto-pause reduces compute consumption</li>
+</ul>
+<p><strong>Bad</strong>:</p>
+<ul>
+<li><strong>32GB limit</strong>: Free Tier requires data retention discipline; archived data to blob storage</li>
+<li><strong>5 DTU ceiling</strong>: Free Tier has hard performance ceiling; must monitor query patterns</li>
+<li><strong>Single database</strong>: One Free Tier database per subscription (OK for single-tenant model)</li>
+<li><strong>30-second cold start</strong>: Production Serverless auto-pause has resume latency (acceptable for batch workload)</li>
+</ul>
+<p><strong>Mitigations</strong>:</p>
+<ul>
+<li>Data retention policy: 90 days in DB, archive to Azure Blob (cool tier) for compliance</li>
+<li>Query optimization: Index monitoring, slow query alerts</li>
+<li>Monitoring: DTU usage alerts at 80% threshold</li>
+</ul>
+<h3>Confirmation</h3>
+<p>Validation performed:</p>
+<ol>
+<li><strong>Free Tier smoke test</strong>: All unit and integration tests passing</li>
+<li><strong>Performance baseline</strong>: Documented in <code>docs/analysis/sql-free-tier-evaluation.md</code></li>
+<li><strong>Production Serverless load test</strong>: 24-hour synthetic load, no auto-pause during active hours</li>
+<li><strong>Migration rollback tested</strong>: Can revert to Standard S2 in &lt; 30 minutes</li>
+<li><strong>Monitoring configured</strong>: DTU alerts, storage alerts, query performance dashboard</li>
+</ol>
+<p>Migration completed February 2025.</p>
+<h2>STRIDE Security Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Threat Category</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Spoofing</strong></td>
+<td>Low</td>
+<td>Azure AD authentication required; no SQL logins with passwords</td>
+</tr>
+<tr>
+<td><strong>Tampering</strong></td>
+<td>Low</td>
+<td>TDE (Transparent Data Encryption) enabled by default on all Azure SQL tiers</td>
+</tr>
+<tr>
+<td><strong>Repudiation</strong></td>
+<td>Low</td>
+<td>SQL Audit Log enabled; all DDL and sensitive DML logged to Azure Log Analytics</td>
+</tr>
+<tr>
+<td><strong>Information Disclosure</strong></td>
+<td>Low</td>
+<td>Private endpoint connectivity; no public IP exposure. Serverless tier has same security features as provisioned</td>
+</tr>
+<tr>
+<td><strong>Denial of Service</strong></td>
+<td>Low</td>
+<td>5 DTU limit on Free Tier is actually a DoS protection — throttles runaway queries. Connection limits enforced (30 max)</td>
+</tr>
+<tr>
+<td><strong>Elevation of Privilege</strong></td>
+<td>Low</td>
+<td>Least-privilege managed identity access; no <code>db_owner</code> for application accounts</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Security Posture</strong>: No security degradation from tier change. All Azure SQL security features (TDE, audit, firewall, private endpoints) available across all tiers.</p>
+<h2>Pros and Cons of the Options</h2>
+<h3>Option 1: Stay on Standard S2 Everywhere</h3>
+<ul>
+<li>Good, because predictable performance, no capacity anxiety</li>
+<li>Bad, because $360/year cost for environments that don&#39;t need the capacity</li>
+<li>Bad, because inefficient resource utilization</li>
+</ul>
+<h3>Option 2: Azure SQL Serverless for All</h3>
+<ul>
+<li>Good, because cost optimization everywhere</li>
+<li>Bad, because 30-second cold start unacceptable for dev workflow</li>
+<li>Bad, because auto-pause would trigger constantly during development</li>
+</ul>
+<h3>Option 3: PostgreSQL Burstable Tier</h3>
+<ul>
+<li>Good, because potentially lower cost at similar performance</li>
+<li>Bad, because requires application changes (SQL dialect, driver, ORM)</li>
+<li>Bad, because introduces new technology without benefit</li>
+<li>Bad, because migration effort exceeds cost savings</li>
+</ul>
+<h3>Option 4: SQLite for Development</h3>
+<ul>
+<li>Good, because zero infrastructure cost</li>
+<li>Bad, because behavioral differences from production (locking, concurrency, features)</li>
+<li>Bad, because &quot;works on my machine&quot; risk</li>
+<li>Bad, because already have working Free Tier solution</li>
+</ul>
+<h2>More Information</h2>
+<ul>
+<li>Free tier evaluation: <code>docs/analysis/sql-free-tier-evaluation.md</code></li>
+<li>Migration script: <code>scripts/migrate-to-sql-free-tier.sh</code></li>
+<li>Production cost analysis: ~$12/month at current workload pattern (sync every 15 min, 8-hour active window)</li>
+<li>Related cost optimization: ADR-0008 (Container Registry), combined annual savings: ~$2100</li>
+</ul>
+<hr>
+<p><strong>Template Version:</strong> MADR 4.0 (September 2024) with STRIDE Security Analysis<br><strong>Last Updated:</strong> 2025-02-10<br><strong>Maintained By:</strong> Solutions Architect 🏛️</p>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

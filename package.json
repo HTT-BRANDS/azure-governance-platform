@@ -8,10 +8,12 @@
     "test:gh-pages:chromium": "cd tests/e2e/github-pages && npm run test:chromium",
     "test:gh-pages:firefox": "cd tests/e2e/github-pages && npm run test:firefox",
     "test:gh-pages:webkit": "cd tests/e2e/github-pages && npm run test:webkit",
-    "test:gh-pages:install": "cd tests/e2e/github-pages && npm install && npx playwright install"
+    "test:gh-pages:install": "cd tests/e2e/github-pages && npm install && npx playwright install",
+    "docs:build": "node scripts/build-detail-pages.js"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.2.1",
+    "marked": "^17.0.5",
     "tailwindcss": "^4.2.1"
   },
   "dependencies": {

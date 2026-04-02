@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Operations Runbook — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Operations</a><span>›</span>
+        Operations Runbook
+      </div>
+      <h1 class="page-title">Operations Runbook</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<h2>Quick Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Production</strong></td>
+<td><a href="https://app-governance-prod.azurewebsites.net">https://app-governance-prod.azurewebsites.net</a></td>
+</tr>
+<tr>
+<td><strong>Health Check</strong></td>
+<td><a href="https://app-governance-prod.azurewebsites.net/health">https://app-governance-prod.azurewebsites.net/health</a></td>
+</tr>
+<tr>
+<td><strong>API Docs</strong></td>
+<td><a href="https://app-governance-prod.azurewebsites.net/docs">https://app-governance-prod.azurewebsites.net/docs</a></td>
+</tr>
+<tr>
+<td><strong>Azure Portal</strong></td>
+<td><a href="https://portal.azure.com">https://portal.azure.com</a></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Daily Operations (5 minutes)</h2>
+<h3>Morning Health Check</h3>
+<p>Run automated check:</p>
+<pre><code class="language-bash">./scripts/daily-ops-check.sh
+</code></pre>
+<p>Manual verification:</p>
+<pre><code class="language-bash"># Health endpoint
+curl -s https://app-governance-prod.azurewebsites.net/health | jq .
+
+# Response time (should be &lt;1s)
+for i in {1..3}; do
+  curl -s -o /dev/null -w &quot;%{time_total}\n&quot; \
+    https://app-governance-prod.azurewebsites.net/health
+done
+</code></pre>
+<h3>Alert Review</h3>
+<p>Check Azure Portal: <strong>Monitor → Alerts</strong></p>
+<p>Verify 4 alert rules enabled:</p>
+<ul>
+<li>✅ Server Errors - Critical</li>
+<li>✅ High Response Time - Warning</li>
+<li>✅ Availability Drop - Critical</li>
+<li>✅ Business Logic Errors - Critical</li>
+</ul>
+<hr>
+<h2>Weekly Operations (15 minutes)</h2>
+<h3>Monday Morning Routine</h3>
+<pre><code class="language-bash">./scripts/weekly-ops-review.sh
+</code></pre>
+<h3>Metrics Review</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+<th>Check Location</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Availability</strong></td>
+<td>99.9%</td>
+<td>App Insights → Availability</td>
+</tr>
+<tr>
+<td><strong>Response Time</strong></td>
+<td>&lt;500ms</td>
+<td>App Insights → Performance</td>
+</tr>
+<tr>
+<td><strong>Error Rate</strong></td>
+<td>&lt;1%</td>
+<td>App Insights → Failures</td>
+</tr>
+<tr>
+<td><strong>Cost</strong></td>
+<td>&lt;$15/mo</td>
+<td>Portal → Cost Management</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Deployment Procedures</h2>
+<h3>Blue-Green Deployment</h3>
+<pre><code class="language-bash"># 1. Deploy to staging
+make deploy-staging
+
+# 2. Validate staging
+./scripts/verify-and-test-deployment.sh --environment staging
+
+# 3. Swap to production
+az webapp deployment slot swap \
+  --name app-governance-prod \
+  --resource-group rg-governance-production \
+  --slot staging \
+  --target-slot production
+
+# 4. Verify production
+./scripts/verify-and-test-deployment.sh --environment production
+</code></pre>
+<h3>Rollback</h3>
+<pre><code class="language-bash"># Swap back (if within 5 minutes)
+az webapp deployment slot swap \
+  --name app-governance-prod \
+  --resource-group rg-governance-production \
+  --slot production \
+  --target-slot staging
+</code></pre>
+<hr>
+<h2>Troubleshooting</h2>
+<h3>Application Down (503/500)</h3>
+<ol>
+<li>Check App Service status in Portal</li>
+<li>Review App Insights exceptions</li>
+<li>If unresolved in 5 min, execute rollback</li>
+</ol>
+<pre><code class="language-bash"># Emergency restart
+az webapp restart \
+  --name app-governance-prod \
+  --resource-group rg-governance-production
+</code></pre>
+<h3>High Response Time (&gt;1s)</h3>
+<ol>
+<li>Check App Insights → Performance</li>
+<li>Review SQL Query Store</li>
+<li>Check App Service Plan CPU/Memory</li>
+</ol>
+<h3>Database Connection Failures</h3>
+<pre><code class="language-bash"># Check SQL status
+az sql db show \
+  --name governance \
+  --server sql-governance-prod \
+  --resource-group rg-governance-production
+
+# Check firewall rules
+az sql server firewall-rule list \
+  --server sql-governance-prod \
+  --resource-group rg-governance-production
+</code></pre>
+<hr>
+<h2>Monitoring &amp; Alerting</h2>
+<h3>Alert Response Matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Alert</th>
+<th>Severity</th>
+<th>Response</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Server Errors</strong></td>
+<td>Critical</td>
+<td>Immediate</td>
+<td>Investigate</td>
+</tr>
+<tr>
+<td><strong>Availability Drop</strong></td>
+<td>Critical</td>
+<td>Immediate</td>
+<td>Rollback</td>
+</tr>
+<tr>
+<td><strong>High Response Time</strong></td>
+<td>Warning</td>
+<td>30 min</td>
+<td>Tune thresholds</td>
+</tr>
+<tr>
+<td><strong>Business Logic Errors</strong></td>
+<td>Critical</td>
+<td>Immediate</td>
+<td>Check deploy</td>
+</tr>
+</tbody></table>
+<h3>Escalation</h3>
+<p><strong>Severity 1: Production Down</strong></p>
+<ol>
+<li>Page on-call engineer</li>
+<li>Attempt automatic recovery</li>
+<li>Escalate if not resolved in 15 min</li>
+<li>Post-mortem within 24 hours</li>
+</ol>
+<hr>
+<h2>SLAs</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+<th>Current</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Availability</strong></td>
+<td>99.9%</td>
+<td>99.9%+ ✅</td>
+</tr>
+<tr>
+<td><strong>Response Time (p95)</strong></td>
+<td>&lt;500ms</td>
+<td>~130ms ✅</td>
+</tr>
+<tr>
+<td><strong>Error Rate</strong></td>
+<td>&lt;1%</td>
+<td>&lt;0.1% ✅</td>
+</tr>
+<tr>
+<td><strong>Recovery Time</strong></td>
+<td>&lt;15 min</td>
+<td>N/A ✅</td>
+</tr>
+</tbody></table>
+<hr>
+<p align="center">
+  <small>Operations Runbook v1.8.1 | Last Updated: March 31, 2026</small>
+</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

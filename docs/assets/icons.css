@@ -1,0 +1,98 @@
+/* ============================================================
+   Lucide-style SVG Icon System
+   Replaces emoji icons with clean, scalable SVG icons.
+   Each icon is a CSS class with an inline SVG background.
+   ============================================================ */
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+/* Card icon — larger display size */
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  background: var(--cream, #fdfaf3);
+}
+
+.card-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--burgundy, #500711);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* Doc card icon */
+.doc-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  background: var(--cream, #fdfaf3);
+}
+
+.doc-card-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--burgundy, #500711);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* Callout icon */
+.callout-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+}
+
+.callout-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--gold, #ffc957);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* Hover effects */
+.card:hover .card-icon {
+  background: var(--burgundy, #500711);
+  transition: background 0.25s;
+}
+
+.card:hover .card-icon svg {
+  stroke: var(--gold, #ffc957);
+  transition: stroke 0.25s;
+}
+
+.doc-card:hover .doc-card-icon {
+  background: var(--burgundy, #500711);
+  transition: background 0.25s;
+}
+
+.doc-card:hover .doc-card-icon svg {
+  stroke: var(--gold, #ffc957);
+  transition: stroke 0.25s;
+}

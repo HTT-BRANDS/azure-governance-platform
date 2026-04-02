@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADR-0004: Research-First Protocol — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Decisions</a><span>›</span>
+        ADR-0004: Research-First Protocol
+      </div>
+      <h1 class="page-title">ADR-0004: Research-First Protocol</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<hr>
+<h2>status: accepted
+date: 2026-03-06
+decision-makers: Solutions Architect, Planning Agent, Pack Leader
+consulted: Experience Architect, Security Auditor, Web Puppy (research)
+informed: All Code Puppy agents, development team</h2>
+<h2>Context and Problem Statement</h2>
+<p>Architecture decisions have long-term consequences on system design, security, performance, and maintainability. Decisions made without proper research can lead to:</p>
+<ul>
+<li><strong>Technical debt</strong> from choosing outdated or inappropriate technologies</li>
+<li><strong>Rework</strong> when better alternatives are discovered after implementation</li>
+<li><strong>Missed best practices</strong> that the industry has already established</li>
+<li><strong>Security vulnerabilities</strong> from uninformed design choices</li>
+<li><strong>Incompatibility</strong> with existing systems or future requirements</li>
+</ul>
+<p>How can we ensure that every architecture decision is grounded in current, evidence-based research rather than assumptions, preferences, or outdated knowledge?</p>
+<h2>Decision Drivers</h2>
+<ul>
+<li><strong>Accuracy</strong>: Decisions must be based on facts, not opinions or assumptions</li>
+<li><strong>Currency</strong>: Technology landscape changes rapidly; research must reflect current state (2024-2026)</li>
+<li><strong>Evidence trail</strong>: Need documented reasoning that can be reviewed and verified</li>
+<li><strong>Reproducibility</strong>: Others should be able to validate the research that informed decisions</li>
+<li><strong>Best practices</strong>: Industry has solved many problems; we should learn from established patterns</li>
+<li><strong>Security</strong>: Many architectural decisions have security implications that require research</li>
+<li><strong>Compliance</strong>: Azure governance requires justified, traceable decisions</li>
+<li><strong>Efficiency</strong>: Better to research once thoroughly than to rework later</li>
+<li><strong>Knowledge transfer</strong>: Research artifacts benefit future team members</li>
+</ul>
+<h2>Considered Options</h2>
+<ol>
+<li><strong>No formal research requirement (ad-hoc)</strong> - Agents make decisions based on their training data and general knowledge</li>
+<li><strong>Manual research via browsing (human-dependent)</strong> - Require human to research before writing ADRs</li>
+<li><strong>Mandatory web-puppy research before every ADR (research-first protocol)</strong> - Web Puppy 🕵️‍♂️ agent MUST be invoked to research topic before any ADR is drafted</li>
+<li><strong>Research only for major decisions</strong> - Require research for &quot;big&quot; decisions, allow ad-hoc for smaller ones</li>
+</ol>
+<h2>Decision Outcome</h2>
+<p>Chosen option: <strong>&quot;Mandatory web-puppy research before every ADR (research-first protocol)&quot;</strong>, because it ensures all architecture decisions are evidence-based, traceable, and current, while creating a knowledge repository that benefits the entire team.</p>
+<h3>Research-First Protocol</h3>
+<p><strong>Core Principle:</strong> No Architecture Decision Record (ADR) may be created without first invoking Web Puppy 🕵️‍♂️ to conduct research on the topic.</p>
+<p><strong>Process Flow:</strong></p>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│ 1. IDENTIFY DECISION                                        │
+│    Solutions Architect or Experience Architect identifies   │
+│    an architectural decision that requires an ADR           │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 2. INVOKE WEB-PUPPY                                         │
+│    Architect agent invokes Web Puppy with research prompt   │
+│    Example: &quot;Research MADR vs LADR vs C4 for ADR formats&quot;  │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 3. WEB-PUPPY RESEARCHES                                     │
+│    Web Puppy searches web, analyzes sources, synthesizes    │
+│    Saves research to research/{topic}/ directory:           │
+│    - README.md (overview)                                   │
+│    - analysis.md (detailed findings)                        │
+│    - sources.md (bibliography with links)                   │
+│    - recommendations.md (what to do)                        │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 4. REVIEW RESEARCH                                          │
+│    Architect reads research artifacts, verifies quality     │
+│    If insufficient: Request additional research             │
+│    If adequate: Proceed to draft ADR                        │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 5. DRAFT ADR                                                │
+│    Architect creates ADR referencing research directory     │
+│    Example: &quot;See research/solutions-architect-patterns/&quot;    │
+│    ADR must cite specific findings from research            │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 6. REVIEW &amp; VERIFICATION                                    │
+│    Security Auditor / Reviewers check:                      │
+│    ✓ Research directory exists for topic                    │
+│    ✓ ADR references research findings                       │
+│    ✓ Recommendations from research are addressed            │
+│    ✓ STRIDE analysis informed by security research          │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 7. ACCEPTANCE                                               │
+│    Pack Leader signs off, ADR status → accepted             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>Agent Workflow Integration</h3>
+<p><strong>Solutions Architect 🏛️ Instructions (Excerpt):</strong></p>
+<pre><code class="language-markdown">## Creating Architecture Decision Records (ADRs)
+
+1. **RESEARCH FIRST** 🔍  
+   BEFORE drafting any ADR, you MUST invoke Web Puppy to research the topic:
+   
+   - Identify key technologies/patterns to evaluate
+   - Invoke Web Puppy: &quot;Research [technology A] vs [technology B] for [use case]&quot;
+   - Wait for research to be saved to research/{topic}/ directory
+   - Review README.md, analysis.md, sources.md, recommendations.md
+   
+2. **DRAFT ADR** 📝  
+   Use research findings to inform your decision:
+   - Reference research directory in ADR
+   - Cite specific findings that influenced decision
+   - Address alternatives mentioned in research
+</code></pre>
+<p><strong>Experience Architect 🎨 Instructions (Excerpt):</strong></p>
+<pre><code class="language-markdown">## Research-First UX Decisions
+
+1. **RESEARCH REQUIREMENTS** 🔍  
+   Before recommending any UX pattern, framework, or approach:
+   
+   - Invoke Web Puppy to research current best practices
+   - Example: &quot;Research accessible form validation patterns 2024&quot;
+   - Example: &quot;Research WCAG 2.2 AA requirements for data tables&quot;
+   - Review research artifacts before making recommendations
+</code></pre>
+<h3>Research Directory Structure</h3>
+<p>All research is stored in <code>research/{topic}/</code> with standard structure:</p>
+<pre><code>research/
+├── solutions-architect-patterns/
+│   ├── README.md              # Research overview
+│   ├── analysis.md            # Detailed findings
+│   ├── sources.md             # Bibliography (all links)
+│   ├── recommendations.md     # What to do
+│   └── artifacts/             # Screenshots, PDFs, etc.
+├── ux-accessibility-patterns/
+│   ├── README.md
+│   ├── analysis.md
+│   ├── sources.md
+│   └── recommendations.md
+└── security-oauth-flows/
+    ├── README.md
+    ├── analysis.md
+    ├── sources.md
+    └── recommendations.md
+</code></pre>
+<h3>Consequences</h3>
+<ul>
+<li><strong>Good</strong>, because decisions are grounded in current evidence rather than assumptions</li>
+<li><strong>Good</strong>, because research artifacts create a knowledge repository for the team</li>
+<li><strong>Good</strong>, because evidence trail makes decisions auditable and defensible</li>
+<li><strong>Good</strong>, because best practices from industry are systematically incorporated</li>
+<li><strong>Good</strong>, because security implications are researched proactively</li>
+<li><strong>Good</strong>, because research is reproducible (sources.md provides all links)</li>
+<li><strong>Good</strong>, because onboarding new team members is easier (research explains the &quot;why&quot;)</li>
+<li><strong>Good</strong>, because reduces rework from uninformed decisions</li>
+<li><strong>Bad</strong>, because adds time to decision-making process (research takes time)</li>
+<li><strong>Bad</strong>, because creates dependency on Web Puppy agent availability</li>
+<li><strong>Bad</strong>, because may slow down &quot;urgent&quot; decisions (though urgency shouldn&#39;t bypass research)</li>
+<li><strong>Neutral</strong>, because requires discipline to follow protocol (but so does any good process)</li>
+</ul>
+<h3>Confirmation</h3>
+<p>This protocol is validated by:</p>
+<ol>
+<li><strong>Research directory exists</strong>: <code>research/</code> at repo root with multiple topics</li>
+<li><strong>ADRs reference research</strong>: Each ADR includes &quot;More Information&quot; section linking to research/{topic}/</li>
+<li><strong>Agent instructions updated</strong>: Solutions Architect and Experience Architect prompts mandate research-first</li>
+<li><strong>Review checklist includes verification</strong>: Security Auditor and reviewers check for research artifacts</li>
+<li><strong>Web Puppy agent operational</strong>: Agent can be invoked and produces standard research structure</li>
+</ol>
+<h2>STRIDE Security Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Threat Category</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Spoofing</strong></td>
+<td>Low</td>
+<td>Research sources are documented with URLs; can verify authenticity of information</td>
+</tr>
+<tr>
+<td><strong>Tampering</strong></td>
+<td>Medium</td>
+<td>Research files are version-controlled in git; all changes tracked with audit trail</td>
+</tr>
+<tr>
+<td><strong>Repudiation</strong></td>
+<td>Low</td>
+<td>Git commits show who created research; ADRs cite research explicitly</td>
+</tr>
+<tr>
+<td><strong>Information Disclosure</strong></td>
+<td>Low</td>
+<td>Research may reference public security vulnerabilities, but stored in private repo</td>
+</tr>
+<tr>
+<td><strong>Denial of Service</strong></td>
+<td>Medium</td>
+<td>If Web Puppy unavailable, ADR creation blocked; mitigation: cache research, allow manual research as fallback</td>
+</tr>
+<tr>
+<td><strong>Elevation of Privilege</strong></td>
+<td>Low</td>
+<td>Research informs security decisions; better than uninformed decisions that might create vulnerabilities</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Security Posture:</strong> This protocol <strong>improves</strong> security posture by ensuring security-relevant decisions are researched:</p>
+<ol>
+<li><strong>Proactive threat analysis</strong> - Security patterns researched before implementation</li>
+<li><strong>Known vulnerability avoidance</strong> - Research identifies CVEs and security issues with technologies</li>
+<li><strong>Best practice adoption</strong> - Industry security standards incorporated systematically</li>
+<li><strong>Informed STRIDE analysis</strong> - Security Auditor can reference research when evaluating ADRs</li>
+</ol>
+<p>The &quot;Denial of Service&quot; risk (Web Puppy dependency) is mitigated by:</p>
+<ul>
+<li>Allowing manual research if Web Puppy is down (human can research and create research/ artifacts)</li>
+<li>Caching research for common topics (reusable across decisions)</li>
+<li>Web Puppy is a high-priority agent (Pack Leader ensures availability)</li>
+</ul>
+<h2>Pros and Cons of the Options</h2>
+<h3>No formal research requirement (ad-hoc) (rejected)</h3>
+<p><em>Agents make decisions based on their training data and general knowledge</em></p>
+<ul>
+<li>Good, because fastest approach (no research time required)</li>
+<li>Good, because no dependency on Web Puppy agent</li>
+<li>Good, because simple process (just write the ADR)</li>
+<li>Bad, because <strong>decisions may be based on outdated information</strong> (LLM training data is stale)</li>
+<li>Bad, because <strong>no evidence trail</strong> - can&#39;t verify reasoning</li>
+<li>Bad, because <strong>misses current best practices</strong> (e.g., new security patterns from 2024-2026)</li>
+<li>Bad, because <strong>high risk of rework</strong> when better alternatives are discovered</li>
+<li>Bad, because <strong>no knowledge transfer</strong> - decisions are opaque to others</li>
+<li>Bad, because <strong>LLM hallucinations</strong> may go undetected (no fact-checking)</li>
+</ul>
+<h3>Manual research via browsing (human-dependent) (rejected)</h3>
+<p><em>Require human to research before writing ADRs</em></p>
+<ul>
+<li>Good, because ensures research is conducted</li>
+<li>Good, because human can apply judgment and critical thinking</li>
+<li>Neutral, because research quality depends on human skill</li>
+<li>Bad, because <strong>not scalable</strong> - requires human in the loop for every ADR</li>
+<li>Bad, because <strong>inconsistent methodology</strong> - different people research differently</li>
+<li>Bad, because <strong>no standard structure</strong> - research artifacts vary in quality/format</li>
+<li>Bad, because <strong>time-consuming for humans</strong> - humans have other responsibilities</li>
+<li>Bad, because <strong>knowledge not systematically captured</strong> - may live in email/chat instead of repo</li>
+</ul>
+<h3>Mandatory web-puppy research before every ADR (research-first protocol) (accepted)</h3>
+<p><em>Current decision - see above for full analysis</em></p>
+<ul>
+<li>Good, because evidence-based decisions</li>
+<li>Good, because creates knowledge repository</li>
+<li>Good, because reproducible and auditable</li>
+<li>Good, because incorporates current best practices</li>
+<li>Good, because systematic and scalable</li>
+<li>Bad, because adds time to decision process</li>
+<li>Bad, because dependency on Web Puppy agent</li>
+</ul>
+<h3>Research only for major decisions (rejected)</h3>
+<p><em>Require research for &quot;big&quot; decisions, allow ad-hoc for smaller ones</em></p>
+<ul>
+<li>Good, because faster for &quot;small&quot; decisions</li>
+<li>Neutral, because some research is better than none</li>
+<li>Bad, because <strong>&quot;major vs minor&quot; is subjective</strong> - what&#39;s small to one person is major to another</li>
+<li>Bad, because <strong>small decisions accumulate</strong> - many small uninformed decisions = technical debt</li>
+<li>Bad, because <strong>no clear threshold</strong> - when does a decision cross from minor to major?</li>
+<li>Bad, because <strong>inconsistent quality</strong> - some ADRs researched, others not</li>
+<li>Bad, because <strong>misses opportunities</strong> - even &quot;small&quot; decisions benefit from research</li>
+</ul>
+<h2>More Information</h2>
+<p><strong>Related Requirements:</strong></p>
+<ul>
+<li>REQ-101: Create Solutions Architect JSON agent</li>
+<li>REQ-102: Create Experience Architect JSON agent</li>
+<li>REQ-704: Implement research-first protocol (this ADR)</li>
+</ul>
+<p><strong>Related ADRs:</strong></p>
+<ul>
+<li><a href="adr-0001-multi-agent-architecture.md">ADR-0001: Use multi-agent architecture</a> - Defines Web Puppy&#39;s role</li>
+<li><a href="adr-0003-local-first-issue-tracking.md">ADR-0003: Use bd for local-first issue tracking</a> - Research informed tool selection</li>
+</ul>
+<p><strong>Related Documents:</strong></p>
+<ul>
+<li><a href="../../AGENTS.md">Agent Instructions</a> - Solutions Architect and Experience Architect</li>
+<li><a href="../../research/">Research Directory</a> - All research artifacts</li>
+<li><a href="~/.code_puppy/agents/web-puppy.json">Web Puppy Agent</a> - Research agent definition</li>
+</ul>
+<p><strong>Research Examples:</strong></p>
+<ul>
+<li><a href="../../research/solutions-architect-patterns/">Solutions Architect Patterns Research</a> - Informed ADR format decision (MADR 4.0)</li>
+<li><a href="../../research/ux-accessibility-patterns/">UX Accessibility Patterns Research</a> - Informed WCAG requirements</li>
+</ul>
+<p><strong>Validation Checklist:</strong></p>
+<ul>
+<li>✅ Web Puppy agent created and operational</li>
+<li>✅ Research directory structure established (<code>research/</code> at repo root)</li>
+<li>✅ Solutions Architect instructions updated to mandate research-first</li>
+<li>✅ Experience Architect instructions updated to mandate research-first</li>
+<li>✅ ADR template includes &quot;More Information&quot; section for research links</li>
+<li>✅ Review process includes verification of research artifacts</li>
+<li>✅ At least 3 research topics documented (solutions-architect-patterns, etc.)</li>
+</ul>
+<p><strong>Review History:</strong></p>
+<ul>
+<li>2026-03-06: Initial decision documented</li>
+<li>Reviewed by: Security Auditor 🛡️ (STRIDE analysis), Solutions Architect 🏛️ (methodology)</li>
+<li>Consulted: Web Puppy 🕵️‍♂️ (research capability validation)</li>
+<li>Signed off by: Pack Leader 🐺, Planning Agent 📋</li>
+</ul>
+<hr>
+<p><strong>ADR Status:</strong> Accepted<br><strong>Implementation Status:</strong> ✅ Complete<br><strong>Last Updated:</strong> March 6, 2026</p>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

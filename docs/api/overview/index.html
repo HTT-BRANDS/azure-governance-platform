@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Reference — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">API Reference</a><span>›</span>
+        API Reference
+      </div>
+      <h1 class="page-title">API Reference</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<h2>Base URL</h2>
+<pre><code>Production: https://app-governance-prod.azurewebsites.net
+Staging:    https://app-governance-staging-xnczpwyv.azurewebsites.net
+</code></pre>
+<h2>Authentication</h2>
+<p>All API requests require <strong>Bearer token</strong> (JWT):</p>
+<pre><code class="language-http">Authorization: Bearer &lt;jwt_token&gt;
+</code></pre>
+<p>Tokens obtained through Azure AD B2C OIDC flow.</p>
+<hr>
+<h2>Response Format</h2>
+<h3>Success (200 OK)</h3>
+<pre><code class="language-json">{
+  &quot;data&quot;: { ... },
+  &quot;meta&quot;: {
+    &quot;page&quot;: 1,
+    &quot;per_page&quot;: 20,
+    &quot;total&quot;: 150
+  }
+}
+</code></pre>
+<h3>Error (4xx/5xx)</h3>
+<pre><code class="language-json">{
+  &quot;error&quot;: {
+    &quot;code&quot;: &quot;RESOURCE_NOT_FOUND&quot;,
+    &quot;message&quot;: &quot;The requested resource was not found&quot;,
+    &quot;details&quot;: { ... }
+  }
+}
+</code></pre>
+<hr>
+<h2>Rate Limiting</h2>
+<ul>
+<li><strong>Authenticated:</strong> 1000 requests/hour</li>
+<li><strong>Anonymous:</strong> 100 requests/hour</li>
+</ul>
+<p>Headers:</p>
+<pre><code class="language-http">X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1640995200
+</code></pre>
+<hr>
+<h2>Endpoints</h2>
+<h3>Core</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/health</code></td>
+<td>GET</td>
+<td>System health</td>
+</tr>
+<tr>
+<td><code>/api/v1/status</code></td>
+<td>GET</td>
+<td>API status</td>
+</tr>
+<tr>
+<td><code>/docs</code></td>
+<td>GET</td>
+<td>Swagger UI</td>
+</tr>
+<tr>
+<td><code>/openapi.json</code></td>
+<td>GET</td>
+<td>OpenAPI spec</td>
+</tr>
+</tbody></table>
+<h3>Tenants</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/api/v1/tenants</code></td>
+<td>GET</td>
+<td>List tenants</td>
+</tr>
+<tr>
+<td><code>/api/v1/tenants</code></td>
+<td>POST</td>
+<td>Create tenant</td>
+</tr>
+<tr>
+<td><code>/api/v1/tenants/{id}</code></td>
+<td>GET</td>
+<td>Get tenant</td>
+</tr>
+<tr>
+<td><code>/api/v1/tenants/{id}</code></td>
+<td>PUT</td>
+<td>Update tenant</td>
+</tr>
+<tr>
+<td><code>/api/v1/tenants/{id}</code></td>
+<td>DELETE</td>
+<td>Delete tenant</td>
+</tr>
+</tbody></table>
+<h3>Resources</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/api/v1/resources</code></td>
+<td>GET</td>
+<td>List resources</td>
+</tr>
+<tr>
+<td><code>/api/v1/resources/{id}</code></td>
+<td>GET</td>
+<td>Get resource</td>
+</tr>
+<tr>
+<td><code>/api/v1/resources/sync</code></td>
+<td>POST</td>
+<td>Trigger sync</td>
+</tr>
+</tbody></table>
+<h3>Costs</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/api/v1/costs/summary</code></td>
+<td>GET</td>
+<td>Cost summary</td>
+</tr>
+<tr>
+<td><code>/api/v1/costs/trends</code></td>
+<td>GET</td>
+<td>Cost trends</td>
+</tr>
+<tr>
+<td><code>/api/v1/costs/optimization</code></td>
+<td>GET</td>
+<td>Recommendations</td>
+</tr>
+</tbody></table>
+<h3>Compliance</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/api/v1/compliance/score</code></td>
+<td>GET</td>
+<td>Compliance score</td>
+</tr>
+<tr>
+<td><code>/api/v1/compliance/gaps</code></td>
+<td>GET</td>
+<td>Compliance gaps</td>
+</tr>
+<tr>
+<td><code>/api/v1/compliance/reports</code></td>
+<td>GET</td>
+<td>Generate reports</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Interactive Documentation</h2>
+<p><strong>Production:</strong> <a href="https://app-governance-prod.azurewebsites.net/docs">https://app-governance-prod.azurewebsites.net/docs</a></p>
+<p>Features:</p>
+<ul>
+<li>Try endpoints in browser</li>
+<li>See request/response examples</li>
+<li>Download OpenAPI spec</li>
+</ul>
+<hr>
+<h2>Code Examples</h2>
+<h3>Python</h3>
+<pre><code class="language-python">import requests
+
+BASE_URL = &quot;https://app-governance-prod.azurewebsites.net&quot;
+headers = {&quot;Authorization&quot;: f&quot;Bearer {token}&quot;}
+
+response = requests.get(f&quot;{BASE_URL}/api/v1/resources&quot;, headers=headers)
+data = response.json()
+</code></pre>
+<h3>cURL</h3>
+<pre><code class="language-bash"># Health check (no auth)
+curl https://app-governance-prod.azurewebsites.net/health
+
+# List resources (with auth)
+curl -H &quot;Authorization: Bearer $TOKEN&quot; \
+  https://app-governance-prod.azurewebsites.net/api/v1/resources
+
+# Create tenant
+curl -X POST \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{&quot;name&quot;: &quot;New Tenant&quot;}&#39; \
+  https://app-governance-prod.azurewebsites.net/api/v1/tenants
+</code></pre>
+<hr>
+<p align="center">
+  <small>API Reference v1.8.1 | OpenAPI Spec: /openapi.json</small>
+</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

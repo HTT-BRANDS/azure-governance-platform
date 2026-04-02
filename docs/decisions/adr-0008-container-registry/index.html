@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADR-0008: Container Registry — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Decisions</a><span>›</span>
+        ADR-0008: Container Registry
+      </div>
+      <h1 class="page-title">ADR-0008: Container Registry</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<hr>
+<h2>status: accepted
+date: 2025-01-28
+decision-makers: Solutions Architect 🏛️, Pack Leader 🐺, Code Puppy 🐶
+consulted: Experience Architect 🎨 (deployment UX), Web Puppy 🕵️ (cost research)
+informed: All engineering teams, DevOps
+relates-to: INFRA-004</h2>
+<h2>Context and Problem Statement</h2>
+<p>The Azure Governance Platform requires a container registry for storing Docker images used in App Service deployments. Initially, we used Azure Container Registry (ACR) as the native Azure solution. However, as the project matured, several friction points emerged:</p>
+<p><strong>Cost Concerns</strong>: ACR Standard tier costs approximately $5/day ($150/month) for a single region, even with minimal image storage. For a pre-revenue SaaS product, this is significant operational overhead.</p>
+<p><strong>Authentication Complexity</strong>: ACR requires service principal credentials or admin passwords in deployment pipelines. This conflicts with our evolving zero-secrets architecture (see ADR-0007).</p>
+<p><strong>CI/CD Integration</strong>: GitHub Actions workflows required additional secrets (<code>ACR_USERNAME</code>, <code>ACR_PASSWORD</code>) and Azure CLI authentication steps to push images.</p>
+<p><strong>Vendor Lock-in</strong>: Using ACR creates an Azure-specific dependency for a component (container storage) that doesn&#39;t require Azure-specific features.</p>
+<p>How should we host container images to minimize cost while maintaining security and simplifying CI/CD?</p>
+<h2>Decision Drivers</h2>
+<ul>
+<li><strong>Cost (K.O. criterion for pre-revenue)</strong>: Must be free or significantly cheaper than ACR ($150/month)</li>
+<li><strong>Security</strong>: Must align with zero-secrets architecture; no long-lived credentials in CI/CD</li>
+<li><strong>GitHub integration</strong>: Native integration with existing GitHub Actions workflows</li>
+<li><strong>Multi-tenant readiness</strong>: Must support image distribution to multiple Azure subscriptions</li>
+<li><strong>Azure compatibility</strong>: Azure App Service must be able to pull images from chosen registry</li>
+<li><strong>Implementation effort</strong>: Migration must be completable in &lt; 1 day</li>
+</ul>
+<h2>Considered Options</h2>
+<ol>
+<li><strong>GitHub Container Registry (GHCR)</strong> — GitHub&#39;s native container registry, free for public repos, integrated with GitHub Actions via <code>GITHUB_TOKEN</code></li>
+<li><strong>Azure Container Registry (ACR) with Basic tier</strong> — Stay on ACR but downgrade to Basic ($0.17/day) with reduced features</li>
+<li><strong>Docker Hub</strong> — Public registry with free tier for open source projects</li>
+<li><strong>Self-hosted registry</strong> — Deploy our own container registry on Azure compute</li>
+</ol>
+<h2>Decision Outcome</h2>
+<p><strong>Chosen option: &quot;GitHub Container Registry (GHCR)&quot;</strong>, because it is completely free for public repositories, eliminates all authentication secrets (uses <code>GITHUB_TOKEN</code>), has native GitHub Actions integration, and supports Azure App Service deployment via managed identity.</p>
+<p>Option 2 (ACR Basic) was <strong>rejected</strong> because it still costs ~$5/month and doesn&#39;t solve the authentication complexity problem.</p>
+<p>Option 3 (Docker Hub) was <strong>rejected</strong> because it requires separate authentication management and doesn&#39;t integrate as cleanly with GitHub Actions.</p>
+<p>Option 4 (Self-hosted) was <strong>rejected</strong> because it creates operational burden and security responsibilities we don&#39;t need.</p>
+<h3>Migration Summary</h3>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Before (ACR)</th>
+<th>After (GHCR)</th>
+<th>Savings</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Monthly cost</td>
+<td>~$150</td>
+<td>$0</td>
+<td>$1800/year</td>
+</tr>
+<tr>
+<td>Authentication</td>
+<td>Service principal secrets</td>
+<td><code>GITHUB_TOKEN</code> (ephemeral)</td>
+<td>Zero secrets</td>
+</tr>
+<tr>
+<td>CI/CD complexity</td>
+<td>Azure login + ACR login + push</td>
+<td>Direct push</td>
+<td>50% reduction</td>
+</tr>
+<tr>
+<td>Azure compatibility</td>
+<td>Native</td>
+<td>Requires managed identity</td>
+<td>Same capability</td>
+</tr>
+</tbody></table>
+<h3>Architecture</h3>
+<p><strong>Before (ACR)</strong>:</p>
+<pre><code>┌─────────────────┐     ┌─────────────┐     ┌─────────────────┐
+│ GitHub Actions  │────▶│ ACR Login   │────▶│ Azure Container │
+│ Workflow        │     │ (secrets)   │     │ Registry        │
+└─────────────────┘     └─────────────┘     └─────────────────┘
+         │
+         ▼
+┌───────────────────────────────────────────────────────────────┐
+│ ACR admin credentials stored in GitHub Secrets                 │
+│ Rotate quarterly (operational burden)                          │
+└───────────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>After (GHCR)</strong>:</p>
+<pre><code>┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│ GitHub Actions  │────▶│ GITHUB_TOKEN    │────▶│ GitHub Container│
+│ Workflow        │     │ (auto-injected) │     │ Registry (GHCR) │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+         │
+         ▼
+┌───────────────────────────────────────────────────────────────┐
+│ Zero secrets required                                           │
+│ Token auto-generated by GitHub, 15-minute lifetime              │
+└───────────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>App Service Pull</strong>:</p>
+<pre><code>┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│ Azure App       │────▶│ Managed Identity  │────▶│ GHCR (pull)     │
+│ Service         │     │ (UAMI)          │     │ Public image    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+</code></pre>
+<h3>Implementation Details</h3>
+<ol>
+<li><p><strong>GitHub Actions Workflow Changes</strong>:</p>
+<pre><code class="language-yaml"># Before (ACR)
+- name: Login to ACR
+  uses: azure/docker-login@v1
+  with:
+    login-server: myregistry.azurecr.io
+    username: ${{ secrets.ACR_USERNAME }}
+    password: ${{ secrets.ACR_PASSWORD }}
+
+# After (GHCR)
+- name: Login to GHCR
+  uses: docker/login-action@v3
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}  # Auto-injected, no setup!
+</code></pre>
+</li>
+<li><p><strong>Image Tag Changes</strong>:</p>
+<pre><code># Before
+myregistry.azurecr.io/azure-governance-platform:staging
+
+# After
+ghcr.io/tygranlund/azure-governance-platform:staging
+</code></pre>
+</li>
+<li><p><strong>Bicep Template Changes</strong>:</p>
+<pre><code class="language-bicep">// App Service container configuration
+properties: {
+  siteConfig: {
+    linuxFxVersion: &#39;DOCKER|ghcr.io/tygranlund/azure-governance-platform:${environment}&#39;
+  }
+}
+</code></pre>
+</li>
+<li><p><strong>Migration Script</strong>: <code>scripts/migrate-to-ghcr.sh</code> handles:</p>
+<ul>
+<li>Backfill existing images to GHCR</li>
+<li>Update all environment configurations</li>
+<li>Validate App Service can pull from GHCR</li>
+<li>Cleanup ACR images after validation</li>
+</ul>
+</li>
+</ol>
+<h3>Consequences</h3>
+<p><strong>Good</strong>:</p>
+<ul>
+<li><strong>Cost</strong>: $1800/year savings (enough to fund other infrastructure)</li>
+<li><strong>Security</strong>: Zero secrets in CI/CD or configuration</li>
+<li><strong>Simplicity</strong>: GitHub-native workflow, no Azure-specific steps for container push</li>
+<li><strong>Auditability</strong>: All container pushes visible in GitHub security tab</li>
+<li><strong>Compatibility</strong>: Azure App Service supports GHCR via managed identity or public pulls</li>
+</ul>
+<p><strong>Bad</strong>:</p>
+<ul>
+<li><strong>Public images</strong>: GHCR free tier requires public repositories (acceptable for open-core model)</li>
+<li><strong>Azure dependency reduction</strong>: While good for portability, some Azure-native features (geo-replication, content trust) are lost</li>
+<li><strong>Migration downtime</strong>: 5-minute window to update App Service container settings</li>
+</ul>
+<h3>Confirmation</h3>
+<p>Validation performed during migration:</p>
+<ol>
+<li><strong>Image push validation</strong>: <code>docker push ghcr.io/tygranlund/azure-governance-platform:test</code></li>
+<li><strong>App Service pull validation</strong>: Deploy to staging slot, verify container starts</li>
+<li><strong>Integration test</strong>: Full E2E test suite passing against GHCR-deployed instance</li>
+<li><strong>Cleanup</strong>: ACR registry deleted after 7-day validation period</li>
+</ol>
+<p>Migration completed January 28, 2025. Runbook: <code>docs/runbooks/acr-to-ghcr-migration.md</code></p>
+<h2>STRIDE Security Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Threat Category</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Spoofing</strong></td>
+<td>Low</td>
+<td>GHCR images are tied to GitHub repository; only authorized workflows can push</td>
+</tr>
+<tr>
+<td><strong>Tampering</strong></td>
+<td>Low</td>
+<td><code>GITHUB_TOKEN</code> is ephemeral and scoped to the workflow run; no long-lived credentials to compromise</td>
+</tr>
+<tr>
+<td><strong>Repudiation</strong></td>
+<td>Low</td>
+<td>GitHub audit log records all package publish events; signed commits required for workflow triggers</td>
+</tr>
+<tr>
+<td><strong>Information Disclosure</strong></td>
+<td>Low</td>
+<td>Public repository and images align with open-core model; no secrets in image layers</td>
+</tr>
+<tr>
+<td><strong>Denial of Service</strong></td>
+<td>Medium</td>
+<td>GHCR has rate limits (1000 pulls/hour unauthenticated); mitigated by Azure managed identity for authenticated pulls</td>
+</tr>
+<tr>
+<td><strong>Elevation of Privilege</strong></td>
+<td>Low</td>
+<td><code>GITHUB_TOKEN</code> has minimal scope (packages:write) and cannot access other repositories or workflows</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Security Posture</strong>: GHCR improves security posture by eliminating persistent credentials. The ephemeral <code>GITHUB_TOKEN</code> with minimal scope reduces attack surface compared to ACR service principals with long-lived secrets.</p>
+<h2>Pros and Cons of the Options</h2>
+<h3>Option 1: Stay on ACR Standard</h3>
+<ul>
+<li>Good, because geo-replication and content trust features available</li>
+<li>Bad, because $150/month for pre-revenue product is unsustainable</li>
+<li>Bad, because requires ongoing credential rotation</li>
+<li>Bad, because Azure-specific lock-in without using Azure-specific features</li>
+</ul>
+<h3>Option 2: ACR Basic Tier</h3>
+<ul>
+<li>Good, because reduces cost to ~$5/month</li>
+<li>Bad, because still requires secrets and credential management</li>
+<li>Bad, because Basic tier has storage and bandwidth limits that may constrain growth</li>
+<li>Bad, because doesn&#39;t solve the fundamental authentication complexity</li>
+</ul>
+<h3>Option 3: Docker Hub</h3>
+<ul>
+<li>Good, because free tier available for open source</li>
+<li>Bad, because requires separate Docker Hub authentication</li>
+<li>Bad, because additional vendor to manage (rate limits, availability)</li>
+<li>Bad, because doesn&#39;t integrate as cleanly with GitHub Actions</li>
+</ul>
+<h3>Option 4: Self-Hosted Registry</h3>
+<ul>
+<li>Good, because full control over infrastructure</li>
+<li>Bad, because creates operational burden (backups, updates, monitoring)</li>
+<li>Bad, because security responsibility shifts to our team</li>
+<li>Bad, because not cost-effective for expected scale</li>
+</ul>
+<h2>More Information</h2>
+<ul>
+<li>Migration runbook: <code>docs/runbooks/acr-to-ghcr-migration.md</code></li>
+<li>GHCR setup guide: <code>docs/GHCR_SETUP.md</code></li>
+<li>Related authentication ADR: <code>docs/decisions/adr-0007-auth-evolution.md</code></li>
+<li>Cost analysis: Saved $1800/year, redirected to Azure SQL Free Tier (see ADR-0009)</li>
+</ul>
+<hr>
+<p><strong>Template Version:</strong> MADR 4.0 (September 2024) with STRIDE Security Analysis<br><strong>Last Updated:</strong> 2025-01-28<br><strong>Maintained By:</strong> Solutions Architect 🏛️</p>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

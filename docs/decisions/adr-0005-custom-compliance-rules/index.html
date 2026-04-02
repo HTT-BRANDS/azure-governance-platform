@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADR-0005: Custom Compliance Rules — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Decisions</a><span>›</span>
+        ADR-0005: Custom Compliance Rules
+      </div>
+      <h1 class="page-title">ADR-0005: Custom Compliance Rules</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<hr>
+<h2>status: proposed
+date: 2026-03-19
+decision-makers: Solutions Architect 🏛️, Security Auditor 🛡️, Pack Leader 🐺
+consulted: Web Puppy 🕵️ (research), Experience Architect 🎨 (API contracts)
+informed: All Code Puppy agents, MSP administrators
+relates-to: CM-002</h2>
+<h2>Context and Problem Statement</h2>
+<p>The Azure Governance Platform currently evaluates compliance by syncing Azure Policy state into <code>ComplianceSnapshot</code> and <code>PolicyState</code> models, and tracks Riverside-specific compliance via <code>RiversideCompliance</code> and <code>RiversideMFA</code> models. MSP administrators managing 5 tenants want to define <strong>custom compliance rules beyond what Azure Policy provides</strong> — for example, enforcing organisation-specific naming conventions, minimum MFA coverage thresholds, compliance score floors, approved resource SKUs, and required tag sets.</p>
+<p>These custom rules must be:</p>
+<ul>
+<li>Defined by tenant administrators (untrusted input in a multi-tenant context)</li>
+<li>Evaluated against resource properties, compliance scores, and MFA coverage data</li>
+<li>Integrated into the existing sync pipeline and exposed via the compliance API</li>
+<li>Secure against injection, sandbox escape, and cross-tenant data leakage</li>
+</ul>
+<p>How should the custom compliance rule definition and evaluation system be designed?</p>
+<h2>Decision Drivers</h2>
+<ul>
+<li><strong>Security (K.O. criterion)</strong>: Rules authored by tenant admins in a multi-tenant SaaS platform must not create injection vectors — a single compromised rule must not affect other tenants or the host process</li>
+<li><strong>Expressiveness</strong>: Must cover three rule categories: <code>resource_property</code> checks, <code>compliance_score</code> thresholds, and <code>mfa_coverage</code> requirements</li>
+<li><strong>Auditability</strong>: Rule definitions must be stored, versioned, and auditable with full change history</li>
+<li><strong>Implementation velocity</strong>: Must integrate with existing FastAPI + SQLAlchemy stack in 1–2 sprints</li>
+<li><strong>Compatibility</strong>: Must work alongside existing <code>ComplianceSnapshot</code>, <code>PolicyState</code>, <code>RiversideCompliance</code>, and <code>RiversideMFA</code> models without disruption</li>
+<li><strong>Tenant isolation</strong>: Rules scoped per tenant; no cross-tenant rule visibility or evaluation side effects</li>
+</ul>
+<h2>Considered Options</h2>
+<ol>
+<li><strong>JSON Schema rule definitions stored in DB</strong> — declarative JSON describing what resource/compliance properties must match, evaluated via the <code>jsonschema</code> library (no code execution)</li>
+<li><strong>Python expression evaluator</strong> (<code>simpleeval</code> / <code>ast.literal_eval</code>) — tenant-authored Python expressions evaluated at runtime for richer conditions</li>
+<li><strong>Azure Policy definition language clone</strong> — full reimplementation of Azure Policy&#39;s condition language with 11 effects, 20+ operators, resource alias system</li>
+</ol>
+<h2>Decision Outcome</h2>
+<p><strong>Chosen option: &quot;JSON Schema rule definitions stored in DB&quot;</strong>, because it is the only option that satisfies the security K.O. criterion while meeting expressiveness requirements for the three target rule categories, at low implementation cost within the existing stack.</p>
+<p>Option 2 is <strong>eliminated</strong> due to CVE-2026-32640 (CVSS 8.7/10 HIGH) — a live sandbox escape vulnerability in <code>simpleeval</code> that enables remote code execution through object attribute chain traversal. In a multi-tenant compliance platform holding Azure credentials and Key Vault references, this is an existential risk.</p>
+<p>Option 3 is <strong>deferred</strong> — full reimplementation of Azure Policy&#39;s definition language is estimated at 6–18 months and creates a competing system to the native Azure Policy state already synced by this platform.</p>
+<h3>Rule Categories and Schema Design</h3>
+<p>Custom rules are organized into three categories, each with a defined evaluation context:</p>
+<h4>Category 1: <code>resource_property</code></h4>
+<p>Evaluates Azure resource properties synced from the Resource model.</p>
+<pre><code class="language-json">{
+  &quot;rule_name&quot;: &quot;storage-https-only&quot;,
+  &quot;category&quot;: &quot;resource_property&quot;,
+  &quot;resource_type&quot;: &quot;Microsoft.Storage/storageAccounts&quot;,
+  &quot;severity&quot;: &quot;High&quot;,
+  &quot;effect&quot;: &quot;audit&quot;,
+  &quot;schema&quot;: {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {
+      &quot;supportsHttpsTrafficOnly&quot;: { &quot;const&quot;: true }
+    },
+    &quot;required&quot;: [&quot;supportsHttpsTrafficOnly&quot;]
+  }
+}
+</code></pre>
+<h4>Category 2: <code>compliance_score</code></h4>
+<p>Evaluates against <code>ComplianceSnapshot</code> or <code>RiversideCompliance</code> data.</p>
+<pre><code class="language-json">{
+  &quot;rule_name&quot;: &quot;minimum-compliance-score&quot;,
+  &quot;category&quot;: &quot;compliance_score&quot;,
+  &quot;severity&quot;: &quot;High&quot;,
+  &quot;effect&quot;: &quot;audit&quot;,
+  &quot;schema&quot;: {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {
+      &quot;overall_compliance_percent&quot;: { &quot;type&quot;: &quot;number&quot;, &quot;minimum&quot;: 80 },
+      &quot;non_compliant_resources&quot;: { &quot;type&quot;: &quot;integer&quot;, &quot;maximum&quot;: 10 }
+    },
+    &quot;required&quot;: [&quot;overall_compliance_percent&quot;]
+  }
+}
+</code></pre>
+<h4>Category 3: <code>mfa_coverage</code></h4>
+<p>Evaluates against <code>RiversideMFA</code> data.</p>
+<pre><code class="language-json">{
+  &quot;rule_name&quot;: &quot;admin-mfa-required&quot;,
+  &quot;category&quot;: &quot;mfa_coverage&quot;,
+  &quot;severity&quot;: &quot;Critical&quot;,
+  &quot;effect&quot;: &quot;audit&quot;,
+  &quot;schema&quot;: {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {
+      &quot;admin_mfa_percentage&quot;: { &quot;type&quot;: &quot;number&quot;, &quot;minimum&quot;: 100 },
+      &quot;mfa_coverage_percentage&quot;: { &quot;type&quot;: &quot;number&quot;, &quot;minimum&quot;: 90 }
+    },
+    &quot;required&quot;: [&quot;admin_mfa_percentage&quot;, &quot;mfa_coverage_percentage&quot;]
+  }
+}
+</code></pre>
+<h3>Database Model</h3>
+<pre><code class="language-python">class CustomComplianceRule(Base):
+    &quot;&quot;&quot;Custom compliance rule definitions using JSON Schema.&quot;&quot;&quot;
+    __tablename__ = &quot;custom_compliance_rules&quot;
+
+    id: Mapped[int] = Column(Integer, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[str] = Column(String(36), ForeignKey(&quot;tenants.id&quot;), nullable=False)
+    rule_name: Mapped[str] = Column(String(255), nullable=False)
+    rule_description: Mapped[str | None] = Column(Text)
+    category: Mapped[str] = Column(
+        String(50), nullable=False
+    )  # resource_property | compliance_score | mfa_coverage
+    resource_type: Mapped[str | None] = Column(String(255))  # For resource_property rules
+    severity: Mapped[str] = Column(String(20), nullable=False, default=&quot;Medium&quot;)
+    effect: Mapped[str] = Column(String(20), nullable=False, default=&quot;audit&quot;)
+    schema: Mapped[dict] = Column(JSONB, nullable=False)
+    is_active: Mapped[bool] = Column(Boolean, default=True)
+    created_by: Mapped[str] = Column(String(255), nullable=False)
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+</code></pre>
+<h3>Integration Points</h3>
+<p><strong>API Endpoints</strong> (under <code>/api/v1/compliance/rules</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/compliance/rules</code></td>
+<td>List rules for tenant (filtered by <code>tenant_id</code> via authz)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/compliance/rules</code></td>
+<td>Create rule (validates schema, enforces security limits)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/compliance/rules/{id}</code></td>
+<td>Get rule details</td>
+</tr>
+<tr>
+<td><code>PUT</code></td>
+<td><code>/api/v1/compliance/rules/{id}</code></td>
+<td>Update rule (re-validates schema)</td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td><code>/api/v1/compliance/rules/{id}</code></td>
+<td>Soft-delete rule</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/compliance/rules/{id}/evaluate</code></td>
+<td>Dry-run evaluation against current data</td>
+</tr>
+</tbody></table>
+<p><strong>Sync Pipeline Integration</strong>: Rules are evaluated during each compliance sync cycle. The <code>ComplianceService</code> is extended with a <code>evaluate_custom_rules(tenant_id)</code> method that:</p>
+<ol>
+<li>Loads all active rules for the tenant</li>
+<li>Determines the evaluation context per rule category:<ul>
+<li><code>resource_property</code> → resource properties from latest sync</li>
+<li><code>compliance_score</code> → latest <code>ComplianceSnapshot</code> data</li>
+<li><code>mfa_coverage</code> → latest <code>RiversideMFA</code> data</li>
+</ul>
+</li>
+<li>Validates context data against each rule&#39;s JSON Schema</li>
+<li>Stores violations as <code>CustomRuleViolation</code> records</li>
+<li>Violations surface in the existing compliance summary and non-compliant policies views</li>
+</ol>
+<h3>Security Guards</h3>
+<p>The <code>JsonSchemaRuleEngine</code> enforces these security constraints:</p>
+<ol>
+<li><strong>No remote <code>$ref</code> resolution</strong> — prevents SSRF via schema loading</li>
+<li><strong>Schema size limit: 64KB</strong> — prevents memory exhaustion</li>
+<li><strong>Regex pattern length limit: 500 chars</strong> — prevents ReDoS</li>
+<li><strong>Schema nesting depth limit: 10 levels</strong> — prevents deep recursion</li>
+<li><strong>Validator caching per rule_id</strong> — prevents recompilation DoS</li>
+<li><strong>Format checking disabled</strong> — removes attack surface from format validators</li>
+<li><strong>Input sanitization</strong> — rule names/descriptions sanitized for XSS prevention</li>
+</ol>
+<h3>Consequences</h3>
+<p><strong>Good:</strong></p>
+<ul>
+<li>No code execution path in the rule evaluation pipeline — eliminates entire class of injection vulnerabilities</li>
+<li>Rule definitions are pure JSON data — storable in PostgreSQL JSONB, renderable in UI, version-trackable</li>
+<li><code>jsonschema</code> library is mature (MIT license, zero known CVEs, Python 3.10–3.14 support)</li>
+<li>Covers all three required rule categories (<code>resource_property</code>, <code>compliance_score</code>, <code>mfa_coverage</code>)</li>
+<li>Natural integration with existing compliance models via tenant_id FK</li>
+<li>1–2 sprint implementation timeline</li>
+<li>Multi-tenant isolation is trivially enforced via <code>tenant_id</code> foreign key and existing <code>TenantAuthorization</code> middleware</li>
+</ul>
+<p><strong>Bad:</strong></p>
+<ul>
+<li>Cannot express cross-property comparisons (e.g., <code>fieldA &gt;= fieldB</code>)</li>
+<li>Cannot express date arithmetic (e.g., <code>expiryDate &gt; now() + 30d</code>)</li>
+<li>No built-in effect system — audit/deny semantics must be wrapped externally</li>
+<li>~20% of conceivable governance rules may require a future upgrade to OPA/Rego</li>
+</ul>
+<p><strong>Neutral:</strong></p>
+<ul>
+<li>JSON Schema is well-known but some administrators may prefer a simpler DSL for common rules — mitigated by providing rule templates and a UI builder</li>
+</ul>
+<h3>Confirmation</h3>
+<p>This decision is confirmed when:</p>
+<ol>
+<li><code>custom_compliance_rules</code> table exists with <code>tenant_id</code>, <code>category</code>, <code>schema</code> (JSONB) columns</li>
+<li><code>JsonSchemaRuleEngine.evaluate()</code> passes all unit tests including tenant isolation tests</li>
+<li>Security review confirms no code execution path in the validation pipeline</li>
+<li>Remote <code>$ref</code> resolution is disabled (confirmed by fitness function)</li>
+<li>Schema size and pattern length limits enforced (confirmed by fitness function)</li>
+<li>Rules are evaluated during sync runs and results visible via <code>/api/v1/compliance/rules</code></li>
+</ol>
+<h2>STRIDE Security Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Threat Category</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Spoofing</strong></td>
+<td>Low</td>
+<td>Rules stored with <code>tenant_id</code> FK; RBAC limits rule creation to MSP administrators; Azure AD authentication required on all <code>/api/v1/compliance/rules</code> endpoints via existing <code>get_current_user</code> dependency</td>
+</tr>
+<tr>
+<td><strong>Tampering</strong></td>
+<td>Low</td>
+<td>DB integrity constraints on <code>custom_compliance_rules</code> table; JSON Schema validated on write via <code>Draft202012Validator.check_schema()</code>; all mutations logged to <code>audit_log</code> table with <code>created_by</code> field</td>
+</tr>
+<tr>
+<td><strong>Repudiation</strong></td>
+<td>Low</td>
+<td>All rule CRUD operations logged to <code>audit_log</code> with user ID, timestamp, and action; evaluation results timestamped with <code>evaluated_at</code>; <code>updated_at</code> column tracks modifications</td>
+</tr>
+<tr>
+<td><strong>Information Disclosure</strong></td>
+<td>Low</td>
+<td>Tenant isolation enforced at DB level via <code>tenant_id</code> FK and existing <code>TenantAuthorization</code> middleware (same pattern as <code>ComplianceService</code>); no cross-tenant rule visibility in any query</td>
+</tr>
+<tr>
+<td><strong>Denial of Service</strong></td>
+<td>Medium</td>
+<td>Schema size limit (64KB), regex pattern length limit (500 chars), validator caching prevents recompilation, rate limiting on evaluation endpoint; max schema nesting depth (10 levels) prevents deep recursion</td>
+</tr>
+<tr>
+<td><strong>Elevation of Privilege</strong></td>
+<td><strong>None</strong></td>
+<td><strong>JSON Schema evaluation has no code execution model.</strong> The <code>jsonschema</code> library processes schemas as pure data — there is no interpreter, sandbox, or execution environment to escape. This is the fundamental security advantage over Option 2.</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Security Posture</strong>: This decision introduces <strong>no new code execution attack surfaces</strong>. The only new attack vectors are standard data-handling concerns (DoS via large schemas, ReDoS via regex patterns) which are mitigated by explicit size and length limits. Compared to Option 2, which carries CVE-2026-32640 (CVSS 8.7, RCE via sandbox escape), this approach reduces the rule engine&#39;s security risk from <strong>Critical</strong> to <strong>Low</strong>.</p>
+<p><strong>Key CVE Evidence (Option 2 elimination)</strong>:</p>
+<ul>
+<li><code>CVE-2026-32640</code> / <code>GHSA-44vg-5wv2-h2hg</code>: simpleeval sandbox escape, CVSS v4 8.7/10, AV:Network/AC:Low/PR:None/UI:None, CWE-94 Code Injection — affects all versions &lt; 1.0.5</li>
+<li>Recurring pattern: simpleeval GitHub issues #81 (2023), #154 (2024), #166 (2025), #171 (2026)</li>
+<li><code>ast.literal_eval</code>: Python 3.14.3 docs explicitly state <em>&quot;calling it on untrusted data is thus not recommended&quot;</em>; confirmed DoS via memory/C-stack exhaustion</li>
+</ul>
+<h2>Pros and Cons of the Options</h2>
+<h3>Option A — JSON Schema Rule Definitions (selected)</h3>
+<p><em>Declarative JSON Schema stored as JSONB in PostgreSQL, evaluated via <code>jsonschema</code> library with security guards.</em></p>
+<ul>
+<li>Good, because <strong>no code execution</strong> — zero injection attack surface by design</li>
+<li>Good, because <strong>DB-native</strong> — JSONB storage in existing PostgreSQL, versionable, auditable</li>
+<li>Good, because <strong>covers all three rule categories</strong> — <code>resource_property</code>, <code>compliance_score</code>, <code>mfa_coverage</code></li>
+<li>Good, because <strong>low implementation cost</strong> — 1–2 sprints within existing FastAPI/SQLAlchemy stack</li>
+<li>Good, because <strong>multi-tenant safe by design</strong> — <code>tenant_id</code> FK, no shared evaluation state</li>
+<li>Good, because <strong>JSON Schema is a stable, widely-understood standard</strong> (Draft 2020-12)</li>
+<li>Good, because <strong><code>iter_errors()</code> returns all violations</strong> — not just the first match</li>
+<li>Neutral, because security guards are needed — must disable remote <code>$ref</code>, enforce size/pattern limits</li>
+<li>Bad, because <strong>cannot express cross-property comparisons</strong> (e.g., <code>retentionDays &gt;= backupFrequencyDays</code>)</li>
+<li>Bad, because <strong>no date arithmetic</strong> — cannot express time-relative rules</li>
+<li>Bad, because <strong>~20% expressiveness gap</strong> — future upgrade to OPA/Rego may be needed</li>
+</ul>
+<h3>Option B — Python Expression Evaluator (eliminated)</h3>
+<p><em>Tenant-authored Python expressions evaluated by <code>simpleeval</code> or <code>ast.literal_eval</code> at compliance check time.</em></p>
+<ul>
+<li>Good, because high expressiveness — arbitrary expressions cover all rule scenarios</li>
+<li>Bad, because <strong>CVE-2026-32640 (CVSS 8.7 HIGH)</strong> — active sandbox escape enabling RCE via attribute chain traversal to <code>os</code>/<code>sys</code>. Network-exploitable, zero-auth, zero-interaction.</li>
+<li>Bad, because <strong>ast.literal_eval is too limited</strong> — cannot evaluate comparison operators; Python docs say unsafe on untrusted input</li>
+<li>Bad, because <strong>recurring security pattern</strong> — 4 sandbox escape issues in 4 consecutive years</li>
+<li>Bad, because <strong>compliance SaaS context amplifies risk</strong> — platform holds Azure credentials and Key Vault references; sandbox escape = full compromise</li>
+</ul>
+<p><strong>This option is eliminated by the security K.O. criterion.</strong></p>
+<h3>Option C — Azure Policy Definition Language Clone (deferred)</h3>
+<p><em>Full reimplementation of Azure Policy&#39;s condition language: 11 effects, 20+ operators, resource alias system, parameter interpolation.</em></p>
+<ul>
+<li>Good, because 100% Azure Policy compatibility</li>
+<li>Good, because familiar to Azure administrators</li>
+<li>Good, because declarative (no code execution if implemented correctly)</li>
+<li>Bad, because <strong>6–18 month engineering effort</strong> for production-quality implementation</li>
+<li>Bad, because <strong>11 complex effects</strong> with distinct pre-conditions and evaluation semantics</li>
+<li>Bad, because <strong>100+ resource aliases</strong> require a maintained registry</li>
+<li>Bad, because <strong>competes with native Azure Policy</strong> — this platform already syncs Azure Policy state</li>
+<li>Bad, because <strong>ongoing maintenance burden</strong> — must track Azure Policy language changes</li>
+</ul>
+<p><strong>This option is deferred. If full Azure Policy compatibility becomes required, OPA/Rego is a better foundation than building from scratch.</strong></p>
+<h2>Fitness Functions</h2>
+<p>The following automated tests enforce this ADR. They are located in <code>tests/architecture/test_fitness_functions.py</code>:</p>
+<h3>FF-1: No code execution in compliance rule evaluation</h3>
+<pre><code class="language-python">def test_no_code_execution_in_rule_engine():
+    &quot;&quot;&quot;ADR-0005 FF-1: Custom compliance rules must not execute code.
+
+    Verify that the rule engine module does not import any code execution
+    libraries (eval, exec, subprocess, simpleeval, ast.literal_eval for
+    untrusted input).
+    &quot;&quot;&quot;
+    rule_engine_files = list(Path(&quot;app&quot;).rglob(&quot;*rule*engine*.py&quot;))
+    rule_service_files = list(Path(&quot;app&quot;).rglob(&quot;*compliance*rule*.py&quot;))
+    all_files = rule_engine_files + rule_service_files
+
+    banned_imports = {&quot;simpleeval&quot;, &quot;subprocess&quot;, &quot;os.system&quot;, &quot;exec&quot;, &quot;eval&quot;}
+    banned_calls = {&quot;eval(&quot;, &quot;exec(&quot;, &quot;compile(&quot;, &quot;ast.literal_eval(&quot;}
+
+    for filepath in all_files:
+        content = filepath.read_text()
+        for banned in banned_imports:
+            assert banned not in content, (
+                f&quot;ADR-0005 violation: {filepath} imports banned module &#39;{banned}&#39;. &quot;
+                f&quot;Custom compliance rules must use JSON Schema only (no code execution).&quot;
+            )
+        for banned_call in banned_calls:
+            assert banned_call not in content, (
+                f&quot;ADR-0005 violation: {filepath} calls &#39;{banned_call}&#39;. &quot;
+                f&quot;Custom compliance rules must use JSON Schema only (no code execution).&quot;
+            )
+</code></pre>
+<h3>FF-2: Custom rules require tenant isolation</h3>
+<pre><code class="language-python">def test_custom_rules_require_tenant_id():
+    &quot;&quot;&quot;ADR-0005 FF-2: Custom compliance rule model must enforce tenant isolation.
+
+    The CustomComplianceRule model must have a tenant_id FK column to ensure
+    multi-tenant isolation.
+    &quot;&quot;&quot;
+    model_file = Path(&quot;app/models/compliance.py&quot;)
+    if not model_file.exists():
+        pytest.skip(&quot;compliance model not yet created&quot;)
+
+    content = model_file.read_text()
+    if &quot;CustomComplianceRule&quot; in content:
+        assert &quot;tenant_id&quot; in content, (
+            &quot;ADR-0005 violation: CustomComplianceRule model must have tenant_id column &quot;
+            &quot;for multi-tenant isolation.&quot;
+        )
+        assert &quot;ForeignKey&quot; in content and &quot;tenants.id&quot; in content, (
+            &quot;ADR-0005 violation: tenant_id must be a ForeignKey to tenants.id.&quot;
+        )
+</code></pre>
+<h3>FF-3: No remote $ref in schema validation</h3>
+<pre><code class="language-python">def test_no_remote_ref_in_rule_schemas():
+    &quot;&quot;&quot;ADR-0005 FF-3: Rule engine must block remote $ref URLs (SSRF prevention).
+
+    Any file implementing rule schema validation must contain logic to
+    reject remote $ref references (http://, https://).
+    &quot;&quot;&quot;
+    rule_files = list(Path(&quot;app&quot;).rglob(&quot;*rule*engine*.py&quot;))
+    if not rule_files:
+        pytest.skip(&quot;rule engine not yet implemented&quot;)
+
+    for filepath in rule_files:
+        content = filepath.read_text()
+        assert &quot;http://&quot; in content or &quot;$ref&quot; in content, (
+            f&quot;ADR-0005 violation: {filepath} must check for and reject remote $ref URLs &quot;
+            f&quot;to prevent SSRF attacks.&quot;
+        )
+</code></pre>
+<h3>FF-4: Compliance rules API requires authentication</h3>
+<pre><code class="language-python">def test_compliance_rules_api_requires_auth():
+    &quot;&quot;&quot;ADR-0005 FF-4: /api/v1/compliance/rules endpoints must require authentication.
+
+    The rules router must include get_current_user dependency at router level
+    or on every route.
+    &quot;&quot;&quot;
+    rules_route = Path(&quot;app/api/routes/compliance.py&quot;)
+    if not rules_route.exists():
+        pytest.skip(&quot;compliance routes not found&quot;)
+
+    content = rules_route.read_text()
+    if &quot;/rules&quot; in content or &quot;custom_rule&quot; in content:
+        assert &quot;get_current_user&quot; in content, (
+            &quot;ADR-0005 violation: Compliance rules endpoints must require authentication &quot;
+            &quot;via Depends(get_current_user).&quot;
+        )
+</code></pre>
+<h2>More Information</h2>
+<p><strong>Relates to:</strong> CM-002 (Custom Compliance Rule Engine)</p>
+<p><strong>Research Package:</strong> <a href="../../research/compliance-rule-engine-adr/"><code>research/compliance-rule-engine-adr/</code></a> — full evidence including:</p>
+<ul>
+<li>CVE-2026-32640 details and CVSS metrics</li>
+<li>JSON Schema performance benchmarks (5,000 validations/sec)</li>
+<li>Azure Policy definition structure analysis (11 effects, 20+ operators)</li>
+<li>OPA/Rego evaluation as future extension path</li>
+<li>Source credibility assessments and bibliography</li>
+</ul>
+<p><strong>Key References:</strong></p>
+<ul>
+<li>CVE-2026-32640: <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-32640">https://nvd.nist.gov/vuln/detail/CVE-2026-32640</a></li>
+<li>GHSA-44vg-5wv2-h2hg: <a href="https://github.com/advisories/GHSA-44vg-5wv2-h2hg">https://github.com/advisories/GHSA-44vg-5wv2-h2hg</a></li>
+<li>Python <code>ast.literal_eval</code> docs: <a href="https://docs.python.org/3/library/ast.html#ast.literal_eval">https://docs.python.org/3/library/ast.html#ast.literal_eval</a></li>
+<li>Azure Policy definition structure: <a href="https://learn.microsoft.com/en-us/azure/governance/policy/concepts/definition-structure-basics">https://learn.microsoft.com/en-us/azure/governance/policy/concepts/definition-structure-basics</a></li>
+<li>jsonschema library: <a href="https://python-jsonschema.readthedocs.io/en/stable/">https://python-jsonschema.readthedocs.io/en/stable/</a></li>
+<li>OPA Policy Language: <a href="https://www.openpolicyagent.org/docs/policy-language">https://www.openpolicyagent.org/docs/policy-language</a></li>
+</ul>
+<p><strong>Related ADRs:</strong></p>
+<ul>
+<li><a href="adr-0001-multi-agent-architecture.md">ADR-0001: Multi-agent architecture</a> — agents that will implement this</li>
+<li><a href="adr-0004-research-first-protocol.md">ADR-0004: Research-first protocol</a> — research methodology used</li>
+</ul>
+<p><strong>Related Code:</strong></p>
+<ul>
+<li><code>app/models/compliance.py</code> — existing <code>ComplianceSnapshot</code>, <code>PolicyState</code> models</li>
+<li><code>app/api/services/compliance_service.py</code> — existing compliance evaluation service</li>
+<li><code>app/api/services/riverside_compliance.py</code> — MFA gap analysis functions</li>
+<li><code>app/api/routes/compliance.py</code> — existing <code>/api/v1/compliance/*</code> routes</li>
+</ul>
+<p><strong>Future Evolution:</strong></p>
+<ul>
+<li>If &gt;20% of rule requests require expressions not possible in JSON Schema (cross-property, date arithmetic), evaluate OPA/Rego as a complementary engine</li>
+<li>Consider <code>cel-python</code> (Common Expression Language) as an intermediate option for mathematical comparisons without injection risk</li>
+</ul>
+<p><strong>Review History:</strong></p>
+<ul>
+<li>2026-03-19: Initial ADR proposed by Solutions Architect 🏛️ (<code>solutions-architect-1d4b5d</code>)</li>
+<li>Research conducted by: Web Puppy 🕵️</li>
+<li>Pending review: Security Auditor 🛡️ (STRIDE co-sign), Pack Leader 🐺 (sign-off)</li>
+</ul>
+<hr>
+<p><strong>ADR Status:</strong> Proposed
+<strong>Implementation Status:</strong> ⏳ Pending (CM-002)
+<strong>Last Updated:</strong> March 19, 2026
+<strong>Maintained By:</strong> Solutions Architect 🏛️</p>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

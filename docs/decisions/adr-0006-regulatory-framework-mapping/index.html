@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADR-0006: Regulatory Framework Mapping — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Decisions</a><span>›</span>
+        ADR-0006: Regulatory Framework Mapping
+      </div>
+      <h1 class="page-title">ADR-0006: Regulatory Framework Mapping</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<hr>
+<h2>status: proposed
+date: 2026-03-20
+decision-makers: Solutions Architect 🏛️, Security Auditor 🛡️, Pack Leader 🐺
+consulted: Web Puppy 🕵️ (SOC2/NIST research), Experience Architect 🎨 (API contracts)
+informed: All Code Puppy agents, MSP administrators
+relates-to: CM-003</h2>
+<h2>Context and Problem Statement</h2>
+<p>The Azure Governance Platform syncs Azure Policy compliance states into <code>ComplianceSnapshot</code> and <code>PolicyState</code> models, tracks Riverside-specific compliance via <code>RiversideCompliance</code> and <code>RiversideMFA</code> models, and supports custom compliance rules via <code>CustomComplianceRule</code> (ADR-0005). However, <strong>customers cannot view their compliance posture through the lens of regulatory frameworks</strong> — they see raw policy violations but have no way to answer questions like:</p>
+<ul>
+<li>&quot;Which SOC2 Trust Service Criteria are we failing?&quot;</li>
+<li>&quot;What is our NIST CSF coverage across the Protect function?&quot;</li>
+<li>&quot;Which CC6 (Logical Access) controls have gaps?&quot;</li>
+</ul>
+<p>MSP administrators managing 5+ tenants need regulatory framework mapping to prepare for SOC2 Type II audits and demonstrate NIST CSF alignment. The compliance sync pipeline already receives <code>policy_definition_group_names</code> from Azure (which include SOC2 and NIST control references), but this data is currently flattened into a CSV string in <code>policy_category</code> — losing the framework-specific semantic structure.</p>
+<p>How should the platform map existing compliance findings to SOC2 Trust Service Criteria and NIST CSF 2.0 controls?</p>
+<h2>Decision Drivers</h2>
+<ul>
+<li><strong>No new database tables</strong>: Framework definitions are static reference data that changes on AICPA/NIST publication cycles (years), not at runtime — storing them in PostgreSQL adds migration burden without benefit</li>
+<li><strong>Computation at read time</strong>: Compliance coverage percentages must reflect the <em>current</em> state of <code>PolicyState</code> and <code>ComplianceSnapshot</code> data, not a stale cache</li>
+<li><strong>Extensibility</strong>: Must support adding ISO 27001, CIS Benchmarks, or PCI-DSS in future without schema changes</li>
+<li><strong>Auditability</strong>: Framework definitions must be version-controlled in source code, not editable at runtime</li>
+<li><strong>Implementation velocity</strong>: Must integrate with existing FastAPI + SQLAlchemy stack in 1 sprint</li>
+<li><strong>SOC2 TSC IP constraint</strong>: SOC2 Trust Service Criteria are AICPA proprietary — reference control IDs and brief descriptions only, do not reproduce full criterion text</li>
+<li><strong>Azure alignment</strong>: Azure built-in policy initiatives already tag policies with <code>SOC_2_CC6.1</code> and <code>NIST_CSF_v2.0_PR.AA_01</code> style group names — leverage these rather than building a parallel mapping</li>
+</ul>
+<h2>Considered Options</h2>
+<ol>
+<li><strong>Code-embedded framework definitions with keyword-based policy mapping</strong> — Python dataclasses define frameworks; existing <code>PolicyState.policy_name</code> and <code>policy_category</code> keywords map to controls at query time</li>
+<li><strong>New database tables for frameworks and mappings</strong> — <code>compliance_frameworks</code>, <code>framework_controls</code>, and <code>policy_control_mappings</code> tables with foreign keys</li>
+<li><strong>External mapping file (YAML/JSON) loaded at startup</strong> — Framework definitions in <code>config/frameworks/*.yaml</code>, loaded into memory on app start</li>
+</ol>
+<h2>Decision Outcome</h2>
+<p><strong>Chosen option: &quot;Code-embedded framework definitions with keyword-based policy mapping&quot;</strong>, because it satisfies the no-new-tables constraint, keeps framework definitions version-controlled alongside the code that uses them, enables immediate computation of coverage percentages by joining in-memory framework data with existing <code>PolicyState</code> queries, and aligns with the existing pattern established by <code>ComplianceService._map_severity()</code> which already classifies policies by keyword matching.</p>
+<h3>Architecture Overview</h3>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│  GET /api/v1/compliance/frameworks                  │
+│  GET /api/v1/compliance/frameworks/{framework_id}   │
+└──────────────────────┬──────────────────────────────┘
+                       │
+           ┌───────────▼───────────────┐
+           │  FrameworkMappingService   │
+           │  (app/api/services/)      │
+           └───────────┬───────────────┘
+                       │
+          ┌────────────┼────────────────┐
+          │            │                │
+    ┌─────▼─────┐  ┌──▼──────────┐  ┌──▼──────────────┐
+    │ Framework  │  │ PolicyState │  │ ComplianceSnapshot│
+    │ Registry   │  │ (DB query)  │  │ (DB query)        │
+    │ (in-memory)│  └─────────────┘  └──────────────────┘
+    └────────────┘
+         │
+    Python dataclasses
+    with keyword→control
+    mapping tables
+</code></pre>
+<h3>Framework Definition Structure</h3>
+<p>Each framework is defined as a Python dataclass with:</p>
+<ul>
+<li><strong>Framework metadata</strong>: ID, name, version, description</li>
+<li><strong>Control categories</strong>: Hierarchical grouping (e.g., CC6 → CC6.1, CC6.2, ...)</li>
+<li><strong>Control definitions</strong>: ID, name, brief description</li>
+<li><strong>Keyword mappings</strong>: Which <code>PolicyState.policy_name</code> / <code>policy_category</code> keywords indicate coverage of which control</li>
+</ul>
+<pre><code class="language-python">@dataclass(frozen=True)
+class FrameworkControl:
+    &quot;&quot;&quot;A single control within a regulatory framework.&quot;&quot;&quot;
+    id: str                    # e.g., &quot;CC6.1&quot;
+    name: str                  # e.g., &quot;Logical Access Security&quot;
+    description: str           # Brief description (not full AICPA text)
+    category_id: str           # e.g., &quot;CC6&quot;
+
+@dataclass(frozen=True)
+class ControlCategory:
+    &quot;&quot;&quot;A category grouping related controls.&quot;&quot;&quot;
+    id: str                    # e.g., &quot;CC6&quot;
+    name: str                  # e.g., &quot;Logical and Physical Access Controls&quot;
+    controls: tuple[FrameworkControl, ...]
+
+@dataclass(frozen=True)
+class RegulatoryFramework:
+    &quot;&quot;&quot;A complete regulatory framework definition.&quot;&quot;&quot;
+    id: str                    # e.g., &quot;soc2&quot;
+    name: str                  # e.g., &quot;SOC 2 Type II&quot;
+    version: str               # e.g., &quot;2017 with 2022 revisions&quot;
+    description: str
+    categories: tuple[ControlCategory, ...]
+</code></pre>
+<h3>Keyword-to-Control Mapping Approach</h3>
+<p>The mapping uses a <strong>two-tier strategy</strong>:</p>
+<p><strong>Tier 1 — Azure group name matching</strong> (highest confidence): When <code>PolicyState.policy_category</code> contains Azure initiative group names like <code>SOC_2_CC6.1</code> or <code>NIST_CSF_v2.0_PR.AA_01</code>, these map directly to framework controls. This leverages Azure&#39;s own SOC2 and NIST CSF built-in initiatives.</p>
+<p><strong>Tier 2 — Keyword matching</strong> (supplementary): When Azure group names aren&#39;t present, fall back to matching <code>PolicyState.policy_name</code> keywords to controls. This extends the existing <code>ComplianceService._map_severity()</code> pattern. Example: a policy containing &quot;encryption&quot; AND &quot;transit&quot; maps to CC6.7 (transmission protection) and PR.DS-02 (data in transit).</p>
+<pre><code class="language-python"># Tier 1: Direct Azure initiative group name → control mapping
+AZURE_GROUP_TO_CONTROL: dict[str, list[tuple[str, str]]] = {
+    &quot;SOC_2_CC6.1&quot;: [(&quot;soc2&quot;, &quot;CC6.1&quot;)],
+    &quot;SOC_2_CC6.3&quot;: [(&quot;soc2&quot;, &quot;CC6.3&quot;)],
+    &quot;NIST_CSF_v2.0_PR.AA_01&quot;: [(&quot;nist_csf&quot;, &quot;PR.AA-01&quot;)],
+    # ... full mapping in implementation spec
+}
+
+# Tier 2: Keyword sets → control mapping (fallback)
+KEYWORD_CONTROL_MAP: list[tuple[frozenset[str], list[tuple[str, str]]]] = [
+    (frozenset({&quot;encryption&quot;, &quot;transit&quot;}), [(&quot;soc2&quot;, &quot;CC6.7&quot;), (&quot;nist_csf&quot;, &quot;PR.DS-02&quot;)]),
+    (frozenset({&quot;mfa&quot;}), [(&quot;soc2&quot;, &quot;CC6.1&quot;), (&quot;nist_csf&quot;, &quot;PR.AA-01&quot;)]),
+    (frozenset({&quot;firewall&quot;}), [(&quot;soc2&quot;, &quot;CC6.6&quot;), (&quot;nist_csf&quot;, &quot;PR.AA-05&quot;)]),
+    # ... full mapping in implementation spec
+]
+</code></pre>
+<h3>API Design</h3>
+<h4><code>GET /api/v1/compliance/frameworks</code></h4>
+<p>Returns all available regulatory frameworks with summary coverage data.</p>
+<pre><code class="language-json">{
+  &quot;frameworks&quot;: [
+    {
+      &quot;id&quot;: &quot;soc2&quot;,
+      &quot;name&quot;: &quot;SOC 2 Type II&quot;,
+      &quot;version&quot;: &quot;2017 with 2022 revisions&quot;,
+      &quot;description&quot;: &quot;Trust Service Criteria for Security, Availability, Processing Integrity, Confidentiality, Privacy&quot;,
+      &quot;total_controls&quot;: 35,
+      &quot;categories_count&quot;: 12,
+      &quot;coverage_summary&quot;: {
+        &quot;controls_with_coverage&quot;: 22,
+        &quot;controls_without_coverage&quot;: 13,
+        &quot;overall_coverage_percent&quot;: 62.9
+      }
+    },
+    {
+      &quot;id&quot;: &quot;nist_csf&quot;,
+      &quot;name&quot;: &quot;NIST Cybersecurity Framework&quot;,
+      &quot;version&quot;: &quot;2.0 (February 2024)&quot;,
+      &quot;description&quot;: &quot;Framework for improving critical infrastructure cybersecurity&quot;,
+      &quot;total_controls&quot;: 22,
+      &quot;categories_count&quot;: 6,
+      &quot;coverage_summary&quot;: {
+        &quot;controls_with_coverage&quot;: 15,
+        &quot;controls_without_coverage&quot;: 7,
+        &quot;overall_coverage_percent&quot;: 68.2
+      }
+    }
+  ]
+}
+</code></pre>
+<h4><code>GET /api/v1/compliance/frameworks/{framework_id}</code></h4>
+<p>Returns full framework mapping with per-control compliance status.</p>
+<p>Query parameters:</p>
+<ul>
+<li><code>tenant_ids: list[str] | None</code> — filter to specific tenants</li>
+<li><code>include_policies: bool = false</code> — include matched policy details per control</li>
+</ul>
+<pre><code class="language-json">{
+  &quot;framework&quot;: {
+    &quot;id&quot;: &quot;soc2&quot;,
+    &quot;name&quot;: &quot;SOC 2 Type II&quot;,
+    &quot;version&quot;: &quot;2017 with 2022 revisions&quot;
+  },
+  &quot;overall_coverage_percent&quot;: 62.9,
+  &quot;categories&quot;: [
+    {
+      &quot;id&quot;: &quot;CC6&quot;,
+      &quot;name&quot;: &quot;Logical and Physical Access Controls&quot;,
+      &quot;coverage_percent&quot;: 75.0,
+      &quot;controls&quot;: [
+        {
+          &quot;id&quot;: &quot;CC6.1&quot;,
+          &quot;name&quot;: &quot;Logical Access Security&quot;,
+          &quot;description&quot;: &quot;Logical access security software, infrastructure, and architectures&quot;,
+          &quot;status&quot;: &quot;covered&quot;,
+          &quot;matched_policies_count&quot;: 5,
+          &quot;compliant_count&quot;: 3,
+          &quot;non_compliant_count&quot;: 2,
+          &quot;compliance_percent&quot;: 60.0,
+          &quot;matched_policies&quot;: [
+            {
+              &quot;policy_name&quot;: &quot;MFA should be enabled on accounts with owner permissions&quot;,
+              &quot;compliance_state&quot;: &quot;NonCompliant&quot;,
+              &quot;non_compliant_count&quot;: 2,
+              &quot;mapping_confidence&quot;: &quot;high&quot;
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+</code></pre>
+<h3>Consequences</h3>
+<p><strong>Good:</strong></p>
+<ul>
+<li><strong>Zero database migration</strong> — framework definitions are pure Python code; no Alembic migration needed</li>
+<li><strong>Version-controlled</strong> — framework definitions change with git commits, enabling full audit trail</li>
+<li><strong>Instant extensibility</strong> — adding ISO 27001 requires only a new Python module, no schema changes</li>
+<li><strong>Leverages existing data</strong> — computes coverage from <code>PolicyState</code> records already synced by the compliance pipeline</li>
+<li><strong>Azure-native alignment</strong> — uses Azure&#39;s own initiative group names for high-confidence mapping</li>
+<li><strong>Read-time freshness</strong> — coverage percentages always reflect current compliance state</li>
+<li><strong>Low implementation cost</strong> — ~3 new files, ~500 lines of code, 1 sprint</li>
+</ul>
+<p><strong>Bad:</strong></p>
+<ul>
+<li><strong>Keyword mapping is heuristic</strong> — not all policies will map cleanly; some controls may show as &quot;no coverage&quot; when partial coverage exists via unmapped policies</li>
+<li><strong>No runtime customization</strong> — MSP administrators cannot add custom framework-to-policy mappings without code changes</li>
+<li><strong>Coverage ≠ certification</strong> — SOC2 compliance requires auditor judgment beyond policy state; must clearly label as &quot;automated coverage assessment, not audit opinion&quot;</li>
+</ul>
+<p><strong>Neutral:</strong></p>
+<ul>
+<li>Framework definitions will need periodic updates when AICPA revises TSC or NIST publishes CSF updates — but this happens on multi-year cycles</li>
+</ul>
+<h3>Confirmation</h3>
+<p>This decision is confirmed when:</p>
+<ol>
+<li><code>GET /api/v1/compliance/frameworks</code> returns both SOC2 and NIST CSF with coverage percentages</li>
+<li><code>GET /api/v1/compliance/frameworks/soc2</code> returns all control categories with per-control compliance data</li>
+<li>Framework definitions are Python dataclasses in <code>app/api/services/framework_definitions.py</code></li>
+<li>No new Alembic migration is required</li>
+<li>Keyword mapping covers ≥20 SOC2 controls and ≥15 NIST CSF controls</li>
+<li>All fitness functions pass</li>
+</ol>
+<h2>STRIDE Security Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Threat Category</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Spoofing</strong></td>
+<td>Low</td>
+<td>Framework endpoints require authentication via existing <code>get_current_user</code> dependency; tenant filtering uses existing <code>TenantAuthorization</code> middleware — same pattern as <code>/api/v1/compliance/summary</code></td>
+</tr>
+<tr>
+<td><strong>Tampering</strong></td>
+<td><strong>None</strong></td>
+<td>Framework definitions are frozen dataclasses in source code — no runtime mutation path. Coverage percentages are computed from existing <code>PolicyState</code> records which have their own integrity controls</td>
+</tr>
+<tr>
+<td><strong>Repudiation</strong></td>
+<td>Low</td>
+<td>Framework definition changes tracked via git history; API access logged via existing audit middleware; coverage percentages are deterministic (same DB state → same result)</td>
+</tr>
+<tr>
+<td><strong>Information Disclosure</strong></td>
+<td>Low</td>
+<td>Framework definitions are public knowledge (SOC2 control IDs, NIST CSF categories); compliance coverage data is tenant-scoped via existing <code>TenantAuthorization</code>; no new sensitive data introduced</td>
+</tr>
+<tr>
+<td><strong>Denial of Service</strong></td>
+<td>Low</td>
+<td>Coverage computation queries <code>PolicyState</code> table (already indexed by <code>tenant_id</code>); framework registries are tiny in-memory structures (~5KB); no expensive joins or aggregations beyond existing compliance queries</td>
+</tr>
+<tr>
+<td><strong>Elevation of Privilege</strong></td>
+<td><strong>None</strong></td>
+<td>No new authorization model introduced; reuses existing <code>get_current_user</code> + <code>TenantAuthorization</code>; framework data is read-only reference material with no write endpoints</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Security Posture</strong>: This decision introduces <strong>no new attack surfaces</strong>. The framework definitions are static, read-only reference data. The only computation is joining in-memory framework definitions with existing <code>PolicyState</code> queries that already enforce tenant isolation. The API endpoints reuse the same authentication and authorization stack as all other compliance endpoints.</p>
+<p><strong>Key Security Design Principle</strong>: Framework definitions are <code>frozen=True</code> dataclasses — immutable at the Python level. There is no API endpoint to modify them, no database table to inject into, and no configuration file to tamper with at runtime.</p>
+<h2>Pros and Cons of the Options</h2>
+<h3>Option A — Code-Embedded Framework Definitions with Keyword Mapping (selected)</h3>
+<p><em>Python frozen dataclasses define frameworks and controls; <code>PolicyState</code> fields are matched to controls via Azure group names and keyword heuristics; coverage computed at query time.</em></p>
+<ul>
+<li>Good, because <strong>zero database migration</strong> — no new tables, no Alembic version, no schema coupling</li>
+<li>Good, because <strong>version-controlled</strong> — framework definitions are reviewed, committed, and auditable via git history</li>
+<li>Good, because <strong>frozen dataclasses</strong> provide immutability guarantees — no runtime mutation possible</li>
+<li>Good, because <strong>Azure group name matching</strong> (Tier 1) provides high-confidence mapping aligned with Microsoft&#39;s own SOC2/NIST initiatives</li>
+<li>Good, because <strong>keyword fallback</strong> (Tier 2) extends the existing <code>_map_severity()</code> pattern in <code>ComplianceService</code></li>
+<li>Good, because <strong>read-time computation</strong> always reflects current compliance state</li>
+<li>Good, because <strong>extensibility</strong> — adding ISO 27001 is just a new Python module with dataclass definitions</li>
+<li>Neutral, because framework updates require code changes — but AICPA/NIST publish on multi-year cycles</li>
+<li>Bad, because <strong>keyword mapping is heuristic</strong> — edge cases will exist where policies don&#39;t map cleanly</li>
+<li>Bad, because <strong>no runtime customization</strong> — MSP admins can&#39;t override mappings without deploying code</li>
+<li>Bad, because <strong>coverage ≠ certification</strong> — must clearly disclaim this is automated assessment, not audit opinion</li>
+</ul>
+<h3>Option B — New Database Tables for Frameworks and Mappings</h3>
+<p><em><code>compliance_frameworks</code>, <code>framework_controls</code>, <code>policy_control_mappings</code> tables with CRUD endpoints for custom mappings.</em></p>
+<ul>
+<li>Good, because MSP administrators can customize mappings at runtime</li>
+<li>Good, because mapping changes don&#39;t require code deployment</li>
+<li>Good, because standard relational modeling with foreign keys and constraints</li>
+<li>Bad, because <strong>requires Alembic migration</strong> — adds schema complexity for data that changes on multi-year cycles</li>
+<li>Bad, because <strong>framework definitions become mutable</strong> — risk of accidental or malicious modification</li>
+<li>Bad, because <strong>mapping CRUD requires new authorization model</strong> — who can change which framework definitions?</li>
+<li>Bad, because <strong>6 new tables minimum</strong> — <code>frameworks</code>, <code>categories</code>, <code>controls</code>, <code>keyword_maps</code>, <code>group_maps</code>, <code>coverage_snapshots</code></li>
+<li>Bad, because <strong>stale data risk</strong> — coverage snapshots may not reflect current <code>PolicyState</code> data</li>
+</ul>
+<h3>Option C — External YAML/JSON Files Loaded at Startup</h3>
+<p><em>Framework definitions in <code>config/frameworks/soc2.yaml</code> and <code>config/frameworks/nist_csf.yaml</code>, loaded into memory on application start.</em></p>
+<ul>
+<li>Good, because YAML is human-readable and easy to edit</li>
+<li>Good, because no database migration needed</li>
+<li>Good, because configuration-as-code pattern is well understood</li>
+<li>Neutral, because still requires restart to pick up changes (same as Option A)</li>
+<li>Bad, because <strong>no type safety</strong> — YAML parsing errors only caught at runtime, not at import time</li>
+<li>Bad, because <strong>no IDE support</strong> — no autocomplete, no type checking on framework definitions</li>
+<li>Bad, because <strong>deserialization overhead</strong> — must validate YAML structure on every startup</li>
+<li>Bad, because <strong>file path dependency</strong> — adds deployment concern about config file presence</li>
+<li>Bad, because <strong>YAML is a superset of JSON</strong> with known parsing pitfalls (Norway problem, implicit type coercion)</li>
+</ul>
+<h2>Fitness Functions</h2>
+<p>The following automated tests enforce this ADR. They are located in <code>tests/architecture/test_fitness_functions.py</code>:</p>
+<h3>FF-1: Framework definitions are immutable (frozen dataclasses)</h3>
+<pre><code class="language-python">def test_framework_definitions_are_frozen():
+    &quot;&quot;&quot;ADR-0006 FF-1: Framework definitions must be frozen dataclasses.
+
+    Ensures no runtime mutation of framework registry data.
+    &quot;&quot;&quot;
+    framework_file = Path(&quot;app/api/services/framework_definitions.py&quot;)
+    if not framework_file.exists():
+        pytest.skip(&quot;framework_definitions.py not yet implemented&quot;)
+
+    content = framework_file.read_text()
+    assert &quot;frozen=True&quot; in content, (
+        &quot;ADR-0006 violation: Framework dataclasses must use frozen=True &quot;
+        &quot;to prevent runtime mutation of regulatory framework definitions.&quot;
+    )
+    assert &quot;@dataclass(frozen=True)&quot; in content or &quot;frozen=True&quot; in content, (
+        &quot;ADR-0006 violation: All framework definition dataclasses must be frozen.&quot;
+    )
+</code></pre>
+<h3>FF-2: Framework endpoints require authentication</h3>
+<pre><code class="language-python">def test_framework_endpoints_require_auth():
+    &quot;&quot;&quot;ADR-0006 FF-2: /api/v1/compliance/frameworks endpoints must require authentication.
+
+    The frameworks router must be nested under the compliance router which
+    requires get_current_user, or have its own auth dependency.
+    &quot;&quot;&quot;
+    route_files = [
+        Path(&quot;app/api/routes/compliance.py&quot;),
+        Path(&quot;app/api/routes/compliance_frameworks.py&quot;),
+    ]
+
+    for route_file in route_files:
+        if not route_file.exists():
+            continue
+        content = route_file.read_text()
+        if &quot;frameworks&quot; in content:
+            assert &quot;get_current_user&quot; in content, (
+                f&quot;ADR-0006 violation: {route_file.name} contains framework endpoints &quot;
+                f&quot;but does not require authentication via Depends(get_current_user).&quot;
+            )
+</code></pre>
+<h3>FF-3: No new Alembic migration for frameworks</h3>
+<pre><code class="language-python">def test_no_framework_alembic_migration():
+    &quot;&quot;&quot;ADR-0006 FF-3: No new database tables for framework definitions.
+
+    Framework data is code-embedded (frozen dataclasses), not DB-stored.
+    &quot;&quot;&quot;
+    migrations_dir = Path(&quot;alembic/versions&quot;)
+    if not migrations_dir.exists():
+        pytest.skip(&quot;alembic/versions not found&quot;)
+
+    for migration_file in migrations_dir.glob(&quot;*.py&quot;):
+        content = migration_file.read_text()
+        assert &quot;compliance_frameworks&quot; not in content, (
+            f&quot;ADR-0006 violation: {migration_file.name} creates a compliance_frameworks &quot;
+            f&quot;table. Framework definitions must be code-embedded, not DB-stored.&quot;
+        )
+        assert &quot;framework_controls&quot; not in content, (
+            f&quot;ADR-0006 violation: {migration_file.name} creates a framework_controls &quot;
+            f&quot;table. Framework definitions must be code-embedded, not DB-stored.&quot;
+        )
+</code></pre>
+<h3>FF-4: Minimum control coverage in mappings</h3>
+<pre><code class="language-python">def test_minimum_framework_control_coverage():
+    &quot;&quot;&quot;ADR-0006 FF-4: Framework definitions must have minimum control counts.
+
+    SOC2: ≥20 controls defined with keyword mappings
+    NIST CSF: ≥15 controls defined with keyword mappings
+    &quot;&quot;&quot;
+    try:
+        from app.api.services.framework_definitions import FRAMEWORK_REGISTRY
+    except ImportError:
+        pytest.skip(&quot;framework_definitions not yet implemented&quot;)
+
+    soc2 = FRAMEWORK_REGISTRY.get(&quot;soc2&quot;)
+    nist = FRAMEWORK_REGISTRY.get(&quot;nist_csf&quot;)
+
+    assert soc2 is not None, &quot;ADR-0006 violation: SOC2 framework not in registry&quot;
+    assert nist is not None, &quot;ADR-0006 violation: NIST CSF framework not in registry&quot;
+
+    soc2_controls = sum(len(cat.controls) for cat in soc2.categories)
+    nist_controls = sum(len(cat.controls) for cat in nist.categories)
+
+    assert soc2_controls &gt;= 20, (
+        f&quot;ADR-0006 violation: SOC2 has only {soc2_controls} controls, need ≥20&quot;
+    )
+    assert nist_controls &gt;= 15, (
+        f&quot;ADR-0006 violation: NIST CSF has only {nist_controls} controls, need ≥15&quot;
+    )
+</code></pre>
+<h2>More Information</h2>
+<p><strong>Relates to:</strong> CM-003 (Regulatory Framework Mapping)</p>
+<p><strong>Research Package:</strong> <a href="../../research/compliance-frameworks-soc2-nist/"><code>research/compliance-frameworks-soc2-nist/</code></a> — full evidence including:</p>
+<ul>
+<li>SOC2 Trust Service Criteria complete control listing (CC1–CC9, A1, C1, PI1)</li>
+<li>NIST CSF 2.0 complete category/subcategory structure (6 functions, 22 categories)</li>
+<li>Azure built-in initiative group name conventions for SOC2 and NIST CSF</li>
+<li>Cross-framework equivalence mapping (SOC2 ↔ NIST CSF)</li>
+</ul>
+<p><strong>Key References:</strong></p>
+<ul>
+<li>AICPA SOC 2 Trust Service Criteria: <a href="https://us.aicpa.org/interestareas/frc/assuranceadvisoryservices/trustservicescriteria">https://us.aicpa.org/interestareas/frc/assuranceadvisoryservices/trustservicescriteria</a></li>
+<li>NIST CSF 2.0: <a href="https://www.nist.gov/cyberframework">https://www.nist.gov/cyberframework</a> (published February 26, 2024)</li>
+<li>Azure Policy SOC 2 Initiative: <a href="https://github.com/Azure/azure-policy">https://github.com/Azure/azure-policy</a> (SOC_2.json)</li>
+<li>Azure Policy NIST CSF v2.0 Initiative: <a href="https://github.com/Azure/azure-policy">https://github.com/Azure/azure-policy</a> (NIST_CSF_v2.0.json)</li>
+</ul>
+<p><strong>Related ADRs:</strong></p>
+<ul>
+<li><a href="adr-0005-custom-compliance-rules.md">ADR-0005: Custom compliance rule engine</a> — custom rules that can also be mapped to frameworks</li>
+<li><a href="adr-0004-research-first-protocol.md">ADR-0004: Research-first protocol</a> — research methodology used</li>
+</ul>
+<p><strong>Related Code:</strong></p>
+<ul>
+<li><code>app/models/compliance.py</code> — <code>ComplianceSnapshot</code>, <code>PolicyState</code> models</li>
+<li><code>app/api/services/compliance_service.py</code> — existing compliance service with <code>_map_severity()</code> keyword pattern</li>
+<li><code>app/api/routes/compliance.py</code> — existing <code>/api/v1/compliance/*</code> routes</li>
+<li><code>app/core/sync/compliance.py</code> — sync pipeline receiving <code>policy_definition_group_names</code></li>
+</ul>
+<p><strong>Disclaimer Requirement:</strong>
+All framework coverage endpoints MUST include a disclaimer:</p>
+<blockquote>
+<p>&quot;Automated compliance coverage assessment based on Azure Policy state. This is not an audit opinion. SOC 2 Type II certification requires independent auditor evaluation of the full Trust Service Criteria including controls not assessable via automated policy checks.&quot;</p>
+</blockquote>
+<p><strong>Future Evolution:</strong></p>
+<ul>
+<li>If MSP administrators require custom framework-to-policy mappings, consider a hybrid approach: code-embedded defaults with DB-stored overrides</li>
+<li>When Azure adds new built-in initiatives (e.g., PCI-DSS, ISO 27001), add corresponding framework definitions</li>
+<li>Consider caching coverage computations with TTL matching the compliance sync interval</li>
+</ul>
+<p><strong>Review History:</strong></p>
+<ul>
+<li>2026-03-20: Initial ADR proposed by Solutions Architect 🏛️ (<code>solutions-architect-43aef9</code>)</li>
+<li>Research conducted by: Web Puppy 🕵️</li>
+<li>Pending review: Security Auditor 🛡️ (STRIDE co-sign), Pack Leader 🐺 (sign-off)</li>
+</ul>
+<hr>
+<p><strong>ADR Status:</strong> Proposed
+<strong>Implementation Status:</strong> ⏳ Pending (CM-003)
+<strong>Last Updated:</strong> March 20, 2026
+<strong>Maintained By:</strong> Solutions Architect 🏛️</p>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

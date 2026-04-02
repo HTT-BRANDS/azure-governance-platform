@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADR-0002: Per-Agent Tool Filtering — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Decisions</a><span>›</span>
+        ADR-0002: Per-Agent Tool Filtering
+      </div>
+      <h1 class="page-title">ADR-0002: Per-Agent Tool Filtering</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<hr>
+<h2>status: accepted
+date: 2026-03-06
+decision-makers: Security Auditor, Solutions Architect, Pack Leader
+consulted: Code Reviewer, Agent Creator, Planning Agent
+informed: All Code Puppy agents, development team</h2>
+<h2>Context and Problem Statement</h2>
+<p>With 29 specialized agents in the Code Puppy multi-agent system (see ADR-0001), each agent needs access to different tools to perform their role. For example, Husky needs <code>cp_edit_file</code> to modify code, while QA Kitten needs browser automation tools for web testing. A critical security decision is whether to grant all agents access to all tools (simpler) or implement per-agent allow-lists that enforce least privilege (more secure). The key question: How do we balance convenience with security when managing tool access for 29 agents?</p>
+<h2>Decision Drivers</h2>
+<ul>
+<li><strong>Security (Least Privilege)</strong>: Each agent should only have access to tools necessary for their role</li>
+<li><strong>Blast Radius</strong>: Compromised agent should have minimal impact on system</li>
+<li><strong>Accountability</strong>: Clear mapping of which agents can perform which actions</li>
+<li><strong>Auditability</strong>: Ability to review and justify every agent&#39;s tool access</li>
+<li><strong>Maintainability</strong>: Tool access should be easy to review and update</li>
+<li><strong>Performance</strong>: Tool filtering should not significantly impact agent response time</li>
+<li><strong>Regulatory Compliance</strong>: Azure governance platform must demonstrate security controls</li>
+<li><strong>Defense in Depth</strong>: Multiple security layers to protect the codebase</li>
+</ul>
+<h2>Considered Options</h2>
+<ol>
+<li><strong>All agents get all tools</strong> - Every agent has access to the complete toolset</li>
+<li><strong>Per-agent allow-lists (explicit)</strong> - Each agent JSON defines exactly which tools they can use</li>
+<li><strong>Role-based tool groups</strong> - Tools organized into groups (read-only, write, execute, etc.), agents assigned to groups</li>
+<li><strong>Runtime filtering</strong> - All agents have all tools, but runtime checks prevent usage based on agent identity</li>
+</ol>
+<h2>Decision Outcome</h2>
+<p>Chosen option: <strong>&quot;Per-agent allow-lists (explicit)&quot;</strong>, because it provides the strongest security guarantees with clear auditability and maintainability.</p>
+<h3>Implementation Details</h3>
+<p>Each agent&#39;s JSON file (<code>~/.code_puppy/agents/{agent-name}.json</code>) includes a <code>tool_filter</code> section:</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;husky&quot;,
+  &quot;description&quot;: &quot;Main coding executor&quot;,
+  &quot;tool_filter&quot;: {
+    &quot;allowed_tools&quot;: [
+      &quot;cp_list_files&quot;,
+      &quot;cp_read_file&quot;,
+      &quot;cp_grep&quot;,
+      &quot;cp_edit_file&quot;,
+      &quot;cp_delete_file&quot;,
+      &quot;cp_agent_run_shell_command&quot;
+    ]
+  },
+  ...
+}
+</code></pre>
+<p><strong>Key Principles:</strong></p>
+<ol>
+<li><strong>Deny by default</strong> - If a tool isn&#39;t in the allow-list, agent cannot use it</li>
+<li><strong>Explicit over implicit</strong> - Every tool must be explicitly listed (no wildcards)</li>
+<li><strong>Documented justification</strong> - Tool audit document explains why each agent needs each tool</li>
+<li><strong>Regular review</strong> - Tool access reviewed during security audits (quarterly)</li>
+</ol>
+<h3>Examples by Agent Type</h3>
+<p><strong>Read-Only Agents</strong> (QA Expert, Planning Agent):</p>
+<ul>
+<li>Allow: <code>cp_list_files</code>, <code>cp_read_file</code>, <code>cp_grep</code></li>
+<li>Deny: <code>cp_edit_file</code>, <code>cp_delete_file</code></li>
+<li>Rationale: These agents analyze and plan but don&#39;t modify code</li>
+</ul>
+<p><strong>Code Executors</strong> (Husky, Python Programmer):</p>
+<ul>
+<li>Allow: All file operations + <code>cp_agent_run_shell_command</code></li>
+<li>Deny: <code>invoke_agent</code> (orchestration reserved for Pack Leader)</li>
+<li>Rationale: Need full file access for implementation</li>
+</ul>
+<p><strong>Specialized Writers</strong> (Agent Creator):</p>
+<ul>
+<li>Allow: File operations but restricted to <code>~/.code_puppy/agents/</code> directory</li>
+<li>Deny: Modification of application code</li>
+<li>Rationale: Self-modification limited to agent definitions only</li>
+</ul>
+<p><strong>Orchestrators</strong> (Pack Leader):</p>
+<ul>
+<li>Allow: <code>invoke_agent</code>, read-only file access</li>
+<li>Deny: Direct file modification (must delegate to Husky)</li>
+<li>Rationale: Coordination role, not implementation role</li>
+</ul>
+<h3>Consequences</h3>
+<ul>
+<li><strong>Good</strong>, because compromised agent has minimal blast radius (can&#39;t access unauthorized tools)</li>
+<li><strong>Good</strong>, because clear audit trail - tool access documented and reviewable</li>
+<li><strong>Good</strong>, because enforces separation of concerns (readers vs writers vs executors)</li>
+<li><strong>Good</strong>, because meets principle of least privilege (security best practice)</li>
+<li><strong>Good</strong>, because agents can&#39;t accidentally use wrong tools (prevented at runtime)</li>
+<li><strong>Good</strong>, because regulatory compliance - demonstrable security controls</li>
+<li><strong>Bad</strong>, because requires initial setup effort (defining allow-lists for 29 agents)</li>
+<li><strong>Bad</strong>, because tool changes require updating multiple agent JSONs</li>
+<li><strong>Neutral</strong>, because performance impact is negligible (filter check is fast)</li>
+</ul>
+<h3>Confirmation</h3>
+<p>This decision is validated by:</p>
+<ol>
+<li>Tool audit document exists: <code>docs/security/agent-tool-audit.md</code></li>
+<li>Every agent JSON file has <code>tool_filter.allowed_tools</code> defined</li>
+<li>Runtime enforcement: Agent attempting to use disallowed tool receives error</li>
+<li>Security Auditor review confirms no excessive permissions</li>
+<li>Quarterly audit process documents tool access justification</li>
+</ol>
+<h2>STRIDE Security Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Threat Category</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Spoofing</strong></td>
+<td>Low</td>
+<td>Agent identity verified before tool access granted; agent ID logged with every tool invocation</td>
+</tr>
+<tr>
+<td><strong>Tampering</strong></td>
+<td>Low (reduced from High)</td>
+<td>Per-agent filtering prevents unauthorized file modifications; only agents with <code>cp_edit_file</code> permission can modify code</td>
+</tr>
+<tr>
+<td><strong>Repudiation</strong></td>
+<td>Low</td>
+<td>All tool invocations logged with agent ID, timestamp, tool name, and parameters; comprehensive audit trail</td>
+</tr>
+<tr>
+<td><strong>Information Disclosure</strong></td>
+<td>Low (reduced from Medium)</td>
+<td>Read access limited to agents that need it; prevents casual browsing of sensitive files</td>
+</tr>
+<tr>
+<td><strong>Denial of Service</strong></td>
+<td>Low</td>
+<td>Shell command access limited to specific agents; prevents accidental or malicious resource exhaustion</td>
+</tr>
+<tr>
+<td><strong>Elevation of Privilege</strong></td>
+<td>Low (reduced from High)</td>
+<td>Agents cannot grant themselves new tools; tool list is immutable without Agent Creator involvement</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Security Posture:</strong> Per-agent tool filtering is a <strong>critical security control</strong> that reduces multiple threat categories:</p>
+<ol>
+<li><strong>Tampering</strong>: Without filtering, any compromised agent could modify any file. With filtering, damage is contained.</li>
+<li><strong>Elevation of Privilege</strong>: Agents can&#39;t escalate their own permissions - tool list is defined in JSON, not runtime.</li>
+<li><strong>Information Disclosure</strong>: Read-only agents can&#39;t accidentally execute or modify files.</li>
+</ol>
+<p><strong>Risk Reduction:</strong> This control moves tampering and elevation of privilege risks from <strong>High → Low</strong>, a two-level improvement.</p>
+<h2>Pros and Cons of the Options</h2>
+<h3>All agents get all tools (rejected)</h3>
+<p><em>Every agent has access to complete toolset</em></p>
+<ul>
+<li>Good, because simplest to implement (no filtering logic)</li>
+<li>Good, because no maintenance overhead for tool lists</li>
+<li>Good, because agents can adapt to unexpected needs</li>
+<li>Bad, because <strong>massive security risk</strong> - any compromised agent can do anything</li>
+<li>Bad, because violates least privilege principle</li>
+<li>Bad, because unclear accountability (every agent can modify files)</li>
+<li>Bad, because no blast radius containment</li>
+<li>Bad, because difficult to audit (&quot;everyone can do everything&quot;)</li>
+<li>Bad, because agents might use wrong tools accidentally</li>
+<li><strong>Critical flaw</strong>: Single compromised agent (e.g., via prompt injection) could delete entire codebase</li>
+</ul>
+<h3>Per-agent allow-lists (explicit) (accepted)</h3>
+<p><em>Current decision - see above for full analysis</em></p>
+<ul>
+<li>Good, because strongest security (least privilege enforced)</li>
+<li>Good, because clear accountability and audit trail</li>
+<li>Good, because blast radius containment</li>
+<li>Good, because prevents accidental misuse</li>
+<li>Good, because regulatory compliance friendly</li>
+<li>Bad, because initial setup effort</li>
+<li>Bad, because maintenance overhead when tools change</li>
+<li>Neutral, because performance impact is negligible</li>
+</ul>
+<h3>Role-based tool groups (rejected)</h3>
+<p><em>Tools organized into groups, agents assigned to groups</em></p>
+<ul>
+<li>Good, because easier maintenance than per-agent lists (update group, all agents inherit)</li>
+<li>Good, because some security benefit (better than &quot;all tools&quot;)</li>
+<li>Neutral, because moderate setup complexity</li>
+<li>Bad, because less granular than per-agent (e.g., &quot;Writers&quot; group might be too broad)</li>
+<li>Bad, because agents might get tools they don&#39;t need (group has more than agent needs)</li>
+<li>Bad, because role definitions become complex (&quot;Writer&quot; vs &quot;Privileged Writer&quot; vs &quot;Limited Writer&quot;?)</li>
+<li>Bad, because less clear accountability (&quot;some agent in the Writers group did this&quot;)</li>
+</ul>
+<h3>Runtime filtering (rejected)</h3>
+<p><em>All agents have all tools, runtime checks prevent usage</em></p>
+<ul>
+<li>Good, because flexible (can change filtering without updating agents)</li>
+<li>Neutral, because security depends on correct runtime implementation</li>
+<li>Bad, because tools still &quot;visible&quot; to agent (temptation to bypass)</li>
+<li>Bad, because runtime checks can be bypassed if implementation has bugs</li>
+<li>Bad, because no clear declaration of agent capabilities (must read runtime code)</li>
+<li>Bad, because auditability is harder (filtering logic scattered across codebase)</li>
+<li>Bad, because &quot;allow all, filter later&quot; is opposite of secure design</li>
+</ul>
+<h2>More Information</h2>
+<p><strong>Related Requirements:</strong></p>
+<ul>
+<li>REQ-103: Audit all agent tool permissions</li>
+<li>REQ-604: Self-modification protections (Agent Creator only)</li>
+<li>REQ-601: STRIDE analysis for all agents</li>
+<li>ADR-0001: Multi-agent architecture (establishes 29 agents)</li>
+</ul>
+<p><strong>Related Documents:</strong></p>
+<ul>
+<li><a href="../security/agent-tool-audit.md">Agent Tool Audit</a> - Comprehensive audit of all 29 agents&#39; tool access</li>
+<li><a href="../../TRACEABILITY_MATRIX.md">TRACEABILITY_MATRIX.md</a> - Maps security requirements to agents</li>
+<li><a href="../../SECURITY_IMPLEMENTATION.md">SECURITY_IMPLEMENTATION.md</a> - Overall security architecture</li>
+</ul>
+<p><strong>Tool Categories:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Tools</th>
+<th>Risk Level</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Read</strong></td>
+<td><code>cp_list_files</code>, <code>cp_read_file</code>, <code>cp_grep</code></td>
+<td>Low</td>
+</tr>
+<tr>
+<td><strong>Write</strong></td>
+<td><code>cp_edit_file</code>, <code>cp_delete_file</code></td>
+<td>High</td>
+</tr>
+<tr>
+<td><strong>Execute</strong></td>
+<td><code>cp_agent_run_shell_command</code></td>
+<td>Critical</td>
+</tr>
+<tr>
+<td><strong>Orchestrate</strong></td>
+<td><code>invoke_agent</code>, <code>cp_activate_skill</code></td>
+<td>Medium</td>
+</tr>
+<tr>
+<td><strong>Search</strong></td>
+<td><code>cp_list_or_search_skills</code></td>
+<td>Low</td>
+</tr>
+</tbody></table>
+<p><strong>Audit Process:</strong></p>
+<ol>
+<li><strong>Quarterly Review</strong> - Security Auditor reviews all agent tool lists</li>
+<li><strong>New Agent Review</strong> - Agent Creator submits tool list for review before agent activation</li>
+<li><strong>Tool Change Review</strong> - Any tool addition requires Security Auditor sign-off</li>
+<li><strong>Incident Response</strong> - If agent is compromised, tool list immediately reviewed and potentially reduced</li>
+</ol>
+<p><strong>Validation:</strong></p>
+<ul>
+<li>✅ All 29 agents have <code>tool_filter.allowed_tools</code> defined</li>
+<li>✅ Tool audit document completed (Jan 2026, reviewed March 2026)</li>
+<li>✅ Runtime enforcement tested and confirmed</li>
+<li>✅ No agent has excessive permissions (per Security Auditor review)</li>
+</ul>
+<p><strong>Review History:</strong></p>
+<ul>
+<li>2026-03-06: Initial decision documented (retroactive ADR)</li>
+<li>Reviewed by: Security Auditor 🛡️, Code Reviewer 🛡️, Solutions Architect 🏛️</li>
+<li>Signed off by: Pack Leader 🐺</li>
+</ul>
+<p><strong>When to Revisit:</strong></p>
+<ul>
+<li>If new tool types are added to Code Puppy</li>
+<li>If agent roles significantly change</li>
+<li>After any security incident involving agent tool usage</li>
+<li>During annual security architecture review</li>
+</ul>
+<hr>
+<p><strong>ADR Status:</strong> Accepted<br><strong>Implementation Status:</strong> ✅ Complete (agent-tool-audit.md documents all 29 agents)<br><strong>Last Updated:</strong> March 6, 2026</p>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

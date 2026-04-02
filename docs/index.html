@@ -14,6 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/main.css">
+  <link rel="stylesheet" href="assets/icons.css">
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -62,32 +63,44 @@
       </div>
       <div class="grid grid--3">
         <div class="card">
-          <div class="card-icon">🔐</div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
           <h3 class="card-title">Zero-Secrets Auth</h3>
           <p class="card-description">Azure AD B2C with OIDC, User-Assigned Managed Identity, and zero secrets in code. Defense-in-depth authentication.</p>
         </div>
         <div class="card">
-          <div class="card-icon">💰</div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
           <h3 class="card-title">Cost Optimization</h3>
           <p class="card-description">Automated cost analysis and recommendations. 77% savings achieved — from $145/mo to $33/mo with continuous monitoring.</p>
         </div>
         <div class="card">
-          <div class="card-icon">📊</div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          </div>
           <h3 class="card-title">Compliance Monitoring</h3>
           <p class="card-description">Continuous governance assessment against regulatory frameworks. Custom compliance rules with real-time scoring.</p>
         </div>
         <div class="card">
-          <div class="card-icon">🔍</div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
           <h3 class="card-title">Resource Discovery</h3>
           <p class="card-description">Automated Azure resource inventory across subscriptions. Cross-tenant visibility via Azure Lighthouse integration.</p>
         </div>
         <div class="card">
-          <div class="card-icon">👥</div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
           <h3 class="card-title">Identity Governance</h3>
           <p class="card-description">Multi-tenant identity management with row-level security. Role-based access control with department-based personas.</p>
         </div>
         <div class="card">
-          <div class="card-icon">🚨</div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          </div>
           <h3 class="card-title">Alerting &amp; Monitoring</h3>
           <p class="card-description">Real-time anomaly detection with Application Insights and OpenTelemetry. Four active alert rules with auto-escalation.</p>
         </div>
@@ -120,25 +133,33 @@
       </div>
       <div class="grid grid--2">
         <a href="architecture/" class="doc-card">
-          <div class="doc-card-icon">🏗️</div>
+          <div class="doc-card-icon">
+            <svg viewBox="0 0 24 24"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7-7H4a2 2 0 0 0-2 2v17Z"/><path d="M14 2v7h7"/></svg>
+          </div>
           <div class="doc-card-title">Architecture</div>
           <div class="doc-card-description">System design, components, data flow, and deployment topology.</div>
           <div class="doc-card-link">Explore →</div>
         </a>
         <a href="operations/" class="doc-card">
-          <div class="doc-card-icon">⚙️</div>
+          <div class="doc-card-icon">
+            <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
           <div class="doc-card-title">Operations</div>
           <div class="doc-card-description">Runbooks, playbooks, cost analysis, and day-to-day procedures.</div>
           <div class="doc-card-link">Explore →</div>
         </a>
         <a href="api/" class="doc-card">
-          <div class="doc-card-icon">🔌</div>
+          <div class="doc-card-icon">
+            <svg viewBox="0 0 24 24"><path d="m16 18 2 2 4-4"/><path d="M21 12V8.5C21 5 19 3 15.5 3h-7C5 3 3 5 3 8.5v7C3 19 5 21 8.5 21H12"/></svg>
+          </div>
           <div class="doc-card-title">API Reference</div>
           <div class="doc-card-description">Endpoints, schemas, authentication, and integration guides.</div>
           <div class="doc-card-link">Explore →</div>
         </a>
         <a href="decisions/" class="doc-card">
-          <div class="doc-card-icon">📝</div>
+          <div class="doc-card-icon">
+            <svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+          </div>
           <div class="doc-card-title">Decisions</div>
           <div class="doc-card-description">Architecture Decision Records documenting key technical choices.</div>
           <div class="doc-card-link">Explore →</div>
@@ -243,18 +264,16 @@ make dev</code></pre>
   </footer>
 
   <script>
-  // Mobile navigation toggle
   (function() {
-    const toggle = document.querySelector('.nav-toggle');
-    const navLinks = document.querySelector('.nav-links');
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
     if (toggle && navLinks) {
       toggle.addEventListener('click', function() {
         navLinks.classList.toggle('open');
-        const isOpen = navLinks.classList.contains('open');
-        this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
       });
     }
   })();
-</script>
+  </script>
 </body>
 </html>

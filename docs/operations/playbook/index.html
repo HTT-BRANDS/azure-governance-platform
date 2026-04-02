@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Operations Playbook — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Operations</a><span>›</span>
+        Operations Playbook
+      </div>
+      <h1 class="page-title">Operations Playbook</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<blockquote>
+<p><strong>Document Version:</strong> 1.0<br><strong>Last Updated:</strong> May 2025<br><strong>Audience:</strong> DevOps Engineers, SREs, Platform Operators, On-Call Staff<br><strong>System:</strong> Azure Governance Platform v1.6+</p>
+</blockquote>
+<hr>
+<h2>Table of Contents</h2>
+<ol>
+<li><a href="#1-overview">Overview</a></li>
+<li><a href="#2-daily-operations">Daily Operations</a></li>
+<li><a href="#3-system-health-checks">System Health Checks</a></li>
+<li><a href="#4-common-troubleshooting">Common Troubleshooting</a></li>
+<li><a href="#5-alert-response">Alert Response</a></li>
+<li><a href="#6-incident-response">Incident Response</a></li>
+<li><a href="#7-escalation-procedures">Escalation Procedures</a></li>
+<li><a href="#8-contact-information">Contact Information</a></li>
+<li><a href="#9-runbook-templates">Runbook Templates</a></li>
+</ol>
+<hr>
+<h2>1. Overview</h2>
+<h3>1.1 Purpose</h3>
+<p>This playbook provides day-to-day operational guidance for the Azure Governance Platform. It covers:</p>
+<ul>
+<li>Routine health checks and monitoring</li>
+<li>Common troubleshooting scenarios</li>
+<li>Alert response procedures</li>
+<li>Escalation paths</li>
+<li>Emergency contacts</li>
+</ul>
+<h3>1.2 System Architecture Overview</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                    Azure App Service                         │
+│              (Azure Governance Platform)                     │
+├─────────────────────────────────────────────────────────────┤
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │   API    │  │  Static  │  │  Auth    │  │  Sync    │   │
+│  │  Layer   │  │   Files  │  │  Service │  │ Scheduler│   │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘   │
+└───────┼─────────────┼─────────────┼─────────────┼─────────┘
+        │             │             │             │
+   ┌────┴─────┐ ┌────┴─────┐ ┌────┴─────┐ ┌──────┴──────┐
+   │  Azure   │ │   Key    │ │  Azure   │ │ Azure AD /  │
+   │   SQL    │ │  Vault   │ │  Monitor │ │   Entra ID  │
+   │ Database │ │          │ │          │ │             │
+   └──────────┘ └──────────┘ └──────────┘ └─────────────┘
+</code></pre>
+<h3>1.3 Critical Dependencies</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Impact if Down</th>
+<th>Recovery Time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Azure App Service</td>
+<td>Complete outage</td>
+<td>5-15 minutes</td>
+</tr>
+<tr>
+<td>Azure SQL Database</td>
+<td>Data unavailable</td>
+<td>5-30 minutes</td>
+</tr>
+<tr>
+<td>Azure AD</td>
+<td>Auth failures</td>
+<td>0-60 minutes (Microsoft managed)</td>
+</tr>
+<tr>
+<td>Key Vault</td>
+<td>Secret retrieval fails</td>
+<td>5-10 minutes</td>
+</tr>
+<tr>
+<td>Application Insights</td>
+<td>Monitoring blind</td>
+<td>5 minutes (non-critical)</td>
+</tr>
+</tbody></table>
+<h3>1.4 Operational Hours</h3>
+<ul>
+<li><strong>Standard Support:</strong> Monday-Friday, 8:00 AM - 6:00 PM ET</li>
+<li><strong>On-Call Support:</strong> 24/7 for P1 incidents</li>
+<li><strong>Maintenance Windows:</strong> Sundays 2:00 AM - 6:00 AM ET</li>
+</ul>
+<hr>
+<h2>2. Daily Operations</h2>
+<h3>2.1 Morning Health Check (Start of Shift)</h3>
+<p><strong>Time Required:</strong> 5 minutes</p>
+<pre><code class="language-bash">#!/bin/bash
+# Save as: ~/scripts/daily-health-check.sh
+
+BASE_URL=&quot;https://app-governance-prod.azurewebsites.net&quot;
+WEBHOOK_URL=&quot;${TEAMS_WEBHOOK_URL:-}&quot;
+
+echo &quot;=== Daily Health Check - $(date) ===&quot;
+
+# Check 1: Basic health
+HEALTH=$(curl -s &quot;$BASE_URL/health&quot; 2&gt;/dev/null)
+if [[ &quot;$HEALTH&quot; != *&quot;healthy&quot;* ]]; then
+    echo &quot;❌ CRITICAL: Health check failed&quot;
+    # Send alert if configured
+    [[ -n &quot;$WEBHOOK_URL&quot; ]] &amp;&amp; curl -s -X POST &quot;$WEBHOOK_URL&quot; \
+        -H &quot;Content-Type: application/json&quot; \
+        -d &#39;{&quot;text&quot;:&quot;🚨 Azure Governance Platform - Health check failed&quot;}&#39;
+    exit 1
+fi
+echo &quot;✅ Health check passed&quot;
+
+# Check 2: Database connectivity
+DB_STATUS=$(curl -s &quot;$BASE_URL/health/detailed&quot; | jq -r &#39;.components.database&#39;)
+if [[ &quot;$DB_STATUS&quot; != &quot;healthy&quot; &amp;&amp; &quot;$DB_STATUS&quot; != *&quot;sqlite&quot;* ]]; then
+    echo &quot;❌ WARNING: Database status: $DB_STATUS&quot;
+else
+    echo &quot;✅ Database: $DB_STATUS&quot;
+fi
+
+# Check 3: Scheduler status
+SCHEDULER=$(curl -s &quot;$BASE_URL/health/detailed&quot; | jq -r &#39;.components.scheduler&#39;)
+echo &quot;📊 Scheduler: $SCHEDULER&quot;
+
+# Check 4: Active alerts
+ALERTS=$(curl -s &quot;$BASE_URL/api/v1/sync/alerts&quot; 2&gt;/dev/null | jq &#39;.alerts | length&#39;)
+echo &quot;🔔 Active alerts: $ALERTS&quot;
+
+# Check 5: Recent sync jobs
+JOBS=$(curl -s &quot;$BASE_URL/api/v1/sync/status&quot; 2&gt;/dev/null | jq &#39;.jobs | length&#39;)
+echo &quot;🔄 Active sync jobs: $JOBS&quot;
+
+echo &quot;=== Check Complete ===&quot;
+</code></pre>
+<h3>2.2 Dashboard Review Checklist</h3>
+<p>Access: <code>https://app-governance-prod.azurewebsites.net/dashboard</code></p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Expected</th>
+<th>Action if Failed</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Dashboard loads</td>
+<td>&lt; 3 seconds</td>
+<td>Check app health</td>
+</tr>
+<tr>
+<td>Cost data age</td>
+<td>&lt; 25 hours</td>
+<td>Trigger manual sync</td>
+</tr>
+<tr>
+<td>Compliance age</td>
+<td>&lt; 5 hours</td>
+<td>Trigger compliance sync</td>
+</tr>
+<tr>
+<td>Resources age</td>
+<td>&lt; 2 hours</td>
+<td>Trigger resource sync</td>
+</tr>
+<tr>
+<td>Alert count</td>
+<td>0 critical</td>
+<td>Investigate immediately</td>
+</tr>
+<tr>
+<td>All tenants green</td>
+<td>5/5 healthy</td>
+<td>Check tenant connectivity</td>
+</tr>
+<tr>
+<td>Cache hit rate</td>
+<td>&gt; 70%</td>
+<td>Review cache metrics</td>
+</tr>
+</tbody></table>
+<h3>2.3 Key Metrics to Monitor</h3>
+<pre><code class="language-bash"># Get quick metrics summary
+curl -s &quot;$BASE_URL/api/v1/status&quot; | jq &#39;{
+    status: .status,
+    database: .components.database,
+    scheduler: .components.scheduler,
+    alerts: .alerts.active_count,
+    cache_hit_rate: .cache.hit_rate_percent
+}&#39;
+</code></pre>
+<h3>2.4 Weekly Tasks</h3>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Task</th>
+<th>Duration</th>
+<th>Command/Location</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Monday</td>
+<td>Review weekend alerts</td>
+<td>15 min</td>
+<td>Dashboard → Alerts</td>
+</tr>
+<tr>
+<td>Tuesday</td>
+<td>Check sync job performance</td>
+<td>10 min</td>
+<td><code>/api/v1/sync/metrics</code></td>
+</tr>
+<tr>
+<td>Wednesday</td>
+<td>Review cost anomalies</td>
+<td>15 min</td>
+<td>Dashboard → Costs</td>
+</tr>
+<tr>
+<td>Thursday</td>
+<td>Verify backup status</td>
+<td>5 min</td>
+<td>Azure Portal → Backups</td>
+</tr>
+<tr>
+<td>Friday</td>
+<td>Weekly summary report</td>
+<td>20 min</td>
+<td>Generate from dashboard</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>3. System Health Checks</h2>
+<h3>3.1 Quick Health Check Commands</h3>
+<pre><code class="language-bash"># Basic health
+ curl -s https://app-governance-prod.azurewebsites.net/health | jq .
+
+# Detailed health with all components
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | jq .
+
+# System status with metrics
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/status | jq .
+
+# Prometheus metrics
+curl -s https://app-governance-prod.azurewebsites.net/metrics | head -50
+</code></pre>
+<h3>3.2 Component-Specific Checks</h3>
+<h4>Database Health</h4>
+<pre><code class="language-bash"># Check database connectivity
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.components.database&#39;
+
+# Expected response: &quot;healthy&quot;
+
+# Check connection pool stats (Azure SQL only)
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.database_pool&#39;
+</code></pre>
+<h4>Cache Health</h4>
+<pre><code class="language-bash"># Check cache status
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.components.cache&#39;
+
+# View cache metrics
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.cache_metrics&#39;
+
+# Expected: backend = &quot;memory&quot; or &quot;redis&quot;, hit_rate_percent &gt; 50
+</code></pre>
+<h4>Scheduler Health</h4>
+<pre><code class="language-bash"># Check scheduler status
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.components.scheduler&#39;
+
+# Expected response: &quot;running&quot;
+</code></pre>
+<h4>Azure Configuration</h4>
+<pre><code class="language-bash"># Check Azure connectivity
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.components.azure_configured&#39;
+
+# Expected response: true
+</code></pre>
+<h3>3.3 Sync Job Health</h3>
+<pre><code class="language-bash"># Check sync status
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/sync/status | jq .
+
+# Check sync history
+curl -s &quot;https://app-governance-prod.azurewebsites.net/api/v1/sync/history?limit=10&quot; | jq .
+
+# Check for failed jobs
+curl -s &quot;https://app-governance-prod.azurewebsites.net/api/v1/sync/history?limit=20&quot; | \
+    jq &#39;.logs[] | select(.status == &quot;failed&quot;)&#39;
+</code></pre>
+<h3>3.4 Tenant Health Verification</h3>
+<pre><code class="language-bash"># List all tenants
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/tenants | jq .
+
+# Check tenant-specific sync status
+for tenant in HTT BCC FN TLL DCE; do
+    echo &quot;Checking $tenant...&quot;
+    # Add tenant-specific checks here
+done
+</code></pre>
+<hr>
+<h2>4. Common Troubleshooting</h2>
+<h3>4.1 Authentication Issues</h3>
+<h4>Symptom: Users Cannot Log In</h4>
+<p><strong>Diagnostic Steps:</strong></p>
+<pre><code class="language-bash"># 1. Check auth health
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/auth/health | jq .
+
+# 2. Verify Azure AD configuration
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.components.azure_configured&#39;
+
+# 3. Check JWT configuration
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/auth/health | \
+    jq &#39;.jwt_configured&#39;
+</code></pre>
+<p><strong>Common Causes &amp; Solutions:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Cause</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Client secret expired</td>
+<td>Rotate credentials (Section 4.6)</td>
+</tr>
+<tr>
+<td>Redirect URI mismatch</td>
+<td>Update ALLOWED_REDIRECT_URIS in App Settings</td>
+</tr>
+<tr>
+<td>Azure AD app disabled</td>
+<td>Enable app in Azure Portal → App Registrations</td>
+</tr>
+<tr>
+<td>Clock skew</td>
+<td>Verify server time sync with Azure AD</td>
+</tr>
+</tbody></table>
+<h4>Symptom: Token Validation Failures</h4>
+<pre><code class="language-bash"># Check token blacklist status
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.token_blacklist&#39;
+
+# If needed, clear token blacklist (requires admin)
+# Contact engineering team for token blacklist reset
+</code></pre>
+<h3>4.2 Database Connectivity Issues</h3>
+<h4>Symptom: Database Shows &quot;unhealthy&quot;</h4>
+<p><strong>Diagnostic Steps:</strong></p>
+<pre><code class="language-bash"># Check detailed error message
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.components.database&#39;
+
+# Check connection pool status
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.database_pool&#39;
+</code></pre>
+<p><strong>Resolution Steps:</strong></p>
+<ol>
+<li><p><strong>Azure SQL Connection Issues:</strong></p>
+<pre><code class="language-bash"># Verify Azure SQL firewall rules
+az sql server firewall-rule list \
+    --server my-server \
+    --resource-group my-rg
+
+# Add App Service outbound IP if missing
+az sql server firewall-rule create \
+    --server my-server \
+    --resource-group my-rg \
+    --name AllowAppService \
+    --start-ip-address &lt;app-outbound-ip&gt; \
+    --end-ip-address &lt;app-outbound-ip&gt;
+</code></pre>
+</li>
+<li><p><strong>Connection Pool Exhaustion:</strong></p>
+<ul>
+<li>Restart App Service to clear connections</li>
+<li>Check for connection leaks in application logs</li>
+</ul>
+</li>
+</ol>
+<h3>4.3 Sync Job Failures</h3>
+<h4>Symptom: Sync Jobs Not Running</h4>
+<p><strong>Diagnostic Steps:</strong></p>
+<pre><code class="language-bash"># Check scheduler status
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.components.scheduler&#39;
+
+# Check recent sync history
+curl -s &quot;https://app-governance-prod.azurewebsites.net/api/v1/sync/history?limit=20&quot; | \
+    jq &#39;.logs[] | {job_type, status, started_at, error_message}&#39;
+
+# Check for active alerts
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/sync/alerts | jq .
+</code></pre>
+<p><strong>Resolution by Error Type:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Error Pattern</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AADSTS7000215: Invalid client secret</code></td>
+<td>Rotate tenant credentials</td>
+</tr>
+<tr>
+<td><code>429 Too Many Requests</code></td>
+<td>Reduce sync frequency, implement backoff</td>
+</tr>
+<tr>
+<td>Connection timeout</td>
+<td>Check Azure service health, retry with backoff</td>
+</tr>
+<tr>
+<td>Data schema error</td>
+<td>Update sync module, contact engineering</td>
+</tr>
+</tbody></table>
+<p><strong>Trigger Manual Sync:</strong></p>
+<pre><code class="language-bash"># Trigger specific sync types
+curl -X POST https://app-governance-prod.azurewebsites.net/api/v1/sync/costs
+curl -X POST https://app-governance-prod.azurewebsites.net/api/v1/sync/compliance
+curl -X POST https://app-governance-prod.azurewebsites.net/api/v1/sync/resources
+curl -X POST https://app-governance-prod.azurewebsites.net/api/v1/sync/identity
+
+# Trigger Riverside sync
+curl -X POST https://app-governance-prod.azurewebsites.net/api/v1/riverside/sync
+</code></pre>
+<h3>4.4 Performance Issues</h3>
+<h4>Symptom: Slow API Response Times</h4>
+<p><strong>Diagnostic Steps:</strong></p>
+<pre><code class="language-bash"># Check cache hit rate
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.cache_metrics.hit_rate_percent&#39;
+
+# Check system status for performance metrics
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/status | \
+    jq &#39;.performance&#39;
+</code></pre>
+<p><strong>Resolution Steps:</strong></p>
+<ol>
+<li><p><strong>Low Cache Hit Rate (&lt; 50%):</strong></p>
+<ul>
+<li>Review cache TTL settings</li>
+<li>Enable Redis cache for production</li>
+<li>Check for cache invalidation patterns</li>
+</ul>
+</li>
+<li><p><strong>Database Performance:</strong></p>
+<pre><code class="language-bash"># Check for slow queries (if enabled)
+# Review Application Insights → Performance
+</code></pre>
+</li>
+<li><p><strong>Scale Up Resources:</strong></p>
+<pre><code class="language-bash"># Scale up App Service plan
+az appservice plan update \
+    --name app-governance-prod-plan \
+    --resource-group rg-governance-prod \
+    --sku P1V2
+</code></pre>
+</li>
+</ol>
+<h3>4.5 Cache Issues</h3>
+<h4>Symptom: Stale Data or Cache Errors</h4>
+<pre><code class="language-bash"># Check cache metrics
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.cache_metrics&#39;
+
+# Clear preflight cache (if needed)
+curl -X POST https://app-governance-prod.azurewebsites.net/api/v1/preflight/clear-cache
+
+# Restart app to clear all caches
+az webapp restart --name app-governance-prod --resource-group rg-governance-prod
+</code></pre>
+<h3>4.6 Certificate/Secret Rotation</h3>
+<h4>Rotate Client Secret</h4>
+<pre><code class="language-bash"># 1. Create new secret in Azure AD
+# Azure Portal → App Registrations → [App] → Certificates &amp; Secrets → New client secret
+
+# 2. Update App Service settings
+az webapp config appsettings set \
+    --name app-governance-prod \
+    --resource-group rg-governance-prod \
+    --settings &quot;AZURE_CLIENT_SECRET=@Microsoft.KeyVault(SecretUri=...)&quot;
+
+# 3. Verify rotation
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | \
+    jq &#39;.components.azure_configured&#39;
+
+# 4. Delete old secret (after 24 hours)
+</code></pre>
+<hr>
+<h2>5. Alert Response</h2>
+<h3>5.1 Alert Severity Levels</h3>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Description</th>
+<th>Response Time</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>P1 - Critical</strong></td>
+<td>Complete outage or data loss</td>
+<td>15 minutes</td>
+<td>Platform down, all auth failing</td>
+</tr>
+<tr>
+<td><strong>P2 - High</strong></td>
+<td>Major feature impaired</td>
+<td>1 hour</td>
+<td>Sync failing for &gt; 1 tenant</td>
+</tr>
+<tr>
+<td><strong>P3 - Medium</strong></td>
+<td>Minor feature issue</td>
+<td>4 hours</td>
+<td>Single tenant sync delayed</td>
+</tr>
+<tr>
+<td><strong>P4 - Low</strong></td>
+<td>Cosmetic or informational</td>
+<td>24 hours</td>
+<td>UI glitch, non-urgent</td>
+</tr>
+</tbody></table>
+<h3>5.2 Alert Response Procedures</h3>
+<h4>P1 - Critical Alert Response</h4>
+<pre><code class="language-bash"># Immediate checks (within 5 minutes)
+
+# 1. Verify platform accessibility
+curl -s https://app-governance-prod.azurewebsites.net/health | jq .
+
+# 2. Check Azure resource status
+az webapp show --name app-governance-prod --resource-group rg-governance-prod --query &quot;state&quot;
+
+# 3. View recent logs
+az webapp log tail --name app-governance-prod --resource-group rg-governance-prod
+
+# 4. If needed, restart App Service
+az webapp restart --name app-governance-prod --resource-group rg-governance-prod
+
+# 5. Verify recovery
+curl -s https://app-governance-prod.azurewebsites.net/health | jq .
+</code></pre>
+<p><strong>Escalation:</strong> Page on-call engineer immediately if:</p>
+<ul>
+<li>Restart doesn&#39;t resolve issue</li>
+<li>Database connectivity failing</li>
+<li>Multiple Azure services affected</li>
+</ul>
+<h4>P2 - High Alert Response</h4>
+<pre><code class="language-bash"># Investigation steps (within 15 minutes)
+
+# 1. Identify affected component
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | jq .
+
+# 2. Check sync job status
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/sync/status | jq .
+
+# 3. Review recent errors
+curl -s &quot;https://app-governance-prod.azurewebsites.net/api/v1/sync/history?limit=10&quot; | \
+    jq &#39;.logs[] | select(.status == &quot;failed&quot;)&#39;
+</code></pre>
+<h3>5.3 Viewing and Managing Alerts</h3>
+<pre><code class="language-bash"># List active alerts
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/sync/alerts | jq .
+
+# Resolve specific alert
+curl -X POST &quot;https://app-governance-prod.azurewebsites.net/api/v1/sync/alerts/{alert_id}/resolve&quot; \
+    -H &quot;Content-Type: application/json&quot; \
+    -d &#39;{&quot;resolved_by&quot;: &quot;operator@company.com&quot;, &quot;resolution_notes&quot;: &quot;Issue resolved after credential rotation&quot;}&#39;
+</code></pre>
+<hr>
+<h2>6. Incident Response</h2>
+<h3>6.1 Incident Classification</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Criteria</th>
+<th>Response Team</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Security</td>
+<td>Unauthorized access, data exposure</td>
+<td>Security + Engineering</td>
+</tr>
+<tr>
+<td>Outage</td>
+<td>Complete or partial platform unavailability</td>
+<td>Engineering + DevOps</td>
+</tr>
+<tr>
+<td>Data</td>
+<td>Data loss, corruption, sync failures</td>
+<td>Engineering + DBA</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Degraded response times</td>
+<td>DevOps + Engineering</td>
+</tr>
+</tbody></table>
+<h3>6.2 Incident Response Workflow</h3>
+<pre><code>Incident Detected
+        |
+        v
+Assess Severity (P1-P4)
+        |
+        +-- P1 --&gt; Page On-Call (15 min SLA)
+        |
+        +-- P2 --&gt; Create Ticket, Notify Team (1 hour SLA)
+        |
+        +-- P3 --&gt; Create Ticket (4 hour SLA)
+        |
+        +-- P4 --&gt; Backlog for Next Sprint
+        |
+        v
+Execute Runbook
+        |
+        v
+Document Actions in Incident Channel
+        |
+        v
+Post-Incident Review (within 48 hours for P1/P2)
+</code></pre>
+<h3>6.3 Communication Templates</h3>
+<h4>Incident Announcement (Slack/Teams)</h4>
+<pre><code class="language-markdown">🚨 **INCIDENT ALERT** 🚨
+
+**Severity:** P1 - Critical
+**Time:** 2025-05-15 14:30 UTC
+**Status:** Investigating
+
+**Impact:** Azure Governance Platform is inaccessible
+**Symptoms:** 503 errors on all endpoints
+
+**Actions Taken:**
+- On-call engineer paged
+- Restart initiated
+
+**Next Update:** 15 minutes
+
+**Incident Channel:** #incident-2025-05-15-platform-down
+</code></pre>
+<h4>Status Update Template</h4>
+<pre><code class="language-markdown">📊 **Status Update** - 14:45 UTC
+
+**Incident:** Platform downtime (P1)
+**Status:** Identified
+
+**Root Cause:** Azure SQL connection pool exhausted
+**Resolution:** Database connections cleared, service recovering
+
+**ETA to Resolution:** 30 minutes
+</code></pre>
+<h4>Resolution Summary Template</h4>
+<pre><code class="language-markdown">✅ **RESOLVED** - 15:15 UTC
+
+**Incident:** Platform downtime (P1)
+**Duration:** 45 minutes
+
+**Root Cause:** Connection pool leak in sync job scheduler
+**Resolution:** Restarted App Service, implemented connection cleanup
+
+**Preventive Actions:**
+- Added connection pool monitoring alert
+- Scheduled code review for sync module
+- Increased pool size from 3 to 5
+
+**Post-Mortem:** Scheduled for 2025-05-17
+</code></pre>
+<hr>
+<h2>7. Escalation Procedures</h2>
+<h3>7.1 Escalation Matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Role</th>
+<th>Contact</th>
+<th>When to Escalate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>L1</td>
+<td>Platform Support</td>
+<td><a href="mailto:platform-support@company.com">platform-support@company.com</a></td>
+<td>Initial triage, routine issues</td>
+</tr>
+<tr>
+<td>L2</td>
+<td>DevOps Engineer</td>
+<td><a href="mailto:devops-oncall@company.com">devops-oncall@company.com</a></td>
+<td>Technical issues, deployments</td>
+</tr>
+<tr>
+<td>L3</td>
+<td>Engineering Manager</td>
+<td><a href="mailto:eng-manager@company.com">eng-manager@company.com</a></td>
+<td>Major incidents, architecture decisions</td>
+</tr>
+<tr>
+<td>L4</td>
+<td>Director of Engineering</td>
+<td><a href="mailto:director-eng@company.com">director-eng@company.com</a></td>
+<td>Business-impacting outages</td>
+</tr>
+</tbody></table>
+<h3>7.2 Escalation Paths by Scenario</h3>
+<h4>Scenario 1: Platform Down (P1)</h4>
+<pre><code>0-5 min:   L1 attempts restart
+5-15 min:  Escalate to L2 if unresolved
+15-30 min: Escalate to L3, notify stakeholders
+30+ min:   Escalate to L4, executive notification
+</code></pre>
+<h4>Scenario 2: Security Incident</h4>
+<pre><code>Immediate: Page L2 + Security team
+5 min:     Isolate affected systems
+15 min:    Escalate to L3 + Legal if data exposure
+30 min:    External notification if required (breach laws)
+</code></pre>
+<h4>Scenario 3: Data Loss</h4>
+<pre><code>Immediate: Stop all write operations
+5 min:     Page L2 + DBA
+15 min:    Assess scope, begin recovery from backup
+30 min:    Escalate to L3, customer notification decision
+</code></pre>
+<h3>7.3 External Escalation</h3>
+<table>
+<thead>
+<tr>
+<th>Vendor</th>
+<th>Support Channel</th>
+<th>Escalation Path</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Microsoft Azure</td>
+<td><a href="https://portal.azure.com/#blade/Microsoft_Azure_Support/HelpAndSupportBlade">https://portal.azure.com/#blade/Microsoft_Azure_Support/HelpAndSupportBlade</a></td>
+<td>Open severity A ticket</td>
+</tr>
+<tr>
+<td>Azure AD Issues</td>
+<td>Microsoft 365 Admin Center</td>
+<td>Escalate through tenant admin</td>
+</tr>
+<tr>
+<td>Third-Party Integrations</td>
+<td>Vendor-specific</td>
+<td>Contact per SLA</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>8. Contact Information</h2>
+<h3>8.1 Internal Contacts</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Name</th>
+<th>Email</th>
+<th>Phone</th>
+<th>Slack</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Platform Support</td>
+<td>[TBD]</td>
+<td><a href="mailto:platform-support@company.com">platform-support@company.com</a></td>
+<td>[TBD]</td>
+<td>#platform-support</td>
+</tr>
+<tr>
+<td>DevOps On-Call</td>
+<td>[TBD]</td>
+<td><a href="mailto:devops-oncall@company.com">devops-oncall@company.com</a></td>
+<td>[TBD]</td>
+<td>#devops-oncall</td>
+</tr>
+<tr>
+<td>Engineering Manager</td>
+<td>[TBD]</td>
+<td><a href="mailto:eng-manager@company.com">eng-manager@company.com</a></td>
+<td>[TBD]</td>
+<td>@eng-manager</td>
+</tr>
+<tr>
+<td>Security Team</td>
+<td>[TBD]</td>
+<td><a href="mailto:security@company.com">security@company.com</a></td>
+<td>[TBD]</td>
+<td>#security</td>
+</tr>
+<tr>
+<td>Product Owner</td>
+<td>[TBD]</td>
+<td><a href="mailto:product@company.com">product@company.com</a></td>
+<td>[TBD]</td>
+<td>@product-owner</td>
+</tr>
+</tbody></table>
+<h3>8.2 Vendor Contacts</h3>
+<table>
+<thead>
+<tr>
+<th>Vendor</th>
+<th>Support URL</th>
+<th>Account ID</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Microsoft Azure</td>
+<td><a href="https://azure.microsoft.com/support">https://azure.microsoft.com/support</a></td>
+<td>[TBD]</td>
+<td>EA Agreement #[TBD]</td>
+</tr>
+<tr>
+<td>Azure AD Premium</td>
+<td>Via Azure Portal</td>
+<td>[TBD]</td>
+<td>P2 Licenses</td>
+</tr>
+<tr>
+<td>GitHub Enterprise</td>
+<td><a href="https://support.github.com">https://support.github.com</a></td>
+<td>[TBD]</td>
+<td>Enterprise account</td>
+</tr>
+<tr>
+<td>Datadog/New Relic</td>
+<td>[TBD]</td>
+<td>[TBD]</td>
+<td>APM and monitoring</td>
+</tr>
+</tbody></table>
+<h3>8.3 Emergency Contacts</h3>
+<table>
+<thead>
+<tr>
+<th>Emergency Type</th>
+<th>Contact</th>
+<th>When to Use</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Azure Service Outage</td>
+<td>Microsoft Support</td>
+<td>Azure-wide issues</td>
+</tr>
+<tr>
+<td>Security Breach</td>
+<td><a href="mailto:security@company.com">security@company.com</a> + Legal</td>
+<td>Confirmed or suspected breach</td>
+</tr>
+<tr>
+<td>Data Center Issues</td>
+<td>Azure Status Page</td>
+<td>Physical infrastructure</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>9. Runbook Templates</h2>
+<h3>9.1 Incident Response Checklist</h3>
+<pre><code class="language-markdown">## Incident Response Checklist
+
+### Initial Response (0-5 minutes)
+- [ ] Acknowledge incident
+- [ ] Create incident channel
+- [ ] Page on-call if P1/P2
+- [ ] Post initial announcement
+- [ ] Begin triage
+
+### Assessment (5-15 minutes)
+- [ ] Classify severity (P1-P4)
+- [ ] Identify affected components
+- [ ] Check health endpoints
+- [ ] Review recent deployments
+- [ ] Check Azure status page
+
+### Resolution (15-60 minutes)
+- [ ] Execute runbook for issue type
+- [ ] Document all actions taken
+- [ ] Post regular updates (every 15 min for P1)
+- [ ] Escalate if needed
+
+### Post-Resolution
+- [ ] Verify all systems healthy
+- [ ] Send resolution notification
+- [ ] Schedule post-mortem (P1/P2)
+- [ ] Update documentation if needed
+</code></pre>
+<h3>9.2 Deployment Verification Checklist</h3>
+<pre><code class="language-bash">#!/bin/bash
+# Post-Deployment Verification Checklist
+
+URL=&quot;https://app-governance-prod.azurewebsites.net&quot;
+
+echo &quot;=== Post-Deployment Verification ===&quot;
+
+# Health checks
+curl -s &quot;$URL/health&quot; | jq -e &#39;.status == &quot;healthy&quot;&#39; || { echo &quot;❌ Health check failed&quot;; exit 1; }
+curl -s &quot;$URL/health/detailed&quot; | jq -e &#39;.components.database == &quot;healthy&quot;&#39; || echo &quot;⚠️ Database check failed&quot;
+curl -s &quot;$URL/health/detailed&quot; | jq -e &#39;.components.scheduler == &quot;running&quot;&#39; || echo &quot;⚠️ Scheduler not running&quot;
+
+# API checks
+curl -s &quot;$URL/api/v1/status&quot; | jq -e &#39;.status == &quot;healthy&quot;&#39; || { echo &quot;❌ Status API failed&quot;; exit 1; }
+
+# Auth checks
+curl -s &quot;$URL/api/v1/auth/health&quot; | jq -e &#39;.jwt_configured == true&#39; || echo &quot;⚠️ JWT not configured&quot;
+
+# Metrics
+curl -s &quot;$URL/metrics&quot; | head -1 | grep -q &quot;# HELP&quot; &amp;&amp; echo &quot;✅ Metrics available&quot;
+
+echo &quot;=== Verification Complete ===&quot;
+</code></pre>
+<h3>9.3 Maintenance Window Procedure</h3>
+<pre><code class="language-markdown">## Maintenance Window Procedure
+
+### Pre-Maintenance (24 hours before)
+- [ ] Announce maintenance window to stakeholders
+- [ ] Verify backup is current
+- [ ] Prepare rollback plan
+- [ ] Confirm maintenance team availability
+
+### During Maintenance
+- [ ] Put system in maintenance mode (if available)
+- [ ] Execute planned changes
+- [ ] Run verification tests after each change
+- [ ] Monitor logs for errors
+
+### Post-Maintenance
+- [ ] Remove maintenance mode
+- [ ] Run full verification script
+- [ ] Monitor for 30 minutes
+- [ ] Notify stakeholders of completion
+- [ ] Document any issues encountered
+</code></pre>
+<hr>
+<h2>Appendix A: Quick Reference Commands</h2>
+<pre><code class="language-bash"># Health &amp; Status
+curl -s https://app-governance-prod.azurewebsites.net/health | jq .
+curl -s https://app-governance-prod.azurewebsites.net/health/detailed | jq .
+curl -s https://app-governance-prod.azurewebsites.net/api/v1/status | jq .
+
+# Sync Operations
+curl -X POST https://app-governance-prod.azurewebsites.net/api/v1/sync/costs
+curl -X POST https://app-governance-prod.azurewebsites.net/api/v1/sync/compliance
+curl -X POST https://app-governance-prod.azurewebsites.net/api/v1/riverside/sync
+
+# Azure Operations
+az webapp restart --name app-governance-prod --resource-group rg-governance-prod
+az webapp log tail --name app-governance-prod --resource-group rg-governance-prod
+az appservice plan update --name app-governance-prod-plan --resource-group rg-governance-prod --sku P1V2
+
+# Logs and Monitoring
+az webapp log tail --name app-governance-prod --resource-group rg-governance-prod
+az monitor app-insights query --apps app-governance-prod --analytics-query &quot;traces | where severityLevel &gt;= 3&quot;
+</code></pre>
+<hr>
+<h2>Appendix B: Document History</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Author</th>
+<th>Changes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1.0</td>
+<td>2025-05-15</td>
+<td>DevOps Team</td>
+<td>Initial operations playbook</td>
+</tr>
+</tbody></table>
+<hr>
+<p><strong>Related Documents:</strong></p>
+<ul>
+<li><a href="../DEPLOYMENT.md">Deployment Guide</a></li>
+<li><a href="../API.md">API Documentation</a></li>
+<li><a href="../ARCHITECTURE.md">Architecture Overview</a></li>
+<li><a href="../security/production-audit.md">Security Procedures</a></li>
+</ul>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

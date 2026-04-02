@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADR-0007: Auth Evolution — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Decisions</a><span>›</span>
+        ADR-0007: Auth Evolution
+      </div>
+      <h1 class="page-title">ADR-0007: Auth Evolution</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<hr>
+<h2>status: accepted
+date: 2025-02-15
+decision-makers: Solutions Architect 🏛️, Security Auditor 🛡️, Pack Leader 🐺
+consulted: Code Puppy 🐶 (implementation), Experience Architect 🎨 (UX flow)
+informed: All engineering teams, MSP administrators
+relates-to: AUTH-001, AUTH-002, AUTH-003</h2>
+<h2>Context and Problem Statement</h2>
+<p>The Azure Governance Platform requires secure authentication to protect sensitive Azure resource data, compliance findings, and multi-tenant configurations. As the platform evolved from proof-of-concept to production-ready SaaS, our authentication architecture needed to evolve across three distinct phases to meet increasing security requirements while maintaining operational simplicity.</p>
+<p><strong>Phase A Challenge</strong>: Initial implementation used hardcoded client secrets in environment variables. This created security risks (secrets in logs), operational friction (manual rotation), and blocked production deployment.</p>
+<p><strong>Phase B Challenge</strong>: Single-tenant application with manually configured federated credentials required per-customer Azure AD app registrations. This didn&#39;t scale for MSPs managing 5+ customer tenants.</p>
+<p><strong>Phase C Challenge</strong>: Full zero-secrets architecture required to eliminate credential management overhead completely and achieve true production security posture.</p>
+<p>How should the authentication architecture evolve to meet production security standards while enabling multi-tenant SaaS operations?</p>
+<h2>Decision Drivers</h2>
+<ul>
+<li><strong>Security (K.O. criterion)</strong>: Zero secrets in code, configuration, or CI/CD pipelines; no credentials accessible to humans</li>
+<li><strong>Operational scalability</strong>: MSP scenario requires same app registration to authenticate across 5+ customer tenants without per-tenant configuration</li>
+<li><strong>Compliance</strong>: Must align with SOC2, ISO 27001, and customer security audit requirements</li>
+<li><strong>Implementation velocity</strong>: Each phase must be deployable incrementally without full rearchitecture</li>
+<li><strong>Backward compatibility</strong>: Existing deployments must migrate smoothly between phases</li>
+<li><strong>Azure native alignment</strong>: Leverage Azure&#39;s authentication capabilities rather than building custom systems</li>
+</ul>
+<h2>Considered Options</h2>
+<ol>
+<li><strong>Phase A: Client Secrets</strong> — Traditional OAuth2 client credentials with long-lived secrets</li>
+<li><strong>Phase B: Federated Credentials (Single Tenant)</strong> — OIDC federation with GitHub Actions, per-tenant app registrations</li>
+<li><strong>Phase C: Federated Credentials (Multi-Tenant + Zero Secrets)</strong> — OIDC federation with User-Assigned Managed Identity, no secrets anywhere</li>
+</ol>
+<h2>Decision Outcome</h2>
+<p><strong>Chosen approach: Three-phase evolution (A→B→C)</strong>, implemented incrementally over 6 months:</p>
+<ul>
+<li><strong>Phase A</strong> (Jan 2025): Single-tenant with client secrets — quick to implement, acceptable for staging only</li>
+<li><strong>Phase B</strong> (Feb 2025): Single-tenant with OIDC federation — eliminates secrets from CI/CD, enables automated deployments</li>
+<li><strong>Phase C</strong> (Mar 2025): Multi-tenant with User-Assigned Managed Identity — zero secrets architecture, production-ready</li>
+</ul>
+<p>Each phase builds on the previous, with explicit migration paths and validation gates. Phase A→B migration completed February 2025. Phase B→C migration completed March 2025.</p>
+<h3>Phase A: Client Secrets Architecture</h3>
+<p><strong>Implementation</strong>:</p>
+<pre><code>┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
+│ Application │────▶│ Client ID   │────▶│ Azure AD        │
+│             │     │ + Secret    │     │ Token Endpoint  │
+└─────────────┘     └─────────────┘     └─────────────────┘
+</code></pre>
+<ul>
+<li>Azure AD application registration with client secret</li>
+<li>Secret stored in GitHub Secrets or environment variables</li>
+<li>Direct client credentials flow for token acquisition</li>
+<li>Suitable for: Development, staging environments with short-lived deployments</li>
+</ul>
+<p><strong>Limitations</strong>: Secrets require rotation, can be leaked in logs, human-accessible in CI/CD.</p>
+<h3>Phase B: Single-Tenant Federated Credentials</h3>
+<p><strong>Implementation</strong>:</p>
+<pre><code>┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
+│ GitHub      │────▶│ OIDC Token  │────▶│ Azure AD        │
+│ Actions     │     │ (ephemeral) │     │ Federated Creds │
+└─────────────┘     └─────────────┘     └─────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────┐
+│ Trust Relationship: GitHub OIDC ▶ Azure AD App          │
+│ No long-lived secrets in CI/CD                          │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<ul>
+<li>OIDC federation between GitHub Actions and Azure AD</li>
+<li>Ephemeral tokens (15-minute lifetime)</li>
+<li>Single-tenant app registration</li>
+<li>Federated credentials configured for specific GitHub repos/branches</li>
+</ul>
+<p><strong>Benefits</strong>: Eliminates secrets from CI/CD, automated token lifecycle, auditable via Azure AD sign-in logs.</p>
+<p><strong>Migration from Phase A</strong>: <code>scripts/migrate-to-phase-b.sh</code> — configures federated credentials, validates token acquisition, retires client secrets.</p>
+<h3>Phase C: Multi-Tenant Zero Secrets</h3>
+<p><strong>Implementation</strong>:</p>
+<pre><code>┌─────────────┐     ┌─────────────────────────────┐     ┌─────────────────┐
+│ Application │────▶│ User-Assigned Managed         │────▶│ Azure AD        │
+│ (any Azure) │     │ Identity (UAMI)              │     │ Multi-Tenant App│
+└─────────────┘     └─────────────────────────────┘     └─────────────────┘
+         │
+         │┌────────────────────────────────────────────────────────────────┐
+         ││ GitHub Actions also uses UAMI for OIDC federation             │
+         ││ → No secrets anywhere in the system                          │
+         └┴────────────────────────────────────────────────────────────────┘
+</code></pre>
+<ul>
+<li>Multi-tenant Azure AD application registration</li>
+<li>User-Assigned Managed Identity (UAMI) for runtime authentication</li>
+<li>OIDC federation via UAMI for CI/CD deployments</li>
+<li>Customer tenants grant admin consent once</li>
+</ul>
+<p><strong>Benefits</strong>: Zero secrets anywhere; no credential rotation; works across all customer tenants; production security posture.</p>
+<p><strong>Migration from Phase B</strong>: <code>scripts/migrate-to-phase-c.sh</code> — provisions UAMI, configures OIDC federation, validates multi-tenant access, removes all remaining secrets.</p>
+<h3>Migration Path Summary</h3>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Secrets</th>
+<th>Federation</th>
+<th>Multi-Tenant</th>
+<th>Migration Command</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>Client secrets in env</td>
+<td>None</td>
+<td>No</td>
+<td>N/A (baseline)</td>
+</tr>
+<tr>
+<td>B</td>
+<td>None</td>
+<td>GitHub→Azure AD</td>
+<td>No</td>
+<td><code>scripts/migrate-to-phase-b.sh</code></td>
+</tr>
+<tr>
+<td>C</td>
+<td>None</td>
+<td>UAMI-based</td>
+<td>Yes</td>
+<td><code>scripts/migrate-to-phase-c.sh</code></td>
+</tr>
+</tbody></table>
+<h3>Consequences</h3>
+<p><strong>Good</strong>:</p>
+<ul>
+<li>Progressive security improvement without big-bang rewrites</li>
+<li>Each phase is independently deployable and testable</li>
+<li>Full audit trail via Azure AD logs</li>
+<li>Eliminates credential rotation operational burden</li>
+<li>Meets enterprise security audit requirements</li>
+</ul>
+<p><strong>Bad</strong>:</p>
+<ul>
+<li>Three-phase evolution requires maintenance of migration scripts</li>
+<li>Customer tenants must grant admin consent for Phase C</li>
+<li>Phase B→C migration requires brief deployment window (covered by blue-green deployment)</li>
+</ul>
+<h3>Confirmation</h3>
+<p>Validation gates between phases:</p>
+<ul>
+<li><strong>Phase A→B</strong>: <code>scripts/verify-federated-creds.sh</code> validates token acquisition without secrets</li>
+<li><strong>Phase B→C</strong>: <code>scripts/verify-tenant-access.ps1</code> validates multi-tenant connectivity</li>
+<li>Production checklist: <code>docs/security/production-audit.md</code></li>
+</ul>
+<h2>STRIDE Security Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Threat Category</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Spoofing</strong></td>
+<td>Low</td>
+<td>OIDC tokens are signed by GitHub/Microsoft identity providers; cryptographically verified by Azure AD</td>
+</tr>
+<tr>
+<td><strong>Tampering</strong></td>
+<td>Low</td>
+<td>Token binding to specific workflow runs and commit SHAs; any tampering invalidates the token</td>
+</tr>
+<tr>
+<td><strong>Repudiation</strong></td>
+<td>Low</td>
+<td>Azure AD sign-in logs record all federated credential authentications; GitHub Actions logs record OIDC token issuance</td>
+</tr>
+<tr>
+<td><strong>Information Disclosure</strong></td>
+<td>Low</td>
+<td>Phase C achieves zero secrets — nothing to disclose; ephemeral tokens have 15-minute lifetime</td>
+</tr>
+<tr>
+<td><strong>Denial of Service</strong></td>
+<td>Medium</td>
+<td>Azure AD token endpoint or GitHub OIDC provider outage could block deployments; mitigated by UAMI fallback for runtime</td>
+</tr>
+<tr>
+<td><strong>Elevation of Privilege</strong></td>
+<td>Low</td>
+<td>Federated credentials have explicit trust relationships (repo, branch, environment); no credential sharing between environments</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Security Posture</strong>: Phase C achieves defense-in-depth with no secrets in any layer of the stack. Ephemeral tokens, cryptographically bound to specific CI/CD contexts, provide the strongest authentication posture available on Azure.</p>
+<h2>Pros and Cons of the Options</h2>
+<h3>Option 1: Stay on Client Secrets (Don&#39;t Evolve)</h3>
+<ul>
+<li>Good, because no migration effort required</li>
+<li>Bad, because fails SOC2/ISO 27001 audit requirements</li>
+<li>Bad, because secret rotation is operational burden</li>
+<li>Bad, because secrets can leak in logs or be accessible to developers</li>
+</ul>
+<h3>Option 2: Phase B Only (No Multi-Tenant)</h3>
+<ul>
+<li>Good, because eliminates CI/CD secrets</li>
+<li>Bad, because doesn&#39;t scale to MSP scenario (5+ tenants)</li>
+<li>Bad, because still requires per-tenant app registrations</li>
+<li>Bad, because doesn&#39;t achieve zero-secrets at runtime</li>
+</ul>
+<h3>Option 3: Phase C Direct (Skip Phase B)</h3>
+<ul>
+<li>Good, because reaches target state immediately</li>
+<li>Bad, because higher initial complexity and risk</li>
+<li>Bad, because harder to debug if issues arise</li>
+<li>Bad, because no incremental validation checkpoints</li>
+</ul>
+<h2>More Information</h2>
+<ul>
+<li>Migration runbooks: <code>docs/runbooks/phase-b-multi-tenant-app.md</code>, <code>docs/runbooks/phase-c-zero-secrets.md</code></li>
+<li>ACR→GHCR migration (related): <code>docs/runbooks/acr-to-ghcr-migration.md</code></li>
+<li>Security audit: <code>docs/security/production-audit.md</code></li>
+<li>Phase C setup script: <code>scripts/setup-uami-phase-c.sh</code></li>
+</ul>
+<hr>
+<p><strong>Template Version:</strong> MADR 4.0 (September 2024) with STRIDE Security Analysis<br><strong>Last Updated:</strong> 2025-03-15<br><strong>Maintained By:</strong> Solutions Architect 🏛️</p>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

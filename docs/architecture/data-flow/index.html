@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data Flow &amp; Connections — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Architecture</a><span>›</span>
+        Data Flow &amp; Connections
+      </div>
+      <h1 class="page-title">Data Flow &amp; Connections</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<h2>🌊 System Data Flow</h2>
+<p>Understanding how data moves through the Azure Governance Platform is critical for troubleshooting, optimization, and scaling.</p>
+<hr>
+<h2>High-Level Data Flow</h2>
+<p><strong>External Sources → Platform → Data Layer → Consumers</strong></p>
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│                   EXTERNAL SOURCES                        │
+│  ┌──────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │ Azure    │  │ Azure Cost   │  │ Azure AD     │      │
+│  │ ARM API  │  │ Management   │  │ B2C          │      │
+│  └──────────┘  └──────────────┘  └──────────────┘      │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│              AZURE GOVERNANCE PLATFORM                    │
+│  ┌────────────┐  ┌──────────┐  ┌──────────┐  ┌───────┐ │
+│  │ FastAPI    │  │ Service  │  │ Redis    │  │Workers│ │
+│  │ App        │  │ Layer    │  │ Cache    │  │       │ │
+│  └────────────┘  └──────────┘  └──────────┘  └───────┘ │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                    DATA LAYER                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐               │
+│  │ Azure    │  │ Blob     │  │ Key      │               │
+│  │ SQL      │  │ Storage  │  │ Vault    │               │
+│  └──────────┘  └──────────┘  └──────────┘               │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                  DATA CONSUMERS                           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
+│  │ React    │  │ Azure    │  │ Alert    │              │
+│  │ Web App  │  │ Workbooks│  │ System   │              │
+│  └──────────┘  └──────────┘  └──────────┘              │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>Request Lifecycle</h2>
+<h3>9-Step API Request Flow</h3>
+<p><strong>Average Response Time:</strong> ~130ms (p95: ~532ms)</p>
+<div class="data-flow">
+  <div class="flow-step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h4>Request Ingress</h4>
+      <p>Client sends HTTP request to Azure Front Door → App Service</p>
+    </div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h4>Authentication & Validation</h4>
+      <p>FastAPI validates JWT (Azure AD B2C), checks rate limits</p>
+    </div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h4>Tenant Resolution</h4>
+      <p>Extract tenant_id from JWT, set SQL context for RLS</p>
+    </div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="step-number">4</div>
+    <div class="step-content">
+      <h4>Cache Lookup</h4>
+      <p>Check Redis cache for data (15-min TTL)</p>
+    </div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="step-number">5</div>
+    <div class="step-content">
+      <h4>Database Query</h4>
+      <p>Query Azure SQL with tenant filters (RLS applied)</p>
+    </div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="step-number">6</div>
+    <div class="step-content">
+      <h4>Business Logic</h4>
+      <p>Service layer processes, transforms, enriches data</p>
+    </div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="step-number">7</div>
+    <div class="step-content">
+      <h4>Response Serialization</h4>
+      <p>Pydantic models serialize to JSON</p>
+    </div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="step-number">8</div>
+    <div class="step-content">
+      <h4>Telemetry & Logging</h4>
+      <p>App Insights captures metrics and trace data</p>
+    </div>
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">
+    <div class="step-number">9</div>
+    <div class="step-content">
+      <h4>Response Delivery</h4>
+      <p>JSON response with security headers</p>
+    </div>
+  </div>
+</div>
+
+<hr>
+<h2>Azure Integration Flows</h2>
+<h3>Resource Discovery Flow</h3>
+<p><strong>Frequency:</strong> Every 6 hours per tenant<br><strong>Duration:</strong> ~2-5 minutes per tenant</p>
+<pre><code>Sync Worker → Azure ARM API → Resource Parser → Azure SQL → Redis Cache
+</code></pre>
+<p><strong>Process:</strong></p>
+<ol>
+<li>Sync Worker authenticates with Managed Identity</li>
+<li>Queries Azure ARM API for resource list</li>
+<li>For each resource: get details, normalize, enrich</li>
+<li>Upsert to Azure SQL (with tenant_id)</li>
+<li>Invalidate Redis cache</li>
+<li>Update last sync timestamp</li>
+</ol>
+<h3>Cost Data Ingestion Flow</h3>
+<p><strong>Frequency:</strong> Daily at 2 AM UTC<br><strong>Retention:</strong> 13 months</p>
+<pre><code>Job Scheduler → Cost Management API → Data Transformer → Azure SQL → App Insights
+</code></pre>
+<p><strong>Process:</strong></p>
+<ol>
+<li>Scheduler requests usage data (daily)</li>
+<li>API returns CSV/JSON usage details</li>
+<li>Data transformer parses and maps to internal schema</li>
+<li>Bulk insert to Azure SQL (partitioned by tenant)</li>
+<li>Log metrics to Application Insights</li>
+</ol>
+<hr>
+<h2>Data Connections Matrix</h2>
+<h3>Internal Connections</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Destination</th>
+<th>Protocol</th>
+<th>Purpose</th>
+<th>Volume</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>App Service</strong></td>
+<td>Azure SQL</td>
+<td>ODBC + SSL</td>
+<td>Data queries</td>
+<td>~500 req/min</td>
+</tr>
+<tr>
+<td><strong>App Service</strong></td>
+<td>Redis</td>
+<td>Redis</td>
+<td>Caching</td>
+<td>~1000 ops/min</td>
+</tr>
+<tr>
+<td><strong>App Service</strong></td>
+<td>Key Vault</td>
+<td>HTTPS</td>
+<td>Secrets</td>
+<td>~10 req/min</td>
+</tr>
+<tr>
+<td><strong>Workers</strong></td>
+<td>Azure SQL</td>
+<td>ODBC + SSL</td>
+<td>Data writes</td>
+<td>~200 writes/min</td>
+</tr>
+</tbody></table>
+<h3>External Connections</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Destination</th>
+<th>Protocol</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Platform</strong></td>
+<td>Azure ARM</td>
+<td>HTTPS</td>
+<td>Resource discovery</td>
+</tr>
+<tr>
+<td><strong>Platform</strong></td>
+<td>Cost Mgmt</td>
+<td>HTTPS</td>
+<td>Cost data</td>
+</tr>
+<tr>
+<td><strong>Platform</strong></td>
+<td>Azure AD B2C</td>
+<td>HTTPS</td>
+<td>Authentication</td>
+</tr>
+<tr>
+<td><strong>Platform</strong></td>
+<td>App Insights</td>
+<td>HTTPS</td>
+<td>Telemetry</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Data Storage Architecture</h2>
+<h3>Azure SQL Database</h3>
+<p><strong>Key Tables:</strong></p>
+<ul>
+<li><code>tenants</code> - Tenant configuration (50 rows)</li>
+<li><code>resources</code> - Resource inventory (~2,500 rows)</li>
+<li><code>cost_data</code> - Daily cost records (~15,000 rows)</li>
+<li><code>compliance_scores</code> - Assessments (~500 rows)</li>
+<li><code>users</code> - User identities (~200 rows)</li>
+<li><code>audit_logs</code> - Audit trail (~50,000 rows)</li>
+</ul>
+<h3>Redis Cache</h3>
+<p><strong>Cache Patterns:</strong></p>
+<ul>
+<li><code>session:{user_id}</code> → User session (8h TTL)</li>
+<li><code>resources:{tenant_id}</code> → Resource list (15m TTL)</li>
+<li><code>costs:{tenant_id}:{month}</code> → Cost summary (1h TTL)</li>
+<li><code>health:{tenant_id}</code> → Health status (5m TTL)</li>
+</ul>
+<p><strong>Hit Rate:</strong> ~85%</p>
+<h3>Blob Storage</h3>
+<p><strong>Containers:</strong></p>
+<ul>
+<li><code>reports/</code> → Generated PDFs</li>
+<li><code>exports/</code> → CSV exports</li>
+<li><code>backups/</code> → Daily DB backups</li>
+<li><code>logs/</code> → Application logs</li>
+</ul>
+<p><strong>Total Size:</strong> ~12GB</p>
+<hr>
+<h2>Performance Characteristics</h2>
+<h3>Query Performance</h3>
+<table>
+<thead>
+<tr>
+<th>Query Type</th>
+<th>Average</th>
+<th>p95</th>
+<th>Cache Hit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Resource List</td>
+<td>45ms</td>
+<td>120ms</td>
+<td>85%</td>
+</tr>
+<tr>
+<td>Cost Summary</td>
+<td>30ms</td>
+<td>80ms</td>
+<td>90%</td>
+</tr>
+<tr>
+<td>Compliance</td>
+<td>25ms</td>
+<td>60ms</td>
+<td>95%</td>
+</tr>
+<tr>
+<td>User Lookup</td>
+<td>15ms</td>
+<td>40ms</td>
+<td>80%</td>
+</tr>
+</tbody></table>
+<h3>Throughput</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Current</th>
+<th>Capacity</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Requests/Second</strong></td>
+<td>~15</td>
+<td>~150</td>
+</tr>
+<tr>
+<td><strong>Concurrent Users</strong></td>
+<td>~10</td>
+<td>~100</td>
+</tr>
+<tr>
+<td><strong>Data Ingestion</strong></td>
+<td>~1MB/hour</td>
+<td>~10MB/hour</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Data Security in Transit</h2>
+<h3>Encryption</h3>
+<table>
+<thead>
+<tr>
+<th>Connection</th>
+<th>Protocol</th>
+<th>Cipher</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Client → App</td>
+<td>HTTPS 1.3</td>
+<td>TLS_AES_256_GCM_SHA384</td>
+</tr>
+<tr>
+<td>App → SQL</td>
+<td>ODBC + SSL</td>
+<td>AES-256</td>
+</tr>
+<tr>
+<td>App → Redis</td>
+<td>Redis + TLS</td>
+<td>AES-256</td>
+</tr>
+<tr>
+<td>App → Key Vault</td>
+<td>HTTPS</td>
+<td>TLS 1.3</td>
+</tr>
+</tbody></table>
+<h3>Network Security</h3>
+<ul>
+<li>✅ <strong>Private Endpoints:</strong> SQL, Key Vault, Storage</li>
+<li>✅ <strong>Firewall Rules:</strong> Only App Service IPs allowed</li>
+<li>✅ <strong>VNet Integration:</strong> App Service in isolated VNet</li>
+</ul>
+<hr>
+<h2>Troubleshooting Data Flow</h2>
+<h3>Common Issues</h3>
+<p><strong>Slow resource list loading:</strong></p>
+<ul>
+<li>Check Redis cache hit rate (target: &gt;80%)</li>
+<li>Review SQL query execution plan</li>
+<li>Verify connection pool not exhausted</li>
+</ul>
+<p><strong>Stale cost data:</strong></p>
+<ul>
+<li>Check sync job last run time</li>
+<li>Verify Azure Cost Management API access</li>
+<li>Review Service Bus queue depth</li>
+</ul>
+<p><strong>High database CPU:</strong></p>
+<ul>
+<li>Identify expensive queries in Query Store</li>
+<li>Check for missing indexes</li>
+<li>Review sync job timing</li>
+</ul>
+<hr>
+<p align="center"><small>Data Flow v1.8.1 | Understanding the System</small></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

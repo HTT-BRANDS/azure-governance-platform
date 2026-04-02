@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADR-0001: Multi-Agent Architecture — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Decisions</a><span>›</span>
+        ADR-0001: Multi-Agent Architecture
+      </div>
+      <h1 class="page-title">ADR-0001: Multi-Agent Architecture</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<hr>
+<h2>status: accepted
+date: 2026-03-06
+decision-makers: Tyler Granlund (Pack Leader), Planning Agent, Solutions Architect
+consulted: Security Auditor, Experience Architect, Web Puppy (research)
+informed: All Code Puppy agents, development team</h2>
+<h2>Context and Problem Statement</h2>
+<p>The Azure Governance Platform requires an AI-powered development assistant to help with architecture decisions, code implementation, testing, security audits, and UX design. A key decision was whether to build this as a single monolithic agent or as a specialized multi-agent system. Given the diverse skill sets required (backend development, frontend design, security analysis, testing, documentation), how should we structure the AI assistant to maximize effectiveness while maintaining code quality and security?</p>
+<h2>Decision Drivers</h2>
+<ul>
+<li><strong>Specialization</strong>: Different tasks require different expertise (e.g., Python development vs accessibility testing)</li>
+<li><strong>Parallel work</strong>: Need ability for multiple agents to work simultaneously on different issues</li>
+<li><strong>Clear accountability</strong>: Each task should have a clearly responsible agent</li>
+<li><strong>Security</strong>: Need to limit tool access per agent (least privilege principle)</li>
+<li><strong>Code quality</strong>: Specialized reviewers for different domains (Python, security, UX)</li>
+<li><strong>Scalability</strong>: System should scale to handle complex projects with many simultaneous tasks</li>
+<li><strong>Traceability</strong>: Need clear audit trail of which agent made which decisions</li>
+<li><strong>Context management</strong>: Single agent would have excessive context switching between vastly different tasks</li>
+</ul>
+<h2>Considered Options</h2>
+<ol>
+<li><strong>Monolithic agent</strong> - Single general-purpose agent handles all tasks</li>
+<li><strong>Multi-agent system (29 specialized agents)</strong> - Each agent has specific expertise and limited tool access</li>
+<li><strong>Hybrid approach</strong> - Small number of &quot;specialist&quot; agents (5-10) with broader capabilities</li>
+<li><strong>Tool-based specialization</strong> - Single agent with different &quot;modes&quot; activated by tooling</li>
+</ol>
+<h2>Decision Outcome</h2>
+<p>Chosen option: <strong>&quot;Multi-agent system (29 specialized agents)&quot;</strong>, because it provides the best balance of specialization, security, accountability, and parallel work capabilities.</p>
+<h3>Agent Roster</h3>
+<p>The system includes 29 specialized agents organized by domain:</p>
+<p><strong>Planning &amp; Coordination</strong> (3 agents):</p>
+<ul>
+<li>Pack Leader 🐺 - Strategic oversight, prioritization, final approval</li>
+<li>Planning Agent 📋 - Traceability, requirements decomposition, roadmap management</li>
+<li>Bloodhound 🐕‍🦸 - Issue tracking (bd), backlog management</li>
+</ul>
+<p><strong>Architecture &amp; Design</strong> (2 agents):</p>
+<ul>
+<li>Solutions Architect 🏛️ - Backend architecture, ADRs, technical decisions</li>
+<li>Experience Architect 🎨 - UX/UI design, accessibility, privacy patterns</li>
+</ul>
+<p><strong>Development</strong> (5 agents):</p>
+<ul>
+<li>Husky 🐺 - Main coding executor (pulls the sled!)</li>
+<li>Python Programmer 🐍 - Python-specific implementation</li>
+<li>Terrier 🐕 - Infrastructure, DevOps, deployment</li>
+<li>Agent Creator 🏭️ - Creates/modifies agent JSON files</li>
+<li>Web Puppy 🕵️‍♂️ - Research, web scraping, evidence gathering</li>
+</ul>
+<p><strong>Quality Assurance</strong> (6 agents):</p>
+<ul>
+<li>QA Expert 🐾 - Test strategy, 13-step methodology</li>
+<li>Watchdog 🐕‍🦺 - Automated testing, CI/CD gates</li>
+<li>QA Kitten 🐱 - Manual web UI testing</li>
+<li>Terminal QA 🖥️ - CLI and smoke testing</li>
+<li>Shepherd 🐕 - Code review coordinator, PR workflow</li>
+<li>Code Reviewer 🛡️ - Security-focused code review</li>
+</ul>
+<p><strong>Security &amp; Compliance</strong> (2 agents):</p>
+<ul>
+<li>Security Auditor 🛡️ - STRIDE analysis, threat modeling</li>
+<li>Prompt Reviewer 📝 - Reviews agent prompts for security issues</li>
+</ul>
+<p><strong>Review Specialists</strong> (2 agents):</p>
+<ul>
+<li>Python Reviewer 🐍 - Python code quality, PEP compliance</li>
+<li>Documentation Reviewer 📖 - Documentation quality</li>
+</ul>
+<h3>Consequences</h3>
+<ul>
+<li><strong>Good</strong>, because each agent can focus on their domain expertise without context switching</li>
+<li><strong>Good</strong>, because multiple agents can work in parallel on different worktrees/issues</li>
+<li><strong>Good</strong>, because tool access is limited per agent (security via least privilege)</li>
+<li><strong>Good</strong>, because accountability is clear (TRACEABILITY_MATRIX.md tracks agent ownership)</li>
+<li><strong>Good</strong>, because specialized reviewers catch domain-specific issues (Python reviewer for Python, Security Auditor for STRIDE)</li>
+<li><strong>Good</strong>, because prompts are shorter and more focused (no &quot;jack of all trades&quot; mega-prompt)</li>
+<li><strong>Bad</strong>, because coordination overhead requires Pack Leader and Planning Agent orchestration</li>
+<li><strong>Bad</strong>, because agents must use <code>invoke_agent</code> for cross-domain collaboration (communication overhead)</li>
+<li><strong>Neutral</strong>, because 29 agents seems like a lot, but each has a clear, specific role</li>
+</ul>
+<h3>Confirmation</h3>
+<p>This decision is validated by:</p>
+<ol>
+<li>All 29 agent JSON files exist in <code>~/.code_puppy/agents/</code></li>
+<li>Agent tool audit (docs/security/agent-tool-audit.md) confirms each agent has minimal necessary tools</li>
+<li>TRACEABILITY_MATRIX.md maps every requirement to a specific agent</li>
+<li>Parallel worktree workflow allows multiple agents to work simultaneously</li>
+</ol>
+<h2>STRIDE Security Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Threat Category</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Spoofing</strong></td>
+<td>Low</td>
+<td>Each agent has unique identifier (e.g., husky-51d43f); all actions logged with agent ID</td>
+</tr>
+<tr>
+<td><strong>Tampering</strong></td>
+<td>Medium</td>
+<td>Per-agent tool filtering prevents unauthorized file modifications; only Agent Creator can modify agents dir</td>
+</tr>
+<tr>
+<td><strong>Repudiation</strong></td>
+<td>Low</td>
+<td>All agent actions logged to bd issues with timestamps; git commits show agent authorship</td>
+</tr>
+<tr>
+<td><strong>Information Disclosure</strong></td>
+<td>Medium</td>
+<td>Agents only access files/tools necessary for their role; no shared secrets between agents</td>
+</tr>
+<tr>
+<td><strong>Denial of Service</strong></td>
+<td>Low</td>
+<td>Agent resource limits prevent single agent from monopolizing system; timeout protections</td>
+</tr>
+<tr>
+<td><strong>Elevation of Privilege</strong></td>
+<td>Medium</td>
+<td>Tool allow-lists enforce least privilege; agents cannot grant themselves new capabilities</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Security Posture:</strong> Multi-agent architecture significantly improves security posture by:</p>
+<ol>
+<li><strong>Reducing blast radius</strong> - Compromised agent only has access to their limited toolset</li>
+<li><strong>Clear audit trail</strong> - Every action traceable to specific agent</li>
+<li><strong>Least privilege by default</strong> - Each agent only gets tools they need</li>
+<li><strong>Defense in depth</strong> - Multiple review agents create security checkpoints</li>
+</ol>
+<p>Compared to a monolithic agent with all tools, this architecture reduces risk from High to Medium for tampering and elevation of privilege.</p>
+<h2>Pros and Cons of the Options</h2>
+<h3>Monolithic agent (rejected)</h3>
+<p><em>Single general-purpose agent handles all tasks</em></p>
+<ul>
+<li>Good, because simpler coordination (no inter-agent communication)</li>
+<li>Good, because single prompt, easier to maintain initially</li>
+<li>Good, because no context handoff between agents</li>
+<li>Bad, because <strong>massive security risk</strong> - single compromised agent has access to all tools</li>
+<li>Bad, because context window pollution (must know Python + UX + security + testing simultaneously)</li>
+<li>Bad, because no specialization - &quot;jack of all trades, master of none&quot;</li>
+<li>Bad, because no parallel work - single agent can only do one thing at a time</li>
+<li>Bad, because unclear accountability - who reviews the reviewer?</li>
+<li>Bad, because prompt becomes unwieldy (100+ KB of &quot;you are a Python expert AND a security expert AND...&quot;)</li>
+</ul>
+<h3>Multi-agent system (29 specialized agents) (accepted)</h3>
+<p><em>Current decision - see above for full analysis</em></p>
+<ul>
+<li>Good, because specialization improves quality</li>
+<li>Good, because parallel work scales better</li>
+<li>Good, because security via least privilege</li>
+<li>Good, because clear accountability and traceability</li>
+<li>Good, because focused prompts are easier to maintain</li>
+<li>Bad, because coordination overhead</li>
+<li>Bad, because requires orchestration layer (Pack Leader + Planning Agent)</li>
+<li>Neutral, because agent count seems high but each has distinct role</li>
+</ul>
+<h3>Hybrid approach (5-10 specialist agents) (rejected)</h3>
+<p><em>Fewer agents with broader responsibilities</em></p>
+<ul>
+<li>Good, because simpler coordination than 29 agents</li>
+<li>Good, because some specialization benefits</li>
+<li>Neutral, because moderate parallel work capability</li>
+<li>Bad, because still requires broad tool access per agent (higher security risk)</li>
+<li>Bad, because agents still have multiple responsibilities (e.g., &quot;Backend Agent&quot; does Python + infrastructure + security)</li>
+<li>Bad, because less clear accountability (who owns what?)</li>
+<li>Bad, because less effective specialization</li>
+</ul>
+<h3>Tool-based specialization (single agent with modes) (rejected)</h3>
+<p><em>Single agent switches &quot;modes&quot; based on task type</em></p>
+<ul>
+<li>Good, because single prompt to maintain</li>
+<li>Good, because no inter-agent communication</li>
+<li>Neutral, because could use tooling to enforce access control per mode</li>
+<li>Bad, because <strong>no parallel work</strong> - single agent can&#39;t work on multiple tasks simultaneously</li>
+<li>Bad, because mode switching adds complexity and potential errors</li>
+<li>Bad, because all tools must be accessible to single agent (security risk if mode system fails)</li>
+<li>Bad, because accountability is unclear (agent in &quot;Python mode&quot; vs &quot;Security mode&quot;?)</li>
+</ul>
+<h2>More Information</h2>
+<p><strong>Related Requirements:</strong></p>
+<ul>
+<li>REQ-101: Create Solutions Architect JSON agent</li>
+<li>REQ-102: Create Experience Architect JSON agent  </li>
+<li>REQ-103: Audit all agent tool permissions</li>
+<li>REQ-601: STRIDE analysis for all agents</li>
+<li>REQ-604: Self-modification protections</li>
+</ul>
+<p><strong>Related Documents:</strong></p>
+<ul>
+<li><a href="../../AGENTS.md">Agent Instructions</a></li>
+<li><a href="../security/agent-tool-audit.md">Agent Tool Audit</a></li>
+<li><a href="../../TRACEABILITY_MATRIX.md">Traceability Matrix</a></li>
+<li><a href="../../research/multi-agent-architecture/">Research: Multi-Agent Architecture</a></li>
+</ul>
+<p><strong>Validation:</strong></p>
+<ul>
+<li>✅ All 29 agents created and functional</li>
+<li>✅ Agent tool audit completed (docs/security/agent-tool-audit.md)</li>
+<li>✅ TRACEABILITY_MATRIX.md maps all requirements to agents</li>
+<li>✅ Parallel worktree workflow tested and documented</li>
+</ul>
+<p><strong>Review History:</strong></p>
+<ul>
+<li>2026-03-06: Initial decision documented (retroactive ADR)</li>
+<li>Reviewed by: Security Auditor 🛡️, Solutions Architect 🏛️</li>
+<li>Signed off by: Pack Leader 🐺, Planning Agent 📋</li>
+</ul>
+<hr>
+<p><strong>ADR Status:</strong> Accepted<br><strong>Implementation Status:</strong> ✅ Complete<br><strong>Last Updated:</strong> March 6, 2026</p>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

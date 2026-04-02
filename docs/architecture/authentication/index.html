@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Authentication &amp; Authorization — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/" style="background:var(--gray-100);color:var(--gray-900);border-radius:6px">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Architecture</a><span>›</span>
+        Authentication &amp; Authorization
+      </div>
+      <h1 class="page-title">Authentication &amp; Authorization</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<h2>🔐 Overview</h2>
+<p>The Azure Governance Platform implements <strong>enterprise-grade authentication</strong> using Azure AD B2C with OpenID Connect (OIDC).</p>
+<hr>
+<h2>Architecture Flow</h2>
+<h3>Authentication Sequence</h3>
+<ol>
+<li><strong>User Login</strong> → Redirect to Azure AD B2C</li>
+<li><strong>B2C Validation</strong> → User credentials + MFA (if enabled)</li>
+<li><strong>Token Return</strong> → JWT ID Token + Access Token</li>
+<li><strong>API Validation</strong> → Bearer token validation (RS256)</li>
+<li><strong>Tenant Context</strong> → SQL session context for RLS</li>
+<li><strong>Data Response</strong> → Tenant-scoped data returned</li>
+</ol>
+<hr>
+<h2>Current Implementation</h2>
+<h3>Identity Provider: Azure AD B2C</h3>
+<p><strong>Configuration:</strong></p>
+<ul>
+<li>Provider: Azure AD B2C (External)</li>
+<li>Tenant: httbrandsb2c.onmicrosoft.com</li>
+<li>Policy: B2C_1A_SIGNUP_SIGNIN</li>
+<li>Token Format: JWT (RS256)</li>
+<li>Session Lifetime: 8 hours</li>
+<li>MFA: Optional (per user policy)</li>
+</ul>
+<h3>Token Structure (ID Token)</h3>
+<p><strong>Key Claims:</strong></p>
+<ul>
+<li><code>oid</code> - User&#39;s unique Azure AD object ID</li>
+<li><code>tid</code> - Tenant ID for multi-tenancy</li>
+<li><code>extension_Role</code> - <strong>Custom claim for RBAC</strong></li>
+<li><code>extension_Department</code> - <strong>Custom claim for personas</strong></li>
+<li><code>emails</code> - User email address</li>
+<li><code>name</code> - Display name</li>
+</ul>
+<hr>
+<h2>HTTBrands Tenant Access Options</h2>
+<h3>Option 1: Azure AD B2C (Current) ✅</h3>
+<p><strong>How it works:</strong></p>
+<ul>
+<li>Users authenticate through Azure AD B2C</li>
+<li>B2C can federate to HTTBrands Azure AD</li>
+<li>Supports custom attributes (role, department)</li>
+<li>Built-in MFA support</li>
+</ul>
+<p><strong>Pros:</strong>
+✅ Fully managed by Microsoft
+✅ Supports social logins (optional)
+✅ Built-in MFA and conditional access
+✅ Easy custom attributes
+✅ Scales automatically</p>
+<p><strong>Configuration:</strong></p>
+<pre><code class="language-yaml">B2C Tenant: httbrandsb2c.onmicrosoft.com
+Custom Attributes: extension_Role, extension_Department
+User Flow: B2C_1A_SIGNUP_SIGNIN
+Token Lifetime: 8 hours
+</code></pre>
+<h3>Option 2: Direct Azure AD Integration</h3>
+<p><strong>How it works:</strong></p>
+<ul>
+<li>Skip B2C, connect directly to HTTBrands Azure AD</li>
+<li>Use Microsoft Authentication Library (MSAL)</li>
+<li>App registration in HTTBrands tenant</li>
+</ul>
+<p><strong>Pros:</strong>
+✅ No B2C dependency
+✅ Direct SSO with HTTBrands
+✅ Full Azure AD features (PIM, access reviews)
+✅ Group-based access control</p>
+<h3>Option 3: Hybrid (Recommended for Scale)</h3>
+<p><strong>How it works:</strong></p>
+<ul>
+<li>Keep B2C for external customers</li>
+<li>Add Azure AD for HTTBrands employees</li>
+<li>Users choose identity provider on login</li>
+<li>Same app supports both</li>
+</ul>
+<p><strong>Pros:</strong>
+✅ Best of both worlds
+✅ HTTBrands employees get SSO
+✅ Can onboard external users
+✅ Future-proof</p>
+<hr>
+<h2>Role-Based Access Control (RBAC)</h2>
+<h3>Current Role Matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Tenant View</th>
+<th>Cost Data</th>
+<th>Compliance</th>
+<th>Admin Panel</th>
+<th>API Access</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Global Admin</strong></td>
+<td>All ✅</td>
+<td>All ✅</td>
+<td>All ✅</td>
+<td>Full ✅</td>
+<td>Full ✅</td>
+</tr>
+<tr>
+<td><strong>Tenant Admin</strong></td>
+<td>Own ✅</td>
+<td>Own ✅</td>
+<td>Own ✅</td>
+<td>Limited ✅</td>
+<td>Own ✅</td>
+</tr>
+<tr>
+<td><strong>Cost Manager</strong></td>
+<td>Own ✅</td>
+<td>Own ✅</td>
+<td>Read Only ✅</td>
+<td>❌</td>
+<td>Own ✅</td>
+</tr>
+<tr>
+<td><strong>Compliance Officer</strong></td>
+<td>Own ✅</td>
+<td>Read Only ✅</td>
+<td>Own ✅</td>
+<td>❌</td>
+<td>Own ✅</td>
+</tr>
+<tr>
+<td><strong>Read-Only User</strong></td>
+<td>Own ✅</td>
+<td>Read Only ✅</td>
+<td>Read Only ✅</td>
+<td>❌</td>
+<td>Own ✅</td>
+</tr>
+<tr>
+<td><strong>API Service</strong></td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>System ✅</td>
+</tr>
+</tbody></table>
+<h3>Role Enforcement in Code</h3>
+<pre><code class="language-python">from fastapi import Depends, HTTPException
+from app.api.security import verify_token, require_role
+
+@app.get(&quot;/api/v1/admin/users&quot;)
+@require_role([&quot;Global Admin&quot;, &quot;Tenant Admin&quot;])
+async def list_users(current_user: dict = Depends(verify_token)):
+    # Only accessible to admins
+    return await user_service.list_all()
+
+@app.get(&quot;/api/v1/costs/summary&quot;)
+@require_role([&quot;Global Admin&quot;, &quot;Tenant Admin&quot;, &quot;Cost Manager&quot;])
+async def get_cost_summary(current_user: dict = Depends(verify_token)):
+    # Accessible to cost managers and above
+    tenant_id = current_user[&quot;tid&quot;]
+    return await cost_service.get_summary(tenant_id)
+</code></pre>
+<hr>
+<h2>Department-Based Personas</h2>
+<h3>Dynamic UI Based on Department</h3>
+<pre><code class="language-javascript">const department = token[&#39;extension_Department&#39;];
+
+switch(department) {
+  case &#39;Finance&#39;:
+    showFinanceDashboard();  // Cost focus
+    break;
+  case &#39;Security&#39;:
+    showSecurityDashboard();  // Compliance focus
+    break;
+  case &#39;Engineering&#39;:
+    showEngineeringDashboard();  // Resource focus
+    break;
+  case &#39;Executive&#39;:
+    showExecutiveDashboard();  // High-level metrics
+    break;
+  default:
+    showStandardDashboard();
+}
+</code></pre>
+<h3>Pre-configured Personas</h3>
+<table>
+<thead>
+<tr>
+<th>Persona</th>
+<th>Department</th>
+<th>Role</th>
+<th>Default View</th>
+<th>Key Metrics</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>CFO</strong></td>
+<td>Finance</td>
+<td>Global Admin</td>
+<td>Cost dashboard</td>
+<td>Total spend, trends, optimization</td>
+</tr>
+<tr>
+<td><strong>CISO</strong></td>
+<td>Security</td>
+<td>Global Admin</td>
+<td>Compliance view</td>
+<td>Security score, gaps, violations</td>
+</tr>
+<tr>
+<td><strong>Cloud Engineer</strong></td>
+<td>Engineering</td>
+<td>Tenant Admin</td>
+<td>Resource inventory</td>
+<td>VM count, storage, networking</td>
+</tr>
+<tr>
+<td><strong>Finance Analyst</strong></td>
+<td>Finance</td>
+<td>Cost Manager</td>
+<td>Cost allocation</td>
+<td>By department, project, tag</td>
+</tr>
+<tr>
+<td><strong>Compliance Auditor</strong></td>
+<td>Security</td>
+<td>Compliance Officer</td>
+<td>Audit reports</td>
+<td>Framework compliance, evidence</td>
+</tr>
+<tr>
+<td><strong>Department Head</strong></td>
+<td>Any</td>
+<td>Tenant Admin</td>
+<td>Dept summary</td>
+<td>Resources, costs, users</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Multi-Tenancy Security Model</h2>
+<h3>Row-Level Security (RLS) in Azure SQL</h3>
+<pre><code class="language-sql">-- Security predicate function
+CREATE FUNCTION dbo.tenant_access_predicate(@tenant_id uniqueidentifier)
+RETURNS TABLE
+WITH SCHEMABINDING
+AS
+RETURN SELECT 1 AS access_granted
+WHERE 
+    @tenant_id = CAST(SESSION_CONTEXT(N&#39;tenant_id&#39;) AS uniqueidentifier)
+    OR CAST(SESSION_CONTEXT(N&#39;role&#39;) AS nvarchar(50)) = &#39;Global Admin&#39;;
+
+-- Apply to resources table
+CREATE SECURITY POLICY tenant_isolation
+    ADD FILTER PREDICATE dbo.tenant_access_predicate(tenant_id)
+    ON dbo.resources,
+    ADD BLOCK PREDICATE dbo.tenant_access_predicate(tenant_id)
+    ON dbo.resources AFTER INSERT,
+    ADD BLOCK PREDICATE dbo.tenant_access_predicate(tenant_id)
+    ON dbo.resources AFTER UPDATE
+WITH (STATE = ON, SCHEMABINDING = ON);
+</code></pre>
+<h3>API Tenant Resolution</h3>
+<pre><code class="language-python">async def get_current_tenant(request: Request) -&gt; str:
+    &quot;&quot;&quot;Extract tenant_id from JWT and validate access.&quot;&quot;&quot;
+    token = extract_token_from_header(request)
+    payload = jwt.decode(token, verify=False)
+    
+    tenant_id = payload.get(&quot;tid&quot;)
+    user_role = payload.get(&quot;extension_Role&quot;)
+    
+    # Set session context for RLS
+    await db.execute(
+        &quot;EXEC sp_set_session_context &#39;tenant_id&#39;, ?&quot;, tenant_id
+    )
+    await db.execute(
+        &quot;EXEC sp_set_session_context &#39;role&#39;, ?&quot;, user_role
+    )
+    
+    return tenant_id
+</code></pre>
+<hr>
+<h2>Security Best Practices</h2>
+<h3>Current Implementation ✅</h3>
+<ul>
+<li>✅ <strong>HTTPS-only</strong> - All traffic encrypted</li>
+<li>✅ <strong>JWT validation</strong> - RS256 signature verification</li>
+<li>✅ <strong>Token expiration</strong> - 8-hour lifetime with refresh</li>
+<li>✅ <strong>Row-level security</strong> - Database-level tenant isolation</li>
+<li>✅ <strong>Rate limiting</strong> - 1000 req/hour per user</li>
+<li>✅ <strong>Audit logging</strong> - All auth events logged</li>
+<li>✅ <strong>MFA support</strong> - Optional, configurable per user</li>
+<li>✅ <strong>Secure headers</strong> - 12 security headers configured</li>
+</ul>
+<h3>Recommendations for HTTBrands</h3>
+<ol>
+<li><p><strong>Enable Conditional Access:</strong></p>
+<ul>
+<li>Require MFA for admin roles</li>
+<li>Restrict access by location/IP</li>
+<li>Device compliance checks</li>
+</ul>
+</li>
+<li><p><strong>Implement PIM (Privileged Identity Management):</strong></p>
+<ul>
+<li>Just-in-time admin access</li>
+<li>Access reviews quarterly</li>
+<li>Automated access certification</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2>Configuration Reference</h2>
+<h3>Environment Variables</h3>
+<pre><code class="language-bash"># Authentication
+AZURE_B2C_TENANT=httbrandsb2c.onmicrosoft.com
+AZURE_B2C_POLICY=B2C_1A_SIGNUP_SIGNIN
+AZURE_B2C_CLIENT_ID=&lt;app-registration-client-id&gt;
+
+# Token validation
+JWT_ALGORITHM=RS256
+JWT_AUDIENCE=&lt;app-client-id&gt;
+SESSION_TIMEOUT=28800  # 8 hours
+</code></pre>
+<hr>
+<p align="center"><small>Authentication Guide v1.8.1 | Secured by Azure AD B2C</small></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v1.9.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
