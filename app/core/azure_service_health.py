@@ -145,9 +145,9 @@ class ResourceHealthEvent:
     resource_type: str
     resource_group: str
     status: ResourceHealthStatus
-    previous_status: ResourceHealthStatus | None = None
     event_type: str  # "AvailabilityStateChange", "HealthEvent", etc.
     occurred_time: datetime
+    previous_status: ResourceHealthStatus | None = None
     description: str = ""
     reason_chronicity: str = ""  # "Persistent", "Transient"
     reason_type: str = ""  # "Unplanned", "Planned"
