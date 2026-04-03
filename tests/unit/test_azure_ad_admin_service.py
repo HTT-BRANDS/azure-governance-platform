@@ -27,6 +27,7 @@ except ImportError:
             self.status_code = status_code
             self.message = message
 
+
 from app.api.services.azure_ad_admin_service import (  # noqa: E402
     AdminRoleError,
     AdminRoleMetrics,

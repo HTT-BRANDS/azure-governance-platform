@@ -11,6 +11,7 @@ try:
     import azure.mgmt.policyinsights
     import azure.mgmt.resource
     import azure.mgmt.security  # noqa: F401 — imported for availability check
+
     AZURE_AVAILABLE = True
 except ImportError:
     AZURE_AVAILABLE = False

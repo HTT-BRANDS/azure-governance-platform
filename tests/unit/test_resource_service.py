@@ -805,7 +805,10 @@ class TestResourceServiceGetIdleResourcesSummary:
 
         # Service now uses get_tenant_name() helper instead of DB query
         with patch("app.api.services.resource_service.get_tenant_name") as mock_get_name:
-            mock_get_name.side_effect = lambda tid: {"tenant-1": "Tenant 1", "tenant-2": "Tenant 2"}.get(tid, "Unknown")
+            mock_get_name.side_effect = lambda tid: {
+                "tenant-1": "Tenant 1",
+                "tenant-2": "Tenant 2",
+            }.get(tid, "Unknown")
             result = await service.get_idle_resources_summary()
 
         assert isinstance(result, IdleResourceSummary)

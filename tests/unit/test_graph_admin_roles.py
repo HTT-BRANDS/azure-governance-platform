@@ -27,6 +27,7 @@ except ImportError:
             self.status_code = status_code
             self.message = message
 
+
 from app.api.services.graph_client import (  # noqa: E402
     ADMIN_ROLE_TEMPLATE_IDS,
     AdminRoleSummary,
