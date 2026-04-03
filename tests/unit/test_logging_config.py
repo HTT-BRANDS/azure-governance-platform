@@ -202,7 +202,10 @@ def test_log_api_request_includes_user_and_tenant():
     with patch("app.core.logging_config.logging.getLogger") as mock_get_logger:
         mock_logger = mock_get_logger.return_value
         log_api_request(
-            "GET", "/api/data", 200, 10.0,
+            "GET",
+            "/api/data",
+            200,
+            10.0,
             user_id="user-123",
             tenant_id="tenant-456",
         )
@@ -218,7 +221,10 @@ def test_log_api_request_includes_extra_fields():
     with patch("app.core.logging_config.logging.getLogger") as mock_get_logger:
         mock_logger = mock_get_logger.return_value
         log_api_request(
-            "GET", "/api/data", 200, 10.0,
+            "GET",
+            "/api/data",
+            200,
+            10.0,
             extra={"request_id": "req-789", "region": "eastus"},
         )
 
@@ -286,8 +292,13 @@ def test_json_formatter_includes_correlation_id():
     set_correlation_id("fmt-corr-id")
     formatter = JSONFormatter()
     record = logging.LogRecord(
-        name="test", level=logging.INFO, pathname="f.py",
-        lineno=1, msg="msg", args=None, exc_info=None,
+        name="test",
+        level=logging.INFO,
+        pathname="f.py",
+        lineno=1,
+        msg="msg",
+        args=None,
+        exc_info=None,
     )
 
     output = formatter.format(record)
@@ -303,8 +314,13 @@ def test_json_formatter_includes_duration_when_available():
 
     formatter = JSONFormatter()
     record = logging.LogRecord(
-        name="test", level=logging.INFO, pathname="f.py",
-        lineno=1, msg="msg", args=None, exc_info=None,
+        name="test",
+        level=logging.INFO,
+        pathname="f.py",
+        lineno=1,
+        msg="msg",
+        args=None,
+        exc_info=None,
     )
 
     output = formatter.format(record)
@@ -319,8 +335,13 @@ def test_json_formatter_omits_duration_when_no_start_time():
     """JSONFormatter omits duration_ms when no request timing is set."""
     formatter = JSONFormatter()
     record = logging.LogRecord(
-        name="test", level=logging.INFO, pathname="f.py",
-        lineno=1, msg="msg", args=None, exc_info=None,
+        name="test",
+        level=logging.INFO,
+        pathname="f.py",
+        lineno=1,
+        msg="msg",
+        args=None,
+        exc_info=None,
     )
 
     output = formatter.format(record)
@@ -336,11 +357,17 @@ def test_json_formatter_includes_exception_info():
         raise ValueError("test error")
     except ValueError:
         import sys
+
         exc_info = sys.exc_info()
 
     record = logging.LogRecord(
-        name="test", level=logging.ERROR, pathname="f.py",
-        lineno=1, msg="something broke", args=None, exc_info=exc_info,
+        name="test",
+        level=logging.ERROR,
+        pathname="f.py",
+        lineno=1,
+        msg="something broke",
+        args=None,
+        exc_info=exc_info,
     )
 
     output = formatter.format(record)
