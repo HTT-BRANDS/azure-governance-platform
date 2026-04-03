@@ -28,7 +28,7 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Countdown Card -->
-        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-6 mb-8 text-white">
+        <div class="bg-hero-gradient rounded-xl shadow-lg p-6 mb-8 text-white">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
                 <div>
                     <div class="text-4xl font-bold" id="days">--</div>
@@ -103,17 +103,17 @@
                         <p class="text-sm font-medium text-muted-theme">Device Compliance</p>
                         <p class="text-3xl font-bold text-primary-theme" id="device-compliance">--%</p>
                     </div>
-                    <div class="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
+                    <div class="w-16 h-16 rounded-full bg-accent-5 flex items-center justify-center">
                         <span class="text-2xl">💻</span>
                     </div>
                 </div>
                 <div class="mt-4">
                     <div class="flex justify-between text-sm">
                         <span class="text-muted-theme">Target: 90%</span>
-                        <span class="text-purple-600 font-medium" id="device-progress">--%</span>
+                        <span class="text-accent-theme font-medium" id="device-progress">--%</span>
                     </div>
                     <div class="mt-2 bg-surface-tertiary rounded-full h-2">
-                        <div class="bg-purple-600 h-2 rounded-full" id="device-bar" style="width: 0%"></div>
+                        <div class="bg-accent-100 h-2 rounded-full" id="device-bar" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
@@ -240,10 +240,10 @@
                     </div>
                 </div>
                 <div class="text-center p-4 bg-surface-secondary rounded-lg">
-                    <div class="text-3xl font-bold text-purple-600" id="ds-score">--</div>
+                    <div class="text-3xl font-bold text-accent-theme" id="ds-score">--</div>
                     <div class="text-sm text-muted-theme">Data Security (DS)</div>
                     <div class="mt-2 bg-surface-tertiary rounded-full h-2">
-                        <div class="bg-purple-600 h-2 rounded-full" id="ds-bar" style="width: 0%"></div>
+                        <div class="bg-accent-100 h-2 rounded-full" id="ds-bar" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
@@ -382,7 +382,7 @@
         const priorityBars = document.getElementById('priority-bars');
         const priorityColors = {
             'P0': 'bg-wm-red-100',
-            'P1': 'bg-orange-500',
+            'P1': 'bg-wm-orange-500',
             'P2': 'bg-wm-spark-100'
         };
         priorityBars.innerHTML = Object.entries(data.requirements_by_priority).map(([priority, stats]) => `

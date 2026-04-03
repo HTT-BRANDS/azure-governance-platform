@@ -7,7 +7,7 @@
 
 {% macro consent_banner(request) %}
 <div id="consent-banner" 
-     class="fixed bottom-0 left-0 right-0 bg-slate-900 text-white p-4 shadow-lg z-50 hidden"
+     class="fixed bottom-0 left-0 right-0 bg-overlay text-white p-4 shadow-lg z-50 hidden"
      role="dialog"
      aria-labelledby="consent-title"
      aria-describedby="consent-description">
@@ -15,7 +15,7 @@
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="flex-1">
             <h2 id="consent-title" class="text-lg font-semibold mb-1">Cookie Preferences</h2>
-            <p id="consent-description" class="text-sm text-slate-300">
+            <p id="consent-description" class="text-sm text-overlay-muted">
                 We use cookies to enhance your experience. 
                 <a href="/privacy" class="underline hover:text-white">Learn more</a>
             </p>
@@ -23,11 +23,11 @@
         
         <div class="flex flex-wrap gap-2">
             <button id="consent-customize" 
-                    class="px-4 py-2 text-sm bg-slate-700 hover:bg-slate-600 rounded transition-colors">
+                    class="px-4 py-2 text-sm bg-overlay-interactive hover:opacity-80 rounded transition-colors">
                 Customize
             </button>
             <button id="consent-reject" 
-                    class="px-4 py-2 text-sm bg-slate-700 hover:bg-slate-600 rounded transition-colors">
+                    class="px-4 py-2 text-sm bg-overlay-interactive hover:opacity-80 rounded transition-colors">
                 Reject All
             </button>
             <button id="consent-accept" 
@@ -38,7 +38,7 @@
     </div>
     
     {# Expanded preferences panel #}
-    <div id="consent-preferences" class="hidden mt-4 pt-4 border-t border-slate-700 max-w-7xl mx-auto">
+    <div id="consent-preferences" class="hidden mt-4 pt-4 border-t border-overlay max-w-7xl mx-auto">
         <div class="grid md:grid-cols-2 gap-4">
             {% set categories = {
                 'necessary': {'name': 'Necessary', 'required': true, 'desc': 'Essential for the website to function. Cannot be disabled.'},
@@ -48,18 +48,18 @@
             } %}
             
             {% for key, cat in categories.items() %}
-            <div class="flex items-start gap-3 p-3 bg-slate-800 rounded">
+            <div class="flex items-start gap-3 p-3 bg-overlay-elevated rounded">
                 <input type="checkbox" 
                        id="consent-{{ key }}"
                        name="{{ key }}"
                        {% if cat.required %}checked disabled{% endif %}
-                       class="mt-1 w-4 h-4 rounded border-slate-600 text-brand-primary-100 focus-visible:ring-brand-primary-100 disabled:opacity-50">
+                       class="mt-1 w-4 h-4 rounded border-overlay text-brand-primary-100 focus-visible:ring-brand-primary-100 disabled:opacity-50">
                 <div>
                     <label for="consent-{{ key }}" class="font-medium block">
                         {{ cat.name }}
-                        {% if cat.required %}<span class="text-slate-400 text-sm">(Required)</span>{% endif %}
+                        {% if cat.required %}<span class="text-overlay-muted text-sm">(Required)</span>{% endif %}
                     </label>
-                    <p class="text-sm text-slate-400">{{ cat.desc }}</p>
+                    <p class="text-sm text-overlay-muted">{{ cat.desc }}</p>
                 </div>
             </div>
             {% endfor %}

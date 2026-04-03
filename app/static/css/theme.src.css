@@ -346,6 +346,37 @@ body {
 
 
 /* ==========================================================================
+   Overlay/Dark Surface Tokens
+   Used by consent banner, modals, tooltips — always-dark regardless of theme
+   ========================================================================== */
+:root {
+  --overlay-bg:          #0f172a; /* near-black */
+  --overlay-bg-elevated: #1e293b; /* slightly lighter */
+  --overlay-text:        #f1f5f9; /* near-white */
+  --overlay-text-muted:  #94a3b8; /* subdued */
+  --overlay-border:      #334155; /* subtle divider */
+  --overlay-interactive:  #475569; /* buttons, hover */
+  --overlay-interactive-hover: #64748b;
+}
+
+.bg-overlay           { background-color: var(--overlay-bg); }
+.bg-overlay-elevated  { background-color: var(--overlay-bg-elevated); }
+.text-overlay         { color: var(--overlay-text); }
+.text-overlay-muted   { color: var(--overlay-text-muted); }
+.border-overlay       { border-color: var(--overlay-border); }
+.bg-overlay-interactive { background-color: var(--overlay-interactive); }
+
+/* Hero gradient — brand-tinted dark banner for dashboards */
+.bg-hero-gradient {
+  background: linear-gradient(135deg, var(--brand-primary-130, #30040A) 0%, var(--brand-primary-100, #500711) 100%);
+}
+
+/* Info/highlight accent — for informational metrics (not success/warning/error) */
+.text-accent-theme    { color: var(--brand-secondary-100); }
+.bg-accent-5          { background-color: var(--brand-secondary-5); }
+.bg-accent-100        { background-color: var(--brand-secondary-100); }
+
+/* ==========================================================================
    Skeleton Loading Screens
    Replaces spinner-based loading with content-shaped placeholders
    ========================================================================== */
