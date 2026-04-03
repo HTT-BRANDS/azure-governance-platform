@@ -130,7 +130,7 @@ async function loadAllData() {
             const pct = summary.cost_change_percent.toFixed(1);
             const isUp = summary.cost_change_percent > 0;
             changeEl.textContent = `${isUp ? '↑' : '↓'} ${Math.abs(pct)}% vs prior period`;
-            changeEl.className = `mt-1 text-sm ${isUp ? 'text-red-600' : 'text-green-600'}`;
+            changeEl.className = `mt-1 text-sm ${isUp ? 'text-danger' : 'text-success'}`;
         } else {
             changeEl.textContent = 'No prior period data';
             changeEl.className = 'mt-1 text-sm text-muted-theme';
@@ -178,9 +178,9 @@ async function loadAllData() {
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-theme">${a.anomaly_type}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-theme">${formatCurrency(a.expected_cost)}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-theme">${formatCurrency(a.actual_cost)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm ${a.percentage_change > 0 ? 'text-red-600' : 'text-green-600'}">${a.percentage_change > 0 ? '+' : ''}${a.percentage_change.toFixed(1)}%</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm ${a.percentage_change > 0 ? 'text-danger' : 'text-success'}">${a.percentage_change > 0 ? '+' : ''}${a.percentage_change.toFixed(1)}%</td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${a.is_acknowledged ? 'bg-surface-secondary text-gray-800' : 'bg-red-100 text-red-800'}">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${a.is_acknowledged ? 'bg-surface-secondary text-primary-theme' : 'bg-brand-error-5 text-danger'}">
                         ${a.is_acknowledged ? 'Acknowledged' : 'Open'}
                     </span>
                 </td>

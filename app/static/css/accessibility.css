@@ -1,6 +1,96 @@
-/* WCAG 2.2 AA Accessibility (P5: n4e) */
-.skip-link { position:absolute; top:-40px; left:0; background:#000; color:#fff; padding:8px 16px; z-index:10000; font-size:14px; transition:top 0.2s; }
-.skip-link:focus { top:0; }
-nav a,nav button { display:inline-flex; align-items:center; min-height:44px; padding:8px 12px; }
-@media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:0.01ms !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
-@media (forced-colors:active) { .nav-active { border:2px solid currentColor; } button,a { border:1px solid currentColor; } }
+/* ==========================================================================
+   WCAG 2.2 AA Accessibility Layer
+   ========================================================================== 
+   
+   This file provides accessibility enhancements that work WITH the design 
+   system, not against it. All colors use CSS custom properties from 
+   theme.src.css so they adapt per-tenant.
+   
+   Load order: theme.css → riverside.css → accessibility.css
+   ========================================================================== */
+
+/* ── Skip Link ──────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--text-primary, #111827);
+  color: var(--bg-primary, #fff);
+  padding: 8px 16px;
+  z-index: 10000;
+  font-size: 14px;
+  transition: top 0.2s;
+  text-decoration: underline;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── Minimum Touch Target (WCAG 2.5.8) ─────────────────────── */
+nav a,
+nav button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+}
+
+/* ── Focus-Visible (WCAG 2.4.7 + 2.4.11) ───────────────────── 
+   Uses brand token so focus rings adapt per-tenant.
+   The theme.src.css defines :focus-visible with the same token;
+   this layer adds enhanced specificity for ARIA roles.
+   ─────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 3px solid var(--brand-primary, #500711);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Enhanced focus for tab/menu patterns */
+[tabindex="0"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid var(--brand-primary, #500711);
+  outline-offset: 2px;
+}
+
+/* Ensure buttons and links always show focus */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--brand-primary, #500711);
+  outline-offset: 2px;
+}
+
+/* ── Reduced Motion (WCAG 2.3.3) ───────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Forced Colors / High Contrast Mode (WCAG 1.4.11) ──────── */
+@media (forced-colors: active) {
+  .nav-active {
+    border: 2px solid currentColor;
+  }
+
+  button,
+  a {
+    border: 1px solid currentColor;
+  }
+
+  /* Ensure focus rings use system colors in HC mode */
+  :focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+}

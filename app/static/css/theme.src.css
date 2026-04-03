@@ -82,7 +82,7 @@
   /* Text Colors (light mode) */
   --text-primary: #111827;
   --text-secondary: #4B5563;
-  --text-muted: #6B7280;  /* gray-500: 4.64:1 on white (WCAG AA) */
+  --text-muted: #57606A;  /* 5.74:1 on white — WCAG AA compliant */
   --text-on-primary: white;
   --text-on-secondary: #111827;
 
@@ -537,8 +537,9 @@ body {
 }
 
 .btn-brand:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--brand-primary-50);
+  outline: 2px solid var(--brand-primary, #500711);
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 .btn-brand-secondary {

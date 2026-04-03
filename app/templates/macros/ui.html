@@ -47,10 +47,10 @@
 {% set variant_classes = {
   "primary": "badge-brand",
   "accent": "badge-brand-accent",
-  "success": "bg-green-100 text-green-800",
-  "warning": "bg-yellow-100 text-yellow-800",
-  "danger": "bg-red-100 text-red-800",
-  "neutral": "bg-gray-10 text-gray-130"
+  "success": "bg-brand-success-5 text-success",
+  "warning": "bg-brand-warning-5 text-warning",
+  "danger": "bg-brand-error-5 text-danger",
+  "neutral": "bg-surface-secondary text-secondary-theme"
 } %}
 <span class="{{ variant_classes.get(variant, 'badge-brand') }} {{ extra_classes }}" role="status">{{ text }}</span>
 {% endmacro %}
@@ -79,9 +79,9 @@
 
 {# ── Status Indicator ─────────────────────────────────────────── #}
 {% macro status_indicator(status, text=None) %}
-{% set colors = {"healthy": "bg-success", "warning": "bg-warning", "critical": "bg-danger", "unknown": "bg-gray-100"} %}
+{% set colors = {"healthy": "bg-success", "warning": "bg-warning", "critical": "bg-danger", "unknown": "bg-surface-tertiary"} %}
 <span class="inline-flex items-center gap-1.5" role="status">
-  <span class="w-2 h-2 rounded-full {{ colors.get(status, 'bg-gray-100') }}" aria-hidden="true"></span>
+  <span class="w-2 h-2 rounded-full {{ colors.get(status, 'bg-surface-tertiary') }}" aria-hidden="true"></span>
   {% if text %}<span class="text-sm">{{ text }}</span>{% endif %}
 </span>
 {% endmacro %}

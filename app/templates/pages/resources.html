@@ -29,12 +29,12 @@
             </div>
             <div class="bg-surface-primary rounded-xl shadow p-6">
                 <div class="text-sm font-medium text-muted-theme">Idle Resources</div>
-                <div class="mt-2 text-3xl font-bold text-yellow-600" id="idle-count">--</div>
+                <div class="mt-2 text-3xl font-bold text-warning" id="idle-count">--</div>
                 <div class="mt-1 text-sm text-muted-theme">Potential savings</div>
             </div>
             <div class="bg-surface-primary rounded-xl shadow p-6">
                 <div class="text-sm font-medium text-muted-theme">Orphaned Resources</div>
-                <div class="mt-2 text-3xl font-bold text-red-600" id="orphaned-count">--</div>
+                <div class="mt-2 text-3xl font-bold text-danger" id="orphaned-count">--</div>
                 <div class="mt-1 text-sm text-muted-theme">No owner identified</div>
             </div>
             <div class="bg-surface-primary rounded-xl shadow p-6">
@@ -160,7 +160,7 @@ async function loadAllData() {
                 <tr>
                     <td class="px-6 py-4 text-sm font-medium text-primary-theme">${r.resource_name || r.name || '--'}</td>
                     <td class="px-6 py-4 text-sm text-secondary-theme">${r.resource_type || '--'}</td>
-                    <td class="px-6 py-4 text-sm text-green-600">${r.estimated_monthly_savings ? formatCurrency(r.estimated_monthly_savings) : '--'}</td>
+                    <td class="px-6 py-4 text-sm text-success">${r.estimated_monthly_savings ? formatCurrency(r.estimated_monthly_savings) : '--'}</td>
                 </tr>
             `).join('');
         } else {
@@ -191,9 +191,9 @@ async function loadAllData() {
         const score = tagging.compliance_percentage ?? tagging.score ?? 0;
         const scoreEl = document.getElementById('tagging-score');
         scoreEl.textContent = `${score.toFixed(1)}%`;
-        if (score >= 90) scoreEl.className = 'mt-2 text-3xl font-bold text-green-600';
-        else if (score >= 70) scoreEl.className = 'mt-2 text-3xl font-bold text-yellow-600';
-        else scoreEl.className = 'mt-2 text-3xl font-bold text-red-600';
+        if (score >= 90) scoreEl.className = 'mt-2 text-3xl font-bold text-success';
+        else if (score >= 70) scoreEl.className = 'mt-2 text-3xl font-bold text-warning';
+        else scoreEl.className = 'mt-2 text-3xl font-bold text-danger';
     }
 }
 

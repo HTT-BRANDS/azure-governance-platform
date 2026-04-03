@@ -100,7 +100,7 @@
                 const data = await response.json();
                 renderResults(data);
             } catch (err) {
-                results.innerHTML = '<div class="p-8 text-center text-red-500">Search failed</div>';
+                results.innerHTML = '<div class="p-8 text-center text-danger">Search failed</div>';
             }
         }, 150);
     });
@@ -114,7 +114,7 @@
         
         const html = items.map((item, i) => `
             <a href="${item.url}" 
-               class="block px-4 py-3 hover:bg-slate-50 ${i === selectedIndex ? 'bg-blue-50' : ''}"
+               class="block px-4 py-3 hover:bg-slate-50 ${i === selectedIndex ? 'bg-wm-blue-5' : ''}"
                data-index="${i}">
                 <div class="flex items-center gap-3">
                     <span class="text-lg">${getIcon(item.type)}</span>
@@ -167,7 +167,7 @@
     
     function updateSelection(items) {
         items.forEach((item, i) => {
-            item.classList.toggle('bg-blue-50', i === selectedIndex);
+            item.classList.toggle('bg-wm-blue-5', i === selectedIndex);
         });
         items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
     }

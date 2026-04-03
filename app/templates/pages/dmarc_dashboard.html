@@ -13,7 +13,7 @@
                     <p class="mt-1 text-sm text-muted-theme">Email Authentication Compliance for Riverside Tenants</p>
                 </div>
                 <div class="text-right">
-                    <div class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-lg">
+                    <div class="inline-flex items-center px-4 py-2 bg-wm-blue-5 text-wm-blue-100 rounded-lg">
                         <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
                             <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
@@ -31,19 +31,19 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
                 <div>
                     <div class="text-4xl font-bold" id="avg-security-score">--</div>
-                    <div class="text-blue-200">Avg Security Score</div>
+                    <div class="text-white/80">Avg Security Score</div>
                 </div>
                 <div>
                     <div class="text-4xl font-bold" id="total-domains">--</div>
-                    <div class="text-blue-200">Total Domains</div>
+                    <div class="text-white/80">Total Domains</div>
                 </div>
                 <div>
                     <div class="text-4xl font-bold" id="dmarc-compliant">--</div>
-                    <div class="text-blue-200">DMARC Compliant</div>
+                    <div class="text-white/80">DMARC Compliant</div>
                 </div>
                 <div>
                     <div class="text-4xl font-bold" id="dkim-enabled">--</div>
-                    <div class="text-blue-200">DKIM Enabled</div>
+                    <div class="text-white/80">DKIM Enabled</div>
                 </div>
             </div>
         </div>
@@ -63,12 +63,12 @@
             <div class="px-6 py-4 border-b border-theme flex justify-between items-center">
                 <h2 class="text-lg font-semibold text-primary-theme">Tenant Email Security Status</h2>
                 <div class="flex space-x-2">
-                    <button data-filter-tenant="all" class="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800">All</button>
+                    <button data-filter-tenant="all" class="px-3 py-1 text-sm rounded-full bg-wm-blue-5 text-wm-blue-100">All</button>
                     <button data-filter-tenant="riverside" class="px-3 py-1 text-sm rounded-full bg-surface-tertiary text-muted-theme">Riverside Only</button>
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-border-default">
                     <thead class="bg-surface-secondary">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Tenant</th>
@@ -79,7 +79,7 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Last Sync</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-surface-primary divide-y divide-gray-200" id="tenant-table">
+                    <tbody class="bg-surface-primary divide-y divide-border-default" id="tenant-table">
                         <!-- Populated by JavaScript -->
                     </tbody>
                 </table>
@@ -99,15 +99,15 @@
                     </div>
                     <div class="mt-4 text-sm text-muted-theme">
                         <div class="flex items-center mb-1">
-                            <span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                            <span class="w-3 h-3 rounded-full bg-wm-green-100 mr-2"></span>
                             <span><strong>Reject:</strong> Full protection, spoofed emails rejected</span>
                         </div>
                         <div class="flex items-center mb-1">
-                            <span class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
+                            <span class="w-3 h-3 rounded-full bg-wm-spark-100 mr-2"></span>
                             <span><strong>Quarantine:</strong> Partial protection, emails to spam</span>
                         </div>
                         <div class="flex items-center">
-                            <span class="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                            <span class="w-3 h-3 rounded-full bg-wm-red-100 mr-2"></span>
                             <span><strong>None:</strong> No protection, emails pass through</span>
                         </div>
                     </div>
@@ -125,15 +125,15 @@
                     </div>
                     <div class="mt-4 text-sm text-muted-theme">
                         <div class="flex items-center mb-1">
-                            <span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                            <span class="w-3 h-3 rounded-full bg-wm-green-100 mr-2"></span>
                             <span><strong>Enabled & Aligned:</strong> DKIM properly configured</span>
                         </div>
                         <div class="flex items-center mb-1">
-                            <span class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
+                            <span class="w-3 h-3 rounded-full bg-wm-spark-100 mr-2"></span>
                             <span><strong>Enabled Only:</strong> DKIM active but not aligned</span>
                         </div>
                         <div class="flex items-center">
-                            <span class="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                            <span class="w-3 h-3 rounded-full bg-wm-red-100 mr-2"></span>
                             <span><strong>Disabled:</strong> DKIM not configured</span>
                         </div>
                     </div>
@@ -161,14 +161,14 @@
 
         <!-- Active Alerts -->
         <div class="bg-surface-primary rounded-xl shadow mb-8">
-            <div class="px-6 py-4 border-b border-theme bg-red-50">
+            <div class="px-6 py-4 border-b border-theme bg-brand-error-5">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-red-900">Active Security Alerts</h2>
-                    <span class="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded-full" id="alert-count">0</span>
+                    <h2 class="text-lg font-semibold text-danger">Active Security Alerts</h2>
+                    <span class="px-3 py-1 bg-brand-error-100 text-white text-sm font-medium rounded-full" id="alert-count">0</span>
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-border-default">
                     <thead class="bg-surface-secondary">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Severity</th>
@@ -179,7 +179,7 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-surface-primary divide-y divide-gray-200" id="alerts-table">
+                    <tbody class="bg-surface-primary divide-y divide-border-default" id="alerts-table">
                         <!-- Populated by JavaScript -->
                     </tbody>
                 </table>
@@ -192,7 +192,7 @@
                 <h2 class="text-lg font-semibold text-primary-theme">Recent Authentication Failures</h2>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-border-default">
                     <thead class="bg-surface-secondary">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Domain</th>
@@ -202,7 +202,7 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">Failure Rate</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-surface-primary divide-y divide-gray-200" id="failures-table">
+                    <tbody class="bg-surface-primary divide-y divide-border-default" id="failures-table">
                         <!-- Populated by JavaScript -->
                     </tbody>
                 </table>
@@ -211,13 +211,13 @@
 
         <!-- Action Buttons -->
         <div class="flex justify-center space-x-4">
-            <button data-action="sync-dmarc" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+            <button data-action="sync-dmarc" class="inline-flex items-center px-6 py-3 bg-wm-blue-100 text-white font-medium rounded-lg hover:bg-wm-blue-110 transition">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
                 Sync Now
             </button>
-            <a href="/api/v1/dmarc/summary" class="inline-flex items-center px-6 py-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition">
+            <a href="/api/v1/dmarc/summary" class="inline-flex items-center px-6 py-3 bg-wm-gray-100 text-white font-medium rounded-lg hover:bg-wm-gray-110 transition">
                 View API
             </a>
         </div>
@@ -277,15 +277,15 @@
         
         if (criticalCount > 0) {
             banner.innerHTML = `
-                <div class="bg-red-50 border-l-4 border-red-500 p-4">
+                <div class="bg-brand-error-5 border-l-4 border-brand-error-100 p-4">
                     <div class="flex">
                         <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <svg class="h-5 w-5 text-danger" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <p class="text-sm text-red-700">
+                            <p class="text-sm text-danger">
                                 <strong>${criticalCount} critical security alert${criticalCount > 1 ? 's' : ''}</strong> 
                                 require attention. Review the alerts below.
                             </p>
@@ -305,7 +305,7 @@
         container.innerHTML = tenants.slice(0, 4).map(t => {
             const score = t.security_score;
             const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-            const color = score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500';
+            const color = score >= 80 ? 'bg-wm-green-100' : score >= 60 ? 'bg-wm-spark-100' : 'bg-wm-red-100';
             
             return `
                 <div class="bg-surface-primary rounded-xl shadow p-6">
@@ -318,7 +318,7 @@
                             ${grade}
                         </div>
                     </div>
-                    <div class="mt-2 bg-gray-200 rounded-full h-2">
+                    <div class="mt-2 bg-surface-tertiary rounded-full h-2">
                         <div class="${color} h-2 rounded-full" style="width: ${score}%"></div>
                     </div>
                     <p class="text-xs text-muted-theme mt-2">
@@ -341,23 +341,23 @@
             const dkimEnabled = t.dkim_records.filter(r => r.is_enabled).length;
             const dkimAligned = t.dkim_records.filter(r => r.is_aligned).length;
             
-            let policyBadge = 'bg-red-100 text-red-800';
+            let policyBadge = 'bg-brand-error-5 text-danger';
             let policyText = 'None';
             if (rejectCount > 0) {
-                policyBadge = 'bg-green-100 text-green-800';
+                policyBadge = 'bg-brand-success-5 text-success';
                 policyText = `${rejectCount}/${dmarcCount} Reject`;
             } else if (quarantineCount > 0) {
-                policyBadge = 'bg-yellow-100 text-yellow-800';
+                policyBadge = 'bg-brand-warning-5 text-warning';
                 policyText = `${quarantineCount}/${dmarcCount} Quarantine`;
             }
             
-            let dkimBadge = 'bg-red-100 text-red-800';
+            let dkimBadge = 'bg-brand-error-5 text-danger';
             let dkimText = 'None';
             if (dkimAligned > 0) {
-                dkimBadge = 'bg-green-100 text-green-800';
+                dkimBadge = 'bg-brand-success-5 text-success';
                 dkimText = `${dkimAligned}/${t.dkim_records.length} Aligned`;
             } else if (dkimEnabled > 0) {
-                dkimBadge = 'bg-yellow-100 text-yellow-800';
+                dkimBadge = 'bg-brand-warning-5 text-warning';
                 dkimText = `${dkimEnabled}/${t.dkim_records.length} Enabled`;
             }
             
@@ -368,9 +368,9 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
-                            <span class="text-sm font-bold ${t.security_score >= 80 ? 'text-green-600' : t.security_score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${t.security_score.toFixed(1)}</span>
-                            <div class="ml-2 w-16 bg-gray-200 rounded-full h-1.5">
-                                <div class="${t.security_score >= 80 ? 'bg-green-600' : t.security_score >= 60 ? 'bg-yellow-600' : 'bg-red-600'} h-1.5 rounded-full" style="width: ${t.security_score}%"></div>
+                            <span class="text-sm font-bold ${t.security_score >= 80 ? 'text-success' : t.security_score >= 60 ? 'text-warning' : 'text-danger'}">${t.security_score.toFixed(1)}</span>
+                            <div class="ml-2 w-16 bg-surface-tertiary rounded-full h-1.5">
+                                <div class="${t.security_score >= 80 ? 'bg-wm-green-100' : t.security_score >= 60 ? 'bg-wm-spark-100' : 'bg-wm-red-100'} h-1.5 rounded-full" style="width: ${t.security_score}%"></div>
                             </div>
                         </div>
                     </td>
@@ -403,8 +403,8 @@
                     <span class="font-medium text-secondary-theme">Reject (Full Protection)</span>
                     <span class="text-muted-theme">${rejectCount} (${Math.round(rejectCount/total*100)}%)</span>
                 </div>
-                <div class="bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-green-600 h-2.5 rounded-full transition-all duration-500" style="width: ${(rejectCount/total*100)}%"></div>
+                <div class="bg-surface-tertiary rounded-full h-2.5">
+                    <div class="bg-wm-green-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(rejectCount/total*100)}%"></div>
                 </div>
             </div>
             <div>
@@ -412,8 +412,8 @@
                     <span class="font-medium text-secondary-theme">Quarantine (Partial Protection)</span>
                     <span class="text-muted-theme">${quarantineCount} (${Math.round(quarantineCount/total*100)}%)</span>
                 </div>
-                <div class="bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-yellow-500 h-2.5 rounded-full transition-all duration-500" style="width: ${(quarantineCount/total*100)}%"></div>
+                <div class="bg-surface-tertiary rounded-full h-2.5">
+                    <div class="bg-wm-spark-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(quarantineCount/total*100)}%"></div>
                 </div>
             </div>
             <div>
@@ -421,8 +421,8 @@
                     <span class="font-medium text-secondary-theme">None (No Protection)</span>
                     <span class="text-muted-theme">${noneCount} (${Math.round(noneCount/total*100)}%)</span>
                 </div>
-                <div class="bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-red-500 h-2.5 rounded-full transition-all duration-500" style="width: ${(noneCount/total*100)}%"></div>
+                <div class="bg-surface-tertiary rounded-full h-2.5">
+                    <div class="bg-wm-red-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(noneCount/total*100)}%"></div>
                 </div>
             </div>
         `;
@@ -444,8 +444,8 @@
                     <span class="font-medium text-secondary-theme">Enabled & Aligned</span>
                     <span class="text-muted-theme">${alignedCount} (${Math.round(alignedCount/total*100)}%)</span>
                 </div>
-                <div class="bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-green-600 h-2.5 rounded-full transition-all duration-500" style="width: ${(alignedCount/total*100)}%"></div>
+                <div class="bg-surface-tertiary rounded-full h-2.5">
+                    <div class="bg-wm-green-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(alignedCount/total*100)}%"></div>
                 </div>
             </div>
             <div>
@@ -453,8 +453,8 @@
                     <span class="font-medium text-secondary-theme">Enabled Only</span>
                     <span class="text-muted-theme">${enabledOnlyCount} (${Math.round(enabledOnlyCount/total*100)}%)</span>
                 </div>
-                <div class="bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-yellow-500 h-2.5 rounded-full transition-all duration-500" style="width: ${(enabledOnlyCount/total*100)}%"></div>
+                <div class="bg-surface-tertiary rounded-full h-2.5">
+                    <div class="bg-wm-spark-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(enabledOnlyCount/total*100)}%"></div>
                 </div>
             </div>
             <div>
@@ -462,8 +462,8 @@
                     <span class="font-medium text-secondary-theme">Disabled</span>
                     <span class="text-muted-theme">${disabledCount} (${Math.round(disabledCount/total*100)}%)</span>
                 </div>
-                <div class="bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-red-500 h-2.5 rounded-full transition-all duration-500" style="width: ${(disabledCount/total*100)}%"></div>
+                <div class="bg-surface-tertiary rounded-full h-2.5">
+                    <div class="bg-wm-red-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(disabledCount/total*100)}%"></div>
                 </div>
             </div>
         `;
@@ -475,10 +475,10 @@
         const table = document.getElementById('alerts-table');
         
         const severityColors = {
-            'critical': 'bg-red-100 text-red-800',
-            'high': 'bg-orange-100 text-orange-800',
-            'medium': 'bg-yellow-100 text-yellow-800',
-            'low': 'bg-blue-100 text-blue-800'
+            'critical': 'bg-brand-error-5 text-danger',
+            'high': 'bg-brand-warning-5 text-warning',
+            'medium': 'bg-brand-warning-5 text-warning',
+            'low': 'bg-wm-blue-5 text-wm-blue-100'
         };
         
         table.innerHTML = alerts.slice(0, 10).map(alert => `
@@ -491,7 +491,7 @@
                 <td class="px-6 py-4 text-sm text-muted-theme max-w-md truncate">${alert.message}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-theme">${new Date(alert.created_at).toLocaleDateString()}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button data-action="acknowledge-alert" data-alert-id="${alert.id}" class="text-blue-600 hover:text-blue-900">Acknowledge</button>
+                    <button data-action="acknowledge-alert" data-alert-id="${alert.id}" class="text-info hover:text-wm-blue-130">Acknowledge</button>
                 </td>
             </tr>
         `).join('');
@@ -504,10 +504,10 @@
             <tr>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary-theme">${f.domain}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-theme">${new Date(f.date).toLocaleDateString()}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">${f.failed}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-danger font-bold">${f.failed}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-theme">${f.total}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${f.failure_rate > 5 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">${f.failure_rate.toFixed(2)}%</span>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${f.failure_rate > 5 ? 'bg-brand-error-5 text-danger' : 'bg-brand-warning-5 text-warning'}">${f.failure_rate.toFixed(2)}%</span>
                 </td>
             </tr>
         `).join('');
@@ -640,7 +640,7 @@
     function showError(message) {
         // Simple toast notification
         const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        toast.className = 'fixed bottom-4 right-4 bg-brand-error-100 text-white px-4 py-2 rounded-lg shadow-lg';
         toast.textContent = message;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
@@ -648,7 +648,7 @@
 
     function showSuccess(message) {
         const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        toast.className = 'fixed bottom-4 right-4 bg-wm-green-100 text-white px-4 py-2 rounded-lg shadow-lg';
         toast.textContent = message;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
