@@ -892,7 +892,7 @@ None of these mask production bugs.
 | Phase 10: Completeness Sprint | 5 | 5 | 0 | ✅ Complete |
 | Phase 11: OIDC + Security Hardening | 16 | 16 | 0 | ✅ Complete |
 
-| **TOTAL** | **221** | **221** | **0** | **✅ Complete** |
+| **TOTAL (P1-P11)** | **221** | **221** | **0** | **✅ Complete** |
 
 ## Phase 12: Legal Compliance (P1)
 
@@ -1286,8 +1286,53 @@ None of these mask production bugs.
   - Signed off by: Pack Leader 🐺 + Planning Agent 📋
 
 | Phase 16: Audit Remediation Sprint | 43 | 43 | 0 | ✅ Complete |
-| **TOTAL (P1-P5)** | **68** | **25** | **43** | **🟡 In Progress** |
-| **GRAND TOTAL** | **196** | **153** | **43** | **🟡 IN PROGRESS** |
+| Phase 17: Test Coverage + Design System | 21 | 21 | 0 | ✅ Complete |
+| **TOTAL (P1-P5)** | **89** | **89** | **0** | **✅ Complete** |
+| **GRAND TOTAL** | **310** | **310** | **0** | **✅ COMPLETE** |
+
+---
+
+## Phase 17: Test Coverage Sprint + Design System Closure (v2.0.0)
+
+**Status:** ✅ COMPLETE
+**Goal:** Close all 12 remaining test coverage gaps, stabilize crashed session artifacts, resolve final design system nits
+**Completed:** 2026-04-04
+**Agent:** planning-agent-ae291b + code-puppy-b2e1da
+
+### 17.1 Session Recovery (April 3rd crash)
+- [x] 17.1.1 Push orphaned commit from crashed session
+- [x] 17.1.2 Recover 3 passing orphan test files (health_detailed, search_routes, security_headers — 70 tests)
+- [x] 17.1.3 Fix SearchService production bug (5 bad model attribute references)
+- [x] 17.1.4 Pop stashed bd issue tracker state
+- [x] 17.1.5 Gitignore session log artifacts
+
+### 17.2 Test Coverage Sprint — Core (Batch 1)
+- [x] 17.2.1 test_core_metrics.py — 46 tests for MetricsCollector
+- [x] 17.2.2 test_azure_sql_monitoring.py — 34 tests for SQL monitoring
+- [x] 17.2.3 test_scheduler.py — 13 tests for scheduler lifecycle
+- [x] 17.2.4 test_tracing.py — 10 tests for OpenTelemetry setup
+- [x] 17.2.5 test_templates.py — 15 tests for Jinja2 helpers
+
+### 17.3 Test Coverage Sprint — Routes & Services (Batch 2)
+- [x] 17.3.1 test_preflight_azure_network.py — 12 tests for subscription & Graph checks
+- [x] 17.3.2 test_preflight_azure_storage.py — 11 tests for cost management & policy checks
+- [x] 17.3.3 test_preflight_azure_compute.py — 7 tests for resource manager checks
+- [x] 17.3.4 test_routes_audit_logs.py — 9 tests for audit log endpoints
+- [x] 17.3.5 test_resource_lifecycle_service.py — 16 tests for lifecycle events
+- [x] 17.3.6 test_sync_service.py — 9 tests for sync service
+- [x] 17.3.7 test_privacy_service.py — 17 tests for privacy/GDPR
+
+### 17.4 Design System Closure
+- [x] 17.4.1 Replace 5 hardcoded hex colors in Chart.js with CSS variables
+- [x] 17.4.2 Replace 2 SVG stroke hex colors with CSS var references
+- [x] 17.4.3 Replace 2 hardcoded font-family declarations with Tailwind class
+- [x] 17.4.4 Rebuild theme.css with Inter font in --font-sans
+
+### 17.5 Seed Data Validation
+- [x] 17.5.1 Verify seed_data.py runs cleanly on fresh database
+- [x] 17.5.2 Verify app starts with seeded data and health check passes
+
+| Phase 17 | 21 | 21 | 0 | ✅ Complete |
 
 ---
 

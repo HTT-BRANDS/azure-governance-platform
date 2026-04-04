@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-04-04
+
+### 🎉 Release Highlights
+
+**Azure Governance Platform v2.0.0** delivers the test coverage sprint and design system closure. All 12 remaining test coverage gaps are closed, the design system audit is fully resolved, and the platform reaches **3,726 passing tests with zero failures**.
+
+**Key Metrics:**
+- 310 roadmap tasks completed across 17 phases
+- 3,726 tests passing with zero failures (+1,163 from v1.9.0)
+- 12 test coverage gaps closed with 199 new unit tests
+- 9 design system nits resolved — zero remaining violations
+- SearchService production bug fixed (5 bad model attribute references)
+
+---
+
+### Added
+
+#### Test Coverage Sprint (Phase 17.2–17.3)
+- **test_core_metrics.py** — 46 tests for MetricsCollector (counters, histograms, error rates)
+- **test_azure_sql_monitoring.py** — 34 tests for Azure SQL monitoring (query store, DTU, N+1 detection)
+- **test_scheduler.py** — 13 tests for APScheduler lifecycle (init, jobs, manual sync triggers)
+- **test_tracing.py** — 10 tests for OpenTelemetry setup (OTLP, console, TracedContext)
+- **test_templates.py** — 15 tests for Jinja2 template helpers (timeago filter, globals)
+- **test_preflight_azure_network.py** — 12 tests for subscription & Graph API checks
+- **test_preflight_azure_storage.py** — 11 tests for cost management & policy checks
+- **test_preflight_azure_compute.py** — 7 tests for resource manager access checks
+- **test_routes_audit_logs.py** — 9 tests for audit log API endpoints
+- **test_resource_lifecycle_service.py** — 16 tests for resource lifecycle event detection
+- **test_sync_service.py** — 9 tests for sync job trigger/status/results
+- **test_privacy_service.py** — 17 tests for GDPR/CCPA consent management
+
+### Fixed
+
+#### Session Recovery (Phase 17.1)
+- **SearchService production bug** — Fixed 5 incorrect model attribute references (`compliance_score` → `score`, etc.)
+- **Crashed session recovery** — Recovered 3 orphan test files (70 tests) from April 3rd token overflow crash
+- **Git state cleanup** — Popped stashed bd issue tracker state, gitignored session log artifacts
+
+#### Design System Closure (Phase 17.4)
+- **DMARC chart hex colors** — Replaced 5 hardcoded hex colors with `getComputedStyle()` CSS variable reads for dark mode compatibility
+- **SVG stroke colors** — Replaced 2 `#e5e7eb` strokes with `var(--border-color)` in Riverside gauges
+- **Font-family declarations** — Replaced 2 inline `font-family: 'Inter'` with Tailwind `font-sans` class
+- **Theme CSS** — Added `'Inter'` to `--font-sans` in `@theme` block, rebuilt compiled output
+
 ## [1.9.0] - 2026-04-01
 
 ### 🎉 Release Highlights
