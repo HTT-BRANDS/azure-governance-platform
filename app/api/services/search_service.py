@@ -14,7 +14,6 @@ from sqlalchemy.orm import Session
 
 class SearchResultType(Enum):
     TENANT = "tenant"
-    USER = "user"
     RESOURCE = "resource"
     ALERT = "alert"
     COMPLIANCE = "compliance"
@@ -65,8 +64,6 @@ class SearchService:
 
         if SearchResultType.TENANT in types:
             tasks.append(self._search_tenants(query, limit))
-        if SearchResultType.USER in types:
-            tasks.append(self._search_users(query, tenant_id, limit))
         if SearchResultType.RESOURCE in types:
             tasks.append(self._search_resources(query, tenant_id, limit))
         if SearchResultType.ALERT in types:
@@ -91,7 +88,7 @@ class SearchService:
         search = f"%{query}%"
         tenants = (
             self.db.query(Tenant)
-            .filter(or_(Tenant.name.ilike(search), Tenant.code.ilike(search)))
+            .filter(or_(Tenant.name.ilike(search), Tenant.tenant_id.ilike(search)))
             .limit(limit)
             .all()
         )
@@ -101,37 +98,11 @@ class SearchService:
                 id=str(t.id),
                 type=SearchResultType.TENANT,
                 title=t.name,
-                description=f"Code: {t.code}",
+                description=f"Tenant ID: {t.tenant_id}",
                 url=f"/tenants/{t.id}",
                 icon="building",
             )
             for t in tenants
-        ]
-
-    async def _search_users(
-        self, query: str, tenant_id: str | None, limit: int
-    ) -> list[SearchResult]:
-        """Search users by name or email."""
-        from app.models.user import User
-
-        search = f"%{query}%"
-        q = self.db.query(User).filter(or_(User.name.ilike(search), User.email.ilike(search)))
-
-        if tenant_id:
-            q = q.filter(User.tenant_id == tenant_id)
-
-        users = q.limit(limit).all()
-
-        return [
-            SearchResult(
-                id=str(u.id),
-                type=SearchResultType.USER,
-                title=u.name,
-                description=u.email,
-                url=f"/users/{u.id}",
-                icon="user",
-            )
-            for u in users
         ]
 
     async def _search_resources(
@@ -144,8 +115,8 @@ class SearchService:
         q = self.db.query(Resource).filter(
             or_(
                 Resource.name.ilike(search),
-                Resource.type.ilike(search),
-                Resource.resource_id.ilike(search),
+                Resource.resource_type.ilike(search),
+                Resource.id.ilike(search),
             )
         )
 
@@ -159,10 +130,10 @@ class SearchService:
                 id=str(r.id),
                 type=SearchResultType.RESOURCE,
                 title=r.name,
-                description=f"{r.type} in {r.location}",
+                description=f"{r.resource_type} in {r.location}",
                 url=f"/resources/{r.id}",
                 icon="cloud",
-                metadata={"resource_type": r.type, "location": r.location},
+                metadata={"resource_type": r.resource_type, "location": r.location},
             )
             for r in resources
         ]
@@ -171,12 +142,10 @@ class SearchService:
         self, query: str, tenant_id: str | None, limit: int
     ) -> list[SearchResult]:
         """Search alerts by title or description."""
-        from app.models.alert import Alert
+        from app.models.monitoring import Alert
 
         search = f"%{query}%"
-        q = self.db.query(Alert).filter(
-            or_(Alert.title.ilike(search), Alert.description.ilike(search))
-        )
+        q = self.db.query(Alert).filter(or_(Alert.title.ilike(search), Alert.message.ilike(search)))
 
         if tenant_id:
             q = q.filter(Alert.tenant_id == tenant_id)
@@ -188,10 +157,10 @@ class SearchService:
                 id=str(a.id),
                 type=SearchResultType.ALERT,
                 title=a.title,
-                description=a.severity.value if a.severity else None,
+                description=a.severity if a.severity else None,
                 url=f"/alerts/{a.id}",
                 icon="alert-triangle",
-                metadata={"severity": a.severity.value if a.severity else None},
+                metadata={"severity": a.severity if a.severity else None},
             )
             for a in alerts
         ]

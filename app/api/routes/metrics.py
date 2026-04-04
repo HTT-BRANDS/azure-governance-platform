@@ -23,19 +23,23 @@ router = APIRouter(
 @router.get("/health")
 async def health_metrics():
     """Basic health metrics."""
-    from app.core.config import settings
+    from app.core.config import get_settings
 
     return {
         "timestamp": datetime.now(UTC).isoformat(),
         "status": "healthy",
-        "version": settings.app_version,
+        "version": get_settings().app_version,
     }
 
 
 @router.get("/cache")
 async def cache_metrics():
     """Cache performance metrics."""
-    stats = await cache_manager.get_stats()
+    stats = cache_manager.get_metrics()
+    if hasattr(stats, "to_dict"):
+        stats = stats.to_dict()
+    elif not isinstance(stats, dict):
+        stats = {}
     return {
         "timestamp": datetime.now(UTC).isoformat(),
         "hits": stats.get("hits", 0),

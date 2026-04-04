@@ -87,3 +87,4 @@ infrastructure/.oidc-config-*.json
 # Tenant configuration (contains real Azure AD IDs — LOW-1)
 config/tenants.yaml
 !config/tenants.yaml.example
+APRIL-3rd-Log*
