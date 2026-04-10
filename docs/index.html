@@ -39,13 +39,13 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-inner">
-        <span class="hero-badge">Production Certified · v1.9.0</span>
+        <span class="hero-badge">Production Certified · v2.2.0</span>
         <h1 class="hero-title">Azure Governance<br>Platform</h1>
         <p class="hero-subtitle">Multi-tenant Azure governance, cost optimization, and compliance monitoring — built for enterprise scale, running on a startup budget.</p>
         <div class="hero-metrics">
           <div class="metric"><span class="metric-value">A+</span><span class="metric-label">Grade</span></div>
           <div class="metric"><span class="metric-value">94.75%</span><span class="metric-label">Full Send</span></div>
-          <div class="metric"><span class="metric-value">2,563</span><span class="metric-label">Tests</span></div>
+          <div class="metric"><span class="metric-value">3,800</span><span class="metric-label">Tests</span></div>
           <div class="metric"><span class="metric-value">$73/mo</span><span class="metric-label">Infrastructure</span></div>
         </div>
         <div class="hero-actions">
@@ -217,9 +217,9 @@
       <div class="quick-start">
         <pre><code>git clone https://github.com/HTT-BRANDS/azure-governance-platform.git
 cd azure-governance-platform
-python3 -m venv .venv &amp;&amp; source .venv/bin/activate
-pip install -r requirements.txt
-make dev</code></pre>
+pip install uv
+uv sync --dev
+uv run uvicorn app.main:app --reload</code></pre>
       </div>
       <div class="link-list">
         <a href="https://app-governance-prod.azurewebsites.net" class="link-item" target="_blank" rel="noopener">Production App ↗</a>
@@ -259,7 +259,7 @@ make dev</code></pre>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>Production Certified · Rock Solid · v1.9.0</p>
+      <p>Production Certified · Rock Solid · v2.2.0</p>
     </div>
   </footer>
 

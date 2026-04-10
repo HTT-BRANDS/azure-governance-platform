@@ -1,23 +1,23 @@
 # Azure Multi-Tenant Governance Platform
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/tests-3,799-brightgreen.svg)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-3,800-brightgreen.svg)](./tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 A lightweight, cost-effective platform for managing Azure/M365 governance across multiple tenants. Built with Python, FastAPI, HTMX, and Tailwind CSS.
 
-**🏆 Production Ready | 💰 75% Cost Optimized | 🔐 Zero-Secrets Auth | ✅ 322 Tasks Complete | 🧪 3,799 Tests**
+**🏆 Production Ready | 💰 75% Cost Optimized | 🔐 Zero-Secrets Auth | ✅ 328 Tasks Complete | 🧪 3,800 Tests**
 
-## ✨ What's New in v2.1.0
+## ✨ What's New in v2.2.0
 
-**April 2026 Release — "Usability Excellence"**
+**April 2026 Release — "Release Hygiene & Production Deploy"**
 
 ### 🎯 Major Highlights
 
-- **322 Roadmap Tasks Complete** — 18 phases of development, zero open issues
-- **3,799 Tests Passing** — 1.27x test-to-source ratio, zero failures
+- **328 Roadmap Tasks Complete** — 18 phases of development, zero open issues
+- **3,800 Tests Passing** — 1.27x test-to-source ratio, zero failures
 - **Security Headers Hardening** — Environment-specific HSTS, 12 security headers, 70 integration tests
 - **WCAG 2.2 Accessibility** — aria-hidden on decorative SVGs, enhanced skip links, focus indicators
 - **Interactive OpenAPI Examples** — Request/response JSON samples on /docs
