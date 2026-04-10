@@ -78,7 +78,12 @@ class TestSecurityHeaders:
         csp = resp.headers.get("content-security-policy", "")
         assert "default-src" in csp
 
-    def test_no_hsts_in_development(self, unauth_api_context: APIRequestContext):
-        """HSTS should NOT be set in development mode."""
+    def test_hsts_present_in_development_with_short_max_age(
+        self, unauth_api_context: APIRequestContext
+    ):
+        """HSTS is present in all environments; development uses max-age=300."""
         resp = unauth_api_context.get("/health")
-        assert resp.headers.get("strict-transport-security") is None
+        hsts = resp.headers.get("strict-transport-security")
+        assert hsts is not None, "HSTS header must be present even in development"
+        assert "max-age=300" in hsts
+        assert "includeSubDomains" in hsts
