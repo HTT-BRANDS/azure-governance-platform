@@ -424,13 +424,13 @@ app.include_router(recommendations_router)
 async def swagger_ui_html(request: Request) -> HTMLResponse:
     """Swagger UI documentation with auth protection in production.
 
-    In development: accessible without authentication.
-    In production: requires valid JWT token in header or cookie.
+    In development/staging: accessible without authentication.
+    In production: requires valid JWT token (Bearer header or cookie).
     """
-    # Check auth in production (use get_settings() for testability)
+    # Require auth only in production (staging needs public docs for CI validation)
     from app.core.config import get_settings
 
-    if not get_settings().is_development:
+    if get_settings().is_production:
         token = None
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
@@ -469,13 +469,13 @@ async def swagger_ui_html(request: Request) -> HTMLResponse:
 async def redoc_html(request: Request) -> HTMLResponse:
     """ReDoc documentation with auth protection in production.
 
-    In development: accessible without authentication.
-    In production: requires valid JWT token in header or cookie.
+    In development/staging: accessible without authentication.
+    In production: requires valid JWT token (Bearer header or cookie).
     """
-    # Check auth in production (use get_settings() for testability)
+    # Require auth only in production (staging needs public docs for CI validation)
     from app.core.config import get_settings
 
-    if not get_settings().is_development:
+    if get_settings().is_production:
         token = None
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
