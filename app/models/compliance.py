@@ -37,7 +37,7 @@ class PolicyState(Base):
     tenant_id: Mapped[str] = Column(String(36), ForeignKey("tenants.id"), nullable=False)
     subscription_id: Mapped[str] = Column(String(36), nullable=False)
     policy_definition_id: Mapped[str] = Column(String(500), nullable=False)
-    policy_name: Mapped[str] = Column(String(255), nullable=False)
+    policy_name: Mapped[str] = Column(String(1000), nullable=False)
     policy_category: Mapped[str | None] = Column(String(500))
     compliance_state: Mapped[str] = Column(
         String(50), nullable=False
