@@ -83,9 +83,9 @@ class TestInitScheduler:
         init_scheduler()
 
         for call in mock_sched.add_job.call_args_list:
-            assert (
-                call.kwargs.get("replace_existing") is True
-            ), f"Job {call.kwargs.get('id')} missing replace_existing=True"
+            assert call.kwargs.get("replace_existing") is True, (
+                f"Job {call.kwargs.get('id')} missing replace_existing=True"
+            )
 
 
 # ---------------------------------------------------------------------------

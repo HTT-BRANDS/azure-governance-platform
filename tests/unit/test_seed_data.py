@@ -52,9 +52,9 @@ def seeded_db():
             timeout=30,
         )
 
-        assert (
-            result.returncode == 0
-        ), f"seed_data.py failed!\nstdout: {result.stdout}\nstderr: {result.stderr}"
+        assert result.returncode == 0, (
+            f"seed_data.py failed!\nstdout: {result.stdout}\nstderr: {result.stderr}"
+        )
         assert "Seeding complete" in result.stdout, f"Unexpected output: {result.stdout}"
 
         # Connect to the seeded database

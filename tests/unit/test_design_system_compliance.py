@@ -211,9 +211,9 @@ class TestCSSDesignSystem:
     def test_accessibility_css_uses_brand_token_for_focus(self):
         """accessibility.css must use var(--brand-primary) for focus-visible, not hardcoded blue."""
         content = ACCESSIBILITY_CSS.read_text()
-        assert (
-            "var(--brand-primary" in content
-        ), "accessibility.css must use var(--brand-primary) for focus-visible outlines"
+        assert "var(--brand-primary" in content, (
+            "accessibility.css must use var(--brand-primary) for focus-visible outlines"
+        )
         # Must NOT have hardcoded Walmart blue
         assert "#0053e2" not in content.lower(), (
             "accessibility.css still has hardcoded #0053e2 (Walmart blue). "
@@ -223,16 +223,16 @@ class TestCSSDesignSystem:
     def test_accessibility_css_has_forced_colors(self):
         """accessibility.css must support forced-colors (Windows High Contrast)."""
         content = ACCESSIBILITY_CSS.read_text()
-        assert (
-            "forced-colors" in content
-        ), "accessibility.css must include @media (forced-colors: active) for HC mode"
+        assert "forced-colors" in content, (
+            "accessibility.css must include @media (forced-colors: active) for HC mode"
+        )
 
     def test_accessibility_css_has_reduced_motion(self):
         """accessibility.css must respect prefers-reduced-motion."""
         content = ACCESSIBILITY_CSS.read_text()
-        assert (
-            "prefers-reduced-motion" in content
-        ), "accessibility.css must include @media (prefers-reduced-motion: reduce)"
+        assert "prefers-reduced-motion" in content, (
+            "accessibility.css must include @media (prefers-reduced-motion: reduce)"
+        )
 
     def test_accessibility_css_has_skip_link(self):
         """accessibility.css must define .skip-link for keyboard navigation."""
@@ -370,12 +370,12 @@ class TestLoginTemplate:
 
     def test_uses_design_tokens(self, login_html):
         """login.html must use brand-primary and muted-theme tokens."""
-        assert (
-            "bg-brand-primary" in login_html or "btn-brand" in login_html
-        ), "login.html must use brand-primary or btn-brand for the brand accent"
-        assert (
-            "text-muted-theme" in login_html
-        ), "login.html must use text-muted-theme for secondary text"
+        assert "bg-brand-primary" in login_html or "btn-brand" in login_html, (
+            "login.html must use brand-primary or btn-brand for the brand accent"
+        )
+        assert "text-muted-theme" in login_html, (
+            "login.html must use text-muted-theme for secondary text"
+        )
 
 
 # ── Contrast Ratio Helper ──────────────────────────────────────

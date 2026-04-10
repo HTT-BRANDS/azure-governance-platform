@@ -150,9 +150,9 @@ class TestFocusVisible:
         focus_match = re.search(r":focus-visible\s*\{([^}]+)\}", theme_css)
         assert focus_match
         block = focus_match.group(1)
-        assert (
-            "var(--brand-primary" in block
-        ), "Focus-visible must use var(--brand-primary) for tenant-aware focus"
+        assert "var(--brand-primary" in block, (
+            "Focus-visible must use var(--brand-primary) for tenant-aware focus"
+        )
 
     def test_accessibility_css_focus_not_hardcoded(self, a11y_css):
         """accessibility.css focus must use CSS vars, not hex.
@@ -166,9 +166,9 @@ class TestFocusVisible:
             if "outline" in block:
                 uses_system_color = any(sc in block for sc in system_colors)
                 if not uses_system_color:
-                    assert (
-                        "var(" in block
-                    ), f"Focus-visible block uses hardcoded color: {block.strip()}"
+                    assert "var(" in block, (
+                        f"Focus-visible block uses hardcoded color: {block.strip()}"
+                    )
 
     def test_btn_brand_focus_has_outline(self, theme_css):
         """btn-brand:focus-visible must use outline (not just box-shadow)."""
@@ -245,9 +245,9 @@ class TestForcedColors:
     def test_forced_colors_focus_indicator(self, a11y_css):
         """Focus indicator must use Highlight in forced-colors mode."""
         forced_block = a11y_css[a11y_css.index("forced-colors") :]
-        assert (
-            "Highlight" in forced_block or "highlight" in forced_block
-        ), "Forced-colors mode must use system Highlight color for focus"
+        assert "Highlight" in forced_block or "highlight" in forced_block, (
+            "Forced-colors mode must use system Highlight color for focus"
+        )
 
 
 # ── Reduced Motion ──────────────────────────────────────────────

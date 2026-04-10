@@ -141,9 +141,9 @@ class TestSkipLinks:
 
         # Check if skip link is focused by comparing href attribute
         focused = authenticated_page.evaluate("() => document.activeElement?.getAttribute('href')")
-        assert (
-            focused == "#main-content"
-        ), f"Skip link should receive focus on first Tab, got: {focused}"
+        assert focused == "#main-content", (
+            f"Skip link should receive focus on first Tab, got: {focused}"
+        )
 
     def test_skip_link_becomes_visible_on_focus(self, authenticated_page: Page, base_url: str):
         """Skip links should become visible when focused (off-screen pattern)."""
@@ -288,9 +288,9 @@ class TestFocusIndicators:
         assert has_focus_styles, "Should have explicit :focus-visible or :focus styles"
 
         # Should have sufficient outline width (3px is WCAG 2.2 AA best practice)
-        assert (
-            "3px" in css_content or "outline" in css_content
-        ), "Should define outline width for visibility"
+        assert "3px" in css_content or "outline" in css_content, (
+            "Should define outline width for visibility"
+        )
 
     def test_reduced_motion_respected(self, authenticated_page: Page, base_url: str):
         """prefers-reduced-motion media query should be present."""
@@ -300,9 +300,9 @@ class TestFocusIndicators:
         response = authenticated_page.request.get(f"{base_url}/static/css/accessibility.css")
         css_content = response.text()
 
-        assert (
-            "prefers-reduced-motion" in css_content
-        ), "Should support prefers-reduced-motion for accessibility"
+        assert "prefers-reduced-motion" in css_content, (
+            "Should support prefers-reduced-motion for accessibility"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -472,9 +472,9 @@ class TestPageStructure:
         # Also check for charset in content attribute
         if charset.count() == 0:
             content_type = authenticated_page.locator("meta[http-equiv='Content-Type']")
-            assert (
-                content_type.count() > 0 or "charset" in authenticated_page.content().lower()
-            ), "Page should declare charset"
+            assert content_type.count() > 0 or "charset" in authenticated_page.content().lower(), (
+                "Page should declare charset"
+            )
 
     def test_live_region_exists(self, authenticated_page: Page, base_url: str):
         """ARIA live region should exist for dynamic content announcements."""
@@ -503,9 +503,9 @@ class TestPageStructure:
         """)
 
         # Accept either banner OR nav as header area (our design uses nav without header)
-        assert (
-            landmarks["banner"] >= 1 or landmarks["navigation"] >= 1
-        ), "Should have banner landmark or nav as header substitute"
+        assert landmarks["banner"] >= 1 or landmarks["navigation"] >= 1, (
+            "Should have banner landmark or nav as header substitute"
+        )
         assert landmarks["main"] >= 1, "Should have main landmark"
         assert landmarks["navigation"] >= 1, "Should have navigation landmark"
         assert landmarks["contentinfo"] >= 1, "Should have contentinfo landmark"
