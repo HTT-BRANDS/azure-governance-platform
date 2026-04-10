@@ -44,15 +44,22 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-surface-primary text-primary-theme min-h-screen flex flex-col font-sans">
+    <!-- Skip Links for Keyboard Navigation -->
+    <a href="#main-content" class="skip-link" aria-label="Skip to main content">
+        Skip to main content
+    </a>
+    <a href="#main-nav" class="skip-link" aria-label="Skip to navigation">
+        Skip to navigation
+    </a>
+
     <!-- Progress Bar -->
-    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="htmx-progress-bar" aria-hidden="true"></div>
 
     <!-- Screen Reader Announcer -->
     <div id="page-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
     <!-- Navigation -->
-    <nav class="bg-brand-primary-100 text-white shadow-lg" role="navigation" aria-label="Main navigation" hx-boost="true" hx-select="main" hx-target="main" hx-swap="outerHTML settle:150ms">
+    <nav id="main-nav" class="bg-brand-primary-100 text-white shadow-lg" role="navigation" aria-label="Main navigation" hx-boost="true" hx-select="main" hx-target="main" hx-swap="outerHTML settle:150ms">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <!-- Logo + Desktop Nav -->
@@ -147,5 +154,29 @@
 
     <!-- Mobile menu toggle -->
     <script src="/static/js/mobileMenu.js" nonce="{{ request.state.csp_nonce }}"></script>
+
+    <!-- Skip Link Smooth Scroll & Focus Management -->
+    <script nonce="{{ request.state.csp_nonce }}">
+        // Smooth scroll for skip links with focus management
+        document.querySelectorAll('.skip-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const target = document.getElementById(targetId);
+                
+                if (target) {
+                    // Smooth scroll to target
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Set focus after scroll for better accessibility
+                    setTimeout(() => {
+                        target.setAttribute('tabindex', '-1');
+                        target.focus();
+                        target.removeAttribute('tabindex');
+                    }, 300);
+                }
+            });
+        });
+    </script>
 </body>
 </html>

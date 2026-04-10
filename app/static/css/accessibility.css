@@ -9,7 +9,15 @@
    Load order: theme.css → riverside.css → accessibility.css
    ========================================================================== */
 
-/* ── Skip Link ──────────────────────────────────────────────── */
+/* ── Skip Links ──────────────────────────────────────────────── */
+.skip-links-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10000;
+}
+
 .skip-link {
   position: absolute;
   top: -40px;
@@ -19,12 +27,45 @@
   padding: 8px 16px;
   z-index: 10000;
   font-size: 14px;
-  transition: top 0.2s;
+  font-weight: 500;
+  transition: top 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
   text-decoration: underline;
+  opacity: 0;
+  border-radius: 0 0 4px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: inline-block;
 }
 
 .skip-link:focus {
   top: 0;
+  opacity: 1;
+  transform: translateY(0);
+  outline: 2px solid var(--border-focus, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* Second skip link (skip to navigation) positioned next to first */
+.skip-link:nth-of-type(2) {
+  left: auto;
+  right: 0;
+  border-radius: 0 0 0 4px;
+}
+
+/* Mobile: stack skip links vertically when focused */
+@media (max-width: 640px) {
+  .skip-link:focus {
+    position: relative;
+    top: 0;
+    display: block;
+    width: 100%;
+    text-align: center;
+    border-radius: 0;
+  }
+  
+  .skip-link:nth-of-type(2):focus {
+    left: 0;
+    right: auto;
+  }
 }
 
 /* ── Minimum Touch Target (WCAG 2.5.8) ─────────────────────── */
