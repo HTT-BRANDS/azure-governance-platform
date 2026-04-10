@@ -11,7 +11,7 @@
             {{ 'bg-brand-success-10' if status.status == 'healthy' else ('bg-brand-error-10' if status.status == 'critical' else 'bg-brand-warning-10') }}">
             <svg class="w-8 h-8 
                 {{ 'text-brand-success-100' if status.status == 'healthy' else ('text-brand-error-100' if status.status == 'critical' else 'text-brand-warning-100') }}"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 {% if status.status == 'healthy' %}
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 {% elif status.status == 'critical' %}
@@ -28,7 +28,7 @@
     <div class="mb-6 p-4 bg-brand-error-5 rounded-lg border border-brand-error-10">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <svg class="w-5 h-5 text-brand-error-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-brand-error-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
                 <span class="font-medium text-brand-error-130">
@@ -48,7 +48,7 @@
     {% else %}
     <div class="mb-6 p-4 bg-brand-success-5 rounded-lg border border-brand-success-10">
         <div class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-brand-success-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-brand-success-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <span class="font-medium text-brand-success-130">All systems operational</span>
@@ -87,25 +87,25 @@
     {# Quick Actions #}
     <div class="flex flex-wrap gap-3 mb-4">
         <button hx-post="/api/v1/sync/costs" hx-swap="none" class="inline-flex items-center px-4 py-2 bg-brand-primary-100 text-white text-sm font-medium rounded-lg hover:bg-brand-primary-110 transition-colors">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
             Sync Costs
         </button>
         <button hx-post="/api/v1/sync/compliance" hx-swap="none" class="inline-flex items-center px-4 py-2 bg-brand-success-100 text-white text-sm font-medium rounded-lg hover:bg-brand-success-110 transition-colors">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
             Sync Compliance
         </button>
         <button hx-post="/api/v1/sync/resources" hx-swap="none" class="inline-flex items-center px-4 py-2 bg-brand-warning-100 text-primary-theme text-sm font-medium rounded-lg hover:bg-brand-warning-110 transition-colors">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
             Sync Resources
         </button>
         <button hx-post="/api/v1/sync/identity" hx-swap="none" class="inline-flex items-center px-4 py-2 bg-brand-gray-100 text-white text-sm font-medium rounded-lg hover:bg-brand-gray-110 transition-colors">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
             Sync Identity
@@ -115,7 +115,7 @@
     {# Footer with refresh info and auto-refresh #}
     <div class="flex items-center justify-between pt-4 border-t border-brand-gray-50 text-xs text-muted-theme">
         <span hx-get="/partials/sync-status-card" hx-trigger="every 30s" hx-swap="outerHTML" hx-target="#sync-status-card" class="cursor-pointer hover:text-brand-primary-100 flex items-center gap-1">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
             Auto-refreshing every 30s

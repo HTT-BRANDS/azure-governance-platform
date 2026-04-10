@@ -3,7 +3,7 @@
     <div class="px-6 py-4 border-b border-brand-gray-50 flex items-center justify-between">
         <div class="flex items-center gap-3">
             <div class="p-2 rounded-full {{ 'bg-brand-success-10' if stats.active == 0 else 'bg-brand-error-10' }}">
-                <svg class="w-5 h-5 {{ 'text-brand-success-100' if stats.active == 0 else 'text-brand-error-100' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 {{ 'text-brand-success-100' if stats.active == 0 else 'text-brand-error-100' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
             </div>
@@ -18,7 +18,7 @@
             </div>
         </div>
         <button hx-get="/partials/active-alerts" hx-target="#active-alerts-panel" hx-swap="outerHTML" class="p-2 text-muted-theme hover:text-brand-primary-100 hover:bg-brand-primary-5 rounded-lg transition-colors" title="Refresh now">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
         </button>
@@ -48,7 +48,7 @@
         {% else %}
         <div class="text-center py-12">
             <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-brand-success-10 flex items-center justify-center">
-                <svg class="w-8 h-8 text-brand-success-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-8 h-8 text-brand-success-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </div>
