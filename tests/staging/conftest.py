@@ -33,6 +33,12 @@ def staging_url(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="session")
+def is_production(staging_url: str) -> bool:
+    """True when tests target the production URL (docs requires auth there)."""
+    return "-prod" in staging_url or "production" in staging_url
+
+
+@pytest.fixture(scope="session")
 def client(staging_url: str) -> requests.Session:
     """Unauthenticated HTTP session with reasonable timeouts."""
     s = requests.Session()

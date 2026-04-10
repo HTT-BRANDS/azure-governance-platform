@@ -57,11 +57,20 @@ class TestPublicEndpoints:
         assert "paths" in data, "openapi.json missing 'paths'"
         assert "info" in data, "openapi.json missing 'info'"
 
-    def test_docs_ui_is_public(self, client: requests.Session, staging_url: str) -> None:
-        """GET /docs must return HTML."""
+    def test_docs_ui_responds_correctly(
+        self, client: requests.Session, staging_url: str, is_production: bool
+    ) -> None:
+        """GET /docs — 200 in dev/staging, 401 in production (auth-gated)."""
         resp = client.get(f"{staging_url}/docs", timeout=10)
-        assert resp.status_code == 200
-        assert "text/html" in resp.headers.get("content-type", "")
+        if is_production:
+            assert resp.status_code == 401, (
+                f"/docs returned {resp.status_code} in production — expected 401"
+            )
+        else:
+            assert resp.status_code == 200, (
+                f"/docs returned {resp.status_code} — expected 200"
+            )
+            assert "text/html" in resp.headers.get("content-type", "")
 
     def test_app_not_returning_500(self, client: requests.Session, staging_url: str) -> None:
         """The app must not be in a crash loop — health must never return 5xx."""
