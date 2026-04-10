@@ -190,12 +190,16 @@ class TestCSPNonce:
 
 
 class TestHSTS:
-    """Strict-Transport-Security only in non-development environments."""
+    """Strict-Transport-Security in all environments with environment-specific max-age."""
 
-    def test_hsts_absent_in_development(self):
+    def test_hsts_present_in_development_with_short_max_age(self):
+        """HSTS is now present in development with short max-age (5 minutes)."""
         client = _make_app(is_development=True)
         resp = client.get("/test")
-        assert "Strict-Transport-Security" not in resp.headers
+        assert "Strict-Transport-Security" in resp.headers
+        hsts = resp.headers["Strict-Transport-Security"]
+        assert "max-age=300" in hsts
+        assert "includeSubDomains" in hsts
 
     def test_hsts_present_in_production(self):
         client = _make_app(is_development=False)

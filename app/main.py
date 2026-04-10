@@ -427,8 +427,10 @@ async def swagger_ui_html(request: Request) -> HTMLResponse:
     In development: accessible without authentication.
     In production: requires valid JWT token in header or cookie.
     """
-    # Check auth in production
-    if not settings.is_development:
+    # Check auth in production (use get_settings() for testability)
+    from app.core.config import get_settings
+
+    if not get_settings().is_development:
         token = None
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
@@ -470,8 +472,10 @@ async def redoc_html(request: Request) -> HTMLResponse:
     In development: accessible without authentication.
     In production: requires valid JWT token in header or cookie.
     """
-    # Check auth in production
-    if not settings.is_development:
+    # Check auth in production (use get_settings() for testability)
+    from app.core.config import get_settings
+
+    if not get_settings().is_development:
         token = None
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
