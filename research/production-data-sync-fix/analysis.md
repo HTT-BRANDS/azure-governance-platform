@@ -359,3 +359,197 @@ For this project on Azure SQL S0:
 1. **Index requirements**: `policy_definition_id` is used in policy aggregation (dictionary key), filtered by tenant+subscription. `String(N)` allows efficient indexing.
 2. **S0 performance**: HDD-based storage. In-row `NVARCHAR(N)` is faster than off-row `NVARCHAR(max)` for short values.
 3. **Data integrity**: Bounded columns with truncation provide clear logging when data is unexpectedly long, rather than silently storing oversized values.
+
+---
+
+## Q6: APScheduler Staggered Startup Pattern
+
+### Should All Sync Jobs Fire Simultaneously?
+
+**No. Stagger them by 2-minute intervals.**
+
+### The Thundering Herd Problem
+
+When all 6+ sync jobs use `next_run_time=datetime.now(UTC)` simultaneously:
+
+| Resource | Contention Risk | Impact |
+|----------|----------------|--------|
+| Executor thread pool (10 threads) | 6 of 10 consumed instantly | Other scheduled work delayed |
+| Azure Management API | ~72+ API calls in burst | HTTP 429 throttling likely |
+| Database connection pool | 6 concurrent writers | Lock contention on shared tables |
+| Azure SQL S0 (10 DTUs) | CPU spike | Query performance degradation |
+| App startup | Jobs fire before health checks pass | Premature circuit breaker trips |
+
+### Documented APScheduler Behavior
+
+From APScheduler docs (S11, S12):
+
+- **ThreadPoolExecutor** defaults to `max_workers=10` — 6 simultaneous sync jobs consume 60% of the pool
+- If pool is exhausted, jobs may be **skipped** based on `misfire_grace_time`
+- Only **one instance of each job** runs at a time (default `max_instances=1`)
+- **Coalescing** can prevent multiple missed runs from executing separately
+
+### Recommended Pattern
+
+```python
+now = datetime.now(UTC)
+stagger_minutes = [0, 2, 4, 6, 8]  # 2-minute spacing
+
+for (job_id, func, interval), delay in zip(sync_jobs, stagger_minutes):
+    scheduler.add_job(
+        func,
+        trigger=IntervalTrigger(hours=interval),
+        id=f"sync_{job_id}",
+        replace_existing=True,
+        next_run_time=now + timedelta(minutes=delay),
+        misfire_grace_time=300,
+    )
+```
+
+### Why 2 Minutes?
+
+- Each sync job completes most Azure API calls within 1-2 minutes
+- 2-minute spacing allows previous job's API calls to settle before next job starts
+- Azure API rate limits reset on a sliding window — spacing prevents burst hitting the ceiling
+- Provides clear log separation for debugging startup issues
+
+---
+
+## Q7: Circuit Breaker Auto-Recovery Behavior
+
+### Answer: YES, Auto-Recovery Is Built In
+
+Our circuit breaker implementation (`app/core/circuit_breaker.py`) follows the canonical
+Martin Fowler pattern and **automatically transitions from OPEN to HALF_OPEN**.
+
+### How It Works (Our Implementation)
+
+The transition is **lazy/passive** — it happens when `can_execute()` is called:
+
+```python
+def can_execute(self) -> bool:
+    if self._state == CircuitState.OPEN:
+        if self._should_attempt_reset():  # recovery_timeout elapsed?
+            self._state = CircuitState.HALF_OPEN  # Auto-transition!
+            self._success_count = 0
+            return True  # Allow trial call
+        return False  # Still blocking
+```
+
+There is **no background timer**. The state change happens on the next call attempt after
+the `recovery_timeout` (300 seconds for most breakers) has elapsed.
+
+### State Machine
+
+```
+CLOSED --[5 failures]--> OPEN --[300s elapsed, next call]--> HALF_OPEN
+  ^                                                             |
+  |                                                             |
+  +--[2 consecutive successes]----------------------------------+
+  
+HALF_OPEN --[any failure]--> OPEN (timeout restarts)
+```
+
+### Martin Fowler's Canonical Description (S13)
+
+> "We can implement this self-resetting behavior by trying the protected call again
+> after a suitable interval, and resetting the breaker should it succeed."
+
+> "There is now a third state present - half open - meaning the circuit is ready to
+> make a real call as trial to see if the problem is fixed."
+
+### Critical Detail: What Trips the Breaker
+
+`expected_exception = (HttpResponseError, ConnectionError, TimeoutError)`
+
+| Exception Type | Trips Breaker? | Correct? |
+|---------------|---------------|----------|
+| `HttpResponseError` (Azure 429/503) | ✅ YES | ✅ Azure API issues should trip |
+| `ConnectionError` | ✅ YES | ✅ Network issues should trip |
+| `TimeoutError` | ✅ YES | ✅ Timeout should trip |
+| `DataError` (SQLAlchemy) | ❌ NO | ✅ DB schema issues shouldn't block API |
+| `IntegrityError` (SQLAlchemy) | ❌ NO | ✅ Duplicate data shouldn't block API |
+| `PendingRollbackError` | ❌ NO | ✅ Session issues shouldn't block API |
+
+### Important Nuance for the Production Fix
+
+The `@circuit_breaker(COMPLIANCE_SYNC_BREAKER)` decorator wraps the **entire**
+`sync_compliance()` function. Since the function catches most `HttpResponseError`
+internally (per-subscription), those caught errors don't trip the breaker. Only
+**uncaught** exceptions propagating out of the function are evaluated.
+
+This means:
+1. A `DataError` crash propagates out but **doesn't trip the breaker** (correct)
+2. After the fix (with truncation + SAVEPOINT), the function handles errors gracefully
+3. The breaker should rarely trip in normal operation
+
+### No Manual Reset Required
+
+The registry provides `reset()` and `reset_all()` methods for administrative use,
+but they are NOT required for normal recovery. The 300-second timeout handles it.
+
+---
+
+## Q8: ALTER COLUMN Impact on Existing Indexes
+
+### Answer: ZERO Impact on Indexes on Other Columns
+
+### Our Table's Index Layout
+
+```sql
+-- Existing indexes on policy_states
+idx_policy_states_compliance  ON (compliance_state)  -- NOT being altered
+idx_policy_states_tenant      ON (tenant_id)         -- NOT being altered
+```
+
+### Columns Being Altered
+
+```sql
+-- None of these columns are in any index
+policy_definition_id:  String(500)  → String(1000)
+policy_name:           String(255)  → String(500)
+policy_category:       String(500)  → String(1000)
+```
+
+### SQL Server Documentation (S7, S15)
+
+ALTER COLUMN operates on **a single named column**. The restrictions listed in the
+documentation apply only to the column being altered:
+
+1. **Index restriction**: "you can't define the column in an index, unless the column
+   is varchar, nvarchar, or varbinary" — This means the ALTERED column must be
+   varchar/nvarchar if it's indexed. Our columns are NVARCHAR, so they pass this test.
+   But they're NOT indexed, so it's irrelevant.
+
+2. **Statistics**: "Statistics that are automatically generated by the query optimizer
+   are automatically dropped by ALTER COLUMN" — Only auto-stats on the ALTERED column.
+   Stats on `compliance_state` and `tenant_id` are untouched.
+
+3. **Sch-M lock**: Table-level, but held for milliseconds (metadata-only change).
+   Queries using the `compliance_state` and `tenant_id` indexes are briefly queued,
+   then resume normally.
+
+### What Would NOT Be Safe
+
+For reference, these scenarios WOULD impact indexes:
+
+| Scenario | Impact |
+|----------|--------|
+| Widening a column that IS in an index | Safe for NVARCHAR, no rebuild needed |
+| Changing the data TYPE of an indexed column | Index rebuild required |
+| Widening beyond 900-byte key limit on indexed column | Warning, reduced efficiency |
+| Adding NOT NULL to a column in a clustered index | Table rebuild |
+
+None of these apply to our migration.
+
+### Conclusion
+
+The Alembic migration to widen `policy_name`, `policy_definition_id`, and
+`policy_category` is completely safe:
+
+- ✅ No existing indexes reference these columns
+- ✅ Indexes on `compliance_state` and `tenant_id` are unaffected
+- ✅ No index rebuilds triggered
+- ✅ Auto-statistics handled automatically
+- ✅ Sub-millisecond Sch-M lock
+- ✅ Can run during normal production traffic

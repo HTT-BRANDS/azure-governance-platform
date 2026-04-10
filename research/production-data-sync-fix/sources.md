@@ -95,3 +95,38 @@
 | S10 (SQLAlchemy Text) | 1 | Official docs | ✅ Consistent with S9 |
 
 **All 10 sources are Tier 1 (Highest credibility)** — official documentation from Microsoft, SQLAlchemy, and APScheduler projects.
+
+### S11: APScheduler 3.x — Executor Pool Configuration
+- **URL**: https://apscheduler.readthedocs.io/en/3.x/modules/executors/pool.html
+- **Type**: Official APScheduler documentation
+- **Tier**: 1 (Highest) — Primary source, official API docs
+- **Key Finding**: `ThreadPoolExecutor` defaults to `max_workers=10`. Simultaneous sync jobs consume 6+ threads.
+- **Relevance**: Supports staggered startup recommendation for Q6
+
+### S12: APScheduler 3.x — Missed Executions and Coalescing
+- **URL**: https://apscheduler.readthedocs.io/en/3.x/userguide.html#missed-job-executions-and-coalescing
+- **Type**: Official APScheduler documentation
+- **Tier**: 1 (Highest) — Primary source
+- **Key Finding**: If executor pool is saturated, jobs may be skipped based on `misfire_grace_time`. Concurrent instances default to 1 per job.
+- **Relevance**: Explains risk of thundering herd for Q6
+
+### S13: Martin Fowler — Circuit Breaker Pattern
+- **URL**: https://martinfowler.com/bliki/CircuitBreaker.html
+- **Type**: Recognized expert, canonical pattern description
+- **Tier**: 2 (High) — Original pattern description by recognized authority
+- **Date**: 6 March 2014
+- **Key Finding**: OPEN → HALF_OPEN transition occurs after reset_timeout elapses, triggered lazily on next call attempt. "Self-resetting behavior" is the standard recommendation.
+- **Relevance**: Directly answers Q7, validates our implementation
+
+### S14: Project Source — app/core/circuit_breaker.py
+- **Type**: Primary source — actual implementation code
+- **Tier**: 1 (Highest) — The actual code being analyzed
+- **Key Finding**: `can_execute()` lazily transitions OPEN → HALF_OPEN when `recovery_timeout` elapses. `expected_exception` is `(HttpResponseError, ConnectionError, TimeoutError)` — SQLAlchemy errors do NOT trip the breaker.
+- **Relevance**: Confirms auto-recovery behavior and exception filtering for Q7
+
+### S15: SQL Server ALTER TABLE — ALTER COLUMN Restrictions
+- **URL**: https://learn.microsoft.com/en-us/sql/t-sql/statements/alter-table-transact-sql?view=sql-server-ver16#alter-column
+- **Type**: Official Microsoft SQL Server documentation
+- **Tier**: 1 (Highest) — Primary source, official T-SQL reference
+- **Key Finding**: Restrictions on ALTER COLUMN (index membership, statistics) apply only to the altered column. Auto-generated statistics are automatically dropped. Indexes on OTHER columns are unaffected.
+- **Relevance**: Directly answers Q8

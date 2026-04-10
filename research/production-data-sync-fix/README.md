@@ -26,16 +26,27 @@ This research addresses five technical questions arising from a production data 
 4. **Add `next_run_time=datetime.now(UTC)` to IntervalTrigger jobs** for immediate first sync on startup
 5. **Create Alembic migration** to widen columns — safe for production Azure SQL S0
 
+### Additional Findings (Batch 2)
+
+| # | Question | Critical Finding |
+|---|----------|------------------|
+| 6 | APScheduler staggered startup | **Stagger jobs by 2 minutes.** Simultaneous firing risks executor pool saturation, Azure API 429s, and DB connection contention. |
+| 7 | Circuit breaker auto-recovery | **YES, auto-recovers.** OPEN → HALF_OPEN transition is lazy/passive — happens on next `can_execute()` call after `recovery_timeout` (300s). No manual reset needed. |
+| 8 | ALTER COLUMN impact on other indexes | **ZERO impact.** Widening `policy_name` does not affect indexes on `compliance_state` or `tenant_id`. Metadata-only, sub-millisecond. |
+
 ## Files in This Research
 
 | File | Description |
 |------|-------------|
 | `README.md` | This executive summary |
 | `sources.md` | All sources with credibility assessments |
-| `analysis.md` | Multi-dimensional analysis of all five questions |
+| `analysis.md` | Multi-dimensional analysis of all eight questions |
 | `recommendations.md` | Project-specific action items with priority |
 | `raw-findings/azure-policy-api-fields.md` | Azure Policy REST API field schema details |
 | `raw-findings/sqlalchemy-session-patterns.md` | SQLAlchemy session and SAVEPOINT documentation |
 | `raw-findings/apscheduler-immediate-exec.md` | APScheduler next_run_time documentation |
+| `raw-findings/apscheduler-staggered-startup.md` | Thundering herd avoidance with staggered `next_run_time` |
 | `raw-findings/azure-sql-alter-column.md` | ALTER COLUMN behavior on Azure SQL |
+| `raw-findings/azure-sql-index-impact.md` | Impact of ALTER COLUMN on indexes on other columns |
+| `raw-findings/circuit-breaker-auto-recovery.md` | Circuit breaker OPEN→HALF_OPEN auto-recovery analysis |
 | `raw-findings/string-vs-text-columns.md` | SQLAlchemy String vs Text comparison |
