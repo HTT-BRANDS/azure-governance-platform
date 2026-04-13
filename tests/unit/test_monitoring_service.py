@@ -67,7 +67,7 @@ class TestMonitoringServiceAlerts:
         assert result.id == 1
 
     @patch("app.api.services.monitoring_service.asyncio.get_running_loop")
-    @patch("app.api.services.monitoring_service.MonitoringService.send_alert_notification")
+    @patch("app.api.services.monitoring_service.send_alert_notification")
     def test_create_alert_with_details(
         self, mock_send_notif, mock_get_loop, monitoring_service, mock_db
     ):
@@ -103,7 +103,7 @@ class TestMonitoringServiceAlerts:
         mock_send_notif.assert_called_once()  # Notification sent for error severity
 
     @patch("app.api.services.monitoring_service.asyncio.get_running_loop")
-    @patch("app.api.services.monitoring_service.MonitoringService.send_alert_notification")
+    @patch("app.api.services.monitoring_service.send_alert_notification")
     def test_create_alert_triggers_notification_for_critical(
         self, mock_send_notif, mock_get_loop, monitoring_service, mock_db
     ):

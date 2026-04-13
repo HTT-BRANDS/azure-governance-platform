@@ -10,6 +10,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.database import get_db_context
 from app.core.notifications import (
     Notification,
     NotificationChannel,
@@ -469,10 +470,12 @@ class MonitoringService:
         logger.warning(f"Created alert: {alert_type} - {title}")
 
         # Send notification for critical alerts — fire-and-forget async call
+        # Pass only the alert_id (not the ORM object) to avoid DetachedInstanceError
+        # when the session closes before the async task runs.
         if severity in ("error", "critical"):
             try:
                 loop = asyncio.get_running_loop()
-                loop.create_task(self.send_alert_notification(alert))
+                loop.create_task(send_alert_notification(alert.id))
             except RuntimeError:
                 # No running event loop (e.g. CLI/sync context) — notification skipped
                 logger.debug("No running event loop; skipping alert notification for %s", alert.id)
@@ -632,97 +635,8 @@ class MonitoringService:
         }
 
     # ==========================================================================
-    # Notification Operations
+    # Notification Log Operations
     # ==========================================================================
-
-    async def send_alert_notification(self, alert: Alert) -> NotificationLog | None:
-        """Send notification for an alert and log the attempt.
-
-        Checks deduplication rules, sends via configured channels,
-        and logs the result to NotificationLog.
-
-        Args:
-            alert: The alert to notify about
-
-        Returns:
-            NotificationLog entry or None if skipped
-        """
-        settings = get_settings()
-
-        # Check if notifications are enabled
-        if not settings.notification_enabled:
-            logger.debug(f"Notifications disabled, skipping alert {alert.id}")
-            return None
-
-        # Check deduplication cooldown
-        if not should_notify(alert.alert_type, alert.job_type):
-            logger.debug(f"Notification for {alert.alert_type}/{alert.job_type} in cooldown")
-            return None
-
-        # Create notification log entry
-        log_entry = NotificationLog(
-            channel=NotificationChannel.TEAMS.value,
-            severity=alert.severity,
-            alert_id=alert.id,
-            job_type=alert.job_type,
-            tenant_id=alert.tenant_id,
-            title=alert.title,
-            message=alert.message,
-            status="pending",
-            sent_at=datetime.now(UTC),
-            metadata_json=json.dumps(
-                {
-                    "alert_type": alert.alert_type,
-                    "details": alert.details_json,
-                }
-            ),
-        )
-        self.db.add(log_entry)
-        self.db.commit()
-
-        # Build notification with actionable links
-        error_message = None
-        if alert.details_json:
-            try:
-                details = json.loads(alert.details_json)
-                error_message = details.get("error_message")
-            except json.JSONDecodeError:
-                pass
-
-        notification = Notification(
-            title=alert.title,
-            message=alert.message,
-            severity=Severity(alert.severity),
-            channel=NotificationChannel.TEAMS,
-            alert_id=alert.id,
-            job_type=alert.job_type,
-            tenant_id=alert.tenant_id,
-            error_message=error_message,
-            dashboard_url=create_dashboard_url(alert.job_type),
-            retry_url=create_retry_url(alert.job_type or "resources", alert.tenant_id),
-            metadata={
-                "alert_type": alert.alert_type,
-                "created_at": alert.created_at.isoformat() if alert.created_at else None,
-            },
-        )
-
-        # Send the notification
-        result = await send_notification(notification)
-
-        # Update log entry with result
-        log_entry.status = "sent" if result.get("success") else "failed"
-        log_entry.response_status = str(result.get("status_code", ""))
-        log_entry.response_body = result.get("error") or json.dumps(result)
-
-        if result.get("success"):
-            log_entry.delivered_at = datetime.now(UTC)
-            record_notification_sent(alert.alert_type, alert.job_type)
-            logger.info(f"Notification sent for alert {alert.id}: {alert.title}")
-        else:
-            logger.error(f"Notification failed for alert {alert.id}: {result.get('error')}")
-
-        self.db.commit()
-        return log_entry
 
     def get_notification_logs(
         self,
@@ -786,3 +700,106 @@ class MonitoringService:
             "by_channel": dict(channel_counts),
             "recent_failures_24h": recent_failures,
         }
+
+
+# ==========================================================================
+# Module-level async notification — uses its own session
+# ==========================================================================
+
+
+async def send_alert_notification(alert_id: int) -> NotificationLog | None:
+    """Send notification for an alert and log the attempt.
+
+    This is a standalone async function (not a MonitoringService method) so it
+    can open its own DB session via get_db_context(). This avoids the
+    DetachedInstanceError that occurs when a fire-and-forget asyncio task
+    outlives the session that created the Alert object.
+
+    Args:
+        alert_id: ID of the alert to notify about
+
+    Returns:
+        NotificationLog entry or None if skipped
+    """
+    with get_db_context() as db:
+        alert = db.query(Alert).filter(Alert.id == alert_id).first()
+        if not alert:
+            logger.error(f"Alert {alert_id} not found for notification")
+            return None
+
+        settings = get_settings()
+
+        # Check if notifications are enabled
+        if not settings.notification_enabled:
+            logger.debug(f"Notifications disabled, skipping alert {alert.id}")
+            return None
+
+        # Check deduplication cooldown
+        if not should_notify(alert.alert_type, alert.job_type):
+            logger.debug(f"Notification for {alert.alert_type}/{alert.job_type} in cooldown")
+            return None
+
+        # Create notification log entry
+        log_entry = NotificationLog(
+            channel=NotificationChannel.TEAMS.value,
+            severity=alert.severity,
+            alert_id=alert.id,
+            job_type=alert.job_type,
+            tenant_id=alert.tenant_id,
+            title=alert.title,
+            message=alert.message,
+            status="pending",
+            sent_at=datetime.now(UTC),
+            metadata_json=json.dumps(
+                {
+                    "alert_type": alert.alert_type,
+                    "details": alert.details_json,
+                }
+            ),
+        )
+        db.add(log_entry)
+        db.commit()
+
+        # Build notification with actionable links
+        error_message = None
+        if alert.details_json:
+            try:
+                details = json.loads(alert.details_json)
+                error_message = details.get("error_message")
+            except json.JSONDecodeError:
+                pass
+
+        notification = Notification(
+            title=alert.title,
+            message=alert.message,
+            severity=Severity(alert.severity),
+            channel=NotificationChannel.TEAMS,
+            alert_id=alert.id,
+            job_type=alert.job_type,
+            tenant_id=alert.tenant_id,
+            error_message=error_message,
+            dashboard_url=create_dashboard_url(alert.job_type),
+            retry_url=create_retry_url(alert.job_type or "resources", alert.tenant_id),
+            metadata={
+                "alert_type": alert.alert_type,
+                "created_at": alert.created_at.isoformat() if alert.created_at else None,
+            },
+        )
+
+        # Send the notification
+        result = await send_notification(notification)
+
+        # Update log entry with result
+        log_entry.status = "sent" if result.get("success") else "failed"
+        log_entry.response_status = str(result.get("status_code", ""))
+        log_entry.response_body = result.get("error") or json.dumps(result)
+
+        if result.get("success"):
+            log_entry.delivered_at = datetime.now(UTC)
+            record_notification_sent(alert.alert_type, alert.job_type)
+            logger.info(f"Notification sent for alert {alert.id}: {alert.title}")
+        else:
+            logger.error(f"Notification failed for alert {alert.id}: {result.get('error')}")
+
+        db.commit()
+        return log_entry

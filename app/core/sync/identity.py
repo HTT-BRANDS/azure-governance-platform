@@ -65,7 +65,7 @@ def _parse_last_sign_in(sign_in_datetime: str | None) -> datetime | None:
     if not sign_in_datetime:
         return None
     try:
-        return datetime.fromisoformat(sign_in_datetime.replace("Z", "+00:00")).replace(tzinfo=None)
+        return datetime.fromisoformat(sign_in_datetime.replace("Z", "+00:00"))
     except (ValueError, AttributeError):
         return None
 

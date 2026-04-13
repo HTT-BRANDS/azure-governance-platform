@@ -1,6 +1,6 @@
 """Tests for identity synchronization module."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -189,7 +189,7 @@ class TestIdentitySync:
             "userPrincipalName": "stale@example.com",
             "userType": "Member",
             "signInActivity": {
-                "lastSignInDateTime": (datetime.utcnow() - timedelta(days=100)).isoformat() + "Z"
+                "lastSignInDateTime": (datetime.now(UTC) - timedelta(days=100)).isoformat()
             },
         }
 
@@ -199,7 +199,7 @@ class TestIdentitySync:
             "userPrincipalName": "active@example.com",
             "userType": "Member",
             "signInActivity": {
-                "lastSignInDateTime": (datetime.utcnow() - timedelta(days=5)).isoformat() + "Z"
+                "lastSignInDateTime": (datetime.now(UTC) - timedelta(days=5)).isoformat()
             },
         }
 
@@ -431,11 +431,11 @@ class TestIdentityHelpers:
         """Test processing active user."""
         user = {
             "signInActivity": {
-                "lastSignInDateTime": (datetime.utcnow() - timedelta(days=5)).isoformat() + "Z"
+                "lastSignInDateTime": (datetime.now(UTC) - timedelta(days=5)).isoformat()
             }
         }
-        stale_30d = datetime.utcnow() - timedelta(days=30)
-        stale_90d = datetime.utcnow() - timedelta(days=90)
+        stale_30d = datetime.now(UTC) - timedelta(days=30)
+        stale_90d = datetime.now(UTC) - timedelta(days=90)
 
         is_active, is_stale_30d, is_stale_90d = _process_user_activity(user, stale_30d, stale_90d)
 
@@ -447,11 +447,11 @@ class TestIdentityHelpers:
         """Test processing user stale for 30 days."""
         user = {
             "signInActivity": {
-                "lastSignInDateTime": (datetime.utcnow() - timedelta(days=45)).isoformat() + "Z"
+                "lastSignInDateTime": (datetime.now(UTC) - timedelta(days=45)).isoformat()
             }
         }
-        stale_30d = datetime.utcnow() - timedelta(days=30)
-        stale_90d = datetime.utcnow() - timedelta(days=90)
+        stale_30d = datetime.now(UTC) - timedelta(days=30)
+        stale_90d = datetime.now(UTC) - timedelta(days=90)
 
         is_active, is_stale_30d, is_stale_90d = _process_user_activity(user, stale_30d, stale_90d)
 
@@ -463,11 +463,11 @@ class TestIdentityHelpers:
         """Test processing user stale for 90 days."""
         user = {
             "signInActivity": {
-                "lastSignInDateTime": (datetime.utcnow() - timedelta(days=100)).isoformat() + "Z"
+                "lastSignInDateTime": (datetime.now(UTC) - timedelta(days=100)).isoformat()
             }
         }
-        stale_30d = datetime.utcnow() - timedelta(days=30)
-        stale_90d = datetime.utcnow() - timedelta(days=90)
+        stale_30d = datetime.now(UTC) - timedelta(days=30)
+        stale_90d = datetime.now(UTC) - timedelta(days=90)
 
         is_active, is_stale_30d, is_stale_90d = _process_user_activity(user, stale_30d, stale_90d)
 
@@ -478,8 +478,8 @@ class TestIdentityHelpers:
     def test_process_user_activity_never_signed_in(self):
         """Test processing user who never signed in."""
         user = {"signInActivity": {}}
-        stale_30d = datetime.utcnow() - timedelta(days=30)
-        stale_90d = datetime.utcnow() - timedelta(days=90)
+        stale_30d = datetime.now(UTC) - timedelta(days=30)
+        stale_90d = datetime.now(UTC) - timedelta(days=90)
 
         is_active, is_stale_30d, is_stale_90d = _process_user_activity(user, stale_30d, stale_90d)
 
