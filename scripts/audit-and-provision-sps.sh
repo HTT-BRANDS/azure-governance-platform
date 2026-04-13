@@ -62,6 +62,7 @@ GRAPH_PERMS=(
   "7ab1d382-f21e-4acd-a863-ba3e13f7da61=Role"  # Directory.Read.All
   "bf394140-e372-4bf9-a898-299cfc7564e5=Role"  # SecurityEvents.Read.All
   "dbb9058a-0e50-45d7-ae91-66909b5d4571=Role"  # Domain.Read.All
+  "2f51be20-0bb4-4fed-bf7b-db946066c75e=Role"  # DeviceManagementManagedDevices.Read.All
 )
 
 # Azure Service Management permission
@@ -69,7 +70,7 @@ AZURE_MGMT_RESOURCE_ID="797f4846-ba00-4fd7-ba43-dac1f8f63013"
 AZURE_MGMT_PERM="41094075-9dad-400e-a0bd-54e686782033=Role"  # user_impersonation
 
 # Human-readable names (parallel to GRAPH_PERMS)
-GRAPH_PERM_NAMES=("User.Read.All" "AuditLog.Read.All" "Reports.Read.All" "Policy.Read.All" "Application.Read.All" "Organization.Read.All" "Directory.Read.All" "SecurityEvents.Read.All" "Domain.Read.All")
+GRAPH_PERM_NAMES=("User.Read.All" "AuditLog.Read.All" "Reports.Read.All" "Policy.Read.All" "Application.Read.All" "Organization.Read.All" "Directory.Read.All" "SecurityEvents.Read.All" "Domain.Read.All" "DeviceManagementManagedDevices.Read.All")
 
 # Script root & output paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

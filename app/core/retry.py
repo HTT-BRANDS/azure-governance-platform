@@ -68,6 +68,7 @@ def is_retryable_error(error: Exception) -> bool:
     - Explicitly non-retryable exception types (auth errors, programming bugs)
     - HTTP 4xx client errors (401, 403, 404, etc.) — same creds will fail again
     - HttpResponseError without a status_code (can't determine if transient)
+    - SyncError carrying a non-retryable HTTP status code
 
     Retryable errors include:
     - HTTP 429 (rate limit), 502, 503, 504 (transient server errors)
@@ -81,7 +82,11 @@ def is_retryable_error(error: Exception) -> bool:
     # Extract status code from any HTTP error type
     status_code = _get_status_code(error)
 
-    # HttpResponseError / httpx error WITH a status code
+    # SyncError may carry an HTTP status_code from a wrapped API error
+    if status_code is None and hasattr(error, "status_code"):
+        status_code = error.status_code
+
+    # HttpResponseError / httpx error / SyncError WITH a status code
     if status_code is not None:
         # Explicitly non-retryable status codes take precedence
         if status_code in NON_RETRYABLE_STATUS_CODES:

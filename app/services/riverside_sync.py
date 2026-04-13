@@ -65,17 +65,28 @@ TARGET_MATURITY_SCORE = 3.0
 
 
 class SyncError(Exception):
-    """Exception raised when sync operations fail."""
+    """Exception raised when sync operations fail.
 
-    def __init__(self, message: str, tenant_id: str | None = None) -> None:
+    Carries optional HTTP status_code so the retry decorator can
+    correctly identify non-retryable errors (e.g. 403 Forbidden).
+    """
+
+    def __init__(
+        self,
+        message: str,
+        tenant_id: str | None = None,
+        status_code: int | None = None,
+    ) -> None:
         """Initialize sync error.
 
         Args:
             message: Error message
             tenant_id: Optional tenant ID associated with the error
+            status_code: Optional HTTP status code (e.g. 403 for permission errors)
         """
         super().__init__(message)
         self.tenant_id = tenant_id
+        self.status_code = status_code
 
 
 class ProgressTracker:
@@ -524,7 +535,7 @@ async def sync_tenant_mfa(
             session.rollback()
             error_msg = f"Azure API error syncing MFA: {e.status_code} - {e.message}"
             logger.error(error_msg)
-            raise SyncError(error_msg, tenant_id) from e
+            raise SyncError(error_msg, tenant_id, status_code=e.status_code) from e
         except CircuitBreakerError as e:
             session.rollback()
             error_msg = f"Circuit breaker open for MFA sync: {e}"
@@ -681,7 +692,7 @@ async def sync_tenant_devices(
             session.rollback()
             error_msg = f"Azure API error syncing devices: {e.status_code} - {e.message}"
             logger.error(error_msg)
-            raise SyncError(error_msg, tenant_id) from e
+            raise SyncError(error_msg, tenant_id, status_code=e.status_code) from e
         except CircuitBreakerError as e:
             error_msg = f"Circuit breaker open for device sync: {e}"
             logger.error(error_msg)
@@ -804,7 +815,7 @@ async def sync_requirement_status(
             session.rollback()
             error_msg = f"Azure API error syncing requirements: {e.status_code} - {e.message}"
             logger.error(error_msg)
-            raise SyncError(error_msg, tenant_id) from e
+            raise SyncError(error_msg, tenant_id, status_code=e.status_code) from e
         except CircuitBreakerError as e:
             error_msg = f"Circuit breaker open for requirement sync: {e}"
             logger.error(error_msg)

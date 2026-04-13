@@ -24,6 +24,81 @@ logger = logging.getLogger(__name__)
 COST_API_VERSION = "2023-11-01"
 
 
+async def _sync_subscription_costs(
+    sub_db,
+    tenant_id: int,
+    azure_tenant_id: str,
+    sub_id: str,
+    sub_name: str,
+    from_date: str,
+    to_date: str,
+) -> int:
+    """Sync cost data for a single subscription using an isolated session.
+
+    Each subscription gets its own DB session so that a flush/commit failure
+    on one subscription does not poison the session for others (avoiding
+    PendingRollbackError cascades).
+
+    Returns:
+        Number of cost records synced for this subscription.
+    """
+    logger.info(f"Querying costs for subscription: {sub_name} ({sub_id[:8]}...)")
+
+    rows = await _query_costs_rest(
+        azure_tenant_id,
+        sub_id,
+        from_date,
+        to_date,
+    )
+
+    if not rows:
+        logger.info(f"No cost data found for subscription {sub_name}")
+        return 0
+
+    rows_processed = 0
+
+    # Column indices from Azure Cost Management API response:
+    # [0]=Cost, [1]=UsageDate, [2]=ResourceGroupName,
+    # [3]=ServiceName, [4]=Currency
+    # (matches grouping order in _query_costs_rest)
+    for row in rows:
+        try:
+            if len(row) < 3:
+                continue
+
+            cost_value = float(row[0]) if row[0] else 0.0
+            usage_date = datetime.strptime(str(row[1]), "%Y%m%d").date()
+            resource_group = str(row[2]) if len(row) > 2 and row[2] else None
+            service_name = str(row[3]) if len(row) > 3 and row[3] else None
+            currency = str(row[4]) if len(row) > 4 and row[4] else "USD"
+
+            # Skip zero-cost entries to save space
+            if cost_value == 0.0:
+                continue
+
+            snapshot = CostSnapshot(
+                tenant_id=tenant_id,
+                subscription_id=sub_id,
+                date=usage_date,
+                total_cost=cost_value,
+                currency=currency,
+                resource_group=resource_group,
+                service_name=service_name,
+                synced_at=datetime.now(UTC),
+            )
+
+            sub_db.add(snapshot)
+            rows_processed += 1
+
+        except (ValueError, TypeError, IndexError) as e:
+            logger.warning(f"Error processing cost row: {e}")
+            continue
+
+    sub_db.commit()
+    logger.info(f"Successfully synced {rows_processed} cost records for subscription {sub_name}")
+    return rows_processed
+
+
 @circuit_breaker(COST_SYNC_BREAKER)
 @retry_with_backoff(COST_SYNC_POLICY)
 async def sync_costs():
@@ -60,113 +135,56 @@ async def sync_costs():
             logger.info(f"Syncing costs for tenant: {tenant_name} ({azure_tenant_id})")
 
             try:
-                with get_db_context() as tenant_db:
-                    # Get subscriptions for this tenant
-                    subscriptions = await azure_client_manager.list_subscriptions(azure_tenant_id)
-                    logger.info(
-                        f"Found {len(subscriptions)} subscriptions for tenant {tenant_name}"
-                    )
+                # Get subscription list (Azure API call, no DB session needed)
+                subscriptions = await azure_client_manager.list_subscriptions(azure_tenant_id)
 
-                    for sub in subscriptions:
-                        sub_id = sub["subscription_id"]
-                        sub_name = sub["display_name"]
+                logger.info(f"Found {len(subscriptions)} subscriptions for tenant {tenant_name}")
 
-                        # Skip non-enabled subscriptions
-                        if sub["state"] != "Enabled":
-                            logger.info(f"Skipping subscription {sub_name} (state: {sub['state']})")
-                            continue
+                # Process each subscription in its own session to prevent
+                # PendingRollbackError cascade when one subscription fails
+                for sub in subscriptions:
+                    sub_id = sub["subscription_id"]
+                    sub_name = sub["display_name"]
 
-                        try:
-                            logger.info(
-                                f"Querying costs for subscription: {sub_name} ({sub_id[:8]}...)"
+                    # Skip non-enabled subscriptions
+                    if sub["state"] != "Enabled":
+                        logger.info(f"Skipping subscription {sub_name} (state: {sub['state']})")
+                        continue
+
+                    try:
+                        with get_db_context() as sub_db:
+                            synced = await _sync_subscription_costs(
+                                sub_db=sub_db,
+                                tenant_id=tenant_id,
+                                azure_tenant_id=azure_tenant_id,
+                                sub_id=sub_id,
+                                sub_name=sub_name,
+                                from_date=from_date,
+                                to_date=to_date,
                             )
-
-                            rows = await _query_costs_rest(
-                                azure_tenant_id,
-                                sub_id,
-                                from_date,
-                                to_date,
-                            )
-
-                            if rows:
-                                rows_processed = 0
-
-                                # Column indices from Azure Cost Management API response:
-                                # [0]=Cost, [1]=UsageDate, [2]=ResourceGroupName,
-                                # [3]=ServiceName, [4]=Currency
-                                # (matches grouping order in _query_costs_rest)
-                                for row in rows:
-                                    try:
-                                        if len(row) < 3:
-                                            continue
-
-                                        # Extract values from row
-                                        cost_value = float(row[0]) if row[0] else 0.0
-                                        usage_date = datetime.strptime(str(row[1]), "%Y%m%d").date()
-                                        resource_group = (
-                                            str(row[2]) if len(row) > 2 and row[2] else None
-                                        )
-                                        service_name = (
-                                            str(row[3]) if len(row) > 3 and row[3] else None
-                                        )
-                                        currency = str(row[4]) if len(row) > 4 and row[4] else "USD"
-
-                                        # Skip zero-cost entries to save space
-                                        if cost_value == 0.0:
-                                            continue
-
-                                        # Create or update cost snapshot
-                                        snapshot = CostSnapshot(
-                                            tenant_id=tenant_id,
-                                            subscription_id=sub_id,
-                                            date=usage_date,
-                                            total_cost=cost_value,
-                                            currency=currency,
-                                            resource_group=resource_group,
-                                            service_name=service_name,
-                                            synced_at=datetime.now(UTC),
-                                        )
-
-                                        tenant_db.add(snapshot)
-                                        rows_processed += 1
-
-                                    except (ValueError, TypeError, IndexError) as e:
-                                        logger.warning(f"Error processing cost row: {e}")
-                                        continue
-
-                                # Commit all snapshots for this subscription
-                                tenant_db.commit()
-                                total_synced += rows_processed
-                                logger.info(
-                                    f"Successfully synced {rows_processed} cost records "
-                                    f"for subscription {sub_name}"
-                                )
-                            else:
-                                logger.info(f"No cost data found for subscription {sub_name}")
-
-                        except httpx.HTTPStatusError as e:
-                            total_errors += 1
-                            if e.response.status_code == 403:
-                                logger.error(
-                                    f"Access denied to cost data for subscription {sub_name}. "
-                                    f"Missing Cost Management Reader role?"
-                                )
-                            else:
-                                logger.error(
-                                    f"HTTP error querying costs for subscription {sub_name}: "
-                                    f"{e.response.status_code} - {e.response.text[:200]}"
-                                )
-                        except Exception as e:
-                            total_errors += 1
+                            total_synced += synced
+                    except (IntegrityError, DataError, ProgrammingError) as e:
+                        total_errors += 1
+                        logger.error(f"Data error for subscription {sub_name}: {e}")
+                    except httpx.HTTPStatusError as e:
+                        total_errors += 1
+                        if e.response.status_code == 403:
                             logger.error(
-                                f"Error syncing costs for subscription {sub_name}: {e}",
-                                exc_info=True,
+                                f"Access denied to cost data for subscription {sub_name}. "
+                                f"Missing Cost Management Reader role?"
                             )
+                        else:
+                            logger.error(
+                                f"HTTP error querying costs for subscription {sub_name}: "
+                                f"{e.response.status_code} - {e.response.text[:200]}"
+                            )
+                    except Exception as e:
+                        total_errors += 1
+                        logger.error(
+                            f"Unexpected error for subscription {sub_name}: {e}",
+                            exc_info=True,
+                        )
 
-            except (IntegrityError, DataError, ProgrammingError) as e:
-                total_errors += 1
-                logger.error(f"Data error syncing costs for tenant {tenant_name}: {e}")
-                continue
             except Exception as e:
                 total_errors += 1
                 logger.error(f"Error processing tenant {tenant_name}: {e}", exc_info=True)

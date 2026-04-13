@@ -534,6 +534,7 @@ class RiversideAzureADPermissionsCheck(BasePreflightCheck):
             "Directory.Read.All",
             "AuditLog.Read.All",
             "Reports.Read.All",
+            "DeviceManagementManagedDevices.Read.All",
         ]
 
         try:

@@ -270,6 +270,33 @@ class TestIsRetryableError:
         error = httpx.HTTPStatusError("Service Unavailable", request=request, response=response)
         assert is_retryable_error(error) is True
 
+    def test_sync_error_with_403_is_not_retryable(self):
+        """Test that SyncError carrying status_code=403 is not retryable.
+
+        The outer retry decorator on sync_tenant_mfa re-raised 403s as
+        plain SyncErrors, which the retry logic treated as retryable.
+        Now SyncError carries status_code so is_retryable_error can
+        correctly identify permission errors as non-retryable.
+        """
+        from app.services.riverside_sync import SyncError
+
+        error = SyncError("Azure API error: 403 - Forbidden", tenant_id="abc", status_code=403)
+        assert is_retryable_error(error) is False
+
+    def test_sync_error_with_503_is_retryable(self):
+        """Test that SyncError carrying status_code=503 is retryable (server error)."""
+        from app.services.riverside_sync import SyncError
+
+        error = SyncError("Azure API error: 503 - Service Unavailable", status_code=503)
+        assert is_retryable_error(error) is True
+
+    def test_sync_error_without_status_code_is_retryable(self):
+        """Test that SyncError without status_code defaults to retryable."""
+        from app.services.riverside_sync import SyncError
+
+        error = SyncError("Some generic sync error")
+        assert is_retryable_error(error) is True
+
 
 class TestRetryWithBackoff:
     """Tests for retry_with_backoff decorator."""
