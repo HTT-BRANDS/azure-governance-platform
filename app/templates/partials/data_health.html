@@ -1,0 +1,46 @@
+{# Header data-flow indicator.
+
+   Polls /healthz/data every 60s and renders a coloured dot:
+     - green  → all tenants fresh (data flowing)
+     - amber  → at least one tenant stale
+     - grey   → unreachable (network / 5xx)
+
+   Uses vanilla fetch + Alpine-compatible data hooks so it works inside
+   the CSP-strict Alpine build used by base.html.
+#}
+<span id="data-health-dot"
+      class="inline-flex items-center gap-1 text-xs"
+      aria-live="polite"
+      title="Data sync freshness across all tenants">
+  <span id="data-health-led"
+        class="inline-block w-2.5 h-2.5 rounded-full bg-gray-400"
+        aria-hidden="true"></span>
+  <span id="data-health-label" class="sr-only sm:not-sr-only text-brand-primary-50">
+    Checking…
+  </span>
+</span>
+<script nonce="{{ request.state.csp_nonce }}">
+(function () {
+  const led = document.getElementById('data-health-led');
+  const label = document.getElementById('data-health-label');
+  if (!led || !label) return;
+
+  async function refresh() {
+    try {
+      const r = await fetch('/healthz/data', { credentials: 'same-origin' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      const stale = !!j.any_stale;
+      led.className = 'inline-block w-2.5 h-2.5 rounded-full ' +
+                      (stale ? 'bg-amber-400' : 'bg-emerald-500');
+      label.textContent = stale ? 'Data: stale' : 'Data: live';
+      label.className = 'sr-only sm:not-sr-only text-brand-primary-50';
+    } catch (err) {
+      led.className = 'inline-block w-2.5 h-2.5 rounded-full bg-gray-400';
+      label.textContent = 'Data: unknown';
+    }
+  }
+  refresh();
+  setInterval(refresh, 60000);
+})();
+</script>

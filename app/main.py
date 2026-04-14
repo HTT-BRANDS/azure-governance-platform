@@ -5,11 +5,12 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
+from sqlalchemy.orm import Session
 
 from app.api.routes import (
     accessibility_router,
@@ -42,11 +43,12 @@ from app.api.routes import (
     sync_router,
     tenants_router,
     threats_router,
+    topology_router,
 )
 from app.core.auth import jwt_manager
 from app.core.cache import cache_manager
 from app.core.config import get_settings
-from app.core.database import init_db
+from app.core.database import get_db, init_db
 from app.core.gpc_middleware import GPCMiddleware
 from app.core.logging_config import log_api_request, set_correlation_id, set_request_start_time
 from app.core.rate_limit import rate_limiter
@@ -406,6 +408,7 @@ app.include_router(dmarc_router)
 app.include_router(accessibility_router)
 app.include_router(exports_router)
 app.include_router(pages_router)
+app.include_router(topology_router)
 app.include_router(preflight_router)
 app.include_router(privacy_router)
 app.include_router(search_router)
@@ -517,6 +520,19 @@ async def health_check():
         "version": settings.app_version,
         "environment": settings.environment,
     }
+
+
+@app.get("/healthz/data")
+async def healthz_data_alias(db: Session = Depends(get_db)):
+    """Friendly alias for /api/v1/health/data — per-tenant sync freshness.
+
+    Mounted at /healthz/data so the UI header partial and staging smoke
+    checks can use a short, unversioned path. Delegates to the versioned
+    endpoint to avoid duplicating the query logic.
+    """
+    from app.api.routes.health import data_freshness_check
+
+    return await data_freshness_check(db=db)
 
 
 @app.get("/health/detailed")

@@ -87,4 +87,8 @@ infrastructure/.oidc-config-*.json
 # Tenant configuration (contains real Azure AD IDs — LOW-1)
 config/tenants.yaml
 !config/tenants.yaml.example
+
+# Persona → group mapping (contains real Entra ID group object IDs)
+config/personas.yaml
+!config/personas.yaml.example
 APRIL-3rd-Log*

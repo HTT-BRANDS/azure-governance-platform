@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'scripts/audit_output.json'
+      - 'scripts/render_status.py'
+      - 'riverside-security-requirements/**'
   workflow_dispatch:
 
 permissions:
@@ -26,12 +29,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Render audit status into docs/status.md
+        run: python scripts/render_status.py || true
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
