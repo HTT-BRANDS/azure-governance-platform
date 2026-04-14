@@ -121,8 +121,7 @@ _ROLE_DESCRIPTIONS: dict[str, tuple[str, str]] = {
     ),
     Role.ANALYST: (
         "Analyst",
-        "Read and export data across accessible modules. "
-        "Cannot modify configuration.",
+        "Read and export data across accessible modules. Cannot modify configuration.",
     ),
     Role.VIEWER: (
         "Viewer",
@@ -220,6 +219,13 @@ async def update_user_roles(
     role is stored in ``UserTenant.role`` for all of the user's active
     tenant mappings.
     """
+    # F-01: Segregation of duties — admins cannot modify their own roles.
+    if user_id == user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot modify your own roles — another admin must make this change",
+        )
+
     svc = AdminService(db)
     data = svc.update_user_roles(user_id, body.roles)
     return UserDetailResponse(**data)

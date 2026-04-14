@@ -70,8 +70,7 @@ def _validate_permission_strings(*permissions: str) -> None:
     for perm in permissions:
         if perm not in ALL_PERMISSIONS:
             raise ValueError(
-                f"Unknown permission '{perm}'. "
-                f"Valid permissions: {sorted(ALL_PERMISSIONS)}"
+                f"Unknown permission '{perm}'. Valid permissions: {sorted(ALL_PERMISSIONS)}"
             )
 
 
@@ -132,9 +131,7 @@ def require_permissions(
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=(
-                    f"Missing required permissions: {', '.join(sorted(missing))}"
-                ),
+                detail="Insufficient permissions",
             )
 
         return current_user
@@ -190,10 +187,7 @@ def require_any_permission(
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=(
-                    f"Requires at least one of: "
-                    f"{', '.join(sorted(permissions))}"
-                ),
+                detail="Insufficient permissions",
             )
 
         return current_user

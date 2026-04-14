@@ -410,20 +410,21 @@ class TestErrorDetails:
     def teardown_method(self) -> None:
         self.app.dependency_overrides.clear()
 
-    def test_missing_permission_named_in_detail(self) -> None:
+    def test_missing_permission_returns_generic_detail(self) -> None:
+        """F-06: 403 detail must NOT leak permission names."""
         user = _make_user(["viewer"])
         client = _get_client(self.app, user)
         resp = client.post("/costs")
         assert resp.status_code == 403
-        assert "costs:manage" in resp.json()["detail"]
+        assert resp.json()["detail"] == "Insufficient permissions"
 
-    def test_any_permission_lists_options_in_detail(self) -> None:
+    def test_any_permission_returns_generic_detail(self) -> None:
+        """F-06: 403 detail must NOT leak permission names."""
         user = _make_user(["unknown"])
         client = _get_client(self.app, user)
         resp = client.get("/any-data")
         assert resp.status_code == 403
-        detail = resp.json()["detail"]
-        assert "costs:read" in detail or "resources:read" in detail
+        assert resp.json()["detail"] == "Insufficient permissions"
 
     def test_response_returns_user_on_success(self) -> None:
         user = _make_user(["admin"], user_id="admin-42")

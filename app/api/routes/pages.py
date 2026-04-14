@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 
 from app.core.auth import User, get_current_user
+from app.core.permissions import has_permission
 from app.core.personas import can_view_page, pages_for_personas
 from app.core.templates import templates
 from app.core.tenant_context import get_brand_context_for_request
@@ -101,7 +102,7 @@ async def identity_page(request: Request, user: User = Depends(get_current_user)
 @router.get("/admin", response_class=HTMLResponse)
 async def admin_page(request: Request, user: User = Depends(get_current_user)):
     """Admin dashboard — user management, role assignment, platform stats."""
-    if "admin" not in user.roles:
+    if not has_permission(user.roles, "system:admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
