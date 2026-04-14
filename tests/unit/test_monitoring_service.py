@@ -29,7 +29,11 @@ class TestMonitoringServiceAlerts:
     @pytest.fixture
     def mock_db(self):
         """Create mock database session."""
-        return MagicMock()
+        db = MagicMock()
+        # cleanup_ghost_jobs queries .filter().all() — must return empty list
+        # so the ghost-check doesn't add an extra commit
+        db.query.return_value.filter.return_value.all.return_value = []
+        return db
 
     @pytest.fixture
     def monitoring_service(self, mock_db):
@@ -252,7 +256,11 @@ class TestMonitoringServiceSyncJobs:
     @pytest.fixture
     def mock_db(self):
         """Create mock database session."""
-        return MagicMock()
+        db = MagicMock()
+        # cleanup_ghost_jobs queries .filter().all() — must return empty list
+        # so the ghost-check doesn't add an extra commit
+        db.query.return_value.filter.return_value.all.return_value = []
+        return db
 
     @pytest.fixture
     def monitoring_service(self, mock_db):

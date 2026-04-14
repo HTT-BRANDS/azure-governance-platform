@@ -142,9 +142,25 @@ def mock_db_query(mock_tenant):
 
 @pytest.fixture
 def mock_db_session(mock_db_query):
-    """Create a mock database session."""
+    """Create a mock database session.
+
+    Queries for SyncJobLog (ghost job cleanup) return empty lists
+    so that the ghost-cleanup path does not add extra commits.
+    All other queries return the shared mock_db_query.
+    """
+    from app.models.monitoring import SyncJobLog
+
+    ghost_query = MagicMock()
+    ghost_query.filter.return_value.all.return_value = []
+    ghost_query.filter.return_value.first.return_value = None
+
+    def _query(model):
+        if model is SyncJobLog:
+            return ghost_query
+        return mock_db_query
+
     session = MagicMock()
-    session.query.return_value = mock_db_query
+    session.query.side_effect = _query
     session.add = MagicMock()
     session.commit = MagicMock()
     session.close = MagicMock()
