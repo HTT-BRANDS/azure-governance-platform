@@ -98,6 +98,27 @@ async def identity_page(request: Request, user: User = Depends(get_current_user)
     )
 
 
+@router.get("/admin", response_class=HTMLResponse)
+async def admin_page(request: Request, user: User = Depends(get_current_user)):
+    """Admin dashboard — user management, role assignment, platform stats."""
+    if "admin" not in user.roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    brand_context = get_brand_context_for_request(request)
+    return templates.TemplateResponse(
+        request,
+        "pages/admin_dashboard.html",
+        {
+            **brand_context,
+            "visible_pages": {"*"},
+            "page_key": "admin",
+            "user": user,
+        },
+    )
+
+
 @router.get("/privacy", response_class=HTMLResponse)
 async def privacy_page(request: Request):
     """Privacy policy page."""

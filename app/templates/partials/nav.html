@@ -81,4 +81,13 @@
           class="ml-1"></span>
   </a>
   {% endif %}
+  {# Admin link — only shown to admin users (not persona-gated) #}
+  {% if user is defined and user.roles is defined and 'admin' in user.roles %}
+  <a href="/admin"
+     class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors flex items-center gap-1 {% if page_key == 'admin' %}bg-brand-primary-110{% endif %}"
+     {% if page_key == 'admin' %}aria-current="page"{% endif %}
+     data-nav-path="/admin">
+    <span aria-hidden="true">⚙</span> Admin
+  </a>
+  {% endif %}
 </div>
