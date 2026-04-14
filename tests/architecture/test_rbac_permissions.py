@@ -9,8 +9,6 @@ once implemented.
 Run: pytest tests/architecture/test_rbac_permissions.py -v
 """
 
-import ast
-import importlib
 import re
 from pathlib import Path
 
@@ -125,7 +123,7 @@ class TestPermissionModelInvariants:
     def test_role_hierarchy_containment(self):
         """Viewer ⊂ Analyst ⊂ TenantAdmin (permission containment)."""
         try:
-            from app.core.permissions import ROLE_PERMISSIONS, Role, WILDCARD_PERMISSION
+            from app.core.permissions import ROLE_PERMISSIONS, Role
         except ImportError:
             pytest.skip("permissions module not importable")
 

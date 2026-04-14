@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] - 2026-04-15
+
+### Phase 20: Granular RBAC & Admin Dashboard
+- **RBAC Foundation**: Permission model with 35 `resource:action` permission strings, 4 predefined roles (Admin, TenantAdmin, Analyst, Viewer), strict containment hierarchy
+- **Admin API**: 6 REST endpoints for user management, role assignment, and system stats
+- **Admin Dashboard**: HTMX-powered user management UI with search, filter, inline role editing
+- **Security Hardening**: Self-modification guard, persistent audit logging for role changes, generic 403 messages, XSS defense-in-depth
+- **ADR-0011**: Granular RBAC architecture decision record with STRIDE analysis
+- **Architecture Tests**: 14 fitness functions for RBAC invariants
+
+### Governance Dashboard (Recovered Branch)
+- **Persona System**: Entra ID group → department-based UI gating
+- **Topology Dashboard**: Mermaid-based Azure infrastructure visualization
+- **Production Audit Scripts**: Cross-tenant diagnostic aggregator
+- **Data Health Indicator**: Sync freshness LED in navigation header
+- **UI Polish**: WCAG focus states, contrast fixes, loading states
+- **CI Workflows**: GitHub Projects v2 sync + topology diagram generation
+
+### Maintenance
+- **Dependencies**: 41 pip minor/patch bumps merged (dependabot)
+- **Bug Fixes**: Multi-tenant sync test mocks, design system compliance for data_health.html
+- **Docs**: Strategic audit and next steps roadmap, end-to-end infrastructure overview
+
 ## [2.2.0] - 2026-04-08
 
 ### Phase 19: Release Hygiene Sprint

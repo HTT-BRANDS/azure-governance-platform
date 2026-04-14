@@ -1432,4 +1432,48 @@ None of these mask production bugs.
 
 ---
 
+---
+
+## Phase 20: Granular RBAC & Admin Dashboard (v2.3.0)
+
+### 20.1 RBAC Foundation
+- [x] 20.1.1 ADR-0011: Granular RBAC architecture decision record with STRIDE analysis (Code-Puppy 🐶)
+  - File: docs/adr/0011-granular-rbac.md
+- [x] 20.1.2 Permission model: 35 resource:action strings, 4 roles, containment hierarchy (Code-Puppy 🐶)
+  - Files: app/core/permissions.py, app/core/rbac.py
+- [x] 20.1.3 Architecture fitness tests: 14 invariant checks (Code-Puppy 🐶)
+  - File: tests/architecture/test_rbac_permissions.py
+
+### 20.2 Admin API & Service Layer
+- [x] 20.2.1 AdminService: user CRUD, role assignment, stats aggregation (Code-Puppy 🐶)
+  - File: app/api/services/admin_service.py
+- [x] 20.2.2 Admin API routes: 6 endpoints with system:admin permission gating (Code-Puppy 🐶)
+  - File: app/api/routes/admin.py
+- [x] 20.2.3 Route tests: 90 unit tests for admin endpoints (Code-Puppy 🐶)
+  - File: tests/unit/test_routes_admin.py
+
+### 20.3 Admin Dashboard UI
+- [x] 20.3.1 Admin dashboard template: HTMX stats, user table, role editor (Code-Puppy 🐶)
+  - File: app/templates/pages/admin_dashboard.html
+- [x] 20.3.2 Users table partial: badge rendering, edit button, pagination (Code-Puppy 🐶)
+  - File: app/templates/partials/admin_users_table_body.html
+- [x] 20.3.3 Admin nav link: role-gated visibility in navigation (Code-Puppy 🐶)
+  - File: app/templates/partials/nav.html
+
+### 20.4 Security Hardening
+- [x] 20.4.1 F-01: Self-role-modification guard (Code-Puppy 🐶)
+  - File: app/api/routes/admin.py
+- [x] 20.4.2 F-02: Persistent audit logging for role changes (Code-Puppy 🐶)
+  - Files: app/api/services/admin_service.py, app/api/routes/admin.py
+- [x] 20.4.3 F-03: HTMX partial endpoint with auth (Code-Puppy 🐶)
+  - Files: app/api/routes/pages.py, app/templates/partials/admin_users_table_body.html
+- [x] 20.4.4 F-06: Generic 403 error messages (Code-Puppy 🐶)
+  - File: app/core/rbac.py
+- [x] 20.4.5 F-07: has_permission() for admin page route (Code-Puppy 🐶)
+  - File: app/api/routes/pages.py
+- [x] 20.4.6 F-08: XSS escape in admin stats renderer (Code-Puppy 🐶)
+  - File: app/templates/pages/admin_dashboard.html
+
+| Phase 20 | 15 | 15 | 0 | ✅ Complete |
+
 *This roadmap is the single source of truth for the /wiggum ralph protocol. Task completion is validated by running the task's validation command, then updating via `python scripts/sync_roadmap.py --update --task X.Y.Z`.*

@@ -50,7 +50,7 @@ FROM python:3.11-slim-bookworm as production
 
 LABEL maintainer="Cloud Governance Team" \
       application="Azure Governance Platform" \
-      version="2.2.0"
+      version="2.3.0"
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -166,7 +166,7 @@ FROM builder as development
 
 LABEL maintainer="Cloud Governance Team" \
       application="Azure Governance Platform" \
-      version="2.2.0-dev"
+      version="2.3.0-dev"
 
 # Install development dependencies
 RUN uv pip install --system -e ".[dev]"

@@ -1,18 +1,29 @@
 # Azure Multi-Tenant Governance Platform
 
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/tests-3,800-brightgreen.svg)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-4,300+-brightgreen.svg)](./tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 A lightweight, cost-effective platform for managing Azure/M365 governance across multiple tenants. Built with Python, FastAPI, HTMX, and Tailwind CSS.
 
-**🏆 Production Ready | 💰 75% Cost Optimized | 🔐 Zero-Secrets Auth | ✅ 328 Tasks Complete | 🧪 3,800 Tests**
+**🏆 Production Ready | 💰 75% Cost Optimized | 🔐 Zero-Secrets Auth | ✅ 328 Tasks Complete | 🧪 4,300+ Tests**
 
-## ✨ What's New in v2.2.0
+## ✨ What's New in v2.3.0
 
-**April 2026 Release — "Release Hygiene & Production Deploy"**
+**April 2026 Release — "Granular RBAC & Admin Dashboard"**
+
+### 🎯 Phase 20 Highlights
+
+- **Granular RBAC** — 35 `resource:action` permissions, 4 predefined roles with strict containment hierarchy
+- **Admin Dashboard** — HTMX-powered user management with search, filter, inline role editing
+- **Security Audit** — Self-modification guard, persistent audit logging, generic 403s, XSS defense-in-depth
+- **ADR-0011** — Architecture decision record with STRIDE threat analysis
+- **14 Architecture Tests** — Fitness functions enforcing RBAC invariants
+- **4,300+ Tests** — 236 new tests for RBAC, admin, and security
+
+### Previous: v2.2.0 — "Release Hygiene & Production Deploy"
 
 ### 🎯 Major Highlights
 
