@@ -36,16 +36,14 @@ class TestBackwardCompatibility:
         """User.roles: list[str] must remain — it's the RBAC input."""
         source = AUTH_FILE.read_text()
         assert "roles: list[str]" in source, (
-            "User.roles field missing from auth.py — "
-            "RBAC depends on this field existing"
+            "User.roles field missing from auth.py — RBAC depends on this field existing"
         )
 
     def test_user_has_role_method_exists(self):
         """User.has_role() must remain for backward compatibility."""
         source = AUTH_FILE.read_text()
         assert "def has_role(self" in source, (
-            "User.has_role() method missing — "
-            "existing code depends on this"
+            "User.has_role() method missing — existing code depends on this"
         )
 
     def test_require_roles_function_exists(self):
@@ -60,10 +58,9 @@ class TestBackwardCompatibility:
         """Admin role must always bypass role checks (wildcard behavior)."""
         source = AUTH_FILE.read_text()
         # The require_roles function should check for admin
-        assert '"admin" in current_user.roles' in source or "'admin' in current_user.roles" in source, (
-            "require_roles() must check for admin bypass — "
-            "admin wildcard is a core invariant"
-        )
+        assert (
+            '"admin" in current_user.roles' in source or "'admin' in current_user.roles" in source
+        ), "require_roles() must check for admin bypass — admin wildcard is a core invariant"
 
     def test_tenant_authorization_class_exists(self):
         """TenantAuthorization must remain separate from RBAC."""
@@ -110,9 +107,9 @@ class TestPermissionModelInvariants:
         # Should appear exactly once (in admin's permission set)
         assert wildcard_count >= 1, "Admin role must have wildcard '*' permission"
         # Check it's associated with admin
-        assert re.search(
-            r'(?i)(admin|ADMIN).*\{.*["\']\*["\']', source, re.DOTALL
-        ), "Wildcard '*' must only be assigned to admin role"
+        assert re.search(r'(?i)(admin|ADMIN).*\{.*["\']\*["\']', source, re.DOTALL), (
+            "Wildcard '*' must only be assigned to admin role"
+        )
 
     def test_legacy_role_mapping_exists(self):
         """Legacy roles (operator, reader, user) must map to new roles."""
@@ -133,8 +130,7 @@ class TestPermissionModelInvariants:
 
         # Exclude wildcard from containment check
         assert viewer_perms.issubset(analyst_perms), (
-            f"Viewer permissions not subset of Analyst. "
-            f"Extra: {viewer_perms - analyst_perms}"
+            f"Viewer permissions not subset of Analyst. Extra: {viewer_perms - analyst_perms}"
         )
         assert analyst_perms.issubset(tenant_admin_perms), (
             f"Analyst permissions not subset of TenantAdmin. "
@@ -151,9 +147,7 @@ class TestPermissionModelInvariants:
         viewer_perms = ROLE_PERMISSIONS.get(Role.VIEWER, frozenset())
         write_actions = {"write", "manage", "trigger", "run", "export", "admin"}
         violations = {p for p in viewer_perms if p.split(":")[-1] in write_actions}
-        assert not violations, (
-            f"Viewer role has non-read permissions: {violations}"
-        )
+        assert not violations, f"Viewer role has non-read permissions: {violations}"
 
 
 # ============================================================================
@@ -177,8 +171,7 @@ class TestRBACDependencyGuards:
         banned_imports = ["casbin", "fastapi_permissions", "authx"]
         for lib in banned_imports:
             assert lib not in source, (
-                f"RBAC module imports '{lib}' — ADR-0011 requires "
-                f"zero external RBAC dependencies"
+                f"RBAC module imports '{lib}' — ADR-0011 requires zero external RBAC dependencies"
             )
 
     def test_permissions_resolved_server_side(self):
@@ -206,8 +199,7 @@ class TestTenantIsolationIndependence:
             "tenant isolation is orthogonal to RBAC"
         )
         assert "from app.core.rbac" not in source, (
-            "TenantAuthorization should not depend on rbac module — "
-            "these are separate concerns"
+            "TenantAuthorization should not depend on rbac module — these are separate concerns"
         )
 
     def test_user_tenant_model_still_has_role_column(self):

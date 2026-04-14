@@ -136,9 +136,7 @@ class TestRoleHierarchy:
     def test_analyst_is_strict_subset_of_tenant_admin(self) -> None:
         analyst = ROLE_PERMISSIONS[Role.ANALYST]
         tenant_admin = ROLE_PERMISSIONS[Role.TENANT_ADMIN]
-        assert analyst < tenant_admin, (
-            f"Analyst not ⊂ TenantAdmin. Extra: {analyst - tenant_admin}"
-        )
+        assert analyst < tenant_admin, f"Analyst not ⊂ TenantAdmin. Extra: {analyst - tenant_admin}"
 
     def test_admin_has_wildcard(self) -> None:
         assert WILDCARD_PERMISSION in ROLE_PERMISSIONS[Role.ADMIN]
