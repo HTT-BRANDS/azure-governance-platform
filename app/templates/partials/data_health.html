@@ -13,7 +13,7 @@
       aria-live="polite"
       title="Data sync freshness across all tenants">
   <span id="data-health-led"
-        class="inline-block w-2.5 h-2.5 rounded-full bg-gray-400"
+        class="inline-block w-2.5 h-2.5 rounded-full bg-surface-tertiary"
         aria-hidden="true"></span>
   <span id="data-health-label" class="sr-only sm:not-sr-only text-brand-primary-50">
     Checking…
@@ -32,11 +32,11 @@
       const j = await r.json();
       const stale = !!j.any_stale;
       led.className = 'inline-block w-2.5 h-2.5 rounded-full ' +
-                      (stale ? 'bg-amber-400' : 'bg-emerald-500');
+                      (stale ? 'bg-warning' : 'bg-success');
       label.textContent = stale ? 'Data: stale' : 'Data: live';
       label.className = 'sr-only sm:not-sr-only text-brand-primary-50';
     } catch (err) {
-      led.className = 'inline-block w-2.5 h-2.5 rounded-full bg-gray-400';
+      led.className = 'inline-block w-2.5 h-2.5 rounded-full bg-surface-tertiary';
       label.textContent = 'Data: unknown';
     }
   }
