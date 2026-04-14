@@ -1,7 +1,7 @@
 # Strategic Audit & Next Steps — Azure Governance Platform
 
 **Audit Date:** April 15, 2026  
-**Platform Version:** 2.2.0+  
+**Platform Version:** 2.3.0  
 **Agent:** planning-agent-0f544f  
 **Status:** Production + Staging Operational | All Pipelines Green
 
@@ -9,15 +9,15 @@
 
 ## 1. Executive Summary
 
-The Azure Governance Platform has reached **operational maturity** at v2.2.0 with 328 roadmap tasks completed across 19 phases. Production and staging are deployed, healthy, and all CI/CD pipelines green. The platform serves 5 franchise brands (HTT, BCC, FN, TLL, DCE) across Azure/M365 tenants with OIDC zero-secret authentication.
+The Azure Governance Platform has reached **operational maturity** at v2.3.0 with 343 roadmap tasks completed across 20 phases. Production and staging are deployed, healthy, and all CI/CD pipelines green. The platform serves 5 franchise brands (HTT, BCC, FN, TLL, DCE) across Azure/M365 tenants with OIDC zero-secret authentication.
 
 ### Key Metrics
 | Metric | Value | Status |
 |--------|-------|--------|
-| Version | 2.2.0+ | ✅ Current |
-| Test Count | 3,800+ | ✅ Comprehensive |
+| Version | 2.3.0 | ✅ Current |
+| Test Count | 4,300+ | ✅ Comprehensive |
 | Test Pass Rate | 100% | ✅ Zero failures |
-| Roadmap Tasks | 328 (19 phases) | ✅ All Complete |
+| Roadmap Tasks | 343 (20 phases) | ✅ All Complete |
 | CI Pipeline | Green | ✅ |
 | Production | Healthy | ✅ |
 | Staging | Healthy | ✅ |
@@ -62,9 +62,9 @@ The Azure Governance Platform has reached **operational maturity** at v2.2.0 wit
 
 ## 3. Gap Analysis
 
-### 3.1 RBAC Gap (Priority: HIGH)
+### 3.1 ~~RBAC Gap~~ — ✅ RESOLVED in v2.3.0 (Phase 20)
 
-**Current State:** Binary role model — `User.roles: list[str]` with only `"admin"` as the elevated role. Authorization is tenant-scoped (user sees their tenants' data) but there's no granular permission model.
+**Previous State:** Binary role model — `User.roles: list[str]` with only `"admin"` as the elevated role. Authorization is tenant-scoped (user sees their tenants' data) but there's no granular permission model.
 
 **Gap:** No way to give a user "cost analyst" access without giving them "admin". No permission granularity for:
 - Read-only vs. read-write per module
@@ -74,7 +74,7 @@ The Azure Governance Platform has reached **operational maturity** at v2.2.0 wit
 
 **Impact:** All authenticated non-admin users see the same UI. The new persona system (Entra ID group → page gating) helps with navigation but doesn't enforce API-level access control.
 
-**Recommendation:** Implement Option 1 (Minimal RBAC) — add a `Role` model with predefined roles (Admin, TenantAdmin, Analyst, Viewer) and permission strings. Layer on top of existing auth without breaking backward compatibility.
+**Resolution:** Implemented in v2.3.0 — 35 `resource:action` permissions, 4 predefined roles (Admin, TenantAdmin, Analyst, Viewer), `require_permissions()` FastAPI dependency, admin dashboard with HTMX user management, 6 security audit findings resolved.
 
 ### 3.2 Data Freshness & Sync Reliability (Priority: MEDIUM)
 
@@ -106,7 +106,7 @@ The Azure Governance Platform has reached **operational maturity** at v2.2.0 wit
 
 ## 4. Prioritized Next Steps (Phase 20+)
 
-### Phase 20: Granular RBAC (v2.3.0)
+### Phase 20: Granular RBAC (v2.3.0) — ✅ COMPLETE
 **Priority:** HIGH | **Effort:** 2-3 hours | **Impact:** Enables real multi-user deployment
 
 | Task | Description | Agent |
@@ -161,7 +161,7 @@ The Azure Governance Platform has reached **operational maturity** at v2.2.0 wit
 | ADR-0008 | Container registry | ✅ Decided |
 | ADR-0009 | Database tier | ✅ Decided |
 | ADR-0010 | Sync reliability | ⚠️ Implemented but no ADR document |
-| ADR-0011 | Granular RBAC | 🔜 Proposed (Phase 20) |
+| ADR-0011 | Granular RBAC | ✅ Decided & Implemented (v2.3.0) |
 
 ---
 
@@ -181,5 +181,5 @@ The Azure Governance Platform has reached **operational maturity** at v2.2.0 wit
 ---
 
 **Last Updated:** April 15, 2026  
-**Next Review:** After Phase 20 completion  
+**Next Review:** After Phase 21 (Operational Excellence)  
 **Owner:** planning-agent-0f544f

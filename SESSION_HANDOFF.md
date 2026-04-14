@@ -1,98 +1,92 @@
 # 🚀 SESSION_HANDOFF — Azure Governance Platform
 
-## Current State — v2.2.0 Production Deploy Complete
+## Current State — v2.3.0 RBAC & Admin Dashboard Complete
 
-**Date:** April 10, 2026  
-**Agent:** planning-agent-affa42 + code-puppy  
+**Date:** April 15, 2026  
+**Agent:** planning-agent-0f544f + code-puppy + python-programmer + solutions-architect + security-auditor  
 **Branch:** main (clean, fully pushed)  
-**Session Status:** ✅ ALL WORK COMPLETE — DEPLOYED TO PRODUCTION + STAGING
+**Session Status:** ✅ ALL WORK COMPLETE
 
 ---
 
 ## 🎯 Executive Summary
 
-v2.2.0 is deployed to both production and staging. All three CI/CD pipelines are green. GitHub Pages documentation site is live and updated.
+v2.3.0 delivered granular RBAC with admin dashboard and merged the recovered governance dashboard branch. All security audit findings resolved. Production and staging are on v2.2.0 — deploy v2.3.0 when ready.
 
 | Metric | Value |
 |--------|-------|
-| **Version** | 2.2.0 |
-| **Production** | ✅ Healthy — https://app-governance-prod.azurewebsites.net |
-| **Staging** | ✅ Healthy — https://app-governance-staging-xnczpwyv.azurewebsites.net |
-| **GitHub Pages** | ✅ Live — https://htt-brands.github.io/azure-governance-platform/ |
-| **CI Pipeline** | ✅ Green |
-| **Deploy Staging** | ✅ Green (all 5 jobs) |
-| **Deploy Production** | ✅ Green (all 6 jobs) |
-| **Tests** | 3,800 passing, 0 failures |
-| **Lint** | 0 errors, 0 format violations |
-| **Roadmap Phases** | 19 complete |
-| **Roadmap Tasks** | 328 complete |
+| **Version** | 2.3.0 |
+| **Tests** | 4,300+ passing, 0 failures |
+| **Lint** | 0 errors |
+| **RBAC Roles** | 4 (Admin, TenantAdmin, Analyst, Viewer) |
+| **Permissions** | 35 resource:action strings |
+| **Security Findings** | 6 resolved, 3 tracked for future |
 
 ---
 
 ## 📊 What Was Done This Session
 
-### CI/CD Pipeline Fixes
-- Pre-commit ruff version mismatch fixed (v0.6.9 → v0.14.3)
-- 5 test files reformatted to pass CI format check
-- GHCR_REPOSITORY path fixed (tygranlund → htt-brands)
-- Tenant config example updated for OIDC (oidc_enabled: true)
-- Dockerfile version labels updated (1.8.0 → 2.2.0)
-- GHCR registry credentials added to both staging + production deploy workflows
-- GHCR_PAT secret created and set on both App Services
+### Lost Branch Recovery
+- Discovered `claude/azure-governance-dashboard-lD7n2` on remote after git fetch
+- Full code review (29 files, +2336/-31 lines)
+- Fixed `/healthz/data` session handling (manual SessionLocal → Depends(get_db))
+- Merged to main with fix
 
-### Application Fixes
-- /docs auth changed from `not is_development` to `is_production` (staging gets public docs)
-- Smoke test made environment-aware (expects 401 in prod, 200 in staging)
-- cryptography bumped 46.0.6 → 46.0.7 (CVE-2026-39892)
+### RBAC Implementation (Phase 20)
+- ADR-0011: Granular RBAC design with STRIDE analysis
+- `app/core/permissions.py`: 35 permissions, 4 roles, containment hierarchy
+- `app/core/rbac.py`: `require_permissions()` / `require_any_permission()` FastAPI deps
+- Admin API: 6 endpoints for user/role management
+- Admin Dashboard: HTMX-powered with search, filter, inline role editing
+- 14 architecture fitness functions
 
-### Deployments
-- Staging deployed to v2.2.0 via CI/CD pipeline (auto on push to main)
-- Production deployed to v2.2.0 via manual workflow_dispatch
-- Both environments verified healthy
+### Security Audit & Fixes
+- Full security review by security-auditor
+- F-01: Self-role-modification guard ✅
+- F-02: Persistent audit logging for role changes ✅
+- F-03: HTMX partial endpoint with auth ✅
+- F-06: Generic 403 messages (no permission leakage) ✅
+- F-07: Consistent permission checks ✅
+- F-08: XSS defense-in-depth on stats cards ✅
 
-### Documentation Updates
-- docs/index.html: v1.9.0 → v2.2.0, 2,563 → 3,800 tests, uv quick start
-- README.md: v2.1.0 → v2.2.0, 3,799 → 3,800 tests, 322 → 328 tasks
-- CURRENT_STATE_ASSESSMENT.md: full rewrite from v1.8.1 to v2.2.0
-- GITHUB_PAGES_STATUS.md: updated to reflect Pages is live and building
-- SESSION_HANDOFF.md: this file
+### Housekeeping
+- Committed INFRASTRUCTURE_END_TO_END.md
+- Pruned 5 stale local branches
+- Merged dependabot PR #4 (41 pip bumps)
+- Fixed 4 pre-existing test failures (multi-tenant sync mocks, design system compliance)
 
 ---
 
-## 🔮 Remaining Items (Low Priority)
+## 🔮 Remaining Items
 
 | Priority | Item | Notes |
 |----------|------|-------|
-| Low | Make GHCR package public | Requires org admin via GitHub web UI (Package Settings → visibility) |
-| Low | Node.js 20 deprecation | GitHub Actions will force Node.js 24 by June 2026 |
-| Low | CodeQL v3 deprecation | Should upgrade to v4 before December 2026 |
+| HIGH | Deploy v2.3.0 to staging then production | `gh workflow run deploy-staging.yml` → verify → `gh workflow run deploy-production.yml` |
+| MEDIUM | Phase 21: Operational Excellence | ADR-0010 doc, configurable sync thresholds, failure alerting |
+| MEDIUM | F-04: Rate limiting on admin endpoints | Security audit finding |
+| MEDIUM | F-05: SQL-level pagination for admin users | Performance improvement |
+| LOW | Phase 22: Platform Polish | Python 3.12+ eval, GHCR public, dashboard lazy loading |
+| LOW | Dependabot PR #1: Python 3.14 Docker | Major version jump — evaluate carefully |
+| LOW | Test suite performance | 700+ second full runs due to per-file TestClient |
 
 ---
 
-## 📁 Key Files
+## 📁 Key Files (New This Session)
 
 | File | Purpose |
 |------|---------|
-| `pyproject.toml` | Version = 2.2.0 |
-| `app/__init__.py` | Version = 2.2.0 |
-| `Dockerfile` | Version labels = 2.2.0 |
-| `CHANGELOG.md` | Full version history |
-| `WIGGUM_ROADMAP.md` | 328 tasks across 19 phases |
-| `CURRENT_STATE_ASSESSMENT.md` | Full infrastructure + code state |
-| `docs/index.html` | GitHub Pages homepage |
+| `app/core/permissions.py` | Permission constants + role definitions |
+| `app/core/rbac.py` | require_permissions() FastAPI dependency |
+| `app/api/routes/admin.py` | Admin user/role management API |
+| `app/api/services/admin_service.py` | Admin service layer |
+| `app/templates/pages/admin_dashboard.html` | Admin dashboard UI |
+| `app/templates/partials/admin_users_table_body.html` | HTMX users table partial |
+| `app/core/personas.py` | Persona system (from recovered branch) |
+| `app/api/routes/topology.py` | Topology dashboard (from recovered branch) |
+| `docs/decisions/adr-0011-granular-rbac.md` | RBAC architecture decision |
+| `STRATEGIC_AUDIT_AND_NEXT_STEPS.md` | Strategic audit and roadmap |
+| `tests/architecture/test_rbac_permissions.py` | RBAC fitness functions |
 
 ---
 
-## 🔑 Credentials & Secrets
-
-| Secret | Location | Status |
-|--------|----------|--------|
-| GHCR_PAT | GitHub repo secret | ✅ Set Apr 10, 2026 |
-| AZURE_CLIENT_ID | GitHub repo secret | ✅ Set |
-| AZURE_TENANT_ID | GitHub repo secret | ✅ Set |
-| AZURE_SUBSCRIPTION_ID | GitHub repo secret | ✅ Set |
-| App Service GHCR creds | Staging + Production | ✅ Set via az CLI |
-
----
-
-**Last Updated:** April 10, 2026
+**Last Updated:** April 15, 2026
