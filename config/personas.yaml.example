@@ -1,0 +1,30 @@
+# Copy this file to config/personas.yaml and fill in real Entra ID security
+# group object IDs from the HTT Brands home tenant.
+#
+# config/personas.yaml is gitignored so real IDs do not enter source control.
+#
+# See app/core/personas.py for how these are resolved from the `groups` token
+# claim at login. The multi-tenant app manifest must include:
+#     "groupMembershipClaims": "SecurityGroup"
+# so the `groups` claim is emitted in access tokens.
+
+personas:
+  it_admin:
+    groups:
+      - "REPLACE-WITH-IT-ADMINS-GROUP-OBJECT-ID"
+    pages: ["*"]
+
+  operations:
+    groups:
+      - "REPLACE-WITH-OPERATIONS-GROUP-OBJECT-ID"
+    pages: ["dashboard", "resources", "compliance", "sync", "riverside"]
+
+  finance:
+    groups:
+      - "REPLACE-WITH-FINANCE-GROUP-OBJECT-ID"
+    pages: ["dashboard", "costs", "licensing"]
+
+  marketing:
+    groups:
+      - "REPLACE-WITH-MARKETING-GROUP-OBJECT-ID"
+    pages: ["dashboard", "identity", "licensing"]

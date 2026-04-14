@@ -39,6 +39,7 @@ class TokenData(BaseModel):
     name: str | None = None
     roles: list[str] = []
     tenant_ids: list[str] = []  # Tenants user has access to
+    personas: list[str] = []  # Department-level UI gates (it_admin, finance, ...)
     azure_tenant_id: str | None = None  # Azure AD 'tid' claim
     exp: datetime | None = None
     iat: datetime | None = None
@@ -54,6 +55,7 @@ class User(BaseModel):
     name: str | None = None
     roles: list[str] = []
     tenant_ids: list[str] = []
+    personas: list[str] = []  # Department-level UI gates
     is_active: bool = True
     auth_provider: str = "internal"  # "internal" or "azure_ad"
 
@@ -171,12 +173,16 @@ class AzureADTokenValidator:
 
             exp = payload.get("exp")
             iat = payload.get("iat")
+            # Lazy-import to avoid circular dependency (personas imports auth.User)
+            from app.core.personas import resolve_personas
+
             return TokenData(
                 sub=user_id,
                 email=email,
                 name=name,
                 roles=self._map_groups_to_roles(groups),
                 tenant_ids=self._extract_tenant_ids_from_groups(groups),
+                personas=resolve_personas(groups),
                 azure_tenant_id=azure_tenant_id,
                 exp=datetime.fromtimestamp(exp, tz=UTC) if exp else None,
                 iat=datetime.fromtimestamp(iat, tz=UTC) if iat else None,
@@ -246,6 +252,7 @@ class JWTTokenManager:
         name: str | None = None,
         roles: list[str] | None = None,
         tenant_ids: list[str] | None = None,
+        personas: list[str] | None = None,
         expires_delta: timedelta | None = None,
     ) -> str:
         """Create a new JWT access token.
@@ -256,6 +263,7 @@ class JWTTokenManager:
             name: User display name
             roles: User roles
             tenant_ids: Tenants user can access
+            personas: Department-level UI gates (it_admin, operations, finance, marketing)
             expires_delta: Custom expiration time
 
         Returns:
@@ -272,6 +280,7 @@ class JWTTokenManager:
             "name": name,
             "roles": roles or ["user"],
             "tenant_ids": tenant_ids or [],
+            "personas": personas or [],
             "exp": expire,
             "iat": datetime.now(UTC),
             "iss": "azure-governance-platform",
@@ -433,6 +442,7 @@ async def get_current_user(
                 name=token_data.name,
                 roles=token_data.roles,
                 tenant_ids=token_data.tenant_ids,
+                personas=token_data.personas,
                 is_active=True,
                 auth_provider="azure_ad",
             )
@@ -458,6 +468,7 @@ async def get_current_user(
                 name=payload.get("name"),
                 roles=payload.get("roles", ["user"]),
                 tenant_ids=payload.get("tenant_ids", []),
+                personas=payload.get("personas", []),
                 is_active=True,
                 auth_provider="internal",
             )

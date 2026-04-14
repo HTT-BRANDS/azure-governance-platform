@@ -30,6 +30,7 @@ from app.api.routes.search import router as search_router
 from app.api.routes.sync import router as sync_router
 from app.api.routes.tenants import router as tenants_router
 from app.api.routes.threats import router as threats_router
+from app.api.routes.topology import router as topology_router
 
 __all__ = [
     "accessibility_router",
@@ -62,4 +63,5 @@ __all__ = [
     "sync_router",
     "tenants_router",
     "threats_router",
+    "topology_router",
 ]

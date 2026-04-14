@@ -1,0 +1,113 @@
+# =============================================================================
+# Topology Diagram — regenerate docs/diagrams/topology.mmd
+# =============================================================================
+# Runs on every push to main and PR. Queries Azure Resource Graph via OIDC and
+# commits the updated Mermaid source if it changed. On PRs, posts a comment
+# with a diff hint so the reviewer sees what moved.
+# =============================================================================
+
+name: Topology Diagram
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/generate_topology.py"
+      - "config/tenants.yaml"
+      - ".github/workflows/topology-diagram.yml"
+  pull_request:
+    paths:
+      - "scripts/generate_topology.py"
+      - "config/tenants.yaml"
+      - ".github/workflows/topology-diagram.yml"
+  workflow_dispatch:
+  schedule:
+    # Nightly refresh so drift from Azure (new RGs etc.) lands in the repo.
+    - cron: "0 6 * * *"
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+env:
+  PYTHON_VERSION: "3.11"
+  UV_VERSION: "0.5.x"
+
+jobs:
+  generate:
+    name: Generate Mermaid topology
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Azure Login (OIDC)
+        if: ${{ secrets.AZURE_CLIENT_ID != '' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Generate topology
+        env:
+          OIDC_ALLOW_DEV_FALLBACK: "true"
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          if [ -z "${AZURE_CLIENT_ID}" ]; then
+            echo "No AZURE_CLIENT_ID secret — running in offline mode."
+            uv run python scripts/generate_topology.py --offline
+          else
+            uv run python scripts/generate_topology.py -v
+          fi
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet docs/diagrams/topology.mmd; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git --no-pager diff --stat docs/diagrams/topology.mmd
+          fi
+
+      - name: Commit updated diagram (main only)
+        if: github.event_name == 'push' && steps.diff.outputs.changed == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(topology): refresh Mermaid diagram"
+          file_pattern: docs/diagrams/topology.mmd
+
+      - name: Upload topology artefact
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: topology-mermaid
+          path: docs/diagrams/topology.mmd
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Topology diagram changed
+
+            This PR modifies `docs/diagrams/topology.mmd`.
+            The updated file is attached as the `topology-mermaid` artefact above.
+            Run `scripts/generate_topology.py` locally to preview locally.

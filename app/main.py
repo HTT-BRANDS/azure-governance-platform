@@ -42,6 +42,7 @@ from app.api.routes import (
     sync_router,
     tenants_router,
     threats_router,
+    topology_router,
 )
 from app.core.auth import jwt_manager
 from app.core.cache import cache_manager
@@ -406,6 +407,7 @@ app.include_router(dmarc_router)
 app.include_router(accessibility_router)
 app.include_router(exports_router)
 app.include_router(pages_router)
+app.include_router(topology_router)
 app.include_router(preflight_router)
 app.include_router(privacy_router)
 app.include_router(search_router)
@@ -517,6 +519,24 @@ async def health_check():
         "version": settings.app_version,
         "environment": settings.environment,
     }
+
+
+@app.get("/healthz/data")
+async def healthz_data_alias():
+    """Friendly alias for /api/v1/health/data — per-tenant sync freshness.
+
+    Mounted at /healthz/data so the UI header partial and staging smoke
+    checks can use a short, unversioned path. Delegates to the versioned
+    endpoint to avoid duplicating the query logic.
+    """
+    from app.api.routes.health import data_freshness_check
+    from app.core.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        return await data_freshness_check(db=db)
+    finally:
+        db.close()
 
 
 @app.get("/health/detailed")

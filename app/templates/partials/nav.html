@@ -1,0 +1,84 @@
+{# Persona-aware navigation partial.
+
+   Renders nav items only if the current user's persona can view them.
+   Context expected:
+     - `visible_pages`: set of page keys the user may see ("*" = all).
+                       Injected by app.core.tenant_context.get_brand_context_for_request.
+     - `page_key`: optional key to mark the active nav entry.
+
+   Falls back to showing everything when `visible_pages` is missing or empty
+   (soft-rollout: users with no persona aren't impacted).
+#}
+
+{% macro _can(key) -%}
+  {%- if visible_pages is not defined or not visible_pages or '*' in visible_pages or key in visible_pages -%}
+    true
+  {%- endif -%}
+{%- endmacro %}
+
+<div class="flex items-baseline space-x-1">
+  {% if _can('dashboard') %}
+  <a href="/dashboard"
+     class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% if page_key == 'dashboard' %}bg-brand-primary-110{% endif %}"
+     {% if page_key == 'dashboard' %}aria-current="page"{% endif %}
+     data-nav-path="/dashboard">Dashboard</a>
+  {% endif %}
+
+  {% if _can('sync') %}
+  <a href="/sync-dashboard"
+     class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% if page_key == 'sync' %}bg-brand-primary-110{% endif %}"
+     {% if page_key == 'sync' %}aria-current="page"{% endif %}
+     data-nav-path="/sync-dashboard">Sync</a>
+  {% endif %}
+
+  {% if _can('costs') %}
+  <a href="/costs"
+     class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% if page_key == 'costs' %}bg-brand-primary-110{% endif %}"
+     {% if page_key == 'costs' %}aria-current="page"{% endif %}
+     data-nav-path="/costs">Costs</a>
+  {% endif %}
+
+  {% if _can('compliance') %}
+  <a href="/compliance"
+     class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% if page_key == 'compliance' %}bg-brand-primary-110{% endif %}"
+     {% if page_key == 'compliance' %}aria-current="page"{% endif %}
+     data-nav-path="/compliance">Compliance</a>
+  {% endif %}
+
+  {% if _can('resources') %}
+  <a href="/resources"
+     class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% if page_key == 'resources' %}bg-brand-primary-110{% endif %}"
+     {% if page_key == 'resources' %}aria-current="page"{% endif %}
+     data-nav-path="/resources">Resources</a>
+  {% endif %}
+
+  {% if _can('identity') %}
+  <a href="/identity"
+     class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% if page_key == 'identity' %}bg-brand-primary-110{% endif %}"
+     {% if page_key == 'identity' %}aria-current="page"{% endif %}
+     data-nav-path="/identity">Identity</a>
+  {% endif %}
+
+  {% if _can('topology') %}
+  <a href="/topology"
+     class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% if page_key == 'topology' %}bg-brand-primary-110{% endif %}"
+     {% if page_key == 'topology' %}aria-current="page"{% endif %}
+     data-nav-path="/topology">Topology</a>
+  {% endif %}
+
+  {% if _can('riverside') %}
+  <a href="/riverside"
+     class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% if page_key == 'riverside' %}bg-brand-primary-110{% endif %} flex items-center gap-1"
+     {% if page_key == 'riverside' %}aria-current="page"{% endif %}
+     data-nav-path="/riverside">
+    Riverside
+    <span id="riverside-badge"
+          hx-get="/partials/riverside-badge"
+          hx-trigger="load, every 60s"
+          hx-target="#riverside-badge"
+          hx-swap="innerHTML"
+          hx-push-url="false"
+          class="ml-1"></span>
+  </a>
+  {% endif %}
+</div>

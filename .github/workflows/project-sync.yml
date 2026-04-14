@@ -1,0 +1,147 @@
+# =============================================================================
+# Project v2 Sync — keep the Azure Governance project board in step with
+# PR / Issue activity in htt-brands/azure-governance-platform.
+# =============================================================================
+#
+# Required secrets / vars:
+#   GH_PROJECT_TOKEN  — GitHub App installation token (Projects R/W + Issues R).
+#                       Prefer a GH App over a PAT. See docs/GITHUB_SECRETS_SETUP.md.
+#   PROJECT_URL       — The projects v2 URL, e.g.
+#                       https://github.com/orgs/htt-brands/projects/3
+#
+# Labels recognised and mapped to project fields:
+#   persona:it_admin | persona:operations | persona:finance | persona:marketing
+#   tenant:htt | tenant:bcc | tenant:fn | tenant:tll | tenant:dce
+#   priority:P0 | priority:P1 | priority:P2
+#   riverside:<id>            (e.g. riverside:R-042)
+#
+# On PR merge, status is set to Done. On issue/PR open, items are added
+# with Status=Todo. Labels added later trigger a re-sync of fields.
+# =============================================================================
+
+name: Project v2 Sync
+
+on:
+  pull_request:
+    types: [opened, reopened, closed, labeled, unlabeled, synchronize]
+  issues:
+    types: [opened, reopened, closed, labeled, unlabeled, assigned]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  repository-projects: write
+
+jobs:
+  add-to-project:
+    name: Add to Project + set fields
+    runs-on: ubuntu-latest
+    if: ${{ vars.PROJECT_URL != '' }}
+
+    steps:
+      - name: Add item to project
+        id: add
+        uses: actions/add-to-project@v1
+        with:
+          project-url: ${{ vars.PROJECT_URL }}
+          github-token: ${{ secrets.GH_PROJECT_TOKEN }}
+
+      - name: Extract labels
+        id: labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = context.payload;
+            const labels = (payload.issue || payload.pull_request || {}).labels || [];
+            const byPrefix = (pfx) => labels
+              .map(l => l.name)
+              .find(n => n.startsWith(pfx + ':'));
+            const persona  = (byPrefix('persona')   || '').split(':')[1] || '';
+            const tenant   = (byPrefix('tenant')    || '').split(':')[1] || '';
+            const priority = (byPrefix('priority')  || '').split(':')[1] || '';
+            const riverside = (byPrefix('riverside') || '').split(':')[1] || '';
+            core.setOutput('persona',   persona);
+            core.setOutput('tenant',    tenant);
+            core.setOutput('priority',  priority);
+            core.setOutput('riverside', riverside);
+            core.info(`persona=${persona} tenant=${tenant} priority=${priority} riverside=${riverside}`);
+
+      - name: Update single-select fields
+        if: ${{ steps.add.outputs.itemId != '' }}
+        uses: actions/github-script@v7
+        env:
+          PROJECT_URL: ${{ vars.PROJECT_URL }}
+          ITEM_ID: ${{ steps.add.outputs.itemId }}
+          PERSONA: ${{ steps.labels.outputs.persona }}
+          TENANT: ${{ steps.labels.outputs.tenant }}
+          PRIORITY: ${{ steps.labels.outputs.priority }}
+          RIVERSIDE: ${{ steps.labels.outputs.riverside }}
+        with:
+          github-token: ${{ secrets.GH_PROJECT_TOKEN }}
+          script: |
+            const url = process.env.PROJECT_URL;
+            const m = url.match(/projects\/(\d+)/);
+            if (!m) { core.setFailed(`Unexpected PROJECT_URL: ${url}`); return; }
+            const projectNumber = parseInt(m[1], 10);
+            const ownerMatch = url.match(/github\.com\/(?:orgs|users)\/([^/]+)/);
+            if (!ownerMatch) { core.setFailed(`Unexpected PROJECT_URL owner: ${url}`); return; }
+            const owner = ownerMatch[1];
+
+            // Resolve project id + field ids
+            const q = `
+              query($owner:String!, $n:Int!) {
+                organization(login:$owner) {
+                  projectV2(number:$n) {
+                    id
+                    fields(first:40) {
+                      nodes { __typename
+                        ... on ProjectV2Field { id name }
+                        ... on ProjectV2SingleSelectField { id name options { id name } }
+                      }
+                    }
+                  }
+                }
+              }`;
+            const data = await github.graphql(q, { owner, n: projectNumber });
+            const project = data.organization?.projectV2;
+            if (!project) { core.setFailed('Project not found'); return; }
+
+            const findField = (name) => project.fields.nodes.find(f => f.name === name);
+            const setSingleSelect = async (fieldName, optName) => {
+              if (!optName) return;
+              const f = findField(fieldName);
+              if (!f?.options) return;
+              const opt = f.options.find(o => o.name.toLowerCase() === optName.toLowerCase());
+              if (!opt) return;
+              await github.graphql(`
+                mutation($p:ID!, $i:ID!, $f:ID!, $v:ProjectV2FieldValue!) {
+                  updateProjectV2ItemFieldValue(input:{projectId:$p, itemId:$i, fieldId:$f, value:$v}) {
+                    projectV2Item { id }
+                  }
+                }`, {
+                  p: project.id, i: process.env.ITEM_ID, f: f.id,
+                  v: { singleSelectOptionId: opt.id },
+                });
+            };
+            const setText = async (fieldName, value) => {
+              if (!value) return;
+              const f = findField(fieldName);
+              if (!f) return;
+              await github.graphql(`
+                mutation($p:ID!, $i:ID!, $f:ID!, $v:ProjectV2FieldValue!) {
+                  updateProjectV2ItemFieldValue(input:{projectId:$p, itemId:$i, fieldId:$f, value:$v}) {
+                    projectV2Item { id }
+                  }
+                }`, { p: project.id, i: process.env.ITEM_ID, f: f.id, v: { text: value } });
+            };
+
+            await setSingleSelect('Persona',  process.env.PERSONA);
+            await setSingleSelect('Tenant',   process.env.TENANT);
+            await setSingleSelect('Priority', process.env.PRIORITY);
+            await setText('Riverside Requirement ID', process.env.RIVERSIDE);
+
+            // Auto-mark Done on PR merge / issue close
+            const closed = context.payload.pull_request?.merged === true
+                         || (context.payload.action === 'closed' && context.payload.issue?.state === 'closed');
+            if (closed) await setSingleSelect('Status', 'Done');

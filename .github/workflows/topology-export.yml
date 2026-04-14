@@ -1,0 +1,70 @@
+# =============================================================================
+# Topology Export — weekly drawio + SVG renders for stakeholder decks
+# =============================================================================
+# Consumes the committed docs/diagrams/topology.mmd and emits:
+#   - docs/diagrams/topology.svg    (embedded on the Pages site)
+#   - docs/diagrams/topology.drawio (opens in draw.io with Azure stencils)
+# =============================================================================
+
+name: Topology Export
+
+on:
+  schedule:
+    - cron: "0 7 * * MON"  # Mondays at 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    name: Render SVG + drawio
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install mermaid-cli
+        run: npm install -g @mermaid-js/mermaid-cli@11
+
+      - name: Render SVG from Mermaid
+        run: |
+          mkdir -p docs/diagrams
+          mmdc \
+            -i docs/diagrams/topology.mmd \
+            -o docs/diagrams/topology.svg \
+            -t default \
+            -b transparent
+
+      - name: Generate drawio wrapper
+        run: |
+          # Minimal drawio XML that embeds the SVG. Open in draw.io desktop,
+          # then "Arrange → Insert → Shapes → Azure 2019" to overlay stencils.
+          svg_b64=$(base64 -w0 docs/diagrams/topology.svg)
+          cat > docs/diagrams/topology.drawio <<EOF
+          <mxfile host="Electron">
+            <diagram name="Azure Topology">
+              <mxGraphModel dx="1200" dy="800" grid="1" pageWidth="1654" pageHeight="1169">
+                <root>
+                  <mxCell id="0" />
+                  <mxCell id="1" parent="0" />
+                  <mxCell id="svg" style="shape=image;image=data:image/svg+xml;base64,${svg_b64}" vertex="1" parent="1">
+                    <mxGeometry x="0" y="0" width="1600" height="1100" as="geometry" />
+                  </mxCell>
+                </root>
+              </mxGraphModel>
+            </diagram>
+          </mxfile>
+          EOF
+
+      - name: Commit exports
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(topology): weekly SVG + drawio export"
+          file_pattern: |
+            docs/diagrams/topology.svg
+            docs/diagrams/topology.drawio

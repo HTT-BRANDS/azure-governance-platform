@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="/static/css/theme.css">
     <link rel="stylesheet" href="/static/css/riverside.css">
     <link rel="stylesheet" href="/static/css/accessibility.css">
+    <link rel="stylesheet" href="/static/css/ui-polish.css">
 
     <!-- HTMX 2.0 — selfRequestsOnly:true is now default (security) -->
     <meta name="htmx-config" content='{"inlineScriptNonce":"{{ request.state.csp_nonce }}","selfRequestsOnly":true}'>
@@ -68,25 +69,7 @@
                         Azure Governance
                     </a>
                     <div class="hidden lg:block ml-8">
-                        <div class="flex items-baseline space-x-1">
-                            <a href="/dashboard" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_dashboard %}{% endblock %}" data-nav-path="/dashboard">Dashboard</a>
-                            <a href="/sync-dashboard" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_sync_dashboard %}{% endblock %}" data-nav-path="/sync-dashboard">Sync</a>
-                            <a href="/api/v1/preflight" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_preflight %}{% endblock %}" data-nav-path="/api/v1/preflight">Preflight</a>
-                            <a href="/costs" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_costs %}{% endblock %}" data-nav-path="/costs">Costs</a>
-                            <a href="/compliance" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_compliance %}{% endblock %}" data-nav-path="/compliance">Compliance</a>
-                            <a href="/resources" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_resources %}{% endblock %}" data-nav-path="/resources">Resources</a>
-                            <a href="/identity" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_identity %}{% endblock %}" data-nav-path="/identity">Identity</a>
-                            <a href="/riverside" class="nav-item px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-primary-110 transition-colors {% block nav_riverside %}{% endblock %} flex items-center gap-1" data-nav-path="/riverside">
-                                Riverside
-                                <span id="riverside-badge"
-                                      hx-get="/partials/riverside-badge"
-                                      hx-trigger="load, every 60s"
-                                      hx-target="#riverside-badge"
-                                      hx-swap="innerHTML"
-                                      hx-push-url="false"
-                                      class="ml-1"></span>
-                            </a>
-                        </div>
+                        {% include 'partials/nav.html' %}
                     </div>
                 </div>
 
@@ -96,6 +79,7 @@
                         <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                     </div>
                     <button id="theme-toggle-btn" class="text-sm px-2 py-1 rounded hover:bg-brand-primary-110" aria-label="Toggle dark mode" title="Toggle dark mode">🌓</button>
+                    {% include 'partials/data_health.html' %}
                     <span class="hidden sm:inline text-sm text-brand-primary-50">4 Tenants</span>
 
                     <!-- Mobile hamburger -->

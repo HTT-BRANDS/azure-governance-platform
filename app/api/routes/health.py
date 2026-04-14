@@ -3,11 +3,11 @@
 Provides API-specific health status endpoints for monitoring and load balancers.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from app.core.cache import cache_manager
@@ -19,6 +19,10 @@ router = APIRouter(
     prefix="/api/v1/health",
     tags=["System"],
 )
+
+# Freshness threshold used by /healthz/data — any tenant whose most recent
+# sync for a given data type is older than this is reported as stale.
+DATA_FRESHNESS_THRESHOLD = timedelta(hours=24)
 
 
 @router.get("")
@@ -265,3 +269,74 @@ async def api_health_check_detailed(
         response["authenticated"] = True
 
     return response
+
+
+@router.get("/data")
+async def data_freshness_check(
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Per-tenant sync freshness across all data domains.
+
+    Returns a mapping ``{tenant_key: {domain: iso8601 | null, ..., stale: bool}}``
+    used by the UI header indicator to answer the question "is data actually
+    flowing?" at a glance. A tenant is ``stale`` when any domain's most recent
+    ``synced_at`` is older than ``DATA_FRESHNESS_THRESHOLD`` (or missing).
+
+    No authentication required — returns no sensitive data, just timestamps
+    and freshness booleans, so the unauthenticated app shell can render
+    the green/amber dot.
+    """
+    # Lazy imports to avoid importing models at module load (keeps the
+    # existing /health endpoint cheap).
+    from app.models.compliance import ComplianceSnapshot
+    from app.models.cost import CostSnapshot
+    from app.models.identity import IdentitySnapshot
+    from app.models.resource import Resource
+    from app.models.tenant import Tenant
+
+    now = datetime.now(UTC)
+    tenants = db.query(Tenant).filter(Tenant.is_active == True).all()  # noqa: E712
+
+    domains: dict[str, Any] = {
+        "resources": Resource,
+        "costs": CostSnapshot,
+        "compliance": ComplianceSnapshot,
+        "identity": IdentitySnapshot,
+    }
+
+    result: dict[str, Any] = {}
+    overall_any_stale = False
+
+    for tenant in tenants:
+        per_tenant: dict[str, Any] = {}
+        tenant_stale = False
+        for name, model in domains.items():
+            try:
+                last = (
+                    db.query(func.max(model.synced_at))
+                    .filter(model.tenant_id == tenant.id)
+                    .scalar()
+                )
+            except Exception:  # pragma: no cover — schema-drift guard
+                last = None
+            if last is None:
+                per_tenant[name] = None
+                tenant_stale = True
+                continue
+            # SQLite may return naive datetimes — normalise to UTC for comparison
+            last_utc = last if last.tzinfo else last.replace(tzinfo=UTC)
+            per_tenant[name] = last_utc.isoformat()
+            if now - last_utc > DATA_FRESHNESS_THRESHOLD:
+                tenant_stale = True
+
+        per_tenant["stale"] = tenant_stale
+        overall_any_stale = overall_any_stale or tenant_stale
+        key = getattr(tenant, "name", None) or tenant.tenant_id
+        result[key] = per_tenant
+
+    return {
+        "timestamp": now.isoformat(),
+        "threshold_hours": int(DATA_FRESHNESS_THRESHOLD.total_seconds() // 3600),
+        "any_stale": overall_any_stale,
+        "tenants": result,
+    }
