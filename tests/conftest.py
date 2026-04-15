@@ -1,4 +1,11 @@
-"""Test configuration and fixtures."""
+"""Test configuration and fixtures.
+
+Performance optimization: The TestClient is session-scoped so the app's
+lifespan (init_db, cache, scheduler) runs only once per test session.
+Database and dependency overrides remain function-scoped for proper
+test isolation. FastAPI evaluates dependency_overrides at request time,
+not at client creation time, so per-test DB swapping works correctly.
+"""
 
 # Pre-import Azure modules to fix namespace package issues during test collection
 # This must happen before any other imports
@@ -45,6 +52,31 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+# =============================================================================
+# Session-scoped TestClient — app lifespan runs once per test session
+# =============================================================================
+
+
+@pytest.fixture(scope="session")
+def _test_client_session():
+    """Session-scoped TestClient — runs app lifespan (startup/shutdown) once.
+
+    DO NOT use this fixture directly in tests. Use ``client`` or
+    ``authed_client`` instead, which add per-test DB isolation on top.
+    """
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as tc:
+        yield tc
+
+
+# =============================================================================
+# Function-scoped fixtures (per-test isolation)
+# =============================================================================
+
+
 @pytest.fixture(scope="function")
 def db_session():
     """Create a fresh database session for each test."""
@@ -58,10 +90,12 @@ def db_session():
 
 
 @pytest.fixture(scope="function")
-def client(db_session):
-    """Create test client with overridden database."""
-    from fastapi.testclient import TestClient
+def client(db_session, _test_client_session):
+    """Test client with overridden database.
 
+    Reuses the session-scoped TestClient but swaps the DB dependency
+    per test for proper isolation.
+    """
     from app.main import app
 
     def override_get_db():
@@ -71,8 +105,7 @@ def client(db_session):
             pass
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
-        yield test_client
+    yield _test_client_session
     app.dependency_overrides.clear()
 
 
@@ -111,14 +144,15 @@ def mock_authz(mock_user):
 
 
 @pytest.fixture(scope="function")
-def authed_client(db_session, mock_user, mock_authz):
+def authed_client(db_session, mock_user, mock_authz, _test_client_session):
     """Test client with database AND auth overrides.
 
     Use this for testing authenticated endpoints — bypasses JWT validation
     and tenant authorization so you can focus on business logic.
-    """
-    from fastapi.testclient import TestClient
 
+    Reuses the session-scoped TestClient for performance while maintaining
+    per-test isolation via dependency overrides and fresh DB sessions.
+    """
     from app.main import app
 
     # Seed a tenant — use same string for id and tenant_id so FK refs
@@ -142,7 +176,6 @@ def authed_client(db_session, mock_user, mock_authz):
     app.dependency_overrides[get_current_user] = lambda: mock_user
     app.dependency_overrides[get_tenant_authorization] = lambda: mock_authz
 
-    with TestClient(app) as test_client:
-        yield test_client
+    yield _test_client_session
 
     app.dependency_overrides.clear()
