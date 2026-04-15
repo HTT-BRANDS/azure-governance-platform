@@ -28,7 +28,7 @@ permissions:
   actions: read
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.12'
   UV_VERSION: '0.5.x'
   IMAGE_NAME: azure-governance-platform
 
@@ -73,14 +73,14 @@ jobs:
         if: always()
 
       - name: Upload Trivy SARIF (CRITICAL/HIGH)
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-image-results.sarif'
           category: 'trivy-image-critical-high'
 
       - name: Upload Trivy SARIF (MEDIUM/LOW)
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-image-low-results.sarif'
@@ -148,7 +148,7 @@ jobs:
         if: always()
 
       - name: Upload Bandit SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'bandit-results.sarif'

@@ -19,10 +19,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
       
       - name: Install axe-core CLI
         run: npm install -g @axe-core/cli@4.11.1
@@ -71,8 +71,8 @@ jobs:
         with:
           version: "latest"
       
-      - name: Setup Python 3.11
-        run: uv python install 3.11
+      - name: Setup Python 3.12
+        run: uv python install 3.12
       
       - name: Install dependencies
         run: |
@@ -101,10 +101,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
       
       - name: Install Pa11y
         run: npm install -g pa11y@9.1.1

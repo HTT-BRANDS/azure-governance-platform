@@ -30,7 +30,7 @@ on:
         type: boolean
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.12'
   UV_VERSION:     '0.5.x'
   # GHCR Configuration — free for public repos, uses GITHUB_TOKEN
   GHCR_REGISTRY:    ghcr.io
@@ -178,7 +178,7 @@ jobs:
           exit-code: '0'
 
       - name: Upload Trivy SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-fs.sarif
