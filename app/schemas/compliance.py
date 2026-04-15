@@ -8,6 +8,25 @@ from pydantic import BaseModel, Field
 class ComplianceScore(BaseModel):
     """Compliance score for a tenant/subscription."""
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "tenant_id": "tenant-htt-001",
+                    "tenant_name": "HTT Brands",
+                    "subscription_id": "sub-prod-001",
+                    "subscription_name": "HTT Production",
+                    "overall_compliance_percent": 87.5,
+                    "secure_score": 72.0,
+                    "compliant_resources": 350,
+                    "non_compliant_resources": 50,
+                    "exempt_resources": 10,
+                    "last_updated": "2025-05-25T10:00:00Z",
+                }
+            ]
+        }
+    }
+
     tenant_id: str
     tenant_name: str
     subscription_id: str | None = None
@@ -33,6 +52,20 @@ class ComplianceSummary(BaseModel):
 
 class PolicyViolation(BaseModel):
     """Top policy violations."""
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "policy_name": "Require tag on resources",
+                    "policy_category": "Tags",
+                    "violation_count": 23,
+                    "affected_tenants": 3,
+                    "severity": "Medium",
+                }
+            ]
+        }
+    }
 
     policy_name: str
     policy_category: str | None

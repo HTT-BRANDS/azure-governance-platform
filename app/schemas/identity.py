@@ -8,6 +8,23 @@ from pydantic import BaseModel, Field
 class IdentitySummary(BaseModel):
     """Identity governance summary across tenants."""
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "total_users": 1250,
+                    "active_users": 980,
+                    "guest_users": 45,
+                    "mfa_enabled_percent": 94.5,
+                    "privileged_users": 12,
+                    "stale_accounts": 67,
+                    "service_principals": 34,
+                    "by_tenant": [],
+                }
+            ]
+        }
+    }
+
     total_users: int
     active_users: int
     guest_users: int

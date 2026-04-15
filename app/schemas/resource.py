@@ -8,6 +8,30 @@ from pydantic import BaseModel, Field
 class ResourceItem(BaseModel):
     """Individual resource in inventory."""
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "id": "rsc-abc123",
+                    "tenant_id": "tenant-htt-001",
+                    "tenant_name": "HTT Brands",
+                    "subscription_id": "sub-prod-001",
+                    "subscription_name": "HTT Production",
+                    "resource_group": "rg-app-prod",
+                    "resource_type": "Microsoft.Web/sites",
+                    "name": "app-governance-prod",
+                    "location": "eastus",
+                    "provisioning_state": "Succeeded",
+                    "sku": "B1",
+                    "tags": {"environment": "production", "owner": "platform-team"},
+                    "is_orphaned": False,
+                    "estimated_monthly_cost": 13.14,
+                    "last_synced": "2025-05-25T10:30:00Z",
+                }
+            ]
+        }
+    }
+
     id: str
     tenant_id: str
     tenant_name: str

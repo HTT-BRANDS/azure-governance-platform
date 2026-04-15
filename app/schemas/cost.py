@@ -8,6 +8,34 @@ from pydantic import BaseModel, Field
 class CostSummary(BaseModel):
     """Aggregated cost summary across all tenants."""
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "total_cost": 2847.53,
+                    "currency": "USD",
+                    "period_start": "2025-05-01",
+                    "period_end": "2025-05-31",
+                    "tenant_count": 5,
+                    "subscription_count": 12,
+                    "cost_change_percent": -3.2,
+                    "top_services": [
+                        {
+                            "service_name": "Virtual Machines",
+                            "cost": 1200.00,
+                            "percentage_of_total": 42.1,
+                        },
+                        {
+                            "service_name": "SQL Database",
+                            "cost": 450.00,
+                            "percentage_of_total": 15.8,
+                        },
+                    ],
+                }
+            ]
+        }
+    }
+
     total_cost: float = Field(..., description="Total cost across all tenants")
     currency: str = "USD"
     period_start: date
@@ -68,6 +96,27 @@ class CostBreakdown(BaseModel):
 
 class CostAnomaly(BaseModel):
     """Cost anomaly alert."""
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "id": 42,
+                    "tenant_id": "tenant-htt-001",
+                    "tenant_name": "HTT Brands",
+                    "subscription_id": "sub-prod-001",
+                    "detected_at": "2025-05-20T08:15:00Z",
+                    "anomaly_type": "spike",
+                    "description": "Azure SQL costs increased 45% vs 30-day average",
+                    "expected_cost": 450.00,
+                    "actual_cost": 652.50,
+                    "percentage_change": 45.0,
+                    "service_name": "SQL Database",
+                    "is_acknowledged": False,
+                }
+            ]
+        }
+    }
 
     id: int
     tenant_id: str
