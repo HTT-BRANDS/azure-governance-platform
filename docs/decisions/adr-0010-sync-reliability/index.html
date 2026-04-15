@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADR-0010: Sync Reliability — Azure Governance Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/main.css">
+  <link rel="stylesheet" href="../../assets/icons.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../../" class="nav-logo" aria-label="Home">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/" class="active">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb">
+        <a href="../../">Home</a><span>›</span>
+        <a href="../">Decisions</a><span>›</span>
+        ADR-0010: Sync Reliability
+      </div>
+      <h1 class="page-title">ADR-0010: Sync Reliability</h1>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="prose" style="max-width:800px;margin:0 auto">
+<h1>ADR-0010: Sync Reliability — Prevent Cascading Failures in Multi-Tenant Data Sync</h1>
+<h2>Context and Problem Statement</h2>
+<p>The Azure Governance Platform syncs data from multiple Azure tenants on a</p>
+<p>scheduled basis (costs, compliance, resources, identity, DMARC). During</p>
+<p>production operations several failure modes were observed:</p>
+<p>1. <strong>Column overflow cascade:</strong> Azure Policy names exceeding the</p>
+<p>   <code>policy_name VARCHAR(255)</code> column caused a <code>DataError</code>. Because all</p>
+<p>   tenants shared a single SQLAlchemy session, the poisoned session killed</p>
+<p>   sync for *every remaining tenant* in the batch.</p>
+<p>2. <strong>Ghost jobs:</strong> If the sync process was OOM-killed or crashed mid-run,</p>
+<p>   jobs remained stuck in <code>running</code> status forever, blocking subsequent</p>
+<p>   scheduler invocations.</p>
+<p>3. <strong>Silent cold start:</strong> <code>IntervalTrigger</code> scheduler jobs without an</p>
+<p>   explicit <code>next_run_time</code> don't fire until their first interval elapses</p>
+<p>   (hours later), leaving dashboards empty after a fresh deployment.</p>
+<p>4. <strong>Dead code confusion:</strong> A placeholder <code>SyncService</code> stub in</p>
+<p>   <code>app/api/services/sync_service.py</code> returned mock data, causing</p>
+<p>   confusion about which code path was actually used.</p>
+<p>How do we make multi-tenant data sync resilient to single-tenant failures</p>
+<p>without requiring a complete architectural rewrite?</p>
+<h2>Decision Drivers</h2>
+<ul>
+<li><strong>Blast radius:</strong> A single tenant's bad data must not affect other tenants</li>
+<li><strong>Observability:</strong> Truncation and failures must be logged for audit trail</li>
+<li><strong>Startup latency:</strong> Dashboards must show data within minutes of deployment</li>
+<li><strong>Simplicity:</strong> Prefer targeted fixes over major refactors (YAGNI)</li>
+<li><strong>Testability:</strong> Fixes must be enforceable via automated fitness functions</li>
+<h2>Considered Options</h2>
+</ul>
+<p>2. Full async task queue (Celery / Azure Service Bus)</p>
+<p>3. Separate worker process per tenant</p>
+<h2>Decision Outcome</h2>
+<p>Chosen option: <strong>Per-tenant session isolation with safe truncation</strong>, because</p>
+<p>it addresses all observed failure modes with minimal architectural change and</p>
+<p>is fully enforceable via fitness functions.</p>
+<h3>Implementation Details</h3>
+<table>
+<thead><tr>
+<th>Fix</th>
+<th>Description</th>
+<th>Files</th>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>FF-1: Widen policy_name</strong></td>
+<td>`String(255)` → `String(1000)`</td>
+<td>`alembic/versions/009_widen_policy_name.py`, `app/models/compliance.py`</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>FF-2: safe_truncate</strong></td>
+<td>Audit-logged truncation for oversized fields</td>
+<td>`app/core/sync/utils.py`, used in `app/core/sync/compliance.py`</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>FF-3: Per-tenant sessions</strong></td>
+<td>Each tenant gets a fresh `get_db_context()` session</td>
+<td>All 5 sync modules: `compliance`, `costs`, `resources`, `identity`, `dmarc`</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>FF-4: Staggered startup</strong></td>
+<td>`next_run_time` + `timedelta` offsets on all `IntervalTrigger` jobs</td>
+<td>`app/core/scheduler.py`</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>FF-5: Remove dead stub</strong></td>
+<td>Delete placeholder `SyncService`</td>
+<td>`app/api/services/sync_service.py` (deleted)</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>FF-6: Migration guard</strong></td>
+<td>Alembic migration 009 must exist and reference `policy_name`</td>
+<td>`alembic/versions/009_widen_policy_name.py`</td>
+</tr>
+</tbody></table>
+<h3>Consequences</h3>
+<ul>
+<li><strong>Good:</strong> Single-tenant failures are now isolated — one tenant's bad data</li>
+</ul>
+<p>  cannot cascade to kill other tenants' sync</p>
+<ul>
+<li><strong>Good:</strong> Oversized fields are truncated with structured warning logs</li>
+</ul>
+<p>  (satisfies STRIDE T-1 tampering and R-1 repudiation requirements)</p>
+<ul>
+<li><strong>Good:</strong> Dashboards show data within 2 minutes of deployment (staggered</li>
+</ul>
+<p>  startup with 15-second offsets)</p>
+<ul>
+<li><strong>Good:</strong> Ghost jobs are auto-cleaned by <code>cleanup_ghost_jobs()</code> (30 min</li>
+</ul>
+<p>  threshold)</p>
+<ul>
+<li><strong>Neutral:</strong> Slightly more database connections during sync (one per</li>
+</ul>
+<p>  tenant instead of one shared), acceptable for current scale (< 10 tenants)</p>
+<ul>
+<li><strong>Bad:</strong> If we grow to 50+ tenants, the per-tenant session model may need</li>
+</ul>
+<p>  batching — but this is a good problem to have (see scaling path below)</p>
+<h3>Confirmation</h3>
+<p>All six fixes are enforced by architectural fitness functions in</p>
+<p><code>tests/architecture/test_sync_data_integrity.py</code>:</p>
+<pre><code class="language-bash">
+uv run pytest tests/architecture/test_sync_data_integrity.py -v
+</code></pre>
+<p>These tests verify structural properties of the codebase (column widths, AST</p>
+<p>patterns, file existence) and will fail immediately if any fix regresses.</p>
+<h2>STRIDE Security Analysis</h2>
+<table>
+<thead><tr>
+<th>Threat Category</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>Spoofing</strong></td>
+<td>Low</td>
+<td>No auth changes; sync uses existing UAMI credentials</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>Tampering</strong></td>
+<td>Medium → Low</td>
+<td>`safe_truncate` logs all truncations with field name, original length, and context</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>Repudiation</strong></td>
+<td>Medium → Low</td>
+<td>Structured logging provides audit trail for all data modifications</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>Information Disclosure</strong></td>
+<td>Low</td>
+<td>No new data exposure; truncation only reduces data</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>Denial of Service</strong></td>
+<td>High → Low</td>
+<td>Session isolation prevents cascade; ghost job cleanup prevents stuck state</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>Elevation of Privilege</strong></td>
+<td>Low</td>
+<td>No privilege changes; sync operates with existing service identity</td>
+</tr>
+</tbody></table>
+<p><strong>Overall Security Posture:</strong> Significantly improved. The primary risk (DoS</p>
+<p>via cascading session failure) is eliminated.</p>
+<h2>Scaling Path</h2>
+<table>
+<thead><tr>
+<th>Scale</th>
+<th>Tenants</th>
+<th>Strategy</th>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>Current (Phase 1)</strong></td>
+<td>< 10</td>
+<td>Per-tenant sessions, sequential sync</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>Phase 2</strong></td>
+<td>10–50</td>
+<td>Batched sessions (5 tenants per batch), `asyncio.gather`</td>
+</tr>
+</tr></thead><tbody>
+<tr>
+<td><strong>Phase 3</strong></td>
+<td>50+</td>
+<td>Azure Service Bus task queue, dedicated sync worker</td>
+</tr>
+</tbody></table>
+<h2>More Information</h2>
+<ul>
+<li>Fitness functions: <code>tests/architecture/test_sync_data_integrity.py</code></li>
+<li>Sync utilities: <code>app/core/sync/utils.py</code></li>
+<li>Scheduler with staggered startup: <code>app/core/scheduler.py</code></li>
+<li>Ghost job cleanup: <code>app/api/services/monitoring_service.py</code></li>
+</ul>
+<p><strong>Template Version:</strong> MADR 4.0 (September 2024) with STRIDE Security Analysis</p>
+<p><strong>Last Updated:</strong> 2025-05-25</p>
+<p><strong>Maintained By:</strong> Code Puppy 🐶 (retroactive documentation)</p>
+</div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../../architecture/">Architecture</a>
+        <a href="../../operations/">Operations</a>
+        <a href="../../api/">API</a>
+        <a href="../../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Production Certified · Rock Solid · v2.5.0</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

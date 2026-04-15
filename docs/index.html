@@ -39,7 +39,7 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-inner">
-        <span class="hero-badge">Production Certified · v2.2.0</span>
+        <span class="hero-badge">Production Certified · v2.5.0</span>
         <h1 class="hero-title">Azure Governance<br>Platform</h1>
         <p class="hero-subtitle">Multi-tenant Azure governance, cost optimization, and compliance monitoring — built for enterprise scale, running on a startup budget.</p>
         <div class="hero-metrics">
@@ -107,6 +107,17 @@
       </div>
     </section>
 
+    <!-- Architecture Diagram -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Platform Architecture</h2>
+        <p class="section-subtitle">5 tenants, 2 environments, zero secrets</p>
+      </div>
+      <div style="max-width:960px;margin:0 auto;overflow-x:auto">
+        <img src="diagrams/architecture.svg" alt="Architecture diagram showing Users, Production and Staging environments, 5 managed Azure AD tenants, and CI/CD pipeline" style="width:100%;height:auto" loading="lazy">
+      </div>
+    </section>
+
     <!-- Tech Stack -->
     <section class="section section--alt">
       <div class="section-header">
@@ -114,7 +125,7 @@
         <p class="section-subtitle">Modern, proven, cost-effective</p>
       </div>
       <div class="tech-grid">
-        <div class="tech-item"><span class="tech-layer">Backend</span><span class="tech-name">FastAPI · Python 3.11</span></div>
+        <div class="tech-item"><span class="tech-layer">Backend</span><span class="tech-name">FastAPI · Python 3.12</span></div>
         <div class="tech-item"><span class="tech-layer">Frontend</span><span class="tech-name">HTMX · Tailwind · Chart.js</span></div>
         <div class="tech-item"><span class="tech-layer">Auth</span><span class="tech-name">Azure AD B2C · OIDC · UAMI</span></div>
         <div class="tech-item"><span class="tech-layer">Data</span><span class="tech-name">Azure SQL · Redis</span></div>
@@ -259,7 +270,7 @@ uv run uvicorn app.main:app --reload</code></pre>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>Production Certified · Rock Solid · v2.2.0</p>
+      <p>Production Certified · Rock Solid · v2.5.0</p>
     </div>
   </footer>
 

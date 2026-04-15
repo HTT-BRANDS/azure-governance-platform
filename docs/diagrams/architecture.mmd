@@ -1,0 +1,57 @@
+%% Azure Governance Platform — Architecture Overview
+%% Static diagram for GitHub Pages. See topology.mmd for live Azure Resource Graph data.
+flowchart TB
+  classDef prod stroke:#ef4444,stroke-width:2px,fill:#fef2f2;
+  classDef staging stroke:#f59e0b,stroke-width:2px,fill:#fffbeb;
+  classDef tenant fill:#e0e7ff,stroke:#4338ca,color:#1e1b4b;
+  classDef infra fill:#dcfce7,stroke:#15803d,color:#052e16;
+  classDef data fill:#fef3c7,stroke:#b45309,color:#451a03;
+  classDef user fill:#f1f5f9,stroke:#475569,color:#0f172a;
+
+  subgraph Users["👤 Users & Authentication"]
+    direction LR
+    Admin["IT Admins"]:::user
+    Analyst["Cost Analysts"]:::user
+    Viewer["Viewers"]:::user
+    B2C["Azure AD B2C<br/>OIDC + PKCE"]:::infra
+  end
+
+  subgraph Production["🔴 Production — East US"]
+    direction TB
+    AppProd["App Service B1<br/>Python 3.12 + FastAPI"]:::prod
+    SQLProd["Azure SQL Serverless<br/>~$12/mo"]:::prod
+    KVProd["Key Vault"]:::prod
+    AIProd["App Insights<br/>OpenTelemetry"]:::prod
+  end
+
+  subgraph Staging["🟡 Staging — West US 2"]
+    direction TB
+    AppStag["App Service B1<br/>Python 3.12 + FastAPI"]:::staging
+    SQLStag["Azure SQL Free Tier<br/>$0/mo"]:::staging
+    KVStag["Key Vault"]:::staging
+    AIStag["App Insights"]:::staging
+  end
+
+  subgraph Tenants["🏢 Managed Tenants (5)"]
+    direction LR
+    HTT["HTT Brands<br/>(Home Tenant)"]:::tenant
+    BCC["Bishops (BCC)"]:::tenant
+    FN["Frenchies (FN)"]:::tenant
+    TLL["Lash Lounge (TLL)"]:::tenant
+    DCE["Delta Crown (DCE)"]:::tenant
+  end
+
+  subgraph CICD["⚙️ CI/CD"]
+    direction LR
+    GH["GitHub Actions"]:::infra
+    GHCR["GHCR<br/>Container Registry"]:::infra
+    Pages["GitHub Pages<br/>Docs Site"]:::infra
+  end
+
+  Admin & Analyst & Viewer --> B2C
+  B2C --> AppProd & AppStag
+  AppProd --> SQLProd & KVProd & AIProd
+  AppStag --> SQLStag & KVStag & AIStag
+  AppProd -- "OIDC Federation<br/>(zero secrets)" --> HTT & BCC & FN & TLL & DCE
+  GH -- "Build & Deploy" --> GHCR --> AppProd & AppStag
+  GH -- "Docs Deploy" --> Pages

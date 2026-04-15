@@ -21,11 +21,16 @@ Riverside timeline below.
 - [Riverside timeline](riverside-timeline.md) — countdown to **July 8, 2026** and per-domain maturity.
 - Architecture diagram — embedded below (regenerated from Azure Resource Graph on every push).
 
-## Azure topology
+## Architecture
 
-![Azure topology diagram](diagrams/topology.svg)
+![Architecture overview diagram](diagrams/architecture.svg)
 
-_Source (editable): [`docs/diagrams/topology.mmd`](diagrams/topology.mmd) · weekly [drawio export](diagrams/topology.drawio)._
+_Source: [`docs/diagrams/architecture.mmd`](diagrams/architecture.mmd)_
+
+## Azure topology (live)
+
+The live topology diagram is generated from Azure Resource Graph via OIDC and
+updated on every push. See [`docs/diagrams/topology.mmd`](diagrams/topology.mmd).
 
 ## How this page updates
 
