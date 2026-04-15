@@ -1,6 +1,6 @@
 [project]
 name = "azure-governance-platform"
-version = "2.3.0"
+version = "2.5.0"
 description = "Multi-tenant Azure governance platform for cost optimization, compliance monitoring, resource management, and identity governance"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -108,7 +108,7 @@ ignore = [
 "tests/unit/test_*.py" = ["E402"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = false
 warn_return_any = false
 warn_unused_configs = true

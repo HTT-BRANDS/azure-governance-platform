@@ -11,6 +11,6 @@ try:
     __version__ = version("azure-governance-platform")
 except PackageNotFoundError:
     # Package not installed (e.g., running from source without install)
-    __version__ = "2.3.0"
+    __version__ = "2.5.0"
 
 __author__ = "Cloud Governance Team"
