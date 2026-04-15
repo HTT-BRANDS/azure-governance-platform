@@ -80,40 +80,62 @@ class AdminService:
     ) -> dict[str, Any]:
         """List known users with pagination and optional filters.
 
-        Users are discovered from ``UserTenant`` records.  Search matches
-        against ``user_id`` (Phase 4 will add email/name search).
+        Uses SQL-level ``DISTINCT``, ``COUNT``, ``LIMIT``/``OFFSET`` to avoid
+        loading the full ``UserTenant`` table into memory (F-05).
 
         Returns:
             Dict with ``items``, ``total``, ``page``, ``per_page``, ``pages``.
         """
-        query = self.db.query(UserTenant)
+        # Build base filter (shared between count and page queries)
+        base = self.db.query(UserTenant.user_id)
 
         if search:
-            query = query.filter(UserTenant.user_id.ilike(f"%{search}%"))
+            base = base.filter(UserTenant.user_id.ilike(f"%{search}%"))
 
         if role_filter:
-            # Resolve legacy role names for the filter
             resolved = LEGACY_ROLE_MAP.get(role_filter, role_filter)
-            query = query.filter(UserTenant.role == resolved)
+            base = base.filter(UserTenant.role == resolved)
 
-        mappings: list[UserTenant] = query.order_by(UserTenant.user_id).all()
+        # 1. Count distinct users at SQL level
+        total: int = base.distinct().count()
+        pages = max(1, math.ceil(total / per_page))
+        offset = (page - 1) * per_page
 
-        # Group by user_id
+        # 2. Fetch only this page's user_ids (SQL LIMIT/OFFSET)
+        page_user_ids: list[str] = [
+            row[0]
+            for row in base.distinct()
+            .order_by(UserTenant.user_id)
+            .offset(offset)
+            .limit(per_page)
+            .all()
+        ]
+
+        if not page_user_ids:
+            return {
+                "items": [],
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "pages": pages,
+            }
+
+        # 3. Fetch full UserTenant rows only for this page's users
+        mappings: list[UserTenant] = (
+            self.db.query(UserTenant)
+            .filter(UserTenant.user_id.in_(page_user_ids))
+            .order_by(UserTenant.user_id)
+            .all()
+        )
+
+        # Group (bounded to at most per_page users)
         users_map: dict[str, list[UserTenant]] = {}
         for ut in mappings:
             users_map.setdefault(ut.user_id, []).append(ut)
 
-        # Sort user_ids for deterministic pagination
-        all_user_ids = sorted(users_map.keys())
-        total = len(all_user_ids)
-        pages = max(1, math.ceil(total / per_page))
-        start = (page - 1) * per_page
-        end = start + per_page
-        page_user_ids = all_user_ids[start:end]
-
         items: list[dict[str, Any]] = []
         for uid in page_user_ids:
-            uts = users_map[uid]
+            uts = users_map.get(uid, [])
             roles = sorted({ut.role for ut in uts})
             items.append(
                 {
