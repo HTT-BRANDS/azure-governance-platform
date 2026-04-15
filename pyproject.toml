@@ -3,7 +3,7 @@ name = "azure-governance-platform"
 version = "2.3.0"
 description = "Multi-tenant Azure governance platform for cost optimization, compliance monitoring, resource management, and identity governance"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [
     {name = "Cloud Governance Team"}
 ]
@@ -83,7 +83,7 @@ build-backend = "hatchling.build"
 packages = ["app"]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
