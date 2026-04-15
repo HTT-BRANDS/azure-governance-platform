@@ -140,13 +140,18 @@ class TestAuthMiddleware:
             if f.name in self.PUBLIC_ROUTES:
                 continue
             content = f.read_text()
-            has_auth = "get_current_user" in content or "require_roles" in content
+            has_auth = (
+                "get_current_user" in content
+                or "require_roles" in content
+                or "require_permissions" in content
+                or "require_any_permission" in content
+            )
             if not has_auth:
                 unprotected.append(f.name)
 
         assert not unprotected, (
-            f"Routes without authentication (get_current_user / require_roles): "
-            f"{unprotected}. Add dependencies=[Depends(get_current_user)] to the router."
+            f"Routes without auth (get_current_user / require_roles / "
+            f"require_permissions): {unprotected}. Add auth deps to the router."
         )
 
 

@@ -38,6 +38,9 @@ jobs:
   generate:
     name: Generate Mermaid topology
     runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +59,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Azure Login (OIDC)
-        if: ${{ secrets.AZURE_CLIENT_ID != '' }}
+        if: env.AZURE_CLIENT_ID != ''
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -66,8 +69,6 @@ jobs:
       - name: Generate topology
         env:
           OIDC_ALLOW_DEV_FALLBACK: "true"
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         run: |
           if [ -z "${AZURE_CLIENT_ID}" ]; then
             echo "No AZURE_CLIENT_ID secret — running in offline mode."
