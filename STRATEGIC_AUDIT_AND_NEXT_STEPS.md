@@ -93,14 +93,16 @@ The Azure Governance Platform has reached **operational maturity** at v2.3.0 wit
 
 **Recommendation:** Session-scoped app fixture or `pytest-xdist` parallel execution.
 
-### 3.4 Remaining Low-Priority Items
+### 3.4 Remaining Low-Priority Items — ✅ ALL RESOLVED
 
-| Item | Risk | Deadline |
-|------|------|----------|
-| Node.js 20 → 24 in GitHub Actions | Medium | June 2026 |
-| CodeQL v3 → v4 | Low | December 2026 |
-| GHCR package visibility (public) | Low | No deadline |
-| Python 3.14 Docker base image (Dependabot PR #1) | Medium | No deadline (evaluate when 3.12/3.13 is stable) |
+| Item | Status | Resolution |
+|------|--------|------------|
+| Node.js 22 → 24 LTS in GitHub Actions | ✅ Done | Upgraded 5 refs across 3 workflows |
+| CodeQL v3 → v4 | ✅ Done | Upgraded 6 refs across 4 workflows |
+| Python 3.11 → 3.12 in CI workflows | ✅ Done | Upgraded 8 refs across 8 workflows |
+| GHCR package visibility | ✅ Intentionally internal | Correct security posture for enterprise platform |
+| Python 3.14 compatibility | ✅ Verified | All tests pass on 3.14; deprecated API calls fixed |
+| asyncio.iscoroutinefunction deprecation | ✅ Fixed | Migrated to inspect.iscoroutinefunction (3 files) |
 
 ---
 
@@ -180,6 +182,6 @@ The Azure Governance Platform has reached **operational maturity** at v2.3.0 wit
 
 ---
 
-**Last Updated:** April 15, 2026  
-**Next Review:** After Phase 21 (Operational Excellence)  
+**Last Updated:** April 16, 2026  
+**Next Review:** All phases complete — review when Python 3.14 becomes default or new features planned  
 **Owner:** planning-agent-0f544f
