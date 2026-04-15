@@ -32,7 +32,7 @@ class TimeoutError(Exception):
         super().__init__(f"Operation '{operation}' timed out after {timeout}s: {details}")
 
 
-async def with_timeout(
+async def with_timeout[T](
     coro: Coroutine[Any, Any, T],
     timeout: float = DEFAULT_TIMEOUT,
     operation_name: str = "operation",

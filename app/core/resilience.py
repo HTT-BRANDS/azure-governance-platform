@@ -288,7 +288,7 @@ class ResilientAzureClient:
         }
 
 
-async def resilient_api_call(
+async def resilient_api_call[T](
     func: Callable[..., T],
     api_name: str,
     max_retries: int = 3,

@@ -9,7 +9,7 @@
 FROM python:3.12-slim-bookworm as builder
 
 # Build arguments
-ARG PYTHON_VERSION=3.11
+ARG PYTHON_VERSION=3.12
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -50,7 +50,7 @@ FROM python:3.12-slim-bookworm as production
 
 LABEL maintainer="Cloud Governance Team" \
       application="Azure Governance Platform" \
-      version="2.3.0"
+      version="2.5.0"
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -114,7 +114,7 @@ RUN mkdir -p /usr/local/lib && \
 WORKDIR ${APP_HOME}
 
 # Copy installed packages from builder stage
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Harden: remove build tools that aren't needed at runtime.
@@ -123,7 +123,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 #   - pip/wheel:    Python build tools (CVE-2026-24049, CVE-2025-8869)
 #   - setuptools:   Build tool with vendored jars (CVE-2026-23949)
 #   - ecdsa:        Transitive dep of paramiko via pip (CVE-2024-23342)
-RUN rm -f /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/pip*          /usr/local/bin/wheel /usr/local/bin/easy_install*     && rm -rf /usr/local/lib/python3.11/site-packages/pip*               /usr/local/lib/python3.11/site-packages/setuptools*               /usr/local/lib/python3.11/site-packages/wheel*               /usr/local/lib/python3.11/site-packages/ecdsa*               /usr/local/lib/python3.11/site-packages/_distutils_hack*               /usr/local/lib/python3.11/site-packages/pkg_resources*
+RUN rm -f /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/pip*          /usr/local/bin/wheel /usr/local/bin/easy_install*     && rm -rf /usr/local/lib/python3.12/site-packages/pip*               /usr/local/lib/python3.12/site-packages/setuptools*               /usr/local/lib/python3.12/site-packages/wheel*               /usr/local/lib/python3.12/site-packages/ecdsa*               /usr/local/lib/python3.12/site-packages/_distutils_hack*               /usr/local/lib/python3.12/site-packages/pkg_resources*
 
 # Smoke-test: verify pyodbc can import against the system libodbc.so.2.
 # This fails the BUILD (not just runtime) if the ODBC runtime is missing.
@@ -166,7 +166,7 @@ FROM builder as development
 
 LABEL maintainer="Cloud Governance Team" \
       application="Azure Governance Platform" \
-      version="2.3.0-dev"
+      version="2.5.0-dev"
 
 # Install development dependencies
 RUN uv pip install --system -e ".[dev]"

@@ -1,13 +1,9 @@
 """Riverside bulk operations and pagination schemas."""
 
-from typing import Generic, TypeVar
-
 from pydantic import BaseModel, Field
 
-T = TypeVar("T")
 
-
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse[T](BaseModel):
     """Generic paginated response wrapper."""
 
     items: list[T] = Field(

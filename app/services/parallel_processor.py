@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from sqlalchemy.orm import Session
 
@@ -34,7 +34,7 @@ class TaskStatus(StrEnum):
 
 
 @dataclass
-class TaskResult(Generic[T, R]):
+class TaskResult[T, R]:
     """Result of a parallel task execution.
 
     Attributes:
