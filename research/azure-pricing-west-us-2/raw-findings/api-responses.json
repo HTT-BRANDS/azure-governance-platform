@@ -1,0 +1,143 @@
+{
+  "research_metadata": {
+    "date": "2026-04-15",
+    "api_endpoint": "https://prices.azure.com/api/retail/prices",
+    "region": "westus2",
+    "currency": "USD"
+  },
+  "app_service_b1_linux": {
+    "productName": "Azure App Service Basic Plan - Linux",
+    "skuName": "B1",
+    "retailPrice": 0.017,
+    "unitOfMeasure": "1 Hour",
+    "type": "Consumption",
+    "isPrimaryMeterRegion": true,
+    "effectiveStartDate": "2019-06-01T00:00:00Z",
+    "monthly_estimate_730h": 12.41
+  },
+  "app_service_s1_linux": {
+    "productName": "Azure App Service Standard Plan - Linux",
+    "skuName": "S1",
+    "retailPrice": 0.08,
+    "unitOfMeasure": "1 Hour",
+    "type": "Consumption",
+    "isPrimaryMeterRegion": true,
+    "effectiveStartDate": "2020-03-01T00:00:00Z",
+    "monthly_estimate_730h": 58.40
+  },
+  "app_service_p1v3_linux": {
+    "productName": "Azure App Service Premium v3 Plan - Linux",
+    "skuName": "P1 v3",
+    "retailPrice": 0.155,
+    "unitOfMeasure": "1 Hour",
+    "type": "Consumption",
+    "isPrimaryMeterRegion": true,
+    "effectiveStartDate": "2020-10-01T00:00:00Z",
+    "monthly_estimate_730h": 113.15,
+    "reserved_1yr": 885.00,
+    "reserved_3yr": 1839.00
+  },
+  "sql_database_s0": {
+    "productName": "SQL Database Single Standard",
+    "skuName": "S0",
+    "meterName": "S0 DTUs",
+    "retailPrice": 0.4839,
+    "unitOfMeasure": "1/Day",
+    "type": "Consumption",
+    "effectiveStartDate": "2014-11-01T00:00:00Z",
+    "monthly_estimate_30d": 14.52,
+    "monthly_estimate_avg": 14.72
+  },
+  "sql_database_free": {
+    "productName": "SQL Database Single Free",
+    "skuName": "Free",
+    "meterName": "Free DTU",
+    "retailPrice": 0.0,
+    "unitOfMeasure": "1/Day",
+    "type": "Consumption"
+  },
+  "container_registry_basic": {
+    "productName": "Container Registry",
+    "skuName": "Basic",
+    "meterName": "Basic Registry Unit",
+    "retailPrice": 0.1666,
+    "unitOfMeasure": "1/Day",
+    "type": "Consumption",
+    "monthly_estimate": 5.00,
+    "included_storage_gb": 10,
+    "overage_storage_per_gb": 0.10
+  },
+  "container_registry_standard": {
+    "productName": "Container Registry",
+    "skuName": "Standard",
+    "meterName": "Standard Registry Unit",
+    "retailPrice": 0.6666,
+    "unitOfMeasure": "1/Day",
+    "type": "Consumption",
+    "monthly_estimate": 20.00,
+    "included_storage_gb": 100,
+    "overage_storage_per_gb": 0.10
+  },
+  "key_vault_standard": {
+    "operations": {
+      "meterName": "Operations",
+      "retailPrice": 0.03,
+      "unitOfMeasure": "10K"
+    },
+    "advanced_key_operations": {
+      "meterName": "Advanced Key Operations",
+      "retailPrice": 0.15,
+      "unitOfMeasure": "10K"
+    },
+    "secret_renewal": {
+      "meterName": "Secret Renewal",
+      "retailPrice": 1.00,
+      "unitOfMeasure": "1"
+    },
+    "certificate_renewal": {
+      "meterName": "Certificate Renewal Request",
+      "retailPrice": 3.00,
+      "unitOfMeasure": "1"
+    },
+    "automated_key_rotation": {
+      "meterName": "Automated Key Rotation",
+      "retailPrice": 1.00,
+      "unitOfMeasure": "1 Rotation"
+    }
+  },
+  "log_analytics": {
+    "analytics_logs_ingestion": {
+      "skuName": "Analytics Logs",
+      "meterName": "Analytics Logs Data Ingestion",
+      "retailPrice": 2.30,
+      "unitOfMeasure": "1 GB",
+      "free_allowance_gb": 5,
+      "note": "First 5 GB/month free per billing account; tierMinimumUnits=5.0 indicates pricing starts after free tier"
+    },
+    "data_retention": {
+      "meterName": "Analytics Logs Data Retention",
+      "retailPrice": 0.10,
+      "unitOfMeasure": "1 GB/Month",
+      "free_retention_days": 31
+    }
+  },
+  "azure_monitor": {
+    "basic_logs_ingestion": {
+      "skuName": "Basic Logs",
+      "meterName": "Basic Logs Data Ingestion",
+      "retailPrice": 0.50,
+      "unitOfMeasure": "1 GB"
+    },
+    "auxiliary_logs_ingestion": {
+      "skuName": "Auxiliary Logs",
+      "meterName": "Auxiliary Logs Data Ingestion",
+      "retailPrice": 0.05,
+      "unitOfMeasure": "1 GB"
+    }
+  },
+  "github_enterprise_cloud": {
+    "source": "github.com/pricing",
+    "price_per_user_month": 21.00,
+    "note": "Shown as 'Starting at' $21/user/month"
+  }
+}
