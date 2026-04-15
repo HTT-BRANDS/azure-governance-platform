@@ -1,6 +1,12 @@
 # Azure Governance Platform — Launch Readiness, Costs & 2-Year Roadmap
 
 > Generated: April 15, 2026 | Version: 2.5.0 | Region: West US 2
+>
+> **UPDATE (same day):** Executed all launch recommendations. Deleted unused
+> Azure Firewall ($295/mo), 3 orphaned PIPs ($11/mo), downgraded ACR ($15/mo).
+> Total savings: **$321/mo ($3,851/yr)**. Full subscription cost reduced from
+> $748/mo → $429/mo (43% cut). All monitoring, alerts, diagnostics deployed
+> at zero additional cost. v2.5.0 live in production.
 
 ---
 
