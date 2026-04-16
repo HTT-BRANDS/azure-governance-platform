@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Infrastructure] - 2026-04-16
+
+### Cost Optimization Session (no code changes)
+- **Governance SQL Databases**: Dev + Prod downgraded Standard S0 → Basic (5 DTU, 2 GB). Dev DB 22 MB, Prod DB 57 MB. Staging stays on Free tier. Saves $19.46/mo.
+- **Storage Accounts**: Dev + Staging storage downgraded GRS → LRS (both empty).
+- **Container Registry**: `acrgovprod` deleted — prod pulls from GHCR exclusively. Saves $5/mo. Dev ACR retained.
+- **Stale Storage**: `sqlbackup1774966098` storage account deleted (held one 26 KB test backup from March 31).
+
+### Security — Control Tower Cleanup (predecessor app)
+- **Revoked Contributor-at-subscription-scope role** from `control-tower-prod` SP.
+- **Deleted** Azure AD app registrations: `control-tower-prod` (+ 3 GitHub OIDC credentials), `Control Tower SWA`.
+- **Deleted** Cosmos DB `controltower` database (9 containers, ~4,159 stale docs — re-derivable from Azure Graph API).
+- **Archived** `github.com/HTT-BRANDS/control-tower` repo (history preserved).
+
+### Documentation
+- `SESSION_HANDOFF.md`: rewritten for April 16 cost optimization session.
+- `INFRASTRUCTURE_END_TO_END.md`: updated SKUs, costs, added dev env section.
+
+### Follow-ups Filed (bd issues)
+- `w1cc`: audit domain-intelligence RG after launch (P3)
+- `ll49`: migrate dev ACR → GHCR (P3)
+- `832c`: rename `rg-identity-puppy-prod` (P3)
+- `a1sb`: `/api/v1/health` returns 500 pre-existing bug (P3)
+- `6wyk`: add Teams webhook to `governance-alerts` (P4)
+
+**Governance monthly cost: ~$73 → ~$53 (27% reduction).**
+**Cross-project monthly cost: ~$748 → ~$282 (62% reduction).**
+
+---
+
 ## [2.3.0] - 2026-04-15
 
 ### Phase 20: Granular RBAC & Admin Dashboard

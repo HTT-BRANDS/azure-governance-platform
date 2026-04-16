@@ -1,7 +1,7 @@
 # Azure Governance Platform — End-to-End Infrastructure Overview
 
-**Document Date:** April 14, 2026
-**System Version:** 2.2.0
+**Document Date:** April 16, 2026 (updated post-cost-optimization)
+**System Version:** 2.5.0
 **Status:** Operational (Production + Staging healthy, all pipelines green)
 **Owner:** Tyler Granlund — IT Support & Systems Engineer, HTT Brands
 
@@ -44,12 +44,15 @@ A multi-tenant Azure governance application serving 5 brands/tenants across the 
 |---------------------|----------------------------------------------------------|-----------------------------|
 | App Service Plan    | `asp-governance-production`                              | B1 Basic (Linux)            |
 | Web App             | `app-governance-prod`                                    | Docker, HTTPS only          |
-| SQL Server          | `sql-gov-prod-mylxq53d`                                  | Standard                    |
-| SQL Database        | `governance`                                             | S0, 250 GB, Online          |
+| SQL Server          | `sql-gov-prod-mylxq53d`                                  | Standard (logical server)   |
+| SQL Database        | `governance`                                             | **Basic** (5 DTU, 2 GB)     |
 | Key Vault           | `kv-gov-prod`                                            | Standard, soft delete       |
 | App Insights        | `governance-appinsights`                                 | Receiving telemetry         |
+| Log Analytics       | `governance-logs`                                        | Per-GB (free tier)          |
 | Container Registry  | `ghcr.io/htt-brands/azure-governance-platform` (GHCR)    | Primary image source        |
-| Legacy ACR          | `acrgovprod` (per older inventory; superseded by GHCR)   | Reconcile / retire          |
+| Alert Rules         | 7 metric alerts + 2 availability tests                   | ~$0.60/mo                   |
+
+> **Note:** Legacy `acrgovprod` ACR was deleted on Apr 16, 2026 — prod pulls from GHCR exclusively.
 
 **Production URL:** https://app-governance-prod.azurewebsites.net
 
@@ -60,24 +63,55 @@ A multi-tenant Azure governance application serving 5 brands/tenants across the 
 | App Service Plan    | `asp-governance-staging-xnczpwyvwsaba`  | B1 Basic              |
 | Web App             | `app-governance-staging-xnczpwyv`       | Running               |
 | SQL Server          | `sql-governance-staging-77zfjyem`       | Standard              |
-| SQL Database        | `governance`                            | Online                |
-| Key Vault           | `kv-gov-staging-77zfjyem`               | Standard              |
-| Storage Account     | `stgovstagingxnczpwyv`                  | StorageV2, GRS        |
+| SQL Database        | `governance`                            | **Free tier** (32 MB) |
+| Key Vault           | `kv-gov-staging-xnczpwyv`               | Standard              |
+| Storage Account     | `stgovstagingxnczpwyv`                  | StorageV2, **LRS**    |
 | Log Analytics       | `log-governance-staging-xnczpwyvwsaba`  | PerGB2018, 30-day     |
 | App Insights        | `ai-governance-staging-xnczpwyvwsaba`   | Web type              |
-| ACR                 | `acrgovstaging19859`                    | Anonymous pull        |
+
+> **Note:** `sqlbackup1774966098` storage account + stale test backup deleted Apr 16, 2026.
+> Staging pulls containers directly from GHCR (no ACR needed).
 
 **Staging URL:** https://app-governance-staging-xnczpwyv.azurewebsites.net
 
-### 3.3 Monthly Cost (post-optimization)
+### 3.3 Dev — `rg-governance-dev` (West US 2)
 
-| Environment | Monthly  |
-|-------------|----------|
-| Production  | ~$35.17  |
-| Staging     | ~$38.17  |
-| **Total**   | **~$73.34** |
+| Resource            | Name                       | SKU / Notes          |
+|---------------------|----------------------------|----------------------|
+| App Service Plan    | `asp-governance-dev-001`   | B1 Basic             |
+| Web App             | `app-governance-dev-001`   | Pulls from dev ACR   |
+| SQL Server          | `sql-governance-dev-76481` | Standard (logical)   |
+| SQL Database        | `governance`               | **Basic** (5 DTU)    |
+| Container Registry  | `acrgovernancedev`         | Basic (10 GB limit)  |
+| Storage Account     | `stgovdev001`              | StorageV2, **LRS**   |
+| Key Vault           | `kv-gov-dev-001`           | Standard             |
+| Log Analytics       | `log-governance-dev-001`   | Per-GB (free tier)   |
+| App Insights        | `ai-governance-dev-001`    | Per-GB (free tier)   |
 
-Rightsizing (B2→B1, S2→S0, orphan cleanup) reduced spend from ~$298/mo — **~75% reduction**, ~$225/mo saved.
+### 3.4 Monthly Cost (post-optimization, April 16, 2026)
+
+| Environment | Monthly |
+|-------------|---------|
+| Dev         | ~$22.67 |
+| Staging     | ~$12.68 |
+| Production  | ~$18.05 |
+| **Total**   | **~$53.40** / ~$641/yr |
+
+### Optimization History
+
+| Date       | Action                                              | Savings  |
+|------------|-----------------------------------------------------|----------|
+| ~March     | Initial rightsizing (B2→B1, S2→S0, orphan cleanup)  | ~$225/mo |
+| 2026-04-16 | Dev SQL S0→Basic                                    | $9.73/mo |
+| 2026-04-16 | Prod SQL S0→Basic                                   | $9.73/mo |
+| 2026-04-16 | Deleted unused `acrgovprod`                         | $5.00/mo |
+| 2026-04-16 | Deleted orphan PIP `pip-vpn-core`                   | $3.65/mo |
+| 2026-04-16 | Storage GRS→LRS on empty accounts                   | $0.50/mo |
+
+**Governance-only spend reduced from ~$298/mo → ~$53/mo — roughly 82% reduction.**
+
+See `SESSION_HANDOFF.md` for broader cross-project Azure optimization work done on
+the same date (~$466/mo total savings across all HTT-BRANDS projects).
 
 ---
 
@@ -179,7 +213,9 @@ All pipelines use **OIDC Workload Identity Federation** — zero stored client s
 | Make GHCR package public                 | Requires org admin via GitHub UI (Package Settings)       |
 | Node.js 20 → 24 in GitHub Actions        | Forced migration by June 2026                             |
 | CodeQL v3 → v4                           | Upgrade before December 2026                              |
-| Reconcile `INFRASTRUCTURE_INVENTORY.md`  | Mar 27 doc still references `acrgovprod` and old tenant label; update to reflect GHCR + HTT-CORE |
+| Migrate dev ACR → GHCR                   | bd issue `ll49` — saves $5/mo, unifies image source       |
+| Fix `/api/v1/health` 500 response        | bd issue `a1sb` — `/health` works, only `/api/v1/health` broken |
+| Reconcile `INFRASTRUCTURE_INVENTORY.md`  | Mar 27 doc needs GHCR + HTT-CORE + Basic SQL refresh      |
 
 ---
 
@@ -198,4 +234,4 @@ All pipelines use **OIDC Workload Identity Federation** — zero stored client s
 ---
 
 **Prepared for:** Tyler Granlund — IT Support & Systems Engineer, HTT Brands
-**Source of truth:** `CURRENT_STATE_ASSESSMENT.md`, `SESSION_HANDOFF.md`, `INFRASTRUCTURE_INVENTORY.md`, `ARCHITECTURE.md`, workspace file tree (as of April 14, 2026)
+**Source of truth:** `CURRENT_STATE_ASSESSMENT.md`, `SESSION_HANDOFF.md`, `INFRASTRUCTURE_INVENTORY.md`, `ARCHITECTURE.md`, Azure CLI live queries (as of April 16, 2026)

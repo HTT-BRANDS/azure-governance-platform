@@ -1,92 +1,126 @@
 # 🚀 SESSION_HANDOFF — Azure Governance Platform
 
-## Current State — v2.3.0 RBAC & Admin Dashboard Complete
+## Current State — v2.5.0 + Infrastructure Cost Optimization Complete
 
-**Date:** April 15, 2026  
-**Agent:** planning-agent-0f544f + code-puppy + python-programmer + solutions-architect + security-auditor  
-**Branch:** main (clean, fully pushed)  
-**Session Status:** ✅ ALL WORK COMPLETE
+**Date:** April 16, 2026
+**Agent:** code-puppy (Richard)
+**Branch:** main (clean, fully pushed)
+**Session Status:** ✅ ALL WORK COMPLETE — READY TO RESUME DEVELOPMENT
 
 ---
 
 ## 🎯 Executive Summary
 
-v2.3.0 delivered granular RBAC with admin dashboard and merged the recovered governance dashboard branch. All security audit findings resolved. Production and staging are on v2.2.0 — deploy v2.3.0 when ready.
+Full Azure subscription cost audit + aggressive optimization pass. Reduced total Azure spend across all HTT-BRANDS projects from **$748/mo → ~$282/mo (~62% reduction, ~$5,600/yr saved)**. Cleaned up the abandoned Control Tower predecessor (merged into this platform long ago). No code changes — pure infrastructure, security, and hygiene work.
 
-| Metric | Value |
-|--------|-------|
-| **Version** | 2.3.0 |
-| **Tests** | 4,300+ passing, 0 failures |
-| **Lint** | 0 errors |
-| **RBAC Roles** | 4 (Admin, TenantAdmin, Analyst, Viewer) |
-| **Permissions** | 35 resource:action strings |
-| **Security Findings** | 6 resolved, 3 tracked for future |
+| Metric | Before | After | Delta |
+|--------|--------|-------|-------|
+| **Total Azure spend (all projects)** | $748/mo | ~$282/mo | **-$466/mo** |
+| **Annualized savings** | — | — | **~$5,596/yr** |
+| **Governance platform spend** | ~$73/mo | ~$53/mo | -$20/mo |
+| **Orphaned/idle resources** | 8+ | 0 | ✅ cleaned |
+| **Over-privileged service principals** | 1 (Contributor @ sub) | 0 | ✅ revoked |
+
+**Production and staging verified healthy post-changes. `/health` returns 200.**
 
 ---
 
 ## 📊 What Was Done This Session
 
-### Lost Branch Recovery
-- Discovered `claude/azure-governance-dashboard-lD7n2` on remote after git fetch
-- Full code review (29 files, +2336/-31 lines)
-- Fixed `/healthz/data` session handling (manual SessionLocal → Depends(get_db))
-- Merged to main with fix
+### Round 1 — Initial Optimizations
+- Identified Syntex charges ending Jan 3, 2026 (already $0/mo going forward)
+- Downgraded `acrgovprod` Premium → Basic (-$15/mo)
+- Deleted `rg-identity-puppy-dev` (unused, -$18.45/mo)
+- Cleaned up duplicate Action Groups
 
-### RBAC Implementation (Phase 20)
-- ADR-0011: Granular RBAC design with STRIDE analysis
-- `app/core/permissions.py`: 35 permissions, 4 roles, containment hierarchy
-- `app/core/rbac.py`: `require_permissions()` / `require_any_permission()` FastAPI deps
-- Admin API: 6 endpoints for user/role management
-- Admin Dashboard: HTMX-powered with search, filter, inline role editing
-- 14 architecture fitness functions
+### Round 2 — Governance Platform Rightsizing
+- Deleted orphaned `pip-vpn-core` public IP (-$3.65/mo)
+- Deleted empty RGs: `control-tower-rg`, `rg-netsec-quarantine-prod`
+- Downgraded **dev SQL** Standard S0 → Basic (22 MB DB, -$9.73/mo)
+- Downgraded dev + staging storage GRS → LRS
+- Deleted unused `acrgovprod` (prod pulls from GHCR!) (-$5/mo)
+- Deleted stale `sqlbackup1774966098` storage
 
-### Security Audit & Fixes
-- Full security review by security-auditor
-- F-01: Self-role-modification guard ✅
-- F-02: Persistent audit logging for role changes ✅
-- F-03: HTMX partial endpoint with auth ✅
-- F-06: Generic 403 messages (no permission leakage) ✅
-- F-07: Consistent permission checks ✅
-- F-08: XSS defense-in-depth on stats cards ✅
-
-### Housekeeping
-- Committed INFRASTRUCTURE_END_TO_END.md
-- Pruned 5 stale local branches
-- Merged dependabot PR #4 (41 pip bumps)
-- Fixed 4 pre-existing test failures (multi-tenant sync mocks, design system compliance)
+### Round 3 — The Big Wins
+- **Cosmos DB Optimization** — Migrated all 13 containers from fixed 400 RU/s → autoscale (1000 max, 100 floor). Saved ~$90–100/mo. Zero traffic detected in 30 days prior.
+- **Downgraded PROD SQL** Standard S0 → Basic (57 MB DB, -$9.73/mo). Verified `/health` returns 200 in 612ms after change.
+- **Control Tower Cleanup** (per Tyler: "anything control-tower was meant for THIS platform"):
+  - Deleted Cosmos `controltower` database (9 containers, ~4,159 stale docs)
+  - Archived `github.com/HTT-BRANDS/control-tower` repo (history preserved)
+  - Deleted `control-tower-prod` Azure AD app registration + 3 GitHub OIDC federated credentials
+  - Deleted `Control Tower SWA` Azure AD app registration
+  - **🛡️ Revoked Contributor-at-subscription-scope role** from `control-tower-prod` SP (major security win)
 
 ---
 
-## 🔮 Remaining Items
+## 💰 Governance Platform Cost Breakdown (Current)
 
-| Priority | Item | Notes |
-|----------|------|-------|
-| HIGH | Deploy v2.3.0 to staging then production | `gh workflow run deploy-staging.yml` → verify → `gh workflow run deploy-production.yml` |
-| MEDIUM | Phase 21: Operational Excellence | ADR-0010 doc, configurable sync thresholds, failure alerting |
-| MEDIUM | F-04: Rate limiting on admin endpoints | Security audit finding |
-| MEDIUM | F-05: SQL-level pagination for admin users | Performance improvement |
-| LOW | Phase 22: Platform Polish | Python 3.12+ eval, GHCR public, dashboard lazy loading |
-| LOW | Dependabot PR #1: Python 3.14 Docker | Major version jump — evaluate carefully |
-| LOW | Test suite performance | 700+ second full runs due to per-file TestClient |
+| Environment | Monthly |
+|-------------|---------|
+| **Dev** (rg-governance-dev) | ~$22.67 |
+| **Staging** (rg-governance-staging) | ~$12.68 |
+| **Production** (rg-governance-production) | ~$18.05 |
+| **Total (governance-only)** | **~$53.40/mo** ≈ **$641/yr** |
 
----
-
-## 📁 Key Files (New This Session)
-
-| File | Purpose |
-|------|---------|
-| `app/core/permissions.py` | Permission constants + role definitions |
-| `app/core/rbac.py` | require_permissions() FastAPI dependency |
-| `app/api/routes/admin.py` | Admin user/role management API |
-| `app/api/services/admin_service.py` | Admin service layer |
-| `app/templates/pages/admin_dashboard.html` | Admin dashboard UI |
-| `app/templates/partials/admin_users_table_body.html` | HTMX users table partial |
-| `app/core/personas.py` | Persona system (from recovered branch) |
-| `app/api/routes/topology.py` | Topology dashboard (from recovered branch) |
-| `docs/decisions/adr-0011-granular-rbac.md` | RBAC architecture decision |
-| `STRATEGIC_AUDIT_AND_NEXT_STEPS.md` | Strategic audit and roadmap |
-| `tests/architecture/test_rbac_permissions.py` | RBAC fitness functions |
+### Resource SKUs
+| Env | App Service | SQL | ACR | Storage |
+|-----|-------------|-----|-----|---------|
+| Dev | B1 Linux | **Basic** (5 DTU) | Basic (kept — CI/CD uses it) | LRS |
+| Staging | B1 Linux | Free tier | — (uses GHCR) | LRS |
+| Production | B1 Linux | **Basic** (5 DTU) | — (uses GHCR) | — |
 
 ---
 
-**Last Updated:** April 15, 2026
+## 🔮 Remaining Items (Filed as bd issues)
+
+| ID | Priority | Item | Notes |
+|----|----------|------|-------|
+| `w1cc` | P3 | Audit domain-intelligence RG after launch | $65/mo idle, revisit when traffic exists |
+| `ll49` | P3 | Migrate dev ACR → GHCR + delete | Saves another $5/mo, needs workflow edit |
+| `832c` | P3 | Rename `rg-identity-puppy-prod` | Housekeeping — contains cross-brand shared secrets |
+| `a1sb` | P3 | `/api/v1/health` returns 500 (pre-existing) | Either remove endpoint or add auth |
+| `6wyk` | P4 | Add Teams webhook to `governance-alerts` action group | Nice-to-have |
+
+**Previous session items (RBAC v2.3.0 → v2.5.0):** Already landed on main. Tests pass, lint clean.
+
+---
+
+## 🛬 Session Landing Checklist
+
+- [x] All commits pushed to `origin/main`
+- [x] Stale local branches identified (see cleanup section below)
+- [x] No stashes
+- [x] bd issues synced
+- [x] Docs updated (this file + `INFRASTRUCTURE_END_TO_END.md`)
+- [x] Production verified healthy (`/health` returns 200)
+- [x] No open PRs
+
+---
+
+## 📁 Key Files Touched This Session
+
+| File | Change |
+|------|--------|
+| `SESSION_HANDOFF.md` | Full rewrite for April 16 cost optimization session |
+| `INFRASTRUCTURE_END_TO_END.md` | Updated SKUs, costs, and removed references to deleted ACR |
+| `.beads/issues.jsonl` | Added 4 new ops issues, closed `occx` (Cosmos) |
+
+**No application code was changed this session.** All work was Azure CLI infrastructure operations.
+
+---
+
+## 🎯 Next Session Starting Point
+
+When you come back to finish development:
+
+1. **Run `bd ready`** to see the 5 open P3/P4 follow-ups
+2. **`git pull`** to grab latest
+3. **Production is on v2.5.0** — `app-governance-prod.azurewebsites.net/health` returns 200
+4. **Cost baseline is now $53/mo for governance** — budget-friendly for continued dev
+5. **No domain-intelligence work needed** — Cosmos is optimized, code work is in separate repo
+6. **To resume end-to-end finalization:** check `WIGGUM_ROADMAP.md` for any incomplete phases
+
+---
+
+**Last Updated:** April 16, 2026
+**Agent:** Richard (code-puppy-680ba4) 🐶
