@@ -92,3 +92,8 @@ config/tenants.yaml
 config/personas.yaml
 !config/personas.yaml.example
 APRIL-3rd-Log*
+
+# Raw pricing query dumps - large JSON files from Azure Retail Prices API research.
+# We commit the summary markdown files (analysis.md, recommendations.md, sources.md)
+# but exclude raw-findings/ to keep the repo slim. See docs/COST_MODEL_AND_SCALING.md.
+research/*/raw-findings/
