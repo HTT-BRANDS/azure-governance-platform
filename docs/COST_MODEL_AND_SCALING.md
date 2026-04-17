@@ -1,6 +1,6 @@
 # Azure Governance Platform — Production Cost Model & Scaling Playbook
 
-> **bd issue:** zj9k | **Status:** Accepted | **Author:** Solutions Architect (solutions-architect-8ad3a1)
+> **bd issue:** zj9k | **Status:** Accepted | **Author:** Solutions Architect
 > **Date:** April 18, 2026 | **Version:** 1.0.0 | **Region:** East US (prod), West US 2 (staging/dev)
 > **Supersedes:** Stale cost sections in `docs/LAUNCH_READINESS_AND_ROADMAP.md` and `docs/operations/cost-analysis.md`
 
@@ -8,11 +8,25 @@
 
 ## TL;DR
 
-**Launch cost: ~$53/mo Azure + $147/mo GitHub = ~$200/mo all-in.** At the base growth scenario (20 tenants by month 12, 40 by month 24), the 12-month Azure cost is ~$1,140 and the recommended starting tier set is **B1 App Service + Basic SQL + in-memory cache** across all three environments with trigger-based upgrades. There is no reason to change tiers before launch. The first upgrade trigger will be App Service CPU p95 > 70% sustained, which at current architecture headroom is unlikely before ~30 concurrent users.
+**Launch cost: ~$53/mo Azure + $147/mo GitHub = ~$200/mo all-in.** At the base growth scenario (20 tenants by month 12, 40 by month 24), the 12-month Azure cost is ~$1,140. The recommended setup uses the lowest production-grade tier for each service — plenty of headroom for launch load and up to ~30 active users before any upgrade is needed. **No infrastructure changes required before launch.** When scaling is needed, each upgrade is a ~5-minute change with predictable cost bumps (see §6.2 for the specific triggers and costs).
+
+## For Executives
+
+- **Launch cost:** ~$200/month total ($53 Azure infrastructure + $147 GitHub)
+- **Year 1 (base growth):** ~$2,900 total spend
+- **Year 2 cumulative (base growth):** ~$6,300
+- **Recommendation:** Launch on the current configuration — no infrastructure changes needed. Upgrades are incremental and signal-driven (see §6.2).
+- **Biggest open cost question:** Whether we need zero-downtime deployments (+$57/mo). Current recommendation: defer until user load justifies it.
+
+> Everything below this box is technical detail for the engineering team. Section 5.5 has the year-over-year budget comparison; Section 6 has the recommendation. Sections 2–5 can be skipped if you're not responsible for implementation.
+
+---
 
 ### How to read this doc
 
 Tables contain the hard numbers — skim them for dollar amounts. Narrative sections explain *why* those numbers matter and *when* to act. Callout boxes (▸) flag decisions that need Tyler's input.
+
+**Conventions:** Azure tier codes use letter-number pairs (B = Basic, S = Standard, P = Premium; higher number = more capacity and cost). The ⚠️ marker means a figure is *documented from repo sources* rather than *live-verified from Azure APIs* — it's an estimate, not a danger warning.
 
 ### Assumptions & Caveats
 
@@ -28,7 +42,7 @@ Tables contain the hard numbers — skim them for dollar amounts. Narrative sect
 | **Tax/support** | Excluded | Azure support plans and tax vary by agreement |
 | **Numbers marked ⚠️** | Documented, not live-verified | Could not access live Azure CLI in this environment |
 
-> **Gap marker:** All cost figures in this document are derived from (a) `INFRASTRUCTURE_END_TO_END.md` as of April 16, 2026, (b) Azure Retail Prices REST API via web-puppy research, and (c) `SESSION_HANDOFF.md`. Live `az consumption` data was **not available** in this session. Numbers are marked where derived vs verified.
+> **Gap marker:** All cost figures in this document are derived from (a) `INFRASTRUCTURE_END_TO_END.md` as of April 16, 2026, (b) Azure Retail Prices REST API and official Azure pricing pages, and (c) `SESSION_HANDOFF.md`. Live `az consumption` data was **not available** when this document was prepared. Numbers are marked where derived vs verified.
 
 ---
 
@@ -39,6 +53,8 @@ Tables contain the hard numbers — skim them for dollar amounts. Narrative sect
 > **This section supersedes** `LAUNCH_READINESS_AND_ROADMAP.md` §2–3 (which still shows S0 SQL at $14.72 and ACR Standard at $20.00 — both changed on April 16, 2026).
 
 #### Production — `rg-governance-production` (East US)
+
+> **Regional pricing note:** App Service B1 Linux is $12.41/mo (pay-as-you-go, $0.017/hr × 730 hrs) and is **regionally flat** across East US and West US 2 per the Azure Retail Prices API as of April 18, 2026. Same figure used for all three environments below.
 
 | Resource | SKU | Region | Monthly Cost | % of Total | Fixed/Usage | Notes |
 |---|---|---|---|---|---|---|
@@ -95,7 +111,9 @@ Tables contain the hard numbers — skim them for dollar amounts. Narrative sect
 | GitHub Enterprise | $147.00 | $1,764.00 |
 | **TOTAL** | **$200.40** | **$2,404.80** |
 
-> **Cross-project context:** The full HTT-BRANDS Azure subscription is ~$282/mo (per April 16 session). The governance platform is $53.40 of that. The remaining ~$229/mo includes `rg-htt-domain-intelligence` (~$65/mo, see bd-w1cc) and other project resources.
+> **Cross-project context:** The full HTT-BRANDS Azure subscription is ~$282/mo (per April 16 session). The governance platform is $53.40 of that. The remaining ~$229/mo includes `rg-htt-domain-intelligence` (~$65/mo, tracked separately as the domain-intelligence cost review) and other project resources.
+
+> 📋 **Sections 2–5 contain technical scaling analysis and implementation detail. If you're here for the recommendation, jump to Section 6 (Recommended Starting Tier).**
 
 ### 1.3 Decomposition by Service Category
 
@@ -113,8 +131,8 @@ Tables contain the hard numbers — skim them for dollar amounts. Narrative sect
 
 | Type | Monthly | % | What |
 |---|---|---|---|
-| **Fixed** (runs even at zero traffic) | $52.12 | 97.6% | App Service Plans + SQL DBs + ACR + Alert Rules |
-| **Variable** (scales with usage) | $1.28 | 2.4% | Key Vault ops + Storage + Egress + App Insights ingestion |
+| **Fixed** (runs even at zero traffic) | $52.63 | 98.6% | 3× App Service B1 ($37.23) + 2× SQL Basic ($9.80) + ACR Basic ($5.00) + Alert Rules ($0.60) |
+| **Variable** (scales with usage) | $0.77 | 1.4% | 3× Key Vault ops ($0.09) + 2× Storage LRS ($0.57) + Egress ($0.11) + App Insights (within free tier) |
 
 **Implication:** At current scale, this platform is almost entirely fixed-cost. Usage-based charges only become material at >>10 tenants with active API calls. This is typical for a B-tier App Service architecture — you're renting the compute box, not paying per request.
 
@@ -163,7 +181,7 @@ Tables contain the hard numbers — skim them for dollar amounts. Narrative sect
 | Cost delta from B1 | +$12.41 | +$56.94 |
 | **Choose when** | You need more CPU/RAM but NOT slots | You need slots (blue-green) or autoscale |
 
-> **Cross-reference bd-hofd:** If the blue-green decision (bd-hofd) goes with real slot-based deployment, the App Service tier MUST be S1 minimum. This changes the prod cost from $12.41 → $69.35/mo (+$56.94). The S1 provides the same 1 vCPU/1.75 GB as B1 — you're paying for the **slot capability**, not more compute. If you need both more compute AND slots, go to S2 ($138.70 East US) or P1v3 ($113.15 — actually cheaper than S2 and gives 2 vCPU + 8 GB + 20 slots).
+> **Cross-reference — the zero-downtime deployment decision (internal: bd-hofd):** If that decision goes with real slot-based deployment, the App Service tier MUST be S1 minimum. This changes the prod cost from $12.41 → $69.35/mo (+$56.94). The S1 provides the same 1 vCPU/1.75 GB as B1 — you're paying for the **slot capability**, not more compute. If you need both more compute AND slots, go to S2 ($138.70 East US) or P1v3 ($113.15 — actually cheaper than S2 and gives 2 vCPU + 8 GB + 20 slots).
 
 ### 2.3 SQL Basic — Deep Dive
 
@@ -245,7 +263,7 @@ Deployment slots are the primary driver for upgrading from B1 to S1+. Key facts:
 | What's the real cost of slots? | The **plan tier upgrade cost**, not the slot itself: B1 ($12.41) → S1 ($69.35 East US) = **+$56.94/mo prod only** |
 | Can you keep staging/dev on B1 while prod is S1? | **Yes** — each environment has its own App Service Plan |
 
-**If bd-hofd decides on real blue-green deployment:**
+**If we decide on real blue-green (zero-downtime) deployment:**
 
 | Environment | Current (B1) | With Slots (S1) | Delta |
 |---|---|---|---|
@@ -254,7 +272,7 @@ Deployment slots are the primary driver for upgrading from B1 to S1+. Key facts:
 | Dev (West US 2) | $12.41 | $12.41 (keep B1) | $0 |
 | **Net impact** | | | **+$56.94/mo** |
 
-> ▸ **Decision for Tyler (also relevant to bd-hofd):** For 5 users, a 10-second restart during deploy is acceptable. Recommend deferring S1 upgrade until deploying multiple times per day during business hours, OR when user count exceeds ~20 and downtime during deploy becomes unacceptable. **Save $56.94/mo until then.**
+> ▸ **Decision for Tyler (relates to the zero-downtime deployment decision — internal: bd-hofd):** For 5 users, a 10-second restart during deploy is acceptable. Recommend deferring S1 upgrade until deploying multiple times per day during business hours, OR when user count exceeds ~20 and downtime during deploy becomes unacceptable. **Save $56.94/mo until then.**
 
 ### 3.3 Regional Expansion — Multi-Region Cost Model
 
@@ -291,7 +309,7 @@ If active/passive multi-region is needed (e.g., for DR or latency):
 
 ### 4.1 Budget Alerts
 
-Set Azure Cost Management budget alerts per environment. Each fires to the existing `governance-alerts` action group (email to admin@httbrands.com, and Teams webhook once bd-6wyk completes).
+Set Azure Cost Management budget alerts per environment. Each fires to the existing `governance-alerts` action group (email to admin@httbrands.com, and a Teams channel webhook once the Teams alerting setup is complete — tracked internally as bd-6wyk).
 
 | Environment | Resource Group | Monthly Budget | 80% Alert ($) | 100% Alert ($) | Forecast Alert |
 |---|---|---|---|---|---|
@@ -395,7 +413,7 @@ Not applicable on B1 (current tier). When/if prod upgrades to S1+:
 
 ### 4.3 Cosmos DB Autoscale Ceiling
 
-> **Not applicable.** The governance platform does NOT use Cosmos DB. The predecessor `control-tower` app used Cosmos (deleted April 16, 2026). The `rg-htt-domain-intelligence` resource group has a Cosmos DB (~$35/mo, see bd-w1cc) but that is a separate project.
+> **Not applicable.** The governance platform does NOT use Cosmos DB. The predecessor `control-tower` app used Cosmos (deleted April 16, 2026). The `rg-htt-domain-intelligence` resource group has a Cosmos DB (~$35/mo, tracked separately as the domain-intelligence cost review) but that is a separate project.
 
 ### 4.4 Resource Locks
 
@@ -471,11 +489,13 @@ Stay on current tier set. No blue-green, no Redis, no multi-region.
 | 10 | $53 | $147 | $200 | $2,000 |
 | 11 | $53 | $147 | $200 | $2,200 |
 | 12 | $53 | $147 | $200 | $2,400 |
-| 13-18 | $53 | $147 | $200 | $3,600 |
-| 18 (bump to S0 SQL) | $63 | $147 | $210 | $3,810 |
-| 19-24 | $63 | $147 | $210 | $5,070 |
+| 13-17 (no changes) | $53 | $147 | $200 | $3,400 |
+| 18 (bump to S0 SQL) | $63 | $147 | $210 | $3,610 |
+| 19-24 | $63 | $147 | $210 | $4,870 |
 
-**Conservative 12-month:** $2,400 | **24-month:** ~$5,070
+**Conservative 12-month:** $2,400 | **24-month:** ~$4,870
+
+> **Collapsed view:** Months 1–17 stay flat at $200/mo (no infrastructure changes). SQL Basic → S0 upgrade at month 18 bumps the run-rate to $210/mo for the remainder of the window.
 
 ### 5.3 Base Scenario — ~20 Tenants by Month 12
 
@@ -525,7 +545,7 @@ Upgrades: S0 SQL at month 2, S1 App Service at month 3 (early slots), P1v3 at mo
 
 | Scenario | 12-Month Total | 24-Month Total | Avg Monthly (Yr 1) | Avg Monthly (Yr 2) |
 |---|---|---|---|---|
-| **Conservative** | $2,400 | $5,070 | $200 | $210 |
+| **Conservative** | $2,400 | $4,870 | $200 | $206 |
 | **Base** | $2,897 | $6,341 | $241 | $287 |
 | **Aggressive** | $3,421 | $8,215 | $285 | $400 |
 
@@ -550,7 +570,7 @@ Upgrades: S0 SQL at month 2, S1 App Service at month 3 (early slots), P1v3 at mo
 | **Staging** | SQL Database | **Free** | $0.00 | Already on free tier. Adequate for testing. |
 | **Dev** | App Service | **B1 Basic** | $12.41 | Dev doesn't need more. |
 | **Dev** | SQL Database | **Basic** | $4.90 | Matches prod for parity. |
-| **Dev** | Container Registry | **Basic** | $5.00 | Dev-only. Migrate to GHCR (bd-ll49) to save $5/mo. |
+| **Dev** | Container Registry | **Basic** | $5.00 | Dev-only. Migration to GHCR would save $5/mo — tracked internally as the dev container registry cleanup (bd-ll49). |
 | | | **TOTAL** | **$53.40/mo** | |
 
 **Why this tier set:**
@@ -590,7 +610,7 @@ Equally important. If load doesn't materialize:
 
 | Tier | Why Rejected |
 |---|---|
-| **S1 App Service for launch** | +$56.94/mo for slot capability that 5 users don't need. Deploy downtime is ~10 seconds — acceptable at launch scale. Defer until bd-hofd decision or user count > 20. |
+| **S1 App Service for launch** | +$56.94/mo for zero-downtime deployment capability that 5 users don't need. Current deploy downtime is ~10 seconds — acceptable at launch scale. Defer until the zero-downtime deployment decision lands or user count exceeds ~20. |
 | **S0 SQL for launch** | Current Basic tier handles the 57 MB database with ease. S0's main advantage is 250 GB storage — not needed until DB grows past 1.5 GB. Saves $9.82/mo. |
 | **P1v3 App Service for launch** | $113.15/mo for 2 vCPU / 8 GB RAM is massively over-provisioned. B1's 1.75 GB is 4× current usage. P1v3 only makes sense at 50+ concurrent users. |
 | **Redis for launch** | $16.06/mo for a cache that's handled perfectly by in-memory. Redis needed only at multi-instance scale or if cache persistence across restarts matters. |
@@ -622,8 +642,8 @@ Equally important. If load doesn't materialize:
 | 16 | Metric alert = $0.05/time-series/month | Azure Monitor Pricing | April 18, 2026 | https://azure.microsoft.com/en-us/pricing/details/monitor/ |
 | 17 | Slots on S1+ = free (share plan compute) | Microsoft Learn | April 18, 2026 | https://learn.microsoft.com/en-us/azure/app-service/deploy-staging-slots |
 | 18 | P1v3 1yr RI = ~35% savings, 3yr RI = ~55% savings | Azure Pricing Calculator | April 18, 2026 | https://azure.microsoft.com/en-us/pricing/details/app-service/linux/ |
-| 19 | Current prod DB size = 57 MB | `INFRASTRUCTURE_END_TO_END.md` (Apr 16) | April 16, 2026 | Repo doc, not live-verified |
-| 20 | Current dev DB size = 22 MB | `INFRASTRUCTURE_END_TO_END.md` (Apr 16) | April 16, 2026 | Repo doc, not live-verified |
+| 19 | Current prod DB size = 57 MB | `CHANGELOG.md` (Apr 16 Infrastructure entry) | April 16, 2026 | Repo doc, not live-verified |
+| 20 | Current dev DB size = 22 MB | `CHANGELOG.md` (Apr 16 Infrastructure entry) | April 16, 2026 | Repo doc, not live-verified |
 | 21 | Total Azure subscription = ~$282/mo | `CHANGELOG.md` (Apr 16 entry) | April 16, 2026 | Repo doc, not live-verified |
 | 22 | DTU model does NOT support reserved instances | Azure Pricing Page | April 18, 2026 | https://azure.microsoft.com/en-us/pricing/details/azure-sql-database/single/ |
 | 23 | Basic/Standard App Service NOT eligible for RI | Azure Pricing Page note | April 18, 2026 | https://azure.microsoft.com/en-us/pricing/details/app-service/linux/ |
@@ -635,12 +655,12 @@ Equally important. If load doesn't materialize:
 | # | Question | Why It Matters | Impact if Unresolved |
 |---|---|---|---|
 | 1 | **How many GitHub Enterprise seats are actually needed?** 7 seats at $21/seat = $147/mo. If some seats are inactive, reducing to 5 seats saves $42/mo ($504/yr). GitHub Team at $4/seat × 7 = $28/mo would save $119/mo but loses SAML SSO and advanced audit. | GitHub is 73% of the total bill. | Overpaying ~$504-$1,428/yr if seats or tier are over-provisioned. |
-| 2 | **Should `parameters.production.json` set `enableRedis: false`?** It currently says `true`, but no Redis is deployed. If someone runs the Bicep template, it would create Redis at ~$16/mo unexpectedly. | Prevents surprise cost increase from IaC deployment. | +$16/mo if someone deploys from Bicep without checking. |
+| 2 | **Should we turn off an unused caching service in our deployment settings?** Our deployment templates are currently flagged to create a Redis cache, but we don't actually deploy one (the app uses in-memory caching instead). If anyone re-runs the deployment scripts today, it would accidentally create a ~$16/mo service we don't need. (Internal: `parameters.production.json` has `enableRedis: true` — tracked as the unused Redis flag cleanup.) | Prevents surprise cost on any future infra redeploy. | +$16/mo if deployed from templates without checking. |
 | 3 | **Is the dev environment needed continuously?** Dev costs ~$23/mo running 24/7. If dev is only used during active development sprints, stopping the App Service Plan on nights/weekends saves ~$4-8/mo. Or stopping entirely between sprints saves $23/mo. | Dev is 42% of Azure governance cost. | Paying $276/yr for an idle dev env. |
-| 4 | **What's the bd-hofd decision on blue-green?** If real slot-based blue-green, prod App Service must upgrade to S1 (+$56.94/mo). If deferred, B1 stays. This is the single largest cost swing. | $56.94/mo = $683/yr. Need answer before any tier change. | Blocking cost clarity on the largest potential upgrade. |
-| 5 | **Target SLA for the platform?** If 99.95% (App Service default) is sufficient, no action needed. If 99.99% is required, need multi-region + SQL geo-replication (~$160/mo prod instead of ~$18/mo). | 9× cost difference between single-region and multi-region. | Could be under-provisioned for resilience if SLA commitment exists. |
+| 4 | **Do we want zero-downtime deployments?** Currently, pushing a code update causes ~10 seconds of API downtime. Eliminating that ("blue-green" deployment) requires upgrading the production hosting tier and costs an extra **+$57/mo** ($683/yr). With ~5 users at launch, the 10-second blip is acceptable — **recommend deferring**. Worth revisiting once we have 20+ active users or deploy multiple times per day. (Internal: tracked as the zero-downtime deployment decision.) | Single largest cost swing on the table. Need clarity before upgrading the production tier. | Blocking cost clarity on the largest potential upgrade. |
+| 5 | **What uptime guarantee do we promise customers?** The App Service default is 99.95% (about 4 hours of allowed downtime per year) — no extra action needed. If we need 99.99% (about 50 minutes per year), we'd need to run the platform in two Azure regions simultaneously, plus a live backup copy of the database in the second region ("SQL geo-replication"). That costs about $160/mo instead of $18/mo for the production hosting. | 9× cost difference between single-region and multi-region. | Could be under-provisioned for resilience if we've committed to a higher uptime target. |
 | 6 | **Data retention policy for sync data?** How many months of cost/compliance/identity/resource data should the DB retain? 12 months? 24 months? This directly affects DB growth rate and when the 2 GB Basic cap is hit. | Controls the SQL upgrade timeline. | May hit 2 GB sooner than projected if retention is unbounded. |
-| 7 | **Is the `rg-htt-domain-intelligence` ($65/mo) going to launch alongside governance?** Per bd-w1cc, that RG has been idle 30 days. If it's not launching, stopping those resources saves $65/mo ($780/yr). | $65/mo is larger than the entire governance Azure bill. | Paying for an idle app with zero users. |
+| 7 | **Is the separate `domain-intelligence` project launching alongside governance?** That project's Azure resource group has been idle for 30 days at a cost of $65/mo. If it's not launching, stopping those resources saves $65/mo ($780/yr). (Internal: tracked as the domain-intelligence cost review.) | $65/mo is larger than the entire governance Azure bill. | Paying for an idle app with zero users. |
 
 ---
 
@@ -664,7 +684,7 @@ The following sections in existing docs are **superseded by this document** and 
 
 ## Appendix D: Surprise Findings
 
-During research for this document, the following unexpected findings were discovered. Pack Leader should assess whether any warrant new bd issues.
+During research for this document, the following items were identified as forward-looking action items for the engineering team. Engineering leadership should assess whether any warrant new bd issues.
 
 ### Finding 1: `enableRedis: true` in Production Bicep Parameters (Severity: Medium)
 
@@ -678,20 +698,20 @@ During research for this document, the following unexpected findings were discov
 
 **Issue:** The LAUNCH_READINESS document states S1 App Service costs $58.40/mo and the B1→S1 delta is $46/mo. This is correct for **West US 2** but production runs in **East US** where S1 is $69.35/mo and the delta is **$56.94/mo** — a 24% higher upgrade cost than documented.
 
-**Impact:** If the bd-hofd blue-green decision is made based on the $46/mo delta figure, the actual cost will be $10.94/mo higher than expected.
+**Impact:** If the zero-downtime deployment decision (internal: bd-hofd) is made based on the $46/mo delta figure, the actual cost will be $10.94/mo higher than expected.
 
 **Recommendation:** Corrected in this document. LAUNCH_READINESS should be updated.
 
-### Finding 3: `docs/operations/cost-analysis.md` is Completely Fictional
+### Finding 3: `docs/operations/cost-analysis.md` Reflects a Prior Architecture (Never Deployed)
 
-**Issue:** This document shows a current state of P1v2 App Service ($11.53), S2 SQL ($7.50), Redis C0 ($4.60), total $33.19/mo. None of these match any known deployed state, past or present. The App Service has never been on P1v2 (went from B2→B1, not P1v2). SQL has never been S2 and $7.50 (S2 is $73.65). Redis has never been deployed for governance.
+**Issue:** This document shows a configuration (P1v2 App Service $11.53, S2 SQL $7.50, Redis C0 $4.60, total $33.19/mo) that does not match any known deployed state, past or present. Appears to be a planning artifact for an architecture that was evaluated but never implemented. The App Service has never been on P1v2 (went from B2→B1, not P1v2). SQL has never been S2 and $7.50 (S2 is $73.65). Redis has never been deployed for governance.
 
-**Impact:** Anyone reading this document would get a completely wrong picture of the current infrastructure.
+**Impact:** Anyone reading this document would get an out-of-date picture of the current infrastructure.
 
 **Recommendation:** Archive or delete `docs/operations/cost-analysis.md`. This document supersedes it entirely. File as a P3 doc cleanup task.
 
 ---
 
-*This document was prepared by Solutions Architect (solutions-architect-8ad3a1) on April 18, 2026, as the deliverable for bd issue zj9k. All Azure pricing sourced from Azure Retail Prices REST API and official pricing pages via web-puppy research (saved to `research/azure-pricing-west-us-2/`). Document reviewed against 15+ existing repo docs and Bicep IaC files for consistency.*
+*This document was prepared by the Solutions Architect on April 18, 2026, as the deliverable for bd issue zj9k. All Azure pricing sourced from the Azure Retail Prices REST API and official Azure pricing pages (research notes saved to `research/azure-pricing-west-us-2/`). Document reviewed against 15+ existing repo docs and Bicep IaC files for consistency.*
 
 *For questions or updates, file a bd issue referencing zj9k.*
