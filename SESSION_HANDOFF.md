@@ -1,120 +1,119 @@
 # 🚀 SESSION_HANDOFF — Azure Governance Platform
 
-## Current State — v2.5.0 + Critical Prod Fix (a1sb)
+## Current State — v2.5.0 · Prod Restored · Launch-Ready Decision Package Delivered
 
-**Date:** April 17, 2026
-**Agent:** Richard (code-puppy-bf0510) 🐶
-**Branch:** main (clean, fully pushed)
-**Session Status:** ✅ ALL WORK COMPLETE — PROD RESTORED TO HEALTHY STATE
-
----
-
-## 🚨 Executive Summary — Prod Was Quietly Broken
-
-What looked like a P3 bug (`/api/v1/health` returns 500) turned out to be a **container build pipeline misconfiguration** that has been silently shipping the **development stage** of the Dockerfile to production for weeks.
-
-| Symptom | Reality |
-|---------|---------|
-| `/api/v1/health` → 500 | DB import was failing: `libodbc.so.2: cannot open shared object file` |
-| `/health` → 200 | Lucky — no DB dependency, doesn't trigger the bad import |
-| Dashboards looked sluggish | Scheduler was crashing on every sync run (libodbc) |
-| Image labelled `version: 2.5.0` | Actually labelled `2.5.0-dev` — wrong stage entirely |
+**Date:** April 17, 2026 (afternoon)
+**Agents:** Richard (code-puppy-bf0510) + Pack Leader (pack-leader-session-4b9a54) 🐶🐺
+**Branch:** `main` @ `866bc24` · fully pushed · working tree clean
+**Session Status:** ✅ LANDED — RESUMING LATER TODAY
 
 ---
 
-## 🔧 Root Cause + Fix
+## 🚨 Executive Summary
 
-`.github/workflows/blue-green-deploy.yml` triggers on every push to `main` and builds the container image. Its `docker/build-push-action` step was missing the **`target:` field**.
+What started as one P3 bug (`a1sb`: prod `/api/v1/health` returns 500) cascaded into:
 
-When you don't specify a target on a multi-stage Dockerfile, Docker Buildx defaults to the **last stage**. The Dockerfile's last stage is `development` (intentional — for `docker compose --target development` workflows). That stage:
+1. **Root cause uncovered** — `blue-green-deploy.yml` was silently shipping the dev-stage Docker image to production for weeks (missing `target: production`). Scheduler sync jobs had been crashing on `libodbc.so.2` every run.
+2. **Hotfix deployed** — prod repointed to a proper production image. `/api/v1/health` now 200, DB 9ms, scheduler running 10 jobs.
+3. **CI hardened** — reusable image-label guard added across all 4 build pathways, prod deploy now digest-pinned.
+4. **Launch decision package delivered** — ADR 0001 (blue-green disposition) + 717-line cost model + 854 lines of pricing research.
 
-- Skips the entire ODBC apt-install layer
-- Runs as `root` (not `appuser`)
-- Uses `uvicorn ... --reload` (dev-only)
-- Tags itself `version: 2.5.0-dev`
-
-These bad images were getting pushed to GHCR as `:latest`, `:main`, and `:<short-sha>`. Production was pinned to `:f156391` (one of these). DB connections crashed at first query.
-
-**Fix:** Added `target: production` to `blue-green-deploy.yml` and a giant warning comment so future-us doesn't break it again.
-
-```yaml
-- name: Build and push
-  uses: docker/build-push-action@v5
-  with:
-    context: .
-    push: true
-    target: production   # ← THE FIX
-    ...
-```
-
-Other workflows (`deploy-staging.yml`, `deploy-production.yml`) already had `target: production`, which is why **staging was healthy the whole time** — that was the giveaway.
+Tyler's original ask — "get this build fully launched in production and have a clear understanding of starting and scalable cost options" — has a complete decision-grade answer waiting for review.
 
 ---
 
-## ✅ Verification
+## 💰 The Numbers Tyler Asked For
 
-After repointing prod from `:f156391` → `:6a7306a` (commit with fix):
+### Launch Today
+- **~$200/mo all-in** ($53 Azure + $147 GitHub)
+- **Year 1 (base growth):** ~$2,900 · **Year 2 cumulative:** ~$6,300
+- **No infrastructure changes needed before launch** — B1 + Basic SQL has 20-50× headroom for 5-user load
 
-```json
-GET https://app-governance-prod.azurewebsites.net/api/v1/health
-{
-  "status": "healthy",
-  "version": "2.5.0",
-  "environment": "production",
-  "checks": {
-    "database":  { "status": "healthy", "response_time_ms": 9.1 },
-    "cache":     { "status": "healthy", "hit_rate_percent": 100.0 },
-    "scheduler": { "status": "healthy", "active_jobs": 10 },
-    "azure_configured": true
-  }
-}
-```
+### Scaling Ladder (signal-driven)
+| Trigger | Action | $ Delta | Lead |
+|---|---|---|---|
+| CPU p95 > 70% sustained 1h | B1 → B2 | +$12/mo | 5 min |
+| Deploy > 2×/day for 2 weeks | B1 → S1 (slots) | +$57/mo | 15 min |
+| SQL DTU > 80% OR size > 1.5 GB | Basic → S0 | +$10/mo | 5 min |
+| Scale to ≥ 2 instances | Add Redis C0 | +$16/mo | 40 min |
+| > 50 concurrent users | Full upgrade P1v3+S1+Redis | +~$165/mo | 1 hour |
 
-3 consecutive smoke-test rounds: `/health` and `/api/v1/health` both 200 in ~400ms.
+Full model: `docs/COST_MODEL_AND_SCALING.md` (6 sections + 4 appendices). Provenance: `research/azure-pricing-2026-comprehensive/`.
 
 ---
 
-## 🐶 Bonus Discovery — Scheduler Was Dead
+## ✅ What Shipped (chronological)
 
-Because every DB connection was crashing, **all 10 scheduled sync jobs** (cost, compliance, identity, resources, etc.) had been failing for weeks. Cost/compliance dashboards in prod were stale.
-
-**Filed as `ajp1` (P2):** Investigate data freshness, trigger manual full sync, verify nightly schedules now actually run.
+| Commit | Deliverable |
+|---|---|
+| `6a7306a` | 🚨 a1sb fix: `target: production` added to blue-green-deploy.yml |
+| `1c1bd54` | a1sb prod repoint + session handoff for libodbc CI bug |
+| `2d34596` | ajp1 investigation + 6699 closure + a1sb follow-ups |
+| `d6a1bd1` | 6699: reusable `verify-production-image` composite action wired into deploy workflows |
+| `2abafa4` | bd: close ajp1, file zj9k (cost model) |
+| `0850d9a` | yil1: a1sb guard added to container-registry-migration.yml |
+| `4c7a75a` | yil1: deploy-production a1sb guard pinned to image digest |
+| `2b9a220` | hofd: ADR 0001 — blue-green-deploy.yml disposition |
+| `66334dc` | hofd: B1 pricing reconciled with zj9k |
+| `17d411c` | zj9k: COST_MODEL_AND_SCALING.md (717 lines) |
+| `e4106e0` | zj9k: shepherd (numeric) + ops-comms (stakeholder) review fixes |
+| `b056303` | chore(bd): close zj9k, file ddr1 |
+| `866bc24` | chore: pricing research summaries committed, raw JSON gitignored, yil1 closed |
 
 ---
 
-## 📋 Open bd Issues
+## 🎯 Tyler's Decisions Awaiting (Priority Order)
 
-| ID | Pri | Type | Item | Notes |
-|----|-----|------|------|-------|
-| `ajp1` | **P2** | task | Verify scheduler caught up after libodbc fix | New — discovered this session |
-| `832c` | P3 | task | Rename `rg-identity-puppy-prod` | Needs Tyler — RG renames are recreate-only |
-| `ll49` | P3 | task | Migrate dev ACR → GHCR + cleanup | Needs decision — option 1 deletes ACR, may break dev |
-| `w1cc` | P3 | task | Audit `domain-intelligence` RG ($65/mo idle) | Deferred — revisit when traffic exists |
-| `6699` | P3 | task | Add CI guard: fail builds producing dev image into :latest | New — belt-and-suspenders for a1sb |
-| `6wyk` | P4 | task | Add Teams webhook to `governance-alerts` action group | Needs Tyler — webhook URL |
+| # | Issue | Pri | Ask | Recommended | Time |
+|---|---|---|---|---|---|
+| 1 | **`sf24`** | **P2 🧨** | `parameters.production.json` has `enableRedis=true` booby trap | Fix flag to `false` — one-line. Bicep redeploy would silently spawn $16/mo Redis. | 5 min |
+| 2 | **`ddr1`** | P3 | Blue-green-deploy.yml fate: (A) fix, (B) strip, (C) delete | **C — Delete.** ADR scores 0.93/1.0 weighted. Option A is +$57/mo for nothing at <20 users. | 5 min read + decide |
+| 3 | **`c56t`** | P2 | Extend `/health/data` to all 10 sync domains | Yes. Needs product input on freshness thresholds per domain + Teams webhook URL. | 30 min to scope |
+| 4 | `5xd5` | P3 | Grant Cost Management Reader on BCC/FN/TLL | Auth-gated. Needs you. | 10 min Azure CLI |
+| 5 | `c7aa` | P3 | DCE tenant in YAML but missing from DB | Product call: should DCE be active at launch? | 5 min decide |
+| 6 | `265y` | P4 | GHCR repo path inconsistency (tygranlund vs htt-brands) | Housekeeping. | 10 min |
+| 7 | `832c`, `ll49`, `w1cc`, `fuy4`, `6wyk` | P3/P4 | Pre-existing backlog | All need your direction | varies |
 
 ---
 
-## 📁 Files Touched This Session
+## 🧨 Landmines to Know About
+
+1. **`sf24` — Bicep Redis booby trap.** Live prod has no Redis (in-memory cache, 100% hit rate). But `infrastructure/parameters.production.json` has `enableRedis=true`. Any `az deployment group create` against that file will silently provision $16/mo Redis. **Zap this first next session.**
+
+2. **`fuy4` — stale cost claims in research docs.** Existing docs (LAUNCH_READINESS_AND_ROADMAP.md, cost-analysis.md) have numbers that are now superseded by `docs/COST_MODEL_AND_SCALING.md`. Sweep needed so nobody quotes old numbers.
+
+3. **`c56t` — observability gap.** `/api/v1/health/data` only tracks 4 of 10 sync domains. If a1sb had happened on DMARC or Riverside instead of cost, we wouldn't have caught it.
+
+---
+
+## 📁 Key Files Touched This Session
 
 | File | Change |
-|------|--------|
-| `.github/workflows/blue-green-deploy.yml` | Added `target: production` (the fix) |
+|---|---|
+| `.github/workflows/blue-green-deploy.yml` | Added `target: production` (the a1sb fix) |
+| `.github/workflows/deploy-staging.yml` + `deploy-production.yml` | Wired in `verify-production-image` composite action |
+| `.github/workflows/container-registry-migration.yml` | Added a1sb guard |
+| `.github/actions/verify-production-image/` | NEW composite action (reusable guard) |
+| `docs/adr/0001-blue-green-deploy-disposition.md` | NEW — ADR with Option C recommendation |
+| `docs/COST_MODEL_AND_SCALING.md` | NEW — 717-line launch/scaling playbook |
+| `research/azure-pricing-2026-comprehensive/*.md` | NEW — 854 lines of research provenance |
+| `.gitignore` | Exclude `research/*/raw-findings/` (46k lines of raw JSON) |
 | `SESSION_HANDOFF.md` | This rewrite |
-| `.beads/issues.jsonl` | Closed `a1sb`, opened `ajp1` + `6699` |
 
-**Azure side (no code):**
-- `app-governance-prod` container image: `:f156391` → `:6a7306a`
-- App restart triggered, smoke tested healthy
+**Azure side:**
+- `app-governance-prod` container image: `:f156391` (dev image) → `:6a7306a` (proper prod image)
+- No other Azure changes this session
 
 ---
 
-## 🛬 Session Landing Checklist
+## 🛬 Landing Checklist — All Green
 
-- [x] All commits pushed to `origin/main`
-- [x] No stashes, no uncommitted files
-- [x] Production verified healthy (`/api/v1/health` 200, DB 9ms, scheduler running)
-- [x] bd issues synced (closed `a1sb`, opened `ajp1`, `6699`)
+- [x] All commits pushed to `origin/main` (HEAD @ `866bc24`)
+- [x] No stashes
+- [x] No uncommitted files, working tree clean
+- [x] bd synced (all issues exported to JSONL)
+- [x] Production verified healthy (3-round smoke test)
+- [x] Stream A (yil1) ✅ · Stream B (hofd) ✅ · Stream C (zj9k) ✅
 - [x] Docs updated (this file)
 - [x] No open PRs
 
@@ -122,14 +121,22 @@ Because every DB connection was crashing, **all 10 scheduled sync jobs** (cost, 
 
 ## 🎯 Next Session Starting Point
 
-1. **Check `ajp1` first** — verify scheduler actually ran overnight, trigger backfill if data is stale
-2. **`bd ready`** to see remaining 5 issues
-3. Production is now on `:6a7306a` with the proper production image
-4. `:latest` and `:main` GHCR tags are NOW SAFE — they'll point to production-stage images going forward
-5. Remaining issues are housekeeping that need Tyler's input or deferred decisions
+**Fast path to launch (when you resume later today):**
+
+1. **5 min** — Read `docs/adr/0001-blue-green-deploy-disposition.md`, decide `ddr1` (pack recommends Option C: delete)
+2. **5 min** — Fix `sf24` (flip `enableRedis` to `false` in `parameters.production.json`) — one-line commit
+3. **10 min** — Skim `docs/COST_MODEL_AND_SCALING.md` TL;DR + §6 (launch tier + triggers) — validate the recommendation
+4. **Decision point:**
+   - **Launch** 🚀 — everything green-lit, just pull the trigger
+   - **Harden first** — dispatch `c56t` to close the observability gap before launch
+
+**bd state summary:**
+- 11 open issues · 5 closed this session (a1sb, ajp1, 6699, zj9k, yil1)
+- 2 P2 · 7 P3 · 2 P4
+- 1 in-progress (hofd, blocked on ddr1)
 
 ---
 
-**Last Updated:** April 17, 2026
+**Last Updated:** April 17, 2026 — afternoon landing
 **Agent:** Richard (code-puppy-bf0510) 🐶
-**Mood:** Tail-wagging satisfaction — found a sneaky weeks-long bug 🦴
+**Mood:** Tail-wagging satisfaction. Prod healthy, decision package delivered, tree clean. See you later today, boss. 🦴
