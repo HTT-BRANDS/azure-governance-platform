@@ -97,9 +97,9 @@ deploy-production.yml (manual dispatch)
 
 | Resource | Name | Tier | Monthly Cost | Deployment Slots? |
 |---|---|---|---|---|
-| App Service Plan (prod) | `asp-governance-production` | **B1** | ~$13.14 | **❌ Not supported on Basic tier** |
+| App Service Plan (prod) | `asp-governance-production` | **B1** | ~$12.41 | **❌ Not supported on Basic tier** |
 | App Service (prod) | `app-governance-prod` | — | Included | N/A |
-| App Service Plan (staging) | `asp-governance-staging` | **B1** | ~$13.14 | **❌ Not supported** |
+| App Service Plan (staging) | `asp-governance-staging` | **B1** | ~$12.41 | **❌ Not supported** |
 | App Service (staging) | `app-governance-staging-xnczpwyv` | — | Included | N/A |
 
 **No staging slot is provisioned.** No Bicep/Terraform defines a slot. The `blue-green-deploy.yml` deploy jobs attempted to create and use slots on a B1 plan — which Azure would reject even if the vars were set.
@@ -120,7 +120,7 @@ deploy-production.yml (manual dispatch)
 
 ### Option A: Real Blue-Green Deployment
 
-**Summary:** Set the missing `${{ vars.* }}`, provision an Azure App Service staging slot on production, wire slot swap with health validation.
+**Summary:** Set the missing `${{ vars.* }}`, provision an Azure App Service staging slot on production, wire slot swap with health validation. For deeper cost modeling see `docs/COST_MODEL_AND_SCALING.md` (bd-zj9k, forthcoming).
 
 **Implementation sketch:**
 1. Upgrade `asp-governance-production` from B1 to S1 (Standard) — B1 does not support deployment slots
@@ -133,9 +133,9 @@ deploy-production.yml (manual dispatch)
 8. Decide relationship with `deploy-staging.yml` and `deploy-production.yml` — do they become redundant?
 
 **Cost delta:**
-- App Service Plan upgrade B1 → S1: **+$56.21/mo** ($13.14 → $69.35, Linux East US pay-as-you-go)
+- App Service Plan upgrade B1 → S1: **+$56.94/mo** ($12.41 → $69.35, Linux East US pay-as-you-go)
 - Slot itself: included with S1 plan (up to 5 slots)
-- Estimated total prod infra increase: **~$56/mo** (4.3× current App Service cost)
+- Estimated total prod infra increase: **~$57/mo** (5.6× current App Service cost)
 
 **Effort:** 12–20 engineering hours + 1–2 weeks calendar time for Bicep changes, SPN permissions, testing, slot configuration, workflow rewrite, and documentation updates.
 
@@ -197,13 +197,13 @@ deploy-production.yml (manual dispatch)
 
 | Criterion | Weight | Option A: Real Blue-Green | Option B: Build-Only | Option C: Delete Entirely |
 |---|---|---|---|---|
-| Cost | 20% | ❌ +$56/mo (4.3× plan increase) | ✅ $0 | ✅ $0 (saves CI minutes) |
+| Cost | 20% | ❌ +$57/mo (5.6× plan increase) | ✅ $0 | ✅ $0 (saves CI minutes) |
 | Operational simplicity | 20% | ❌ Adds slot management, sticky settings | ⚠️ Still has redundant build | ✅ One less workflow, clear topology |
 | Rollback capability | 15% | ✅ One-click slot swap | ⚠️ Same as today (redeploy) | ⚠️ Same as today (redeploy) |
 | a1sb-class footgun elimination | 20% | ⚠️ Adds new vars that could go unset | ⚠️ Removes broken jobs but keeps redundant build | ✅ Eliminates the entire footgun surface |
 | Engineering effort | 10% | ❌ 12–20 hours | ✅ 1–2 hours | ✅ 1–2 hours |
 | Production readiness for launch | 15% | ❌ Weeks to provision + test | ✅ Immediate | ✅ Immediate |
-| **Weighted Score** | | **Low** | **Medium** | **High** |
+| **Weighted Score** (❌=0, ⚠️=0.5, ✅=1, weighted) | | **0.25 (Low)** | **0.73 (Medium)** | **0.93 (High)** |
 
 ---
 
@@ -213,7 +213,7 @@ deploy-production.yml (manual dispatch)
 
 ### Rationale
 
-1. **The workflow's deploy jobs have never worked.** They were broken from the day they were written. No configuration was ever set to make them work. Fixing them requires S1 tier ($56/mo) — a 4.3× increase in App Service costs for a 10–30 user internal tool.
+1. **The workflow's deploy jobs have never worked.** They were broken from the day they were written. No configuration was ever set to make them work. Fixing them requires S1 tier (+$57/mo) — a 5.6× increase in App Service costs for a 10–30 user internal tool.
 
 2. **The workflow's build job is fully redundant.** `deploy-staging.yml` already builds and pushes a production-target image with the a1sb guard on every push to main. The same guard is also in `deploy-production.yml`. There is no unique value added by the blue-green workflow's build step.
 
@@ -290,11 +290,11 @@ If deleting the workflow causes an unforeseen problem:
 
 1. **Do you want `:latest` to update on every push to main, or only on manual prod deploys?** If you want it on every push, I'll add one line to `deploy-staging.yml`. If not, no change needed.
 
-2. **Do you want true blue-green deployment capability in the future?** If so, it requires upgrading to S1 tier (+$56/mo). That's a separate ADR when/if you're ready. The current workflow was never going to deliver it on B1.
+2. **Do you want true blue-green deployment capability in the future?** If so, it requires upgrading to S1 tier (+$57/mo). That's a separate ADR when/if you're ready. The current workflow was never going to deliver it on B1.
 
 3. **Should we purge the accumulated short-SHA and `:main` tags from GHCR?** They're harmless but cluttery. Can be done with a one-liner: `gh api` call to delete untagged/unused manifests.
 
-4. **Is there any manual process or script that pulls the `:main` GHCR tag?** I found no automated references, but if you or another developer manually does `docker pull ghcr.io/htt-brands/azure-governance-platform:main` for local development, we should know before deleting the workflow that produces it.
+4. **Is there any manual process or script that pulls the `:main` GHCR tag?** I found no automated references, but if you or another developer manually does `docker pull ghcr.io/htt-brands/azure-governance-platform:main` for local development, we should know before deleting the workflow that produces it. *(pending Tyler confirmation before execution)*
 
 ---
 
@@ -352,9 +352,10 @@ The document claims `blue-green-deploy.yml` trigger is "Manual". The actual trig
 
 ## References
 
+- **Authoritative cost model:** `docs/COST_MODEL_AND_SCALING.md` (bd-zj9k, forthcoming) — canonical App Service/SQL/Cosmos pricing and 24-month projections. All cost figures in this ADR should reconcile with that document. Supersedes the cost sections of `research/cost-optimization-2026/` and `docs/LAUNCH_READINESS_AND_ROADMAP.md` where they diverge. Until published, `docs/LAUNCH_READINESS_AND_ROADMAP.md` is the interim source of B1 = $12.41/mo.
 - Incident a1sb: `SESSION_HANDOFF.md` — production running dev image for weeks
 - Azure App Service pricing: [https://azure.microsoft.com/en-us/pricing/details/app-service/linux/](https://azure.microsoft.com/en-us/pricing/details/app-service/linux/)
 - Azure deployment slots documentation: [https://learn.microsoft.com/en-us/azure/app-service/deploy-staging-slots](https://learn.microsoft.com/en-us/azure/app-service/deploy-staging-slots) — "Deployment slots are available in the Standard, Premium, and Isolated App Service plan tiers"
 - GitHub Actions variables: [https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables) — unset `vars.*` evaluate to empty string with no error
 - Current infrastructure: `parameters.production.json` — `appServiceSku: "B1"`
-- Cost data: `research/cost-optimization-2026/analysis.md`, `infrastructure/COST_OPTIMIZATION.md`
+- Cost data: `research/cost-optimization-2026/analysis.md`, `infrastructure/COST_OPTIMIZATION.md` (⚠️ both contain the B1-deployment-slots error flagged in the Documentation Errors table above — reconcile against the authoritative cost model)
