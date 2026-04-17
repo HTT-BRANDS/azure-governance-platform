@@ -99,10 +99,13 @@ race between push and verify.
 Wire the guard into **every workflow job that pushes an image to GHCR under a
 tag that could land in production**. As of this writing that means:
 
-- `blue-green-deploy.yml` — pushes `:latest`, `:main`, `:<sha>`
-- `deploy-staging.yml` — pushes `:staging`, `:sha-<sha>` (staging slot feeds
-  into the blue-green swap, so staging images can become prod images)
+- `deploy-staging.yml` — pushes `:staging`, `:sha-<sha>` (staging images can
+  be promoted to prod via image-tag repoint)
 - `deploy-production.yml` — pushes `:latest`, `:sha-<sha>`
+- `container-registry-migration.yml` — re-tags ACR images into GHCR
+
+Note: `blue-green-deploy.yml` was deleted 2026-04-17 (see ADR 0001). Historical
+context: its `target:`-less build was the root cause of the a1sb incident.
 
 Do **not** add the guard to dev-only or preview workflows whose images can
 never reach production. The guard will (correctly) fail on those.

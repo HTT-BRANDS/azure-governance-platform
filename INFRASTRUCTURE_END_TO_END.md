@@ -139,7 +139,6 @@ Workflows (`.github/workflows/`):
 | `ci.yml`                             | Push / PR                | Lint, test, security scan                        |
 | `deploy-staging.yml`                 | Push to `main`           | 5 jobs: QA gate, security, build, deploy, validate |
 | `deploy-production.yml`              | Manual dispatch          | 6 jobs incl. smoke test + Teams notify           |
-| `blue-green-deploy.yml`              | Manual                   | Zero-downtime swap strategy                      |
 | `container-registry-migration.yml`   | Manual                   | ACR ↔ GHCR migration tooling                     |
 | `dependency-update.yml`              | Scheduled                | Dependabot-style dependency refresh              |
 | `security-scan.yml`                  | Scheduled / push         | Trivy + CodeQL                                   |

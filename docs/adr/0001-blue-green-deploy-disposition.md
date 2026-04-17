@@ -1,7 +1,8 @@
 # ADR 0001: Disposition of blue-green-deploy.yml
 
-**Status:** Proposed — awaiting Tyler decision
+**Status:** Accepted — Option C (delete) executed 2026-04-17
 **Date:** 2026-04-17
+**Implemented-in:** commit deleting `.github/workflows/blue-green-deploy.yml`
 **Deciders:** Tyler Granlund (final), solutions-architect-6b4067 (recommendation)
 **Related:** a1sb (incident — silent prod outage from dev-stage image), bd-6699 (CI a1sb guard), bd-yil1 (guard extension), bd-hofd (this ADR)
 
