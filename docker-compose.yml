@@ -16,7 +16,7 @@ version: '3.8'
 services:
   # ---------------------------------------------------------------------------
   # Main Application Service
-  # For production image, use: ghcr.io/tygranlund/azure-governance-platform:latest
+  # For production image, use: ghcr.io/htt-brands/azure-governance-platform:latest
   # ---------------------------------------------------------------------------
   app:
     build:

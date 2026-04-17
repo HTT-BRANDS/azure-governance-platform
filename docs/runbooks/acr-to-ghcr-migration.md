@@ -44,12 +44,12 @@ This runbook documents the migration from **Azure Container Registry (ACR)** to 
    ```json
    // infrastructure/parameters.staging.json
    "containerImage": {
-     "value": "ghcr.io/tygranlund/azure-governance-platform:staging"
+     "value": "ghcr.io/htt-brands/azure-governance-platform:staging"
    }
    
    // infrastructure/parameters.production.json
    "containerImage": {
-     "value": "ghcr.io/tygranlund/azure-governance-platform:latest"
+     "value": "ghcr.io/htt-brands/azure-governance-platform:latest"
    }
    ```
 
@@ -70,7 +70,7 @@ This runbook documents the migration from **Azure Container Registry (ACR)** to 
    
    env:
      GHCR_REGISTRY: ghcr.io
-     GHCR_REPOSITORY: tygranlund/azure-governance-platform
+     GHCR_REPOSITORY: htt-brands/azure-governance-platform
    
    steps:
      - uses: docker/login-action@v3
@@ -83,7 +83,7 @@ This runbook documents the migration from **Azure Container Registry (ACR)** to 
        with:
          push: true
          tags: |
-           ghcr.io/tygranlund/azure-governance-platform:${{ env.IMAGE_TAG }}
+           ghcr.io/htt-brands/azure-governance-platform:${{ env.IMAGE_TAG }}
    ```
 
 ### Phase 3: Image Migration (Optional — 15 min)
@@ -112,14 +112,14 @@ If you need to preserve existing images from ACR:
    az webapp config container set \
      --name app-governance-staging-xnczpwyv \
      --resource-group rg-governance-staging \
-     --container-image-name ghcr.io/tygranlund/azure-governance-platform:staging \
+     --container-image-name ghcr.io/htt-brands/azure-governance-platform:staging \
      --container-registry-url https://ghcr.io
    
    # Production
    az webapp config container set \
      --name app-governance-prod \
      --resource-group rg-governance-production \
-     --container-image-name ghcr.io/tygranlund/azure-governance-platform:latest \
+     --container-image-name ghcr.io/htt-brands/azure-governance-platform:latest \
      --container-registry-url https://ghcr.io
    ```
 
@@ -188,7 +188,7 @@ permissions:
 **Cause:** Repository might be private or image doesn't exist  
 **Solution:**
 - Verify image visibility: `https://github.com/tygranlund?tab=packages`
-- Check image exists: `docker manifest inspect ghcr.io/tygranlund/azure-governance-platform:latest`
+- Check image exists: `docker manifest inspect ghcr.io/htt-brands/azure-governance-platform:latest`
 
 ### Issue: Migration workflow fails on specific tag
 

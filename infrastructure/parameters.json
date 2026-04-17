@@ -33,7 +33,7 @@
       "value": 30
     },
     "containerImage": {
-      "value": "ghcr.io/tygranlund/azure-governance-platform:latest"
+      "value": "ghcr.io/htt-brands/azure-governance-platform:latest"
     },
     "useContainerDeployment": {
       "value": true

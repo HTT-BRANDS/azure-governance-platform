@@ -1,5 +1,8 @@
 # Azure Governance Platform — Launch Readiness, Costs & 2-Year Roadmap
 
+> **Note:** For authoritative cost figures, see [`docs/COST_MODEL_AND_SCALING.md`](COST_MODEL_AND_SCALING.md) (bd-zj9k). Cost sections in this doc are kept for historical planning context but may lag current pricing.
+
+
 > Generated: April 15, 2026 | Version: 2.5.0 | Region: West US 2
 >
 > **UPDATE (same day):** Executed all launch recommendations. Deleted unused
@@ -169,7 +172,7 @@ You do NOT need S1 or P1v3 for launch. Here's what matters:
 
 | Workflow | Current State | What It Needs |
 |---|---|---|
-| **Blue-Green Deploy** | ❌ Fails (B1 = no slots) | S1 Standard ($58.40/mo) |
+| **Blue-Green Deploy** | ❌ Fails (B1 = no slots) | S1 Standard ($69.35/mo East US — authoritative in `docs/COST_MODEL_AND_SCALING.md`) |
 | **Deploy Production** | ⚠️ Works but no zero-downtime | S1 for slot-based deploys |
 | **Backup** | ⚠️ Untested | Needs staging slot verification |
 

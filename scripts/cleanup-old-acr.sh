@@ -27,7 +27,7 @@ BOLD='\033[1m'
 # Configuration
 OLD_ACR_NAME="acrgovstaging19859"
 OLD_ACR_RESOURCE_GROUP="rg-governance-staging"
-GHCR_REPO="ghcr.io/tygranlund/azure-governance-platform"
+GHCR_REPO="ghcr.io/htt-brands/azure-governance-platform"
 
 # Script flags
 CONFIRM=false
@@ -125,7 +125,7 @@ verify_ghcr_available() {
 
     # Check if GHCR repo is accessible via API
     local http_status
-    http_status=$(curl -s -o /dev/null -w "%{http_code}" "https://ghcr.io/v2/tygranlund/azure-governance-platform/tags/list" 2>/dev/null || echo "000")
+    http_status=$(curl -s -o /dev/null -w "%{http_code}" "https://ghcr.io/v2/htt-brands/azure-governance-platform/tags/list" 2>/dev/null || echo "000")
 
     if [[ "$http_status" == "200" ]] || [[ "$http_status" == "401" ]]; then
         # 401 is expected without auth, but means repo exists

@@ -25,7 +25,7 @@ rm infrastructure/parameters.staging.json
 ```
 
 ### Alternative to Staging
-- Use **App Service deployment slots** (free on B1+) for blue-green deployments
+- **App Service deployment slots** for blue-green require Standard S1+ tier (B1 does NOT support slots)
 - Use **GitHub Actions CI** with `docker-compose up` for integration testing
 - For UAT: spin up ephemeral Container Apps environment, test, destroy
 
@@ -302,3 +302,6 @@ Azure Functions was rejected because:
 4. Better health probe support (startup, liveness, readiness)
 5. Revision-based traffic splitting (better than deployment slots)
 6. The app is already containerized — no additional work to containerize
+
+
+> **Errata (2026-04-17, bd-fuy4):** This document previously claimed App Service deployment slots are 'free on B1+'. That is **factually incorrect** — slots require Standard S1+ tier. Basic (B1/B2/B3) does **not** support slots at all. Corrected inline. Authoritative cost/tier reference: [`docs/COST_MODEL_AND_SCALING.md`](../../docs/COST_MODEL_AND_SCALING.md) §6.2.

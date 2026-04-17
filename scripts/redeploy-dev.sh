@@ -28,7 +28,7 @@ APP_NAME="app-governance-dev-001"
 RESOURCE_GROUP="rg-governance-dev"
 PLAN_NAME="plan-governance-dev-001"
 LOCATION="westus2"
-CONTAINER_IMAGE="ghcr.io/tygranlund/azure-governance-platform:dev"
+CONTAINER_IMAGE="ghcr.io/htt-brands/azure-governance-platform:dev"
 REGISTRY_URL="https://ghcr.io"
 
 # Functions

@@ -53,7 +53,7 @@ az webapp config container show \
     --resource-group rg-governance-staging \
     --query "linuxFxVersion"
 
-# Should contain: ghcr.io/tygranlund/azure-governance-platform
+# Should contain: ghcr.io/htt-brands/azure-governance-platform
 
 # Test health endpoint
 curl -s https://app-governance-staging-xnczpwyv.azurewebsites.net/health
@@ -417,7 +417,7 @@ az webapp config container show \
 az webapp config container set \
     --name app-governance-staging-xnczpwyv \
     --resource-group rg-governance-staging \
-    --docker-custom-image-name "ghcr.io/tygranlund/azure-governance-platform:staging" \
+    --docker-custom-image-name "ghcr.io/htt-brands/azure-governance-platform:staging" \
     --docker-registry-server-url "https://ghcr.io"
 ```
 

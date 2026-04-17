@@ -28,7 +28,7 @@ az group delete --name rg-governance-staging --yes --no-wait
 
 **Replacement strategy:**
 - **Testing**: GitHub Actions CI runs unit + integration tests on every PR
-- **UAT**: Use App Service deployment slots (free on B1+) for blue-green deploys
+- **UAT**: App Service deployment slots for blue-green require Standard S1+ (not supported on B1)
 - **Emergency staging**: Can spin up Container Apps env in minutes if needed ($0 on free tier)
 
 **Rollback**: Re-deploy from Bicep templates in `infrastructure/` directory.
@@ -320,3 +320,6 @@ This is still a 79% savings from the original $73/mo and requires zero code chan
 | Week 2 | Migrate SQL to free tier | $15/mo |
 | Week 3-4 | (Optional) Container Apps migration | $13/mo |
 | **Total** | | **$58-73/mo** |
+
+
+> **Errata (2026-04-17, bd-fuy4):** This document previously claimed App Service deployment slots are 'free on B1+'. That is **factually incorrect** — slots require Standard S1+ tier. Basic (B1/B2/B3) does **not** support slots at all. Corrected inline. Authoritative cost/tier reference: [`docs/COST_MODEL_AND_SCALING.md`](../../docs/COST_MODEL_AND_SCALING.md) §6.2.

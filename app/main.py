@@ -175,7 +175,7 @@ app = FastAPI(
     ## Support
 
     For API support, contact the Cloud Governance Team or visit:
-    [Documentation](https://github.com/tygranlund/azure-governance-platform/tree/main/docs)
+    [Documentation](https://github.com/htt-brands/azure-governance-platform/tree/main/docs)
     """,
     lifespan=lifespan,
     docs_url=None,  # Disabled - using custom routes with auth protection
@@ -229,7 +229,7 @@ app = FastAPI(
     },
     license_info={
         "name": "MIT",
-        "url": "https://github.com/tygranlund/azure-governance-platform/blob/main/LICENSE",
+        "url": "https://github.com/htt-brands/azure-governance-platform/blob/main/LICENSE",
     },
 )
 
@@ -870,7 +870,7 @@ def custom_openapi() -> dict:
     # Add external documentation
     openapi_schema["externalDocs"] = {
         "description": "Full Documentation",
-        "url": "https://github.com/tygranlund/azure-governance-platform/tree/main/docs",
+        "url": "https://github.com/htt-brands/azure-governance-platform/tree/main/docs",
     }
 
     # Add servers info

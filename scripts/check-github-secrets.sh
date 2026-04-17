@@ -10,7 +10,7 @@
 #   3. Deployment configuration
 #
 # Usage: ./scripts/check-github-secrets.sh [owner/repo]
-# Example: ./scripts/check-github-secrets.sh tygranlund/azure-governance-platform
+# Example: ./scripts/check-github-secrets.sh htt-brands/azure-governance-platform
 # =============================================================================
 
 set -euo pipefail

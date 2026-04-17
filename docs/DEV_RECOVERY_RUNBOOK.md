@@ -40,7 +40,7 @@ Expected broken output:
 Expected fixed output:
 ```json
 {
-  "linuxFxVersion": "DOCKER|ghcr.io/tygranlund/azure-governance-platform:dev",
+  "linuxFxVersion": "DOCKER|ghcr.io/htt-brands/azure-governance-platform:dev",
   "kind": "app,linux,container"
 }
 ```

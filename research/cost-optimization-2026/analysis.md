@@ -100,7 +100,7 @@
 | Pre-deploy testing | GitHub Actions CI + Docker Compose local testing |
 | Integration testing | Ephemeral Container Apps job (spin up, test, destroy) |
 | UAT | Feature flags in prod + restricted access |
-| Emergency rollback env | App Service deployment slots (free on B1+) |
+| Emergency rollback env | App Service deployment slots (require Standard S1+ tier — NOT supported on B1) |
 
 ### Multi-Dimensional Assessment
 
@@ -309,7 +309,7 @@ Azure Dev/Test pricing offers discounts on specific services:
 
 1. **Delete the staging resource group entirely** (saves $38.17/mo)
 2. **Use GitHub Actions CI** for automated testing before deploy
-3. **Use App Service deployment slots** for blue-green deployments (free on B1+)
+3. **App Service deployment slots** for blue-green require Standard S1+ tier (~$69/mo East US). NOT supported on Basic B1.
 4. **For UAT**: Deploy to an ephemeral Container Apps environment, run tests, destroy
    - Cost: $0 (within free grants for brief testing sessions)
 
@@ -333,3 +333,6 @@ Azure Dev/Test pricing offers discounts on specific services:
 **$0/month is achievable** using Container Apps consumption (scale-to-zero) + Azure SQL free tier + GHCR + Key Vault.
 
 Realistic floor with minimal storage/networking: **$0-2/month**.
+
+
+> **Errata (2026-04-17, bd-fuy4):** This document previously claimed App Service deployment slots are 'free on B1+'. That is **factually incorrect** — slots require Standard S1+ tier. Basic (B1/B2/B3) does **not** support slots at all. Corrected inline. Authoritative cost/tier reference: [`docs/COST_MODEL_AND_SCALING.md`](../../docs/COST_MODEL_AND_SCALING.md) §6.2.

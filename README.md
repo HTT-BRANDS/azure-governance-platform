@@ -98,7 +98,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for version history.
 
 ```bash
 # Clone the repository
-git clone https://github.com/tygranlund/azure-governance-platform.git
+git clone https://github.com/htt-brands/azure-governance-platform.git
 cd azure-governance-platform
 
 # Create virtual environment
@@ -290,8 +290,8 @@ cd infrastructure
 ./deploy.sh production eastus
 
 # Build and push container image to GHCR
-docker build -t ghcr.io/tygranlund/azure-governance-platform:v1.9.0 .
-docker push ghcr.io/tygranlund/azure-governance-platform:v1.9.0
+docker build -t ghcr.io/htt-brands/azure-governance-platform:v1.9.0 .
+docker push ghcr.io/htt-brands/azure-governance-platform:v1.9.0
 
 # Configure App Service to use GHCR
 az webapp config container set \

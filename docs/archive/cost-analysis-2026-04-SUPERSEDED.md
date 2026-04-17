@@ -1,3 +1,15 @@
+> ⚠️ **SUPERSEDED — DO NOT USE FOR DECISIONS** ⚠️
+>
+> **Archived:** 2026-04-17 (bd-fuy4)
+> **Successor:** [`docs/COST_MODEL_AND_SCALING.md`](../COST_MODEL_AND_SCALING.md)
+>
+> The numbers in this document (P1v2 at $11.53, S2 SQL at $7.50, Redis C0 at $4.60, $33.19 total)
+> **do not match any known past or present state** of this system. Origin unclear; likely
+> fabricated or from a deleted exploratory branch. Kept in `archive/` for historical/audit
+> purposes only. Authoritative cost figures now live in `docs/COST_MODEL_AND_SCALING.md`.
+
+---
+
 # Cost Analysis & Scaling
 
 ## 💰 Current Cost Structure

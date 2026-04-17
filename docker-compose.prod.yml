@@ -32,7 +32,7 @@ services:
         - PYTHON_VERSION=3.11
     
     # Alternative: Use pre-built image from GHCR
-    # image: ghcr.io/tygranlund/azure-governance-platform:${IMAGE_TAG:-latest}
+    # image: ghcr.io/htt-brands/azure-governance-platform:${IMAGE_TAG:-latest}
     
     container_name: governance-platform-prod
     restart: always
