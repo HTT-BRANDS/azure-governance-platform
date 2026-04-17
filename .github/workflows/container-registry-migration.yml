@@ -163,6 +163,18 @@ jobs:
           
           echo "✅ Successfully migrated: ${{ matrix.tag }}"
 
+      # Regression guard for incident a1sb (libodbc missing in dev image
+      # shipped to prod). GHCR is prod-reachable — the App Service pulls
+      # from here — so EVERY tag we publish must pass the production
+      # fingerprint check. This workflow is workflow_dispatch-invokable
+      # against arbitrary ACR tags; without this guard, a stale dev-stage
+      # image in ACR could be re-homed straight into a prod-reachable tag.
+      # See .github/actions/verify-production-image/README.md
+      - name: Verify production image (a1sb guard)
+        uses: ./.github/actions/verify-production-image
+        with:
+          image-ref: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}:${{ matrix.tag }}
+
       - name: Verify GHCR image
         run: |
           DEST_IMAGE="${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}:${{ matrix.tag }}"
