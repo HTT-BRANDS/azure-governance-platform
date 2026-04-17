@@ -2,10 +2,10 @@
 
 ## Current State — v2.5.0 · Prod Restored · Launch-Ready Decision Package Delivered
 
-**Date:** April 17, 2026 (afternoon)
+**Date:** April 17, 2026 (afternoon → continuation)
 **Agents:** Richard (code-puppy-bf0510) + Pack Leader (pack-leader-session-4b9a54) 🐶🐺
-**Branch:** `main` @ `866bc24` · fully pushed · working tree clean
-**Session Status:** ✅ LANDED — RESUMING LATER TODAY
+**Branch:** `main` @ `399c209` · fully pushed · working tree clean
+**Session Status:** ✅ LANDED — 5 MORE ISSUES CLOSED IN CONTINUATION
 
 ---
 
@@ -19,6 +19,42 @@ What started as one P3 bug (`a1sb`: prod `/api/v1/health` returns 500) cascaded 
 4. **Launch decision package delivered** — ADR 0001 (blue-green disposition) + 717-line cost model + 854 lines of pricing research.
 
 Tyler's original ask — "get this build fully launched in production and have a clear understanding of starting and scalable cost options" — has a complete decision-grade answer waiting for review.
+
+---
+
+## 🐕 Continuation Round Delivery (same day, later)
+
+Tyler said "continue" → Richard autonomously closed **5 more bd issues** without needing Tyler input, using the pack-leader's recommendations as directives:
+
+| Issue | What | Impact |
+|---|---|---|
+| **`sf24`** P2 | Redis booby trap — flipped `enableRedis=false` in staging + prod params | Eliminated a latent $16/mo cost-spawn on next Bicep redeploy |
+| **`ddr1` + `hofd`** P3 | Executed ADR 0001 Option C — deleted `blue-green-deploy.yml` | -359 lines of broken workflow; closed the architectural question |
+| **`fuy4`** P3 | Docs sweep — 3 stale cost claims fixed/archived | Research docs no longer mislead on slots, S1 pricing, or fabricated stacks |
+| **`265y`** P4 | GHCR path consistency — 26 refs `tygranlund/*` → `htt-brands/*` | 🚨 Hot find: prod params had stale tygranlund path (sf24-class footgun) |
+
+**Hot find worth flagging:** `infrastructure/parameters.production.json` had `containerImage=ghcr.io/tygranlund/azure-governance-platform:latest` — another dormant a1sb-class booby trap. Fixed.
+
+**New issue filed:** `mrgy` (P3) — Bicep param drift where `enableAzureSql=false` in dev+staging but SQL servers exist. Needs your call (A/B/C options in the issue).
+
+**Total commits this continuation:** 4 logical commits, all CI-green, prod unaffected.
+
+---
+
+## 📋 Remaining Open bd Issues (8)
+
+| ID | P | Status | Gate |
+|---|---|---|---|
+| `c56t` | P2 | obs: extend `/health/data` to all 10 sync domains | Needs product input on freshness thresholds + Teams webhook |
+| `mrgy` | P3 | Bicep SQL drift | Tyler decides A (import) / B (delete module) / C (accept + document) |
+| `c7aa` | P3 | DCE tenant config drift | Tyler product decision — keep config or purge? |
+| `5xd5` | P3 | Cost Mgmt Reader on BCC/FN/TLL | Tyler-gated (Azure RBAC, needs your creds) |
+| `w1cc` | P3 | Domain-intel RG audit | Deferred — revisit when traffic warrants |
+| `ll49` | P3 | Dev ACR cleanup | Tyler-gated (could break dev) |
+| `832c` | P3 | Rename `rg-identity-puppy-prod` | Tyler-gated (destructive) |
+| `6wyk` | P4 | Teams webhook for alerts | Tyler-gated (needs webhook URL) |
+
+**Launch-blocker count:** 0. All remaining issues are either Tyler-gated or enhancements.
 
 ---
 
