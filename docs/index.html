@@ -45,8 +45,8 @@
         <div class="hero-metrics">
           <div class="metric"><span class="metric-value">A+</span><span class="metric-label">Grade</span></div>
           <div class="metric"><span class="metric-value">94.75%</span><span class="metric-label">Full Send</span></div>
-          <div class="metric"><span class="metric-value">3,800</span><span class="metric-label">Tests</span></div>
-          <div class="metric"><span class="metric-value">$73/mo</span><span class="metric-label">Infrastructure</span></div>
+          <div class="metric"><span class="metric-value">3,997</span><span class="metric-label">Tests</span></div>
+          <div class="metric"><span class="metric-value">~$53/mo</span><span class="metric-label">Infrastructure</span></div>
         </div>
         <div class="hero-actions">
           <a href="https://app-governance-prod.azurewebsites.net/docs" class="btn-primary" target="_blank" rel="noopener">API Docs ↗</a>
@@ -74,7 +74,7 @@
             <svg viewBox="0 0 24 24"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
           <h3 class="card-title">Cost Optimization</h3>
-          <p class="card-description">Automated cost analysis and recommendations. 77% savings achieved — from $145/mo to $33/mo with continuous monitoring.</p>
+          <p class="card-description">Automated cost analysis and recommendations. 63% savings achieved — from $145/mo to ~$53/mo with continuous monitoring.</p>
         </div>
         <div class="card">
           <div class="card-icon">
@@ -102,7 +102,7 @@
             <svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
           </div>
           <h3 class="card-title">Alerting &amp; Monitoring</h3>
-          <p class="card-description">Real-time anomaly detection with Application Insights and OpenTelemetry. Four active alert rules with auto-escalation.</p>
+          <p class="card-description">Real-time anomaly detection with Application Insights and OpenTelemetry. <code>/api/v1/health/data</code> monitors 10 sync domains; alerts escalate to the governance-alerts action group.</p>
         </div>
       </div>
     </section>
@@ -128,7 +128,7 @@
         <div class="tech-item"><span class="tech-layer">Backend</span><span class="tech-name">FastAPI · Python 3.12</span></div>
         <div class="tech-item"><span class="tech-layer">Frontend</span><span class="tech-name">HTMX · Tailwind · Chart.js</span></div>
         <div class="tech-item"><span class="tech-layer">Auth</span><span class="tech-name">Azure AD B2C · OIDC · UAMI</span></div>
-        <div class="tech-item"><span class="tech-layer">Data</span><span class="tech-name">Azure SQL · Redis</span></div>
+        <div class="tech-item"><span class="tech-layer">Data</span><span class="tech-name">Azure SQL (Basic)</span></div>
         <div class="tech-item"><span class="tech-layer">Infrastructure</span><span class="tech-name">App Service · Key Vault · Bicep</span></div>
         <div class="tech-item"><span class="tech-layer">CI/CD</span><span class="tech-name">GitHub Actions · GHCR</span></div>
         <div class="tech-item"><span class="tech-layer">Observability</span><span class="tech-name">App Insights · OpenTelemetry</span></div>
@@ -205,8 +205,8 @@
 └──────┬──────────────┬──────────────┬──────────────┬─────────────┘
        │              │              │              │
   ┌────▼────┐   ┌─────▼─────┐  ┌────▼────┐  ┌─────▼──────┐
-  │Azure SQL│   │   Redis   │  │Key Vault│  │App Insights│
-  │ (Data)  │   │  (Cache)  │  │(Secrets)│  │(Telemetry) │
+  │Azure SQL│   │ Azure AD  │  │Key Vault│  │App Insights│
+  │ (Data)  │   │  (Auth)   │  │(Secrets)│  │(Telemetry) │
   └─────────┘   └───────────┘  └─────────┘  └────────────┘
        │
   ┌────▼──────────────────────────────────┐
@@ -251,9 +251,9 @@ uv run uvicorn app.main:app --reload</code></pre>
         <div class="status-item"><span class="status-dot"></span><span class="status-label">Availability</span><span class="status-value">99.9%</span></div>
         <div class="status-item"><span class="status-dot"></span><span class="status-label">Response Time</span><span class="status-value">~532ms</span></div>
         <div class="status-item"><span class="status-dot"></span><span class="status-label">Error Rate</span><span class="status-value">&lt;0.1%</span></div>
-        <div class="status-item"><span class="status-dot"></span><span class="status-label">Monthly Cost</span><span class="status-value">~$73</span></div>
-        <div class="status-item"><span class="status-dot"></span><span class="status-label">Alert Rules</span><span class="status-value">4</span></div>
-        <div class="status-item"><span class="status-dot"></span><span class="status-label">Open Issues</span><span class="status-value">0</span></div>
+        <div class="status-item"><span class="status-dot"></span><span class="status-label">Monthly Cost</span><span class="status-value">~$53</span></div>
+        <div class="status-item"><span class="status-dot"></span><span class="status-label">Alert Rules</span><span class="status-value">2</span></div>
+        <div class="status-item"><span class="status-dot"></span><span class="status-label">Open Issues</span><span class="status-value">4</span></div>
       </div>
     </section>
   </main>
@@ -270,7 +270,7 @@ uv run uvicorn app.main:app --reload</code></pre>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>Production Certified · Rock Solid · v2.5.0</p>
+      <p>Production Certified · v2.5.0 · Updated 2026-04-17</p>
     </div>
   </footer>
 
