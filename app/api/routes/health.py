@@ -292,19 +292,27 @@ async def data_freshness_check(
     # existing /health endpoint cheap).
     from app.models.compliance import ComplianceSnapshot
     from app.models.cost import CostSnapshot
+    from app.models.dmarc import DMARCRecord
     from app.models.identity import IdentitySnapshot
     from app.models.resource import Resource
+    from app.models.riverside import RiversideMFA
     from app.models.tenant import Tenant
 
     now = datetime.now(UTC)
     tenants = db.query(Tenant).filter(Tenant.is_active == True).all()  # noqa: E712
 
-    domains: dict[str, Any] = {
-        "resources": Resource,
-        "costs": CostSnapshot,
-        "compliance": ComplianceSnapshot,
-        "identity": IdentitySnapshot,
-    }
+    # Each entry: (domain_name, model_class, timestamp_column_name).
+    # Using a list of tuples (not a dict) lets us decouple the domain name
+    # from the model's timestamp attribute — Riverside uses ``created_at``
+    # while everything else uses ``synced_at`` (bd-c56t phase 1).
+    domains: list[tuple[str, Any, str]] = [
+        ("resources", Resource, "synced_at"),
+        ("costs", CostSnapshot, "synced_at"),
+        ("compliance", ComplianceSnapshot, "synced_at"),
+        ("identity", IdentitySnapshot, "synced_at"),
+        ("dmarc", DMARCRecord, "synced_at"),
+        ("riverside_mfa", RiversideMFA, "created_at"),
+    ]
 
     result: dict[str, Any] = {}
     overall_any_stale = False
@@ -312,15 +320,17 @@ async def data_freshness_check(
     for tenant in tenants:
         per_tenant: dict[str, Any] = {}
         tenant_stale = False
-        for name, model in domains.items():
-            try:
-                last = (
-                    db.query(func.max(model.synced_at))
-                    .filter(model.tenant_id == tenant.id)
-                    .scalar()
-                )
-            except Exception:  # pragma: no cover — schema-drift guard
-                last = None
+        for name, model, ts_col in domains:
+            ts_attr = getattr(model, ts_col, None)
+            last = None
+            if ts_attr is not None:
+                try:
+                    last = db.query(func.max(ts_attr)).filter(model.tenant_id == tenant.id).scalar()
+                except Exception:  # pragma: no cover — per-domain isolation
+                    # Graceful degradation: one failing domain must not 500 the
+                    # whole endpoint (bd-c56t AC: endpoint returns 200 regardless
+                    # of individual domain health).
+                    last = None
             if last is None:
                 per_tenant[name] = None
                 tenant_stale = True
@@ -339,6 +349,7 @@ async def data_freshness_check(
     return {
         "timestamp": now.isoformat(),
         "threshold_hours": int(_get_data_freshness_threshold().total_seconds() // 3600),
+        "domains_covered": [name for name, _, _ in domains],
         "any_stale": overall_any_stale,
         "tenants": result,
     }
