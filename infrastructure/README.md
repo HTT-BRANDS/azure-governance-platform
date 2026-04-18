@@ -117,9 +117,34 @@ Not yet deployed. Use `parameters.staging.json` and `parameters.json` respective
 
 ### Parameters Files
 
-- `parameters.json` - Production settings
-- `parameters.dev.json` - Development settings
+- `parameters.json` - Default/fallback settings
+- `parameters.production.json` - Production settings (authoritative for prod)
 - `parameters.staging.json` - Staging settings
+- `parameters.dev.json` - Development settings
+
+### Known Bicep-vs-reality drift (see bd-mrgy)
+
+As of 2026-04-17 the following drift exists between parameter files and the
+live Azure state. This is **intentional** and documented here so nobody flips
+a flag thinking "this will match reality" and accidentally spawns duplicate
+resources.
+
+| Param | `dev` | `staging` | `production` | Live state | Notes |
+|---|---|---|---|---|---|
+| `enableAzureSql` | false | false | **true** | SQL deployed everywhere | Dev/staging SQL was created out-of-band. Bicep is incremental, so `false` won't delete existing SQL, but flipping to `true` would try to create a **second** SQL server. Keep as-is until we decide to import. |
+| `enableRedis` | false | false | false | Redis NOT deployed | Was `true` in prod/staging historically (bd-sf24 booby trap, fixed 2026-04-17). Keep `false` until scaled to 2+ instances or cache-miss >20% (`docs/COST_MODEL_AND_SCALING.md` section 6.2 trigger #7). |
+| `containerImage` | `htt-brands/*:dev` | `htt-brands/*:staging` | `htt-brands/*:latest` | Matches | Standardized on `htt-brands/*` 2026-04-17 (bd-265y). Historical `tygranlund/*` refs scrubbed from active code paths. |
+
+**Before `az deployment group create` on any env**, always run with
+`--what-if` first and scrutinize the output for unexpected create/delete
+operations. Bicep is NOT a full source of truth for dev/staging — some
+resources are manually managed.
+
+Related references:
+- `docs/COST_MODEL_AND_SCALING.md` — authoritative cost/scaling
+- `docs/operations/spn-role-matrix.md` — authoritative RBAC
+- bd-sf24 (Redis booby trap, closed), bd-265y (GHCR path drift, closed),
+  bd-mrgy (this drift documented, closed)
 
 ### Customizing Deployment
 
