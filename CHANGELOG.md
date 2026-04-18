@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Follow-ups Filed (bd issues)
 - `w1cc`: audit domain-intelligence RG after launch (P3)
 - `ll49`: migrate dev ACR → GHCR (P3)
-- `832c`: rename `rg-identity-puppy-prod` (P3)
+- `832c`: ✅ rename `rg-identity-puppy-prod` → `rg-httbrands-identity-prod` (P3, executed via az resource move, zero downtime, 19 secrets + 4 access policies intact)
 - `a1sb`: `/api/v1/health` returns 500 pre-existing bug (P3)
 - `6wyk`: add Teams webhook to `governance-alerts` (P4)
 
