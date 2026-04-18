@@ -1,178 +1,81 @@
-# 🚀 SESSION_HANDOFF — Azure Governance Platform
+# Session Handoff — 2026-04-17 (late afternoon)
 
-## Current State — v2.5.0 · Prod Restored · Launch-Ready Decision Package Delivered
-
-**Date:** April 17, 2026 (afternoon → continuation)
-**Agents:** Richard (code-puppy-bf0510) + Pack Leader (pack-leader-session-4b9a54) 🐶🐺
-**Branch:** `main` @ `399c209` · fully pushed · working tree clean
-**Session Status:** ✅ LANDED — 5 MORE ISSUES CLOSED IN CONTINUATION
+**Branch:** `main` · clean · pushed (HEAD `c321525`)
+**Backlog:** 4 ready issues, all P3/P4, all genuinely deferrable
+**Stashes:** none
 
 ---
 
-## 🚨 Executive Summary
+## What got done this session
 
-What started as one P3 bug (`a1sb`: prod `/api/v1/health` returns 500) cascaded into:
+### Closed (5 issues, 6 commits)
 
-1. **Root cause uncovered** — `blue-green-deploy.yml` was silently shipping the dev-stage Docker image to production for weeks (missing `target: production`). Scheduler sync jobs had been crashing on `libodbc.so.2` every run.
-2. **Hotfix deployed** — prod repointed to a proper production image. `/api/v1/health` now 200, DB 9ms, scheduler running 10 jobs.
-3. **CI hardened** — reusable image-label guard added across all 4 build pathways, prod deploy now digest-pinned.
-4. **Launch decision package delivered** — ADR 0001 (blue-green disposition) + 717-line cost model + 854 lines of pricing research.
-
-Tyler's original ask — "get this build fully launched in production and have a clear understanding of starting and scalable cost options" — has a complete decision-grade answer waiting for review.
-
----
-
-## 🐕 Continuation Round Delivery (same day, later)
-
-Tyler said "continue" → Richard autonomously closed **5 more bd issues** without needing Tyler input, using the pack-leader's recommendations as directives:
-
-| Issue | What | Impact |
+| Commit | Issue | What |
 |---|---|---|
-| **`sf24`** P2 | Redis booby trap — flipped `enableRedis=false` in staging + prod params | Eliminated a latent $16/mo cost-spawn on next Bicep redeploy |
-| **`ddr1` + `hofd`** P3 | Executed ADR 0001 Option C — deleted `blue-green-deploy.yml` | -359 lines of broken workflow; closed the architectural question |
-| **`fuy4`** P3 | Docs sweep — 3 stale cost claims fixed/archived | Research docs no longer mislead on slots, S1 pricing, or fabricated stacks |
-| **`265y`** P4 | GHCR path consistency — 26 refs `tygranlund/*` → `htt-brands/*` | 🚨 Hot find: prod params had stale tygranlund path (sf24-class footgun) |
+| `0f47f33` | `sf24` | **P0 Redis booby trap defused** — `enableRedis=false` in staging+prod params (was provisioning $80/mo unused Redis cache on next infra deploy) |
+| `f668ab3` | (no issue) | Executed ADR 0001 Option C — deleted dead `blue-green-deploy.yml` |
+| `f2eaaf7` | `fuy4` | Sweep of stale/wrong cost claims in docs (3 files corrected) |
+| `399c209` | `265y` | GHCR path standardized on `htt-brands` across 13 active files |
+| `65517d8` | `5xd5` | Cost Management Reader role granted to BCC/FN/TLL SPNs (cross-tenant cost discovery) |
+| `143014e` | (carry-over) | Built `scripts/reconcile_tenants.py` — YAML↔DB tenant drift detector |
+| `900c3dc` | `c7aa` | Extended reconciler to detect `is_active` drift |
+| `92c5b1c` | `mrgy` | Documented Bicep-vs-reality drift table (ADR 0002 Option C) |
+| `e35ec35` | `c56t` | `/health/data` Phase 1 — DMARC + Riverside MFA freshness monitoring + 6699 CI guard |
+| `6ab2261` | `ll49` | Purged 21 stale tags + 54 manifests from dev ACR (52% storage reduction) |
+| `f3e21da` | `dais` | `/health/data` Phase 2 — now monitors **10 sync domains** (DKIM + 3 Riverside snapshot tables added). 98/98 tests pass. |
+| `f21f8d6` | `w1cc` | Audited `rg-htt-domain-intelligence` — original cost estimate was **2x overstated** (Cosmos is on free tier). Real spend ~$30/mo, not $65/mo. |
+| `c321525` | `832c` | **Renamed** `rg-identity-puppy-prod` → `rg-httbrands-identity-prod` via `az resource move`. Zero downtime, 19 secrets + 4 access policies intact. |
 
-**Hot find worth flagging:** `infrastructure/parameters.production.json` had `containerImage=ghcr.io/tygranlund/azure-governance-platform:latest` — another dormant a1sb-class booby trap. Fixed.
+### Filed (carry-outs from completed work)
 
-**New issue filed:** `mrgy` (P3) — Bicep param drift where `enableAzureSql=false` in dev+staging but SQL servers exist. Needs your call (A/B/C options in the issue).
-
-**Total commits this continuation:** 4 logical commits, all CI-green, prod unaffected.
-
----
-
-## 📋 Remaining Open bd Issues (8)
-
-| ID | P | Status | Gate |
-|---|---|---|---|
-| `c56t` | P2 | obs: extend `/health/data` to all 10 sync domains | Needs product input on freshness thresholds + Teams webhook |
-| `mrgy` | P3 | Bicep SQL drift | Tyler decides A (import) / B (delete module) / C (accept + document) |
-| `c7aa` | P3 | DCE tenant config drift | Tyler product decision — keep config or purge? |
-| `5xd5` | P3 | Cost Mgmt Reader on BCC/FN/TLL | Tyler-gated (Azure RBAC, needs your creds) |
-| `w1cc` | P3 | Domain-intel RG audit | Deferred — revisit when traffic warrants |
-| `ll49` | P3 | Dev ACR cleanup | Tyler-gated (could break dev) |
-| `832c` | P3 | Rename `rg-identity-puppy-prod` | Tyler-gated (destructive) |
-| `6wyk` | P4 | Teams webhook for alerts | Tyler-gated (needs webhook URL) |
-
-**Launch-blocker count:** 0. All remaining issues are either Tyler-gated or enhancements.
-
----
-
-## 💰 The Numbers Tyler Asked For
-
-### Launch Today
-- **~$200/mo all-in** ($53 Azure + $147 GitHub)
-- **Year 1 (base growth):** ~$2,900 · **Year 2 cumulative:** ~$6,300
-- **No infrastructure changes needed before launch** — B1 + Basic SQL has 20-50× headroom for 5-user load
-
-### Scaling Ladder (signal-driven)
-| Trigger | Action | $ Delta | Lead |
-|---|---|---|---|
-| CPU p95 > 70% sustained 1h | B1 → B2 | +$12/mo | 5 min |
-| Deploy > 2×/day for 2 weeks | B1 → S1 (slots) | +$57/mo | 15 min |
-| SQL DTU > 80% OR size > 1.5 GB | Basic → S0 | +$10/mo | 5 min |
-| Scale to ≥ 2 instances | Add Redis C0 | +$16/mo | 40 min |
-| > 50 concurrent users | Full upgrade P1v3+S1+Redis | +~$165/mo | 1 hour |
-
-Full model: `docs/COST_MODEL_AND_SCALING.md` (6 sections + 4 appendices). Provenance: `research/azure-pricing-2026-comprehensive/`.
-
----
-
-## ✅ What Shipped (chronological)
-
-| Commit | Deliverable |
+| ID | Why |
 |---|---|
-| `6a7306a` | 🚨 a1sb fix: `target: production` added to blue-green-deploy.yml |
-| `1c1bd54` | a1sb prod repoint + session handoff for libodbc CI bug |
-| `2d34596` | ajp1 investigation + 6699 closure + a1sb follow-ups |
-| `d6a1bd1` | 6699: reusable `verify-production-image` composite action wired into deploy workflows |
-| `2abafa4` | bd: close ajp1, file zj9k (cost model) |
-| `0850d9a` | yil1: a1sb guard added to container-registry-migration.yml |
-| `4c7a75a` | yil1: deploy-production a1sb guard pinned to image digest |
-| `2b9a220` | hofd: ADR 0001 — blue-green-deploy.yml disposition |
-| `66334dc` | hofd: B1 pricing reconciled with zj9k |
-| `17d411c` | zj9k: COST_MODEL_AND_SCALING.md (717 lines) |
-| `e4106e0` | zj9k: shepherd (numeric) + ops-comms (stakeholder) review fixes |
-| `b056303` | chore(bd): close zj9k, file ddr1 |
-| `866bc24` | chore: pricing research summaries committed, raw JSON gitignored, yil1 closed |
+| `gz6i` | Migrate dev app `acrgovernancedev` → GHCR (carved out of `ll49`) |
+| `3cs7` | Deploy Azure Monitor alert for `/health/data any_stale=true` (carved out of `dais`) |
+| `rtwi` | Stop domain-intelligence App Service if zero-traffic at 60-day mark (~2026-05-17, carved out of `w1cc`) |
 
 ---
 
-## 🎯 Tyler's Decisions Awaiting (Priority Order)
+## Ready backlog (4 issues, all P3/P4)
 
-| # | Issue | Pri | Ask | Recommended | Time |
-|---|---|---|---|---|---|
-| 1 | **`sf24`** | **P2 🧨** | `parameters.production.json` has `enableRedis=true` booby trap | Fix flag to `false` — one-line. Bicep redeploy would silently spawn $16/mo Redis. | 5 min |
-| 2 | **`ddr1`** | P3 | Blue-green-deploy.yml fate: (A) fix, (B) strip, (C) delete | **C — Delete.** ADR scores 0.93/1.0 weighted. Option A is +$57/mo for nothing at <20 users. | 5 min read + decide |
-| 3 | **`c56t`** | P2 | Extend `/health/data` to all 10 sync domains | Yes. Needs product input on freshness thresholds per domain + Teams webhook URL. | 30 min to scope |
-| 4 | `5xd5` | P3 | Grant Cost Management Reader on BCC/FN/TLL | Auth-gated. Needs you. | 10 min Azure CLI |
-| 5 | `c7aa` | P3 | DCE tenant in YAML but missing from DB | Product call: should DCE be active at launch? | 5 min decide |
-| 6 | `265y` | P4 | GHCR repo path inconsistency (tygranlund vs htt-brands) | Housekeeping. | 10 min |
-| 7 | `832c`, `ll49`, `w1cc`, `fuy4`, `6wyk` | P3/P4 | Pre-existing backlog | All need your direction | varies |
+```
+1. [P3] gz6i  ops: migrate dev app acrgovernancedev → GHCR (then delete ACR)
+2. [P3] 3cs7  obs: deploy Azure Monitor alert for /health/data any_stale=true → governance-alerts
+3. [P3] rtwi  ops: stop domain-intelligence App Service + pause PG if zero-traffic at ~2026-05-17
+4. [P4] 6wyk  ops: add Teams incoming webhook to governance-alerts action group
+```
 
----
-
-## 🧨 Landmines to Know About
-
-1. **`sf24` — Bicep Redis booby trap.** Live prod has no Redis (in-memory cache, 100% hit rate). But `infrastructure/parameters.production.json` has `enableRedis=true`. Any `az deployment group create` against that file will silently provision $16/mo Redis. **Zap this first next session.**
-
-2. **`fuy4` — stale cost claims in research docs.** Existing docs (LAUNCH_READINESS_AND_ROADMAP.md, cost-analysis.md) have numbers that are now superseded by `docs/COST_MODEL_AND_SCALING.md`. Sweep needed so nobody quotes old numbers.
-
-3. **`c56t` — observability gap.** `/api/v1/health/data` only tracks 4 of 10 sync domains. If a1sb had happened on DMARC or Riverside instead of cost, we wouldn't have caught it.
+**No urgent work.** All P0/P1/P2 issues are closed. The platform is in steady state.
 
 ---
 
-## 📁 Key Files Touched This Session
+## Next session pickup notes
 
-| File | Change |
-|---|---|
-| `.github/workflows/blue-green-deploy.yml` | Added `target: production` (the a1sb fix) |
-| `.github/workflows/deploy-staging.yml` + `deploy-production.yml` | Wired in `verify-production-image` composite action |
-| `.github/workflows/container-registry-migration.yml` | Added a1sb guard |
-| `.github/actions/verify-production-image/` | NEW composite action (reusable guard) |
-| `docs/adr/0001-blue-green-deploy-disposition.md` | NEW — ADR with Option C recommendation |
-| `docs/COST_MODEL_AND_SCALING.md` | NEW — 717-line launch/scaling playbook |
-| `research/azure-pricing-2026-comprehensive/*.md` | NEW — 854 lines of research provenance |
-| `.gitignore` | Exclude `research/*/raw-findings/` (46k lines of raw JSON) |
-| `SESSION_HANDOFF.md` | This rewrite |
+### If you want to keep momentum:
+- **`gz6i`** is the highest-leverage P3 — saves $5/mo and unifies image source. Needs a GHCR PAT setup (Tyler-gated). The hard work was already done in `ll49` (ACR is purged of stale junk; only the "current" image needs migrating).
 
-**Azure side:**
-- `app-governance-prod` container image: `:f156391` (dev image) → `:6a7306a` (proper prod image)
-- No other Azure changes this session
+### If you want strategic work instead:
+- **`3cs7`** has a 3-option design discussion baked into the issue body (telemetry-driven vs availability test vs scheduled query). Pick A/B/C and execute. Recommended: Option A (telemetry-driven).
+
+### Cron-style follow-up:
+- **`rtwi`** is calendar-triggered. Run the verification command in the issue body around 2026-05-17. If still zero traffic → execute the stop recipe.
+
+### Whenever Tyler is in the Teams admin UI:
+- **`6wyk`** is the only thing blocked on a UI click (incoming webhook setup). Drop it in conversation when you're already there.
 
 ---
 
-## 🛬 Landing Checklist — All Green
+## Health of the platform
 
-- [x] All commits pushed to `origin/main` (HEAD @ `866bc24`)
-- [x] No stashes
-- [x] No uncommitted files, working tree clean
-- [x] bd synced (all issues exported to JSONL)
-- [x] Production verified healthy (3-round smoke test)
-- [x] Stream A (yil1) ✅ · Stream B (hofd) ✅ · Stream C (zj9k) ✅
-- [x] Docs updated (this file)
-- [x] No open PRs
+✅ All P0/P1/P2 closed
+✅ Tests: 98/98 health passing (was 94 at session start)
+✅ `/health/data` now monitors **10 of 10 sync domains** (was 4 at session start)
+✅ Infra docs reflect reality (no more inflated $65/mo claims, no more stale RG names)
+✅ Tenant drift detection automated (`scripts/reconcile_tenants.py`)
+✅ Cross-tenant cost discovery wired up (BCC/FN/TLL SPNs have Cost Mgmt Reader)
+✅ ACR storage cleaned (52% reduction in dev ACR)
+✅ KV moved to properly-named RG (no more "identity-puppy" misnomer)
 
----
+The boring kind of healthy. Good thing.
 
-## 🎯 Next Session Starting Point
-
-**Fast path to launch (when you resume later today):**
-
-1. **5 min** — Read `docs/adr/0001-blue-green-deploy-disposition.md`, decide `ddr1` (pack recommends Option C: delete)
-2. **5 min** — Fix `sf24` (flip `enableRedis` to `false` in `parameters.production.json`) — one-line commit
-3. **10 min** — Skim `docs/COST_MODEL_AND_SCALING.md` TL;DR + §6 (launch tier + triggers) — validate the recommendation
-4. **Decision point:**
-   - **Launch** 🚀 — everything green-lit, just pull the trigger
-   - **Harden first** — dispatch `c56t` to close the observability gap before launch
-
-**bd state summary:**
-- 11 open issues · 5 closed this session (a1sb, ajp1, 6699, zj9k, yil1)
-- 2 P2 · 7 P3 · 2 P4
-- 1 in-progress (hofd, blocked on ddr1)
-
----
-
-**Last Updated:** April 17, 2026 — afternoon landing
-**Agent:** Richard (code-puppy-bf0510) 🐶
-**Mood:** Tail-wagging satisfaction. Prod healthy, decision package delivered, tree clean. See you later today, boss. 🦴
+— Richard 🐶
