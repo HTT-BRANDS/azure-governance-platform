@@ -186,9 +186,10 @@ class TestWCAGContrast:
 
     def test_text_muted_meets_wcag_aa(self):
         """--text-muted must have >= 4.5:1 contrast on white."""
-        css_file = CSS_DIR / "theme.src.css"
+        # ADR-0005 Phase 1: token definitions live in design-tokens.css.
+        css_file = CSS_DIR / "design-tokens.css"
         if not css_file.exists():
-            pytest.skip("theme.src.css not found")
+            pytest.skip("design-tokens.css not found")
 
         content = css_file.read_text()
         # WCAG-failing values for --text-muted

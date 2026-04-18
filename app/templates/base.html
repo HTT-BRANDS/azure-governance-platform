@@ -15,18 +15,14 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     {% endif %}
 
-    <!-- Compiled Tailwind v4 + Brand Tokens -->
-    <link rel="stylesheet" href="/static/css/theme.css">
-    <link rel="stylesheet" href="/static/css/riverside.css">
-    <link rel="stylesheet" href="/static/css/accessibility.css">
-    <link rel="stylesheet" href="/static/css/ui-polish.css">
+    <!-- Design System (ADR-0005): tokens → Tailwind v3 utilities → brand helpers -->
+    <link rel="stylesheet" href="/static/css/design-tokens.css">
+    <link rel="stylesheet" href="/static/css/tailwind-output.css">
+    <link rel="stylesheet" href="/static/css/design-utilities.css">
 
     <!-- HTMX 2.0 — selfRequestsOnly:true is now default (security) -->
     <meta name="htmx-config" content='{"inlineScriptNonce":"{{ request.state.csp_nonce }}","selfRequestsOnly":true}'>
     <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous" nonce="{{ request.state.csp_nonce }}"></script>
-
-    <!-- Alpine.js CSP build — no eval(), works with strict Content-Security-Policy -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.14.9/dist/cdn.min.js" integrity="sha384-zaqGaLZBjCeXCLnYyKyAJrDaZcsW8AqZN7iDmFDw3TzHJvhjMckT1H52jWWza0w8" crossorigin="anonymous" nonce="{{ request.state.csp_nonce }}"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous" nonce="{{ request.state.csp_nonce }}"></script>  {# pragma: allowlist secret #}

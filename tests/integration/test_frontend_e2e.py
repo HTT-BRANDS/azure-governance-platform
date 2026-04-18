@@ -260,7 +260,10 @@ class TestDesignSystem:
 
     def test_compiled_css_has_tailwind_utilities(self):
         """Compiled theme.css contains Tailwind utility classes."""
-        css = Path("app/static/css/theme.css").read_text()
+        css = (
+            Path("app/static/css/tailwind-output.css").read_text()
+            + Path("app/static/css/design-utilities.css").read_text()
+        )
         assert "tailwindcss" in css, "CSS not compiled from Tailwind"
         # Check key utility classes exist
         for cls in [".flex", ".rounded", ".shadow", ".text-white", ".bg-white"]:
@@ -268,13 +271,19 @@ class TestDesignSystem:
 
     def test_compiled_css_has_wm_colors(self):
         """Compiled CSS includes wm-* Riverside brand colors."""
-        css = Path("app/static/css/theme.css").read_text()
+        css = (
+            Path("app/static/css/tailwind-output.css").read_text()
+            + Path("app/static/css/design-utilities.css").read_text()
+        )
         for color_prefix in ["wm-blue", "wm-gray", "wm-green", "wm-red", "wm-spark"]:
             assert color_prefix in css, f"Missing color family: {color_prefix}"
 
     def test_compiled_css_has_brand_utilities(self):
         """Compiled CSS includes brand-specific utility classes."""
-        css = Path("app/static/css/theme.css").read_text()
+        css = (
+            Path("app/static/css/tailwind-output.css").read_text()
+            + Path("app/static/css/design-utilities.css").read_text()
+        )
         for cls in [".bg-brand-primary", ".text-brand-primary", ".btn-brand"]:
             assert cls in css, f"Missing brand class: {cls}"
 
@@ -418,14 +427,17 @@ class TestTailwindBuild:
 
     def test_source_css_exists(self):
         """Tailwind source file exists."""
-        assert Path("app/static/css/theme.src.css").exists()
+        assert Path("app/static/css/design-tokens.css").exists()
 
     def test_compiled_css_exists(self):
         """Compiled CSS output exists."""
-        css_path = Path("app/static/css/theme.css")
+        css_path = Path("app/static/css/tailwind-output.css")
         assert css_path.exists()
         # Compiled should be significantly larger than source
-        src_size = Path("app/static/css/theme.src.css").stat().st_size
+        src_size = (
+            Path("app/static/css/design-tokens.css").stat().st_size
+            + Path("app/static/css/design-utilities.css").stat().st_size
+        )
         compiled_size = css_path.stat().st_size
         assert compiled_size > src_size * 2, (
             f"Compiled CSS ({compiled_size}b) should be much larger than "
@@ -441,12 +453,18 @@ class TestTailwindBuild:
 
     def test_compiled_css_starts_with_tailwind_header(self):
         """Compiled CSS has Tailwind header comment."""
-        css = Path("app/static/css/theme.css").read_text()
+        css = (
+            Path("app/static/css/tailwind-output.css").read_text()
+            + Path("app/static/css/design-utilities.css").read_text()
+        )
         assert css.startswith("/*! tailwindcss"), "Compiled CSS doesn't start with Tailwind header"
 
     def test_source_css_has_import_directive(self):
         """Source CSS has @import 'tailwindcss' directive."""
-        css = Path("app/static/css/theme.src.css").read_text()
+        css = (
+            Path("app/static/css/design-tokens.css").read_text()
+            + Path("app/static/css/design-utilities.css").read_text()
+        )
         assert '@import "tailwindcss"' in css
 
 
@@ -460,7 +478,7 @@ class TestStaticAssets:
 
     def test_theme_css_served(self, client):
         """Compiled CSS is served at correct path."""
-        response = client.get("/static/css/theme.css")
+        response = client.get("/static/css/tailwind-output.css")
         assert response.status_code == 200
         assert "text/css" in response.headers["content-type"]
 

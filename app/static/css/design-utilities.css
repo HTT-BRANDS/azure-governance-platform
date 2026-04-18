@@ -1,0 +1,462 @@
+/* ==========================================================================
+   HTT Brands Design Utilities
+   Azure Governance Platform — Brand helper classes + global UI patterns.
+
+   Loads AFTER design-tokens.css and AFTER tailwind-output.css, so these
+   utilities can reference tokens and override/extend Tailwind where needed.
+
+   See: docs/decisions/adr-0005-design-system-overhaul.md
+   ========================================================================== */
+
+/* ==========================================================================
+   Body Transition + Dark Mode Element Overrides
+   ========================================================================== */
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dark body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Remap common Tailwind gray/white utilities to token-backed values in dark
+   mode. Templates that use plain Tailwind classes still get proper dark
+   mode without touching the markup. */
+.dark .bg-white,
+.dark .bg-surface-primary      { background-color: var(--bg-primary); }
+
+.dark .bg-gray-50,
+.dark .bg-surface-secondary    { background-color: var(--bg-secondary); }
+
+.dark .bg-gray-100,
+.dark .bg-surface-tertiary     { background-color: var(--bg-tertiary); }
+
+.dark .text-gray-900,
+.dark .text-gray-800           { color: var(--text-primary); }
+
+.dark .text-gray-700,
+.dark .text-gray-600           { color: var(--text-secondary); }
+
+.dark .text-gray-500,
+.dark .text-gray-400           { color: var(--text-muted); }
+
+.dark .border-gray-200,
+.dark .border-gray-300         { border-color: var(--border-color); }
+
+.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4); }
+.dark .shadow-md { box-shadow: 0  4px  6px -1px rgba(0, 0, 0, 0.3); }
+
+/* ==========================================================================
+   Brand Color Utilities
+   ========================================================================== */
+
+/* ── Backgrounds ─────────────────────────────────────────────────────── */
+.bg-brand-primary       { background-color: var(--brand-primary); }
+.bg-brand-primary-5     { background-color: var(--brand-primary-5); }
+.bg-brand-primary-10    { background-color: var(--brand-primary-10); }
+.bg-brand-primary-50    { background-color: var(--brand-primary-50); }
+.bg-brand-primary-100   { background-color: var(--brand-primary-100); }
+.bg-brand-secondary     { background-color: var(--brand-secondary); }
+.bg-brand-secondary-5   { background-color: var(--brand-secondary-5); }
+.bg-brand-secondary-10  { background-color: var(--brand-secondary-10); }
+.bg-brand-accent        { background-color: var(--brand-accent); }
+.bg-brand-accent-5      { background-color: var(--brand-accent-5); }
+.bg-brand-accent-10     { background-color: var(--brand-accent-10); }
+
+/* ── Text ─────────────────────────────────────────────────────────────── */
+.text-brand-primary       { color: var(--brand-primary); }
+.text-brand-primary-50    { color: var(--brand-primary-50); }
+.text-brand-primary-100   { color: var(--brand-primary-100); }
+.text-brand-primary-130   { color: var(--brand-primary-130); }
+.text-brand-secondary     { color: var(--brand-secondary); }
+.text-brand-secondary-130 { color: var(--brand-secondary-130); }
+.text-brand-accent        { color: var(--brand-accent); }
+
+/* ── Borders + Rings ─────────────────────────────────────────────────── */
+.border-brand-primary      { border-color: var(--brand-primary); }
+.border-brand-primary-50   { border-color: var(--brand-primary-50); }
+.border-brand-primary-100  { border-color: var(--brand-primary-100); }
+.border-brand-secondary    { border-color: var(--brand-secondary); }
+.ring-brand-primary        { --tw-ring-color: var(--brand-primary); }
+.ring-brand-primary-50     { --tw-ring-color: var(--brand-primary-50); }
+
+/* ── Semantic ────────────────────────────────────────────────────────── */
+.bg-success  { background-color: var(--color-success); }
+.bg-warning  { background-color: var(--color-warning); }
+.bg-danger   { background-color: var(--color-error); }
+.bg-info     { background-color: var(--color-info); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-danger  { color: var(--color-error); }
+.text-info    { color: var(--color-info); }
+
+/* ── Surface ─────────────────────────────────────────────────────────── */
+.bg-surface-primary   { background-color: var(--bg-primary); }
+.bg-surface-secondary { background-color: var(--bg-secondary); }
+.bg-surface-tertiary  { background-color: var(--bg-tertiary); }
+
+/* ── Text Hierarchy ──────────────────────────────────────────────────── */
+.text-primary-theme   { color: var(--text-primary); }
+.text-secondary-theme { color: var(--text-secondary); }
+.text-muted-theme     { color: var(--text-muted); }
+
+/* ── Border Tokens ───────────────────────────────────────────────────── */
+.border-default { border-color: var(--border-default); }
+.border-light   { border-color: var(--border-light); }
+
+.divide-border-default > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-default);
+}
+
+/* ── Info/Highlight Accent ───────────────────────────────────────────── */
+.text-accent-theme { color: var(--brand-secondary-100); }
+.bg-accent-5       { background-color: var(--brand-secondary-5); }
+.bg-accent-100     { background-color: var(--brand-secondary-100); }
+
+/* ── Overlay/Dark Surfaces (consent banner, modals, tooltips) ────────── */
+.bg-overlay             { background-color: var(--overlay-bg); }
+.bg-overlay-elevated    { background-color: var(--overlay-bg-elevated); }
+.text-overlay           { color: var(--overlay-text); }
+.text-overlay-muted     { color: var(--overlay-text-muted); }
+.border-overlay         { border-color: var(--overlay-border); }
+.bg-overlay-interactive { background-color: var(--overlay-interactive); }
+
+/* ── Hero Gradient (brand-tinted dark banner for dashboards) ─────────── */
+.bg-hero-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--brand-primary-130, #30040A) 0%,
+    var(--brand-primary-100, #500711) 100%
+  );
+}
+
+/* ==========================================================================
+   WCAG Focus Indicators (2.4.7 / 2.4.11)
+   ========================================================================== */
+:focus-visible {
+  outline: 3px solid var(--border-focus, var(--brand-primary-100, #500711));
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Component Patterns — Brand Button, Card, Nav, Progress, Badge
+   ========================================================================== */
+.btn-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text-on-primary);
+  background-color: var(--brand-primary-100);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 150ms ease-in-out;
+}
+.btn-brand:hover         { background-color: var(--brand-primary-110); }
+.btn-brand:focus-visible {
+  outline: 3px solid var(--border-focus, var(--brand-primary-100));
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.btn-brand-secondary {
+  color: var(--brand-primary-100);
+  background-color: var(--brand-primary-5);
+  border-color: var(--brand-primary-50);
+}
+.btn-brand-secondary:hover { background-color: var(--brand-primary-10); }
+
+.card-brand {
+  background-color: var(--bg-primary);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid var(--brand-primary-100);
+  transition: transform 150ms ease-in-out, box-shadow 150ms ease-in-out;
+}
+.card-brand:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.dark .card-brand { background-color: var(--bg-secondary); }
+
+.nav-brand          { background-color: var(--brand-primary-100); color: white; }
+.nav-brand a:hover  { background-color: var(--brand-primary-110); }
+
+.progress-brand {
+  height: 0.75rem;
+  background-color: var(--brand-primary-5);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.progress-brand-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--brand-primary-130) 0%,
+    var(--brand-primary-100) 50%,
+    var(--brand-primary-50) 100%
+  );
+  border-radius: 9999px;
+  transition: width 500ms ease-in-out;
+}
+
+.badge-brand {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background-color: var(--brand-primary-5);
+  color: var(--brand-primary-100);
+}
+.badge-brand-accent {
+  background-color: var(--brand-accent-5);
+  color: var(--brand-accent-130);
+}
+
+/* ==========================================================================
+   Skeleton Loading Placeholders
+   ========================================================================== */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary, #F3F4F6) 25%,
+    var(--bg-secondary, #E5E7EB) 50%,
+    var(--bg-tertiary, #F3F4F6) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 0.375rem;
+}
+@keyframes skeleton-pulse {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ==========================================================================
+   Responsive Tables — stacked-card fallback on mobile
+   ========================================================================== */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .table-responsive-stack thead { display: none; }
+
+  .table-responsive-stack tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color, #E5E7EB);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .table-responsive-stack tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    border: none;
+  }
+
+  .table-responsive-stack tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-primary, #111827);
+    margin-right: 1rem;
+  }
+}
+
+/* ==========================================================================
+   Scrollbar Styles
+   ========================================================================== */
+::-webkit-scrollbar         { width: 8px; height: 8px; }
+::-webkit-scrollbar-track   { background: var(--bg-secondary, #F9FAFB); }
+::-webkit-scrollbar-thumb   {
+  background: var(--text-muted, #6B7280);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary, #4B5563); }
+
+.dark ::-webkit-scrollbar-track { background: var(--bg-secondary, #171717); }
+.dark ::-webkit-scrollbar-thumb { background: var(--text-muted, #6B7280); }
+
+/* ==========================================================================
+   Animation Utilities
+   ========================================================================== */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in  { animation: fade-in  300ms ease-out; }
+.animate-slide-up { animation: slide-up 300ms ease-out; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .animate-fade-in,
+  .animate-slide-up {
+    animation: none;
+  }
+  .skeleton { opacity: 0.7; }
+}
+
+/* ==========================================================================
+   HTMX / Alpine Integration
+   ========================================================================== */
+.htmx-indicator { display: none; }
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator { display: inline-block; }
+
+/* Alpine.js cloak (kept as a defensive no-op — we removed Alpine in Phase 1
+   but any stray x-cloak attributes should still be hidden) */
+[x-cloak] { display: none !important; }
+
+/* ==========================================================================
+   WCAG 2.2 AA Accessibility Layer
+   Ported from old accessibility.css. These work WITH the design system
+   (all colors via CSS custom properties so they adapt per-tenant).
+   ========================================================================== */
+
+/* ── Skip Links (WCAG 2.4.1) ────────────────────────────────────────────── */
+.skip-links-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10000;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--text-primary, #111827);
+  color: var(--bg-primary, #fff);
+  padding: 8px 16px;
+  z-index: 10000;
+  font-size: 14px;
+  font-weight: 500;
+  transition: top 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+  text-decoration: underline;
+  opacity: 0;
+  border-radius: 0 0 4px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: inline-block;
+}
+
+.skip-link:focus {
+  top: 0;
+  opacity: 1;
+  transform: translateY(0);
+  outline: 2px solid var(--border-focus, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* Second skip link (skip to nav) sits on the right */
+.skip-link:nth-of-type(2) {
+  left: auto;
+  right: 0;
+  border-radius: 0 0 0 4px;
+}
+
+/* Mobile: stack skip links vertically when focused */
+@media (max-width: 640px) {
+  .skip-link:focus {
+    position: relative;
+    top: 0;
+    display: block;
+    width: 100%;
+    text-align: center;
+    border-radius: 0;
+  }
+  .skip-link:nth-of-type(2):focus {
+    left: 0;
+    right: auto;
+  }
+}
+
+/* ── Minimum Touch Target (WCAG 2.5.8) ──────────────────────────────────── */
+nav a,
+nav button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+}
+
+/* ── Focus Not Obscured by Sticky Headers (WCAG 2.4.11) ─────────────────── */
+:target,
+:focus {
+  scroll-margin-top: 5rem;
+}
+
+/* ── Enhanced Focus-Visible for ARIA roles (WCAG 2.4.7) ─────────────────── */
+[tabindex="0"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[role="button"]:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--border-focus, var(--brand-primary-100, #500711));
+  outline-offset: 2px;
+}
+
+/* ── Universal Reduced Motion (WCAG 2.3.3) ──────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Forced Colors / Windows High Contrast Mode (WCAG 1.4.11) ───────────── */
+@media (forced-colors: active) {
+  .nav-active {
+    border: 2px solid currentColor;
+  }
+
+  button,
+  a {
+    border: 1px solid currentColor;
+  }
+
+  /* System-color focus rings in HC mode */
+  :focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
+/* ── Screen Reader Only utility (used by aria-live announcer) ───────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

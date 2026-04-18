@@ -20,8 +20,39 @@ import pytest
 ROOT = Path(__file__).parent.parent.parent
 TEMPLATES_DIR = ROOT / "app" / "templates"
 STATIC_JS_DIR = ROOT / "app" / "static" / "js"
-THEME_SRC = ROOT / "app" / "static" / "css" / "theme.src.css"
-ACCESSIBILITY_CSS = ROOT / "app" / "static" / "css" / "accessibility.css"
+
+# Phase 1 (ADR-0005): design system split into 3 files.
+#   design-tokens.css       — :root vars, dark mode, brand ramps
+#   tailwind-output.css     — generated, not human-edited
+#   design-utilities.css    — brand helpers, components, a11y, skip links
+#
+# These tests treat the (tokens + utilities) pair as the canonical "theme".
+DESIGN_TOKENS_CSS = ROOT / "app" / "static" / "css" / "design-tokens.css"
+DESIGN_UTILITIES_CSS = ROOT / "app" / "static" / "css" / "design-utilities.css"
+
+
+class _Concat:
+    """Path-like façade that read_text()s multiple files concatenated.
+
+    Lets legacy assertions keep using THEME_SRC.read_text() without caring
+    that the design system was split into multiple files in Phase 1.
+    """
+
+    def __init__(self, *paths):
+        self._paths = paths
+
+    def exists(self):
+        return all(p.exists() for p in self._paths)
+
+    def read_text(self):
+        return "\n".join(p.read_text() for p in self._paths)
+
+
+# Token-only (used by tests that assert about :root variables)
+THEME_SRC = _Concat(DESIGN_TOKENS_CSS, DESIGN_UTILITIES_CSS)
+
+# A11y patterns moved into design-utilities.css in Phase 1
+ACCESSIBILITY_CSS = DESIGN_UTILITIES_CSS
 
 # ── Banned Patterns ─────────────────────────────────────────────
 # Raw Tailwind palette colors that should NEVER appear in templates or JS.
@@ -336,9 +367,20 @@ class TestBaseTemplate:
         """base.html must have responsive viewport meta tag."""
         assert "viewport" in base_html, "base.html must include viewport meta tag"
 
-    def test_loads_accessibility_css(self, base_html):
-        """base.html must load accessibility.css."""
-        assert "accessibility.css" in base_html, "base.html must load accessibility.css"
+    def test_loads_design_system_css(self, base_html):
+        """base.html must load the 3-file design system stack (ADR-0005).
+
+        Phase 1 split the old monolithic theme/accessibility CSS into:
+          design-tokens.css     (CSS custom properties + dark mode)
+          tailwind-output.css   (generated utility classes)
+          design-utilities.css  (brand helpers, components, a11y, skip links)
+        """
+        for css_file in (
+            "design-tokens.css",
+            "tailwind-output.css",
+            "design-utilities.css",
+        ):
+            assert css_file in base_html, f"base.html must load {css_file}"
 
     def test_page_announcer_for_spa(self, base_html):
         """base.html must have an aria-live region for SPA page changes."""

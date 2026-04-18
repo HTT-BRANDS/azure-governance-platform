@@ -27,8 +27,29 @@ from app.core.design_tokens import load_brands
 
 ROOT = Path(__file__).parent.parent.parent
 TEMPLATES_DIR = ROOT / "app" / "templates"
-THEME_SRC = ROOT / "app" / "static" / "css" / "theme.src.css"
-ACCESSIBILITY_CSS = ROOT / "app" / "static" / "css" / "accessibility.css"
+
+# ADR-0005 Phase 1: design system split.  These tests assert on the union
+# of tokens + utilities, so we expose THEME_SRC/ACCESSIBILITY_CSS as a
+# Path-like façade that concats the relevant new files.
+DESIGN_TOKENS_CSS = ROOT / "app" / "static" / "css" / "design-tokens.css"
+DESIGN_UTILITIES_CSS = ROOT / "app" / "static" / "css" / "design-utilities.css"
+
+
+class _Concat:
+    """Minimal Path-like that concats multiple files for legacy assertions."""
+
+    def __init__(self, *paths):
+        self._paths = paths
+
+    def exists(self):
+        return all(p.exists() for p in self._paths)
+
+    def read_text(self):
+        return "\n".join(p.read_text() for p in self._paths)
+
+
+THEME_SRC = _Concat(DESIGN_TOKENS_CSS, DESIGN_UTILITIES_CSS)
+ACCESSIBILITY_CSS = DESIGN_UTILITIES_CSS
 
 
 # ── Fixtures ────────────────────────────────────────────────────

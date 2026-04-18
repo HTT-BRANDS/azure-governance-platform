@@ -1,0 +1,233 @@
+/* ==========================================================================
+   HTT Brands Design Tokens
+   Azure Governance Platform — Single source of truth for design decisions.
+
+   Source lineage:
+     ~/dev/master-hub-infra/src/index.css           ← canonical spec
+     ~/dev/master-hub-infra/src/components/ds-template/tokens.ts
+     ~/dev/Domain-Intelligence/app/static/css/design-tokens.css (FastAPI port)
+
+   Architecture:
+     Layer 1 (this file):   CSS Custom Properties on :root / .dark / [data-brand]
+     Layer 2 (tailwind):    tailwind.config.cjs maps vars → utility classes
+     Layer 3 (utilities):   design-utilities.css adds brand helpers (.bg-brand-*, etc.)
+
+   Per-tenant overrides are injected dynamically by app/core/css_generator.py
+   via `[data-brand="httbrands"]`, `[data-brand="frenchies"]`, etc. selectors.
+
+   See: docs/decisions/adr-0005-design-system-overhaul.md
+   ========================================================================== */
+
+:root {
+  /* ── HTT Brand Colors (legacy shorthand, keep for template compatibility) ─ */
+  --htt-primary:       #500711;
+  --htt-primary-light: #6B1A24;
+  --htt-primary-dark:  #3A0509;
+  --htt-secondary:       #BB86FC;
+  --htt-secondary-light: #F4BCD4;
+  --htt-accent:        #FFC957;
+  --htt-accent-light:  #FFD97A;
+
+  /* ── Primary Brand — Fluent-style 10-stop ramp ────────────────────────── */
+  --brand-primary:     #500711;
+  --brand-primary-5:   #FBE8EB;
+  --brand-primary-10:  #F5D1D6;
+  --brand-primary-50:  #A8394A;
+  --brand-primary-100: #500711;
+  --brand-primary-110: #45060E;
+  --brand-primary-130: #30040A;
+  --brand-primary-140: #250307;
+  --brand-primary-160: #1A0205;
+  --brand-primary-180: #0F0103;
+
+  /* ── Secondary Brand — Fluent-style 10-stop ramp ──────────────────────── */
+  --brand-secondary:     #BB86FC;
+  --brand-secondary-5:   #F5EEFF;
+  --brand-secondary-10:  #EBD9FF;
+  --brand-secondary-50:  #D4B3FE;
+  --brand-secondary-100: #BB86FC;
+  --brand-secondary-110: #A676E3;
+  --brand-secondary-130: #7D58B5;
+  --brand-secondary-140: #654897;
+  --brand-secondary-160: #3E2D5F;
+  --brand-secondary-180: #1E1630;
+
+  /* ── Accent Brand — Fluent-style 10-stop ramp ─────────────────────────── */
+  --brand-accent:     #FFC957;
+  --brand-accent-5:   #FFF8E8;
+  --brand-accent-10:  #FFF0CE;
+  --brand-accent-50:  #FFD97A;
+  --brand-accent-100: #FFC957;
+  --brand-accent-110: #E6B44E;
+  --brand-accent-130: #B38D3D;
+  --brand-accent-140: #997831;
+  --brand-accent-160: #664F20;
+  --brand-accent-180: #332810;
+
+  /* ── Semantic Colors (colorblind-safe, from microsoft-group-management) ── */
+  --color-success: #0369A1;  /* blue (not green) */
+  --color-warning: #D97706;  /* amber */
+  --color-error:   #C2410C;  /* red-orange (not pure red) */
+  --color-info:    #3B82F6;
+
+  /* ── Brand Status Ramps (used by sync components + riverside) ─────────── */
+  --color-brand-success-5:   #f0fdf4;
+  --color-brand-success-10:  #dcfce7;
+  --color-brand-success-100: var(--color-success);
+  --color-brand-success-110: #025d8f;
+  --color-brand-success-130: #024e78;
+
+  --color-brand-error-5:   #fef2f2;
+  --color-brand-error-10:  #fee2e2;
+  --color-brand-error-50:  #f87171;
+  --color-brand-error-100: var(--color-error);
+  --color-brand-error-110: #ae3a0b;
+  --color-brand-error-130: #8a2e09;
+
+  --color-brand-warning-5:   #fffbeb;
+  --color-brand-warning-10:  #fef3c7;
+  --color-brand-warning-50:  #fbbf24;
+  --color-brand-warning-100: var(--color-warning);
+  --color-brand-warning-110: #c26b05;
+  --color-brand-warning-130: #9a5504;
+  --color-brand-warning-140: #7c4503;
+
+  /* ── Brand Gray Scale ─────────────────────────────────────────────────── */
+  --color-brand-gray-5:   #fafafa;
+  --color-brand-gray-10:  #f5f5f5;
+  --color-brand-gray-50:  #e0e0e0;
+  --color-brand-gray-100: #74767c;
+  --color-brand-gray-110: #5c5e62;
+  --color-brand-gray-130: #2e2f32;
+
+  /* ── Walmart/Riverside Scale (Riverside tenant) ───────────────────────── */
+  --color-wm-blue-5:   #f2f8ff;
+  --color-wm-blue-10:  #e0edff;
+  --color-wm-blue-30:  #74a8ff;
+  --color-wm-blue-50:  #3d7eff;
+  --color-wm-blue-100: #0053e2;
+  --color-wm-blue-110: #004bc8;
+  --color-wm-blue-130: #003ba0;
+
+  --color-wm-gray-5:   #fafafa;
+  --color-wm-gray-10:  #f5f5f5;
+  --color-wm-gray-50:  #e0e0e0;
+  --color-wm-gray-100: #74767c;
+  --color-wm-gray-110: #5c5e62;
+  --color-wm-gray-130: #2e2f32;
+  --color-wm-gray-160: #1a1a1a;
+
+  --color-wm-green-5:   #f0fff0;
+  --color-wm-green-10:  #e0ffe0;
+  --color-wm-green-50:  #5cc44e;
+  --color-wm-green-100: #2a8703;
+  --color-wm-green-110: #247602;
+  --color-wm-green-130: #1a5602;
+
+  --color-wm-red-5:   #fff5f5;
+  --color-wm-red-10:  #ffe5e5;
+  --color-wm-red-50:  #f56060;
+  --color-wm-red-100: #ea1100;
+  --color-wm-red-110: #d00f00;
+  --color-wm-red-130: #a00b00;
+
+  --color-wm-spark-5:   #fffbf0;
+  --color-wm-spark-10:  #fff6de;
+  --color-wm-spark-30:  #ffe38a;
+  --color-wm-spark-50:  #ffd554;
+  --color-wm-spark-100: #ffc220;
+  --color-wm-spark-110: #e6ae1c;
+  --color-wm-spark-130: #b38815;
+  --color-wm-spark-140: #997412;
+
+  --color-wm-orange-500: #f97316;
+
+  /* ── Text Colors (light mode) ─────────────────────────────────────────── */
+  --text-primary:       #111827;
+  --text-secondary:     #4B5563;
+  --text-muted:         #57606A;  /* 5.74:1 on white — WCAG AA compliant */
+  --text-on-primary:    #FFFFFF;
+  --text-on-secondary:  #111827;
+
+  /* ── Surface Colors (light mode) ──────────────────────────────────────── */
+  --bg-primary:   #FFFFFF;
+  --bg-secondary: #F9FAFB;
+  --bg-tertiary:  #F3F4F6;
+
+  /* ── Border Colors ────────────────────────────────────────────────────── */
+  --border-color:   #E5E7EB;
+  --border-light:   #F3F4F6;
+  --border-default: #E5E7EB;
+  --border-focus: var(--brand-primary-100);
+
+  /* ── Sidebar ──────────────────────────────────────────────────────────── */
+  --sidebar-bg:     #FFFFFF;
+  --sidebar-border: #E5E7EB;
+
+  /* ── Typography ──────────────────────────────────────────────────────── */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif,
+               "Apple Color Emoji", "Segoe UI Emoji",
+               "Segoe UI Symbol", "Noto Color Emoji";
+
+  /* ── Overlay/Dark Surface Tokens (always-dark regardless of theme) ────── */
+  /* Used by consent banner, modals, tooltips */
+  --overlay-bg:                #0f172a;
+  --overlay-bg-elevated:       #1e293b;
+  --overlay-text:              #f1f5f9;
+  --overlay-text-muted:        #94a3b8;
+  --overlay-border:            #334155;
+  --overlay-interactive:       #475569;
+  --overlay-interactive-hover: #64748b;
+}
+
+/* ==========================================================================
+   Dark Mode — .dark class toggle
+   ========================================================================== */
+.dark {
+  --bg-primary:     #0F0F0F;
+  --bg-secondary:   #171717;
+  --bg-tertiary:    #262626;
+  --text-primary:   #F9FAFB;
+  --text-secondary: #D1D5DB;
+  --text-muted:     #9CA3AF;  /* ~6.7:1 on #0F0F0F (WCAG AA) */
+  --border-color:   #374151;
+  --border-light:   #262626;
+  --border-default: #374151;
+  --sidebar-bg:     #0F0F0F;
+  --sidebar-border: #262626;
+}
+
+/* System preference fallback (when no explicit .light or .dark class set) */
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) {
+    --bg-primary:     #0F0F0F;
+    --bg-secondary:   #171717;
+    --bg-tertiary:    #262626;
+    --text-primary:   #F9FAFB;
+    --text-secondary: #D1D5DB;
+    --text-muted:     #9CA3AF;
+    --border-color:   #374151;
+    --sidebar-bg:     #0F0F0F;
+    --sidebar-border: #262626;
+  }
+}
+
+/* ==========================================================================
+   Per-Tenant Brand Theming Hook
+
+   Brand-specific CSS custom properties (e.g. [data-brand="httbrands"],
+   [data-brand="frenchies"], [data-brand="riverside"]) are generated
+   server-side by app/core/css_generator.py and injected into the page
+   via <style> tags. The :root block above provides the HTT defaults.
+
+   Tenant accent reference colors:
+     htt:         #500711  (burgundy)
+     bishops:     #c2410c  (orange)
+     lashlounge:  #7c3aed  (purple)
+     frenchies:   #2563eb  (blue)
+     deltacrown:  #004538  (green)
+   ========================================================================== */
+[data-brand] {
+  /* Selector exists to ensure proper specificity for dynamic overrides.
+     See: app/core/css_generator.py */
+}

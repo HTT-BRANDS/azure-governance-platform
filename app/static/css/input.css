@@ -1,0 +1,14 @@
+/**
+ * Tailwind v3 input file.
+ * Built to app/static/css/tailwind-output.css by scripts/build-css.sh.
+ *
+ * This file is intentionally minimal — token definitions live in
+ * design-tokens.css (loaded BEFORE this file in base.html), and custom
+ * utility helpers live in design-utilities.css.
+ *
+ * See: docs/decisions/adr-0005-design-system-overhaul.md
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

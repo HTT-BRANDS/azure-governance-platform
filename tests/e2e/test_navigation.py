@@ -39,5 +39,5 @@ class TestStaticAssets:
     """Static assets should be served with 200 OK."""
 
     def test_static_css_loads(self, client: httpx.Client) -> None:
-        resp = client.get("/static/css/theme.css")
+        resp = client.get("/static/css/tailwind-output.css")
         assert resp.status_code == 200

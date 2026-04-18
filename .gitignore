@@ -97,3 +97,6 @@ APRIL-3rd-Log*
 # We commit the summary markdown files (analysis.md, recommendations.md, sources.md)
 # but exclude raw-findings/ to keep the repo slim. See docs/COST_MODEL_AND_SCALING.md.
 research/*/raw-findings/
+
+# Tailwind v3 standalone binary (downloaded by scripts/bootstrap-css.sh)
+/bin/tailwindcss
