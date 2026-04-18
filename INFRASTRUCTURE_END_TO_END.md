@@ -181,6 +181,7 @@ All pipelines use **OIDC Workload Identity Federation** — zero stored client s
 - **Smoke tests** environment-aware (expect 401 in prod, 200 in staging)
 - Deploy notifications routed to Microsoft Teams via webhook
 - Monitoring setup documented in `infrastructure/MONITORING_SETUP_PHASE2.md` and `MONITORING_SETUP_PHASE3_COMPLETE.md`
+- Per-tenant per-domain sync freshness exposed at `/api/v1/health/data` (see §10)
 
 ---
 
@@ -205,20 +206,55 @@ All pipelines use **OIDC Workload Identity Federation** — zero stored client s
 
 ---
 
-## 10. Known Follow-ups (Low Priority)
+## 10. Health & Sync Freshness Endpoints (added 2026-04-17)
+
+`/api/v1/health` returns the basic up/down + dependency check.
+
+`/api/v1/health/data` returns **per-tenant per-domain freshness** for every
+sync target the scheduler maintains. As of bd-c56t/dais it monitors **10
+domains** across three timestamp conventions:
+
+| Domain | Source model | Timestamp column |
+|---|---|---|
+| `resources` | `Resource` | `synced_at` |
+| `costs` | `CostSnapshot` | `synced_at` |
+| `compliance` | `ComplianceSnapshot` | `synced_at` |
+| `identity` | `IdentitySnapshot` | `synced_at` |
+| `dmarc` | `DMARCRecord` | `synced_at` |
+| `dkim` | `DKIMRecord` | `synced_at` |
+| `riverside_mfa` | `RiversideMFA` | `created_at` |
+| `riverside_compliance` | `RiversideCompliance` | `updated_at` |
+| `riverside_device_compliance` | `RiversideDeviceCompliance` | `snapshot_date` |
+| `riverside_threat_data` | `RiversideThreatData` | `snapshot_date` |
+
+Stale threshold: `settings.sync_stale_threshold_hours` (single global value,
+applies to every domain). Each domain query is isolated — one domain raising
+**does not** 500 the endpoint, that's the bd-a1sb regression guard.
+
+The endpoint self-describes its monitored set via the `domains_covered` field
+in the response body, so on-call tooling never has to hard-code the list.
+
+Adding a domain: edit the `domains` list in `app/api/routes/health.py` and
+add a corresponding test in `tests/unit/test_routes_health_data.py`. The
+`(name, Model, ts_col)` tuple structure makes this a one-line change per
+domain.
+
+---
+
+## 11. Known Follow-ups (Low Priority)
 
 | Item                                     | Notes                                                     |
 |------------------------------------------|-----------------------------------------------------------|
 | Make GHCR package public                 | Requires org admin via GitHub UI (Package Settings)       |
 | Node.js 20 → 24 in GitHub Actions        | Forced migration by June 2026                             |
 | CodeQL v3 → v4                           | Upgrade before December 2026                              |
-| Migrate dev ACR → GHCR                   | bd issue `ll49` — saves $5/mo, unifies image source       |
-| Fix `/api/v1/health` 500 response        | bd issue `a1sb` — `/health` works, only `/api/v1/health` broken |
+| Migrate dev app ACR → GHCR + delete ACR  | bd issue `gz6i` — saves $5/mo, needs GHCR PAT (ll49 cleanup done) |
+| Azure Monitor alert: stale sync data     | bd issue (forthcoming) — wire `/health/data` `any_stale=true` → governance-alerts |
 | Reconcile `INFRASTRUCTURE_INVENTORY.md`  | Mar 27 doc needs GHCR + HTT-CORE + Basic SQL refresh      |
 
 ---
 
-## 11. End-to-End Request Flow (Summary)
+## 12. End-to-End Request Flow (Summary)
 
 1. User hits `https://app-governance-prod.azurewebsites.net`
 2. Azure Front Door / App Service terminates TLS (HTTPS only, HSTS enforced)

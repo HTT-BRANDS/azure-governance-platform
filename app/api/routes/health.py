@@ -292,10 +292,15 @@ async def data_freshness_check(
     # existing /health endpoint cheap).
     from app.models.compliance import ComplianceSnapshot
     from app.models.cost import CostSnapshot
-    from app.models.dmarc import DMARCRecord
+    from app.models.dmarc import DKIMRecord, DMARCRecord
     from app.models.identity import IdentitySnapshot
     from app.models.resource import Resource
-    from app.models.riverside import RiversideMFA
+    from app.models.riverside import (
+        RiversideCompliance,
+        RiversideDeviceCompliance,
+        RiversideMFA,
+        RiversideThreatData,
+    )
     from app.models.tenant import Tenant
 
     now = datetime.now(UTC)
@@ -303,15 +308,25 @@ async def data_freshness_check(
 
     # Each entry: (domain_name, model_class, timestamp_column_name).
     # Using a list of tuples (not a dict) lets us decouple the domain name
-    # from the model's timestamp attribute — Riverside uses ``created_at``
-    # while everything else uses ``synced_at`` (bd-c56t phase 1).
+    # from the model's timestamp attribute — different domains use different
+    # column conventions (synced_at vs created_at vs updated_at vs snapshot_date).
+    #
+    # bd-c56t phase 1 added DMARC + Riverside MFA.
+    # bd-dais phase 2 added DKIM + remaining sync-driven Riverside tables.
+    # RiversideRequirement is intentionally OMITTED — it's a config catalog
+    # (requirements + status), not a periodic sync target, so freshness on it
+    # would generate false-positive staleness alerts.
     domains: list[tuple[str, Any, str]] = [
         ("resources", Resource, "synced_at"),
         ("costs", CostSnapshot, "synced_at"),
         ("compliance", ComplianceSnapshot, "synced_at"),
         ("identity", IdentitySnapshot, "synced_at"),
         ("dmarc", DMARCRecord, "synced_at"),
+        ("dkim", DKIMRecord, "synced_at"),
         ("riverside_mfa", RiversideMFA, "created_at"),
+        ("riverside_compliance", RiversideCompliance, "updated_at"),
+        ("riverside_device_compliance", RiversideDeviceCompliance, "snapshot_date"),
+        ("riverside_threat_data", RiversideThreatData, "snapshot_date"),
     ]
 
     result: dict[str, Any] = {}

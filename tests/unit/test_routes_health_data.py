@@ -18,20 +18,31 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from app.models.dmarc import DMARCRecord
-from app.models.riverside import RiversideMFA
+from app.models.dmarc import DKIMRecord, DMARCRecord
+from app.models.riverside import (
+    RiversideCompliance,
+    RiversideDeviceCompliance,
+    RiversideMFA,
+    RiversideThreatData,
+)
 from app.models.tenant import Tenant
 
 DATA_URL = "/api/v1/health/data"
 
-# Domains we expect the endpoint to monitor as of bd-c56t phase 1.
+# Domains we expect the endpoint to monitor.
+# Phase 1 (bd-c56t): resources, costs, compliance, identity, dmarc, riverside_mfa
+# Phase 2 (bd-dais): dkim + 3 more Riverside tables (compliance, device, threat)
 EXPECTED_DOMAINS = {
     "resources",
     "costs",
     "compliance",
     "identity",
     "dmarc",
+    "dkim",
     "riverside_mfa",
+    "riverside_compliance",
+    "riverside_device_compliance",
+    "riverside_threat_data",
 }
 
 
@@ -163,6 +174,104 @@ class TestHealthDataFreshnessSignal:
         assert tenant_block["riverside_mfa"] is not None  # ts populated
         assert tenant_block["stale"] is True  # but stale
         assert body["any_stale"] is True
+
+
+class TestHealthDataPhase2Domains:
+    """Phase-2 domains (bd-dais): DKIM + 3 more Riverside tables.
+
+    These tests guard the regression of 'I added the import but forgot to
+    register it in the tuple list', which the (name, Model, ts_col) registry
+    makes mechanically easy but still possible.
+    """
+
+    def test_fresh_dkim_record_reports_timestamp(self, client, db_session, active_tenant):
+        import uuid as _uuid
+
+        now = _utc_now()
+        db_session.add(
+            DKIMRecord(
+                id=str(_uuid.uuid4()),
+                tenant_id=active_tenant.id,
+                domain="example.com",
+                selector="default",
+                synced_at=now,
+            )
+        )
+        db_session.commit()
+
+        body = client.get(DATA_URL).json()
+        tenant_block = body["tenants"][active_tenant.name]
+        assert tenant_block["dkim"] is not None
+
+    def test_fresh_riverside_compliance_uses_updated_at(self, client, db_session, active_tenant):
+        """RiversideCompliance uses ``updated_at`` (a 3rd timestamp convention).
+
+        This is the strongest validation of the (name, Model, ts_col) tuple
+        design — three different timestamp conventions in one registry.
+        """
+        from datetime import date
+
+        now = _utc_now()
+        db_session.add(
+            RiversideCompliance(
+                tenant_id=active_tenant.id,
+                overall_maturity_score=2.5,
+                target_maturity_score=4.0,
+                deadline_date=date(2026, 12, 31),
+                financial_risk="medium",
+                critical_gaps_count=3,
+                requirements_completed=10,
+                requirements_total=20,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        db_session.commit()
+
+        body = client.get(DATA_URL).json()
+        tenant_block = body["tenants"][active_tenant.name]
+        assert tenant_block["riverside_compliance"] is not None
+
+    def test_fresh_riverside_device_compliance_uses_snapshot_date(
+        self, client, db_session, active_tenant
+    ):
+        now = _utc_now()
+        db_session.add(
+            RiversideDeviceCompliance(
+                tenant_id=active_tenant.id,
+                total_devices=100,
+                mdm_enrolled=80,
+                edr_covered=70,
+                encrypted_devices=90,
+                compliant_devices=65,
+                compliance_percentage=65.0,
+                snapshot_date=now,
+            )
+        )
+        db_session.commit()
+
+        body = client.get(DATA_URL).json()
+        tenant_block = body["tenants"][active_tenant.name]
+        assert tenant_block["riverside_device_compliance"] is not None
+
+    def test_fresh_riverside_threat_data_uses_snapshot_date(
+        self, client, db_session, active_tenant
+    ):
+        now = _utc_now()
+        db_session.add(
+            RiversideThreatData(
+                tenant_id=active_tenant.id,
+                threat_score=42.0,
+                vulnerability_count=5,
+                malicious_domain_alerts=0,
+                snapshot_date=now,
+            )
+        )
+        db_session.commit()
+
+        body = client.get(DATA_URL).json()
+        tenant_block = body["tenants"][active_tenant.name]
+        assert tenant_block["riverside_threat_data"] is not None
 
 
 class TestHealthDataAlwaysReturns200:
