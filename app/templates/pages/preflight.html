@@ -1,162 +1,135 @@
 {% extends "base.html" %}
+{% from "macros/ds.html" import ds_page_shell, ds_card, ds_button, ds_badge, ds_stat_card %}
 
 {% block nav_preflight %}bg-brand-primary-110{% endblock %}
 
 {% block title %}Preflight Checks - Azure Governance Platform{% endblock %}
 
+{# ─────────────────────────────────────────────────────────────────────
+   Status → visual-style lookup dicts.
+
+   Keyed by the same string values the backend emits for check/category/
+   tenant status. Open/closed: adding a new status is one new row — no
+   scattered nested ternaries drifting out of sync across border/icon/
+   badge selectors. See commit b181ae4 for the rationale.
+   ───────────────────────────────────────────────────────────────────── #}
+
+{# Category-summary card left-border accent (4-way). #}
+{% set category_styles = {
+  "pass":    {"border": "border-l-4 border-l-success"},
+  "warning": {"border": "border-l-4 border-l-warning"},
+  "fail":    {"border": "border-l-4 border-l-danger"},
+} %}
+{% set default_category_style = {"border": "border-l-4 border-default"} %}
+
+{# Check-result status → ds_badge variant + label (5-way). #}
+{% set result_status_styles = {
+  "pass":    {"variant": "success", "label": "✅ Pass"},
+  "warning": {"variant": "warning", "label": "⚠️ Warning"},
+  "fail":    {"variant": "danger",  "label": "❌ Failed"},
+  "skipped": {"variant": "neutral", "label": "⏭️ Skipped"},
+  "running": {"variant": "info",    "label": "🔄 Running"},
+} %}
+{% set default_result_style = {"variant": "neutral", "label": "• Unknown"} %}
+
+{# Tenant overall-status badge (3-way). #}
+{% set tenant_status_styles = {
+  "pass":    {"variant": "success", "label": "✅ Passed"},
+  "warning": {"variant": "warning", "label": "⚠️ Warning"},
+  "fail":    {"variant": "danger",  "label": "❌ Failed"},
+} %}
+{% set default_tenant_style = {"variant": "neutral", "label": "• Unknown"} %}
+
+{# ── Header action buttons ───────────────────────────────────────────── #}
+{% set icon_play %}
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+{% endset %}
+
+{% set header_actions %}
+{{ ds_button(label="Run All Checks", variant="primary", icon_svg=icon_play,
+             extra_attrs='hx-post="/api/v1/preflight/run" hx-swap="none"') }}
+{{ ds_button(label="Clear Cache", variant="secondary",
+             extra_attrs='hx-post="/api/v1/preflight/clear-cache" hx-swap="none"') }}
+{% endset %}
+
+{# ── Quick-action HTMX attrs (extracted for readability) ─────────────── #}
+{% set azure_attrs %}hx-post="/api/v1/preflight/run" hx-vals='{{ {"categories": ["azure_auth", "azure_subscriptions", "azure_cost_management", "azure_policy", "azure_resources", "azure_graph", "azure_security"]}|tojson }}' hx-swap="none"{% endset %}
+
 {% block content %}
-<div class="space-y-6">
-    <!-- Page Header -->
-    <div class="flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-primary-theme">Preflight Checks</h1>
-            <p class="text-secondary-theme">Verify Azure tenant access, GitHub access, and system requirements</p>
-        </div>
-        <div class="flex items-center space-x-3">
-            <button 
-                hx-post="/api/v1/preflight/run" 
-                hx-swap="none"
-                class="bg-brand-primary-100 hover:bg-brand-primary-110 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-                <span class="htmx-indicator">Running...</span>
-                <span>Run All Checks</span>
-            </button>
-            <button 
-                hx-post="/api/v1/preflight/clear-cache" 
-                hx-swap="none"
-                class="bg-surface-secondary hover:bg-surface-tertiary text-primary-theme px-4 py-2 rounded-lg transition-colors"
-            >
-                Clear Cache
-            </button>
-        </div>
+{% call ds_page_shell(
+    title="Preflight Checks",
+    subtitle="Verify Azure tenant access, GitHub access, and system requirements",
+    actions=header_actions) %}
+
+    {# ── Summary stat cards ──────────────────────────────────────────── #}
+    <div id="overall-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {% if report %}
+            {% set status_label = "✅ Passed" if report.is_success else "❌ Failed" %}
+            {% set status_accent = "success" if report.is_success else "danger" %}
+            {{ ds_stat_card(label="Status", value=status_label, border_accent=status_accent) }}
+        {% else %}
+            {{ ds_stat_card(label="Status", value="Not Run") }}
+        {% endif %}
+        {{ ds_stat_card(label="Passed",   value=(report.passed_count  if report else 0), border_accent="success") }}
+        {{ ds_stat_card(label="Warnings", value=(report.warning_count if report else 0), border_accent="warning") }}
+        {{ ds_stat_card(label="Failed",   value=(report.failed_count  if report else 0), border_accent="danger")  }}
+        {% set duration_value = ("%.0f"|format(report.total_duration_ms) ~ "ms") if report else "--" %}
+        {{ ds_stat_card(label="Duration", value=duration_value, border_accent="brand") }}
     </div>
 
-    <!-- Summary Cards Row -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <!-- Overall Status -->
-        <div id="overall-status" class="bg-surface-primary rounded-lg shadow p-4 border-l-4 {% if report and report.is_success %}border-l-success{% else %}border-l-danger{% endif %}">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-secondary-theme">Status</p>
-                    <p class="text-xl font-bold text-primary-theme">
-                        {% if report %}
-                            {% if report.is_success %}
-                                <span class="text-success">✅ Passed</span>
-                            {% else %}
-                                <span class="text-danger">❌ Failed</span>
-                            {% endif %}
-                        {% else %}
-                            <span class="text-secondary-theme">Not Run</span>
-                        {% endif %}
-                    </p>
+    {# ── Category Overview ───────────────────────────────────────────── #}
+    {% if category_summaries %}
+    <section aria-label="Category overview">
+        <h2 class="sr-only">Category Overview</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for summary in category_summaries %}
+            {% set cstyle = category_styles.get(summary.overall_status, default_category_style) %}
+            <div class="bg-surface-primary rounded-xl shadow-sm border border-default p-4 {{ cstyle.border }}">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold text-primary-theme">{{ summary.display_name }}</h3>
+                    <span class="text-sm text-secondary-theme">
+                        {{ summary.checks_passed + summary.checks_failed + summary.checks_warning + summary.checks_skipped }} checks
+                    </span>
+                </div>
+                <div class="flex items-center gap-4 text-sm">
+                    <span class="text-success">✅ {{ summary.checks_passed }}</span>
+                    <span class="text-warning">⚠️ {{ summary.checks_warning }}</span>
+                    <span class="text-danger">❌ {{ summary.checks_failed }}</span>
+                    <span class="text-secondary-theme">⏭️ {{ summary.checks_skipped }}</span>
                 </div>
             </div>
+            {% endfor %}
         </div>
-
-        <!-- Passed -->
-        <div class="bg-surface-primary rounded-lg shadow p-4 border-l-4 border-l-success">
-            <p class="text-sm font-medium text-secondary-theme">Passed</p>
-            <p class="text-2xl font-bold text-success">{{ report.passed_count if report else 0 }}</p>
-        </div>
-
-        <!-- Warnings -->
-        <div class="bg-surface-primary rounded-lg shadow p-4 border-l-4 border-l-warning">
-            <p class="text-sm font-medium text-secondary-theme">Warnings</p>
-            <p class="text-2xl font-bold text-warning">{{ report.warning_count if report else 0 }}</p>
-        </div>
-
-        <!-- Failed -->
-        <div class="bg-surface-primary rounded-lg shadow p-4 border-l-4 border-l-danger">
-            <p class="text-sm font-medium text-secondary-theme">Failed</p>
-            <p class="text-2xl font-bold text-danger">{{ report.failed_count if report else 0 }}</p>
-        </div>
-
-        <!-- Duration -->
-        <div class="bg-surface-primary rounded-lg shadow p-4 border-l-4 border-l-brand-primary">
-            <p class="text-sm font-medium text-secondary-theme">Duration</p>
-            <p class="text-2xl font-bold text-primary-theme">
-                {% if report %}
-                    {{ "%.0f"|format(report.total_duration_ms) }}ms
-                {% else %}
-                    --
-                {% endif %}
-            </p>
-        </div>
-    </div>
-
-    <!-- Check Categories -->
-    {% if category_summaries %}
-    <h2 class="sr-only">Category Overview</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for summary in category_summaries %}
-        <div class="bg-surface-primary rounded-lg shadow p-4 {% if summary.overall_status == 'pass' %}border-l-4 border-l-success{% elif summary.overall_status == 'warning' %}border-l-4 border-l-warning{% elif summary.overall_status == 'fail' %}border-l-4 border-l-danger{% else %}border-l-4 border-default{% endif %}">
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="font-semibold text-primary-theme">{{ summary.display_name }}</h3>
-                <span class="text-sm text-secondary-theme">{{ summary.checks_passed + summary.checks_failed + summary.checks_warning + summary.checks_skipped }} checks</span>
-            </div>
-            <div class="flex items-center space-x-4 text-sm">
-                <span class="text-success">✅ {{ summary.checks_passed }}</span>
-                <span class="text-warning">⚠️ {{ summary.checks_warning }}</span>
-                <span class="text-danger">❌ {{ summary.checks_failed }}</span>
-                <span class="text-secondary-theme">⏭️ {{ summary.checks_skipped }}</span>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
+    </section>
     {% endif %}
 
-    <!-- Detailed Results -->
-    <div class="bg-surface-primary rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-default">
-            <h2 class="sr-only">Check Details</h2>
-            <h3 class="text-lg font-semibold text-primary-theme">Check Results</h3>
-        </div>
+    {# ── Detailed Check Results ──────────────────────────────────────── #}
+    {% call ds_card(title="Check Results", extra_classes="!p-0 overflow-hidden") %}
         {% if results %}
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-border-default">
                 <thead class="bg-surface-secondary">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-theme uppercase">Status</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-theme uppercase">Check</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-theme uppercase">Category</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-theme uppercase">Message</th>
+                        <th scope="col" class="px-6 py-3 text-left  text-xs font-medium text-secondary-theme uppercase">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left  text-xs font-medium text-secondary-theme uppercase">Check</th>
+                        <th scope="col" class="px-6 py-3 text-left  text-xs font-medium text-secondary-theme uppercase">Category</th>
+                        <th scope="col" class="px-6 py-3 text-left  text-xs font-medium text-secondary-theme uppercase">Message</th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-secondary-theme uppercase">Duration</th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-secondary-theme uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border-default">
                     {% for result in results %}
+                    {% set rstyle = result_status_styles.get(result.status, default_result_style) %}
                     <tr class="hover:bg-surface-secondary" hx-vals='{{ {"check_id": result.check_id}|tojson }}'>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            {% if result.status == 'pass' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-success-5 text-success">
-                                ✅ Pass
-                            </span>
-                            {% elif result.status == 'warning' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-warning-5 text-warning">
-                                ⚠️ Warning
-                            </span>
-                            {% elif result.status == 'fail' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-error-5 text-danger">
-                                ❌ Failed
-                            </span>
-                            {% elif result.status == 'skipped' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-secondary text-secondary-theme">
-                                ⏭️ Skipped
-                            </span>
-                            {% elif result.status == 'running' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-primary-5 dark:bg-brand-primary-50 text-brand-primary dark:text-brand-secondary">
-                                🔄 Running
-                            </span>
-                            {% endif %}
+                            {{ ds_badge(rstyle.label, variant=rstyle.variant) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary-theme">
                             {{ result.name }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-theme">
-                            <span class="px-2 py-1 text-xs rounded bg-surface-secondary">
-                                {{ result.category }}
-                            </span>
+                            <span class="px-2 py-1 text-xs rounded bg-surface-secondary">{{ result.category }}</span>
                         </td>
                         <td class="px-6 py-4 text-sm text-primary-theme max-w-md truncate">
                             {{ result.message }}
@@ -166,10 +139,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                             {% if result.recommendations and result.status == 'fail' %}
-                            <button 
-                                class="text-brand-primary dark:text-brand-secondary hover:underline"
-                                data-toggle-rec="{{ result.check_id }}"
-                            >
+                            <button type="button"
+                                    class="text-brand-primary dark:text-brand-secondary hover:underline"
+                                    data-toggle-rec="{{ result.check_id }}">
                                 View Fixes
                             </button>
                             {% endif %}
@@ -194,37 +166,28 @@
             </table>
         </div>
         {% else %}
-        <div class="px-6 py-8 text-center">
+        <div class="px-6 py-12 text-center">
             <div class="text-secondary-theme mb-4">
                 <svg class="w-12 h-12 mx-auto mb-4 text-muted-theme" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                 </svg>
                 <p>No preflight checks have been run yet.</p>
             </div>
-            <button 
-                hx-post="/api/v1/preflight/run" 
-                hx-swap="none"
-                class="bg-brand-primary-100 hover:bg-brand-primary-110 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-                Run Preflight Checks
-            </button>
+            {{ ds_button(label="Run Preflight Checks", variant="primary",
+                         extra_attrs='hx-post="/api/v1/preflight/run" hx-swap="none"') }}
         </div>
         {% endif %}
-    </div>
+    {% endcall %}
 
-    <!-- Tenant Summaries -->
+    {# ── Tenant-Specific Summaries ───────────────────────────────────── #}
     {% if tenant_summaries %}
-    <div class="bg-surface-primary rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-default">
-            <h2 class="sr-only">Tenant Results</h2>
-            <h3 class="text-lg font-semibold text-primary-theme">Tenant-Specific Results</h3>
-        </div>
+    {% call ds_card(title="Tenant-Specific Results", extra_classes="!p-0 overflow-hidden") %}
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-border-default">
                 <thead class="bg-surface-secondary">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-theme uppercase">Tenant</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-theme uppercase">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left   text-xs font-medium text-secondary-theme uppercase">Tenant</th>
+                        <th scope="col" class="px-6 py-3 text-left   text-xs font-medium text-secondary-theme uppercase">Status</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-secondary-theme uppercase">Passed</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-secondary-theme uppercase">Warnings</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-secondary-theme uppercase">Failed</th>
@@ -232,33 +195,22 @@
                 </thead>
                 <tbody class="divide-y divide-border-default">
                     {% for summary in tenant_summaries %}
+                    {% set tstyle = tenant_status_styles.get(summary.overall_status, default_tenant_style) %}
                     <tr class="hover:bg-surface-secondary">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-primary-theme">{{ summary.tenant_name }}</div>
                             <div class="text-xs text-secondary-theme">{{ summary.tenant_id }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            {% if summary.overall_status == 'pass' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-success-5 text-success">
-                                ✅ Passed
-                            </span>
-                            {% elif summary.overall_status == 'warning' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-warning-5 text-warning">
-                                ⚠️ Warning
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-error-5 text-danger">
-                                ❌ Failed
-                            </span>
-                            {% endif %}
+                            {{ ds_badge(tstyle.label, variant=tstyle.variant) }}
                         </td>
-                        <td class="px-6 py-4 text-center text-sm text-primary-theme">
+                        <td class="px-6 py-4 text-center text-sm">
                             <span class="text-success font-medium">{{ summary.checks_passed }}</span>
                         </td>
-                        <td class="px-6 py-4 text-center text-sm text-primary-theme">
+                        <td class="px-6 py-4 text-center text-sm">
                             <span class="text-warning font-medium">{{ summary.checks_warning }}</span>
                         </td>
-                        <td class="px-6 py-4 text-center text-sm text-primary-theme">
+                        <td class="px-6 py-4 text-center text-sm">
                             <span class="text-danger font-medium">{{ summary.checks_failed }}</span>
                         </td>
                     </tr>
@@ -266,84 +218,55 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 
-    <!-- Quick Actions -->
+    {# ── Quick Actions ───────────────────────────────────────────────── #}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Azure Checks -->
-        <div class="bg-surface-primary rounded-lg shadow p-6">
-            <h4 class="font-semibold text-primary-theme mb-4">Azure Checks</h4>
-            <div class="space-y-2">
-                <button 
-                    hx-post="/api/v1/preflight/run"
-                    hx-vals='{{ {"categories": ["azure_auth", "azure_subscriptions", "azure_cost_management", "azure_policy", "azure_resources", "azure_graph", "azure_security"]}|tojson }}'
-                    hx-swap="none"
-                    class="w-full bg-brand-primary-5 dark:bg-brand-primary-50 hover:bg-brand-primary-10 text-brand-primary dark:text-brand-secondary px-4 py-2 rounded-lg transition-colors text-left"
-                >
-                    Run Azure Checks
-                </button>
-            </div>
-        </div>
+        {% call ds_card(title="Azure Checks") %}
+            {{ ds_button(label="Run Azure Checks", variant="ghost",
+                         extra_classes="w-full justify-start",
+                         extra_attrs=azure_attrs) }}
+        {% endcall %}
 
-        <!-- GitHub Checks -->
-        <div class="bg-surface-primary rounded-lg shadow p-6">
-            <h4 class="font-semibold text-primary-theme mb-4">GitHub Checks</h4>
-            <button 
-                hx-get="/api/v1/preflight/github"
-                hx-swap="none"
-                class="w-full bg-surface-secondary hover:bg-surface-secondary text-primary-theme px-4 py-2 rounded-lg transition-colors"
-            >
-                Run GitHub Checks
-            </button>
-        </div>
+        {% call ds_card(title="GitHub Checks") %}
+            {{ ds_button(label="Run GitHub Checks", variant="secondary",
+                         extra_classes="w-full justify-start",
+                         extra_attrs='hx-get="/api/v1/preflight/github" hx-swap="none"') }}
+        {% endcall %}
 
-        <!-- Report Formats -->
-        <div class="bg-surface-primary rounded-lg shadow p-6">
-            <h4 class="font-semibold text-primary-theme mb-4">Export Reports</h4>
+        {% call ds_card(title="Export Reports") %}
             <div class="space-y-2">
-                <a 
-                    href="/api/v1/preflight/report/json"
-                    class="block w-full bg-surface-secondary hover:bg-surface-secondary text-primary-theme px-4 py-2 rounded-lg transition-colors text-center"
-                >
-                    Download JSON
-                </a>
-                <a 
-                    href="/api/v1/preflight/report/markdown"
-                    class="block w-full bg-surface-secondary hover:bg-surface-secondary text-primary-theme px-4 py-2 rounded-lg transition-colors text-center"
-                >
-                    Download Markdown
-                </a>
+                {{ ds_button(label="Download JSON",     variant="secondary",
+                             href="/api/v1/preflight/report/json",
+                             extra_classes="w-full justify-center") }}
+                {{ ds_button(label="Download Markdown", variant="secondary",
+                             href="/api/v1/preflight/report/markdown",
+                             extra_classes="w-full justify-center") }}
             </div>
-        </div>
+        {% endcall %}
     </div>
-</div>
+{% endcall %}
 
+{# ── Page-local scripts (CSP-safe event delegation) ────────────────────
+   - Toggle per-check recommendation rows
+   - Auto-refresh cadence retained from the pre-migration version; the
+     #overall-status element is the canonical HTMX target for the partial
+     refresh endpoint (no-op today, reserved for future partial).
+   ───────────────────────────────────────────────────────────────────── #}
 <script nonce="{{ request.state.csp_nonce }}">
-function toggleRecommendations(checkId) {
-    const row = document.getElementById('rec-' + checkId);
-    if (row) {
-        row.classList.toggle('hidden');
+(function () {
+    function toggleRecommendations(checkId) {
+        const row = document.getElementById('rec-' + checkId);
+        if (row) row.classList.toggle('hidden');
     }
-}
-// CSP-safe: event delegation for toggle buttons
-document.addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-toggle-rec]');
-    if (btn) toggleRecommendations(btn.getAttribute('data-toggle-rec'));
-});
-
-// Auto-refresh status every 30 seconds
-setInterval(function() {
-    htmx.trigger('#overall-status', 'refresh');
-}, 30000);
-</script>
-
-<script nonce="{{ request.state.csp_nonce }}">
-    // Handle HTMX responses
-    document.body.addEventListener('htmx:afterSwap', function(event) {
-        if (event.detail.target.id === 'overall-status') {
-            // Refresh status
-        }
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-toggle-rec]');
+        if (btn) toggleRecommendations(btn.getAttribute('data-toggle-rec'));
     });
+    setInterval(function () {
+        if (window.htmx) window.htmx.trigger('#overall-status', 'refresh');
+    }, 30000);
+})();
 </script>
 {% endblock %}

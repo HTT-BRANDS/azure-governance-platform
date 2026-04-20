@@ -235,6 +235,10 @@ class TestMigratedPages:
                 "pages/identity.html",
                 ["ds_page_shell", "ds_stat_card", "ds_card", "ds_table", "ds_button"],
             ),
+            (
+                "pages/preflight.html",
+                ["ds_page_shell", "ds_stat_card", "ds_card", "ds_button", "ds_badge"],
+            ),
         ],
     )
     def test_page_imports_ds_macros(self, page, required_macros):
