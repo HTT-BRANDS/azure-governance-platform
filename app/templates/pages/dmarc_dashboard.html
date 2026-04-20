@@ -121,6 +121,38 @@
 
 
 <script nonce="{{ request.state.csp_nonce }}">
+    /* ─────────────────────────────────────────────────────────────────
+       Semantic style lookups (replaces nested ternaries). Each dict is
+       the single source of truth for a "status → classes" mapping; open/
+       closed principle — adding a new tier is one entry, not three
+       scattered ternaries. Mirrors the Jinja dict pattern from b181ae4.
+       ───────────────────────────────────────────────────────────────── */
+    const SCORE_STYLES = {
+        good:    { bar: 'bg-success', text: 'text-success', grade: 'bg-success' },
+        warning: { bar: 'bg-warning', text: 'text-warning', grade: 'bg-warning' },
+        bad:     { bar: 'bg-danger',  text: 'text-danger',  grade: 'bg-danger'  },
+    };
+    function scoreStyle(s) {
+        if (s >= 80) return SCORE_STYLES.good;
+        if (s >= 60) return SCORE_STYLES.warning;
+        return SCORE_STYLES.bad;
+    }
+    function gradeFor(s) {
+        if (s >= 90) return 'A';
+        if (s >= 80) return 'B';
+        if (s >= 70) return 'C';
+        if (s >= 60) return 'D';
+        return 'F';
+    }
+
+    // Compliance tier: used for DMARC policy + DKIM rollups in the tenant table.
+    // protect (reject / aligned) > partial (quarantine / enabled-only) > none.
+    const COMPLIANCE_STYLES = {
+        protect: 'bg-brand-success-5 text-success',
+        partial: 'bg-brand-warning-5 text-warning',
+        none:    'bg-brand-error-5 text-danger',
+    };
+
     let currentData = null;
 
     // Fetch dashboard data
@@ -197,66 +229,59 @@
 
     function updateTenantScores(tenants) {
         const container = document.getElementById('tenant-scores');
-        
+
         container.innerHTML = tenants.slice(0, 4).map(t => {
             const score = t.security_score;
-            const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-            const color = score >= 80 ? 'bg-wm-green-100' : score >= 60 ? 'bg-wm-spark-100' : 'bg-wm-red-100';
-            
+            const grade = gradeFor(score);
+            const style = scoreStyle(score);
+            const protectedCount = t.dmarc_records.filter(r => r.policy === 'reject').length;
+
             return `
-                <div class="bg-surface-primary rounded-xl shadow p-6">
+                <article class="bg-surface-primary rounded-xl shadow-sm border border-default p-6">
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <p class="text-sm font-medium text-muted-theme">${t.tenant_name}</p>
+                            <p class="text-sm font-medium text-secondary-theme">${t.tenant_name}</p>
                             <p class="text-2xl font-bold text-primary-theme">${score.toFixed(1)}</p>
                         </div>
-                        <div class="w-12 h-12 rounded-full ${color} flex items-center justify-center text-white text-xl font-bold">
+                        <div class="w-12 h-12 rounded-full ${style.grade} flex items-center justify-center text-white text-xl font-bold" aria-label="Grade ${grade}">
                             ${grade}
                         </div>
                     </div>
                     <div class="mt-2 bg-surface-tertiary rounded-full h-2">
-                        <div class="${color} h-2 rounded-full" style="width: ${score}%"></div>
+                        <div class="${style.bar} h-2 rounded-full" style="width: ${score}%"></div>
                     </div>
                     <p class="text-xs text-muted-theme mt-2">
-                        ${t.dmarc_records.filter(r => r.policy === 'reject').length}/${t.dmarc_records.length} domains protected
+                        ${protectedCount}/${t.dmarc_records.length} domains protected
                     </p>
-                </div>
+                </article>
             `;
         }).join('');
     }
 
     function updateTenantTable(tenants) {
         const table = document.getElementById('tenant-table');
-        
+
         table.innerHTML = tenants.map(t => {
             const dmarcCount = t.dmarc_records.length;
             const rejectCount = t.dmarc_records.filter(r => r.policy === 'reject').length;
             const quarantineCount = t.dmarc_records.filter(r => r.policy === 'quarantine').length;
-            const noneCount = t.dmarc_records.filter(r => r.policy === 'none').length;
-            
+
             const dkimEnabled = t.dkim_records.filter(r => r.is_enabled).length;
             const dkimAligned = t.dkim_records.filter(r => r.is_aligned).length;
-            
-            let policyBadge = 'bg-brand-error-5 text-danger';
-            let policyText = 'None';
-            if (rejectCount > 0) {
-                policyBadge = 'bg-brand-success-5 text-success';
-                policyText = `${rejectCount}/${dmarcCount} Reject`;
-            } else if (quarantineCount > 0) {
-                policyBadge = 'bg-brand-warning-5 text-warning';
-                policyText = `${quarantineCount}/${dmarcCount} Quarantine`;
-            }
-            
-            let dkimBadge = 'bg-brand-error-5 text-danger';
-            let dkimText = 'None';
-            if (dkimAligned > 0) {
-                dkimBadge = 'bg-brand-success-5 text-success';
-                dkimText = `${dkimAligned}/${t.dkim_records.length} Aligned`;
-            } else if (dkimEnabled > 0) {
-                dkimBadge = 'bg-brand-warning-5 text-warning';
-                dkimText = `${dkimEnabled}/${t.dkim_records.length} Enabled`;
-            }
-            
+
+            // Policy + DKIM tiers driven by a dict — no nested ternaries.
+            let policyTier = 'none', policyText = 'None';
+            if (rejectCount > 0)          { policyTier = 'protect'; policyText = `${rejectCount}/${dmarcCount} Reject`; }
+            else if (quarantineCount > 0) { policyTier = 'partial'; policyText = `${quarantineCount}/${dmarcCount} Quarantine`; }
+
+            let dkimTier = 'none', dkimText = 'None';
+            if (dkimAligned > 0)     { dkimTier = 'protect'; dkimText = `${dkimAligned}/${t.dkim_records.length} Aligned`; }
+            else if (dkimEnabled > 0) { dkimTier = 'partial'; dkimText = `${dkimEnabled}/${t.dkim_records.length} Enabled`; }
+
+            const policyBadge = COMPLIANCE_STYLES[policyTier];
+            const dkimBadge   = COMPLIANCE_STYLES[dkimTier];
+            const scoreSt     = scoreStyle(t.security_score);
+
             return `
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -264,9 +289,9 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
-                            <span class="text-sm font-bold ${t.security_score >= 80 ? 'text-success' : t.security_score >= 60 ? 'text-warning' : 'text-danger'}">${t.security_score.toFixed(1)}</span>
+                            <span class="text-sm font-bold ${scoreSt.text}">${t.security_score.toFixed(1)}</span>
                             <div class="ml-2 w-16 bg-surface-tertiary rounded-full h-1.5">
-                                <div class="${t.security_score >= 80 ? 'bg-wm-green-100' : t.security_score >= 60 ? 'bg-wm-spark-100' : 'bg-wm-red-100'} h-1.5 rounded-full" style="width: ${t.security_score}%"></div>
+                                <div class="${scoreSt.bar} h-1.5 rounded-full" style="width: ${t.security_score}%"></div>
                             </div>
                         </div>
                     </td>
@@ -300,7 +325,7 @@
                     <span class="text-muted-theme">${rejectCount} (${Math.round(rejectCount/total*100)}%)</span>
                 </div>
                 <div class="bg-surface-tertiary rounded-full h-2.5">
-                    <div class="bg-wm-green-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(rejectCount/total*100)}%"></div>
+                    <div class="bg-success h-2.5 rounded-full transition-all duration-500" style="width: ${(rejectCount/total*100)}%"></div>
                 </div>
             </div>
             <div>
@@ -309,7 +334,7 @@
                     <span class="text-muted-theme">${quarantineCount} (${Math.round(quarantineCount/total*100)}%)</span>
                 </div>
                 <div class="bg-surface-tertiary rounded-full h-2.5">
-                    <div class="bg-wm-spark-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(quarantineCount/total*100)}%"></div>
+                    <div class="bg-warning h-2.5 rounded-full transition-all duration-500" style="width: ${(quarantineCount/total*100)}%"></div>
                 </div>
             </div>
             <div>
@@ -318,7 +343,7 @@
                     <span class="text-muted-theme">${noneCount} (${Math.round(noneCount/total*100)}%)</span>
                 </div>
                 <div class="bg-surface-tertiary rounded-full h-2.5">
-                    <div class="bg-wm-red-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(noneCount/total*100)}%"></div>
+                    <div class="bg-danger h-2.5 rounded-full transition-all duration-500" style="width: ${(noneCount/total*100)}%"></div>
                 </div>
             </div>
         `;
@@ -341,7 +366,7 @@
                     <span class="text-muted-theme">${alignedCount} (${Math.round(alignedCount/total*100)}%)</span>
                 </div>
                 <div class="bg-surface-tertiary rounded-full h-2.5">
-                    <div class="bg-wm-green-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(alignedCount/total*100)}%"></div>
+                    <div class="bg-success h-2.5 rounded-full transition-all duration-500" style="width: ${(alignedCount/total*100)}%"></div>
                 </div>
             </div>
             <div>
@@ -350,7 +375,7 @@
                     <span class="text-muted-theme">${enabledOnlyCount} (${Math.round(enabledOnlyCount/total*100)}%)</span>
                 </div>
                 <div class="bg-surface-tertiary rounded-full h-2.5">
-                    <div class="bg-wm-spark-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(enabledOnlyCount/total*100)}%"></div>
+                    <div class="bg-warning h-2.5 rounded-full transition-all duration-500" style="width: ${(enabledOnlyCount/total*100)}%"></div>
                 </div>
             </div>
             <div>
@@ -359,7 +384,7 @@
                     <span class="text-muted-theme">${disabledCount} (${Math.round(disabledCount/total*100)}%)</span>
                 </div>
                 <div class="bg-surface-tertiary rounded-full h-2.5">
-                    <div class="bg-wm-red-100 h-2.5 rounded-full transition-all duration-500" style="width: ${(disabledCount/total*100)}%"></div>
+                    <div class="bg-danger h-2.5 rounded-full transition-all duration-500" style="width: ${(disabledCount/total*100)}%"></div>
                 </div>
             </div>
         `;
@@ -374,7 +399,7 @@
             'critical': 'bg-brand-error-5 text-danger',
             'high': 'bg-brand-warning-5 text-warning',
             'medium': 'bg-brand-warning-5 text-warning',
-            'low': 'bg-wm-blue-5 text-wm-blue-100'
+            'low': 'bg-brand-primary-5 text-brand-primary'
         };
         
         table.innerHTML = alerts.slice(0, 10).map(alert => `
@@ -387,7 +412,7 @@
                 <td class="px-6 py-4 text-sm text-muted-theme max-w-md truncate">${alert.message}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-theme">${new Date(alert.created_at).toLocaleDateString()}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button data-action="acknowledge-alert" data-alert-id="${alert.id}" class="text-info hover:text-wm-blue-130">Acknowledge</button>
+                    <button data-action="acknowledge-alert" data-alert-id="${alert.id}" class="text-info hover:text-brand-primary-110">Acknowledge</button>
                 </td>
             </tr>
         `).join('');
@@ -537,22 +562,17 @@
         updateTenantTable(filtered);
     }
 
-    function showError(message) {
-        // Simple toast notification
+    // Toast helpers — semantic bg-danger/bg-success stay on-palette and
+    // keep us off wm-* tokens. One implementation, two thin wrappers.
+    function showToast(message, bg) {
         const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 right-4 bg-brand-error-100 text-white px-4 py-2 rounded-lg shadow-lg';
+        toast.className = `fixed bottom-4 right-4 ${bg} text-white px-4 py-2 rounded-lg shadow-lg`;
         toast.textContent = message;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
     }
-
-    function showSuccess(message) {
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 right-4 bg-wm-green-100 text-white px-4 py-2 rounded-lg shadow-lg';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
+    function showError(message)   { showToast(message, 'bg-danger');  }
+    function showSuccess(message) { showToast(message, 'bg-success'); }
 
 
     // CSP-safe: event delegation for buttons (replaces inline onclick handlers)
