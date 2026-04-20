@@ -86,59 +86,9 @@
             </div>
         </div>
 
-        <!-- DMARC Policy Breakdown -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- DMARC Policies -->
-            <div class="bg-surface-primary rounded-xl shadow">
-                <div class="px-6 py-4 border-b border-theme">
-                    <h2 class="text-lg font-semibold text-primary-theme">DMARC Policy Distribution</h2>
-                </div>
-                <div class="p-6">
-                    <div class="space-y-4" id="dmarc-policies">
-                        <!-- Populated by JavaScript -->
-                    </div>
-                    <div class="mt-4 text-sm text-muted-theme">
-                        <div class="flex items-center mb-1">
-                            <span class="w-3 h-3 rounded-full bg-wm-green-100 mr-2"></span>
-                            <span><strong>Reject:</strong> Full protection, spoofed emails rejected</span>
-                        </div>
-                        <div class="flex items-center mb-1">
-                            <span class="w-3 h-3 rounded-full bg-wm-spark-100 mr-2"></span>
-                            <span><strong>Quarantine:</strong> Partial protection, emails to spam</span>
-                        </div>
-                        <div class="flex items-center">
-                            <span class="w-3 h-3 rounded-full bg-wm-red-100 mr-2"></span>
-                            <span><strong>None:</strong> No protection, emails pass through</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- DKIM Alignment -->
-            <div class="bg-surface-primary rounded-xl shadow">
-                <div class="px-6 py-4 border-b border-theme">
-                    <h2 class="text-lg font-semibold text-primary-theme">DKIM Configuration Status</h2>
-                </div>
-                <div class="p-6">
-                    <div class="space-y-4" id="dkim-status">
-                        <!-- Populated by JavaScript -->
-                    </div>
-                    <div class="mt-4 text-sm text-muted-theme">
-                        <div class="flex items-center mb-1">
-                            <span class="w-3 h-3 rounded-full bg-wm-green-100 mr-2"></span>
-                            <span><strong>Enabled & Aligned:</strong> DKIM properly configured</span>
-                        </div>
-                        <div class="flex items-center mb-1">
-                            <span class="w-3 h-3 rounded-full bg-wm-spark-100 mr-2"></span>
-                            <span><strong>Enabled Only:</strong> DKIM active but not aligned</span>
-                        </div>
-                        <div class="flex items-center">
-                            <span class="w-3 h-3 rounded-full bg-wm-red-100 mr-2"></span>
-                            <span><strong>Disabled:</strong> DKIM not configured</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- DMARC / DKIM breakdown cards -->
+        <div class="mb-8">
+            {% include "partials/dmarc_policy_legend.html" %}
         </div>
 
         <!-- Compliance Trends Chart -->

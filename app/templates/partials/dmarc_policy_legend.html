@@ -1,0 +1,54 @@
+{# ─────────────────────────────────────────────────────────────────────
+   DMARC / DKIM compliance breakdown — side-by-side cards with legend.
+
+   Static legend markup is rendered server-side; the progress-bar rows
+   (#dmarc-policies / #dkim-status) are populated client-side by JS in
+   pages/dmarc_dashboard.html.
+
+   Both panels share identical visual structure (3 rows, same 3-state
+   semantic palette: success / warning / danger), so we drive them off
+   one `_panel_rows` macro keyed on dicts — same "no nested ternaries"
+   discipline that guides the rest of the migration (see commit b181ae4).
+   ───────────────────────────────────────────────────────────────────── #}
+{% from "macros/ds.html" import ds_card %}
+
+{# Legend rows: ordered list of (color-class, <strong>label</strong>, description).
+   One source of truth per panel → adding a row is one dict entry, not
+   three scattered ternaries in the HTML. #}
+{% set dmarc_legend = [
+    {"dot": "bg-success", "label": "Reject",     "desc": "Full protection, spoofed emails rejected"},
+    {"dot": "bg-warning", "label": "Quarantine", "desc": "Partial protection, emails to spam"},
+    {"dot": "bg-danger",  "label": "None",       "desc": "No protection, emails pass through"},
+] %}
+{% set dkim_legend = [
+    {"dot": "bg-success", "label": "Enabled & Aligned", "desc": "DKIM properly configured"},
+    {"dot": "bg-warning", "label": "Enabled Only",      "desc": "DKIM active but not aligned"},
+    {"dot": "bg-danger",  "label": "Disabled",          "desc": "DKIM not configured"},
+] %}
+
+{% macro _legend(rows) %}
+<div class="mt-4 text-sm text-secondary-theme space-y-1">
+    {% for row in rows %}
+    <div class="flex items-center">
+        <span class="w-3 h-3 rounded-full {{ row.dot }} mr-2" aria-hidden="true"></span>
+        <span><strong>{{ row.label }}:</strong> {{ row.desc }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    {% call ds_card(title="DMARC Policy Distribution") %}
+        <div class="space-y-4" id="dmarc-policies">
+            <!-- Populated by JavaScript -->
+        </div>
+        {{ _legend(dmarc_legend) }}
+    {% endcall %}
+
+    {% call ds_card(title="DKIM Configuration Status") %}
+        <div class="space-y-4" id="dkim-status">
+            <!-- Populated by JavaScript -->
+        </div>
+        {{ _legend(dkim_legend) }}
+    {% endcall %}
+</div>
