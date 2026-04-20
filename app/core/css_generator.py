@@ -13,7 +13,6 @@ from app.core.color_utils import (
     get_contrasting_text_color,
 )
 from app.core.design_tokens import (
-    DARK_THEME_TOKENS,
     BrandConfig,
     SemanticColors,
     ThemeTokens,
@@ -29,7 +28,6 @@ __all__ = [
     "generate_inline_style",
     "generate_semantic_variables",
     "generate_theme_variables",
-    "generate_dark_mode_css",
     "SHADOW_PRESETS",
 ]
 
@@ -147,19 +145,6 @@ def generate_theme_variables(
         "--sidebar-bg": tt.sidebar_bg,
         "--sidebar-border": tt.sidebar_border,
     }
-
-
-def generate_dark_mode_css() -> str:
-    """Generate the .dark { ... } CSS block for dark mode overrides.
-
-    Uses DARK_THEME_TOKENS from microsoft-group-management design system.
-    """
-    dark_vars = generate_theme_variables(DARK_THEME_TOKENS)
-    lines = [".dark {"]
-    for name, value in dark_vars.items():
-        lines.append(f"  {name}: {value};")
-    lines.append("}")
-    return "\n".join(lines)
 
 
 def generate_brand_css_variables(brand: BrandConfig) -> dict[str, str]:

@@ -12,7 +12,6 @@ from app.core.css_generator import (
     SHADOW_PRESETS,
     generate_brand_css_variables,
     generate_color_variables,
-    generate_dark_mode_css,
     generate_design_system_variables,
     generate_inline_style,
     generate_scoped_brand_css,
@@ -21,7 +20,6 @@ from app.core.css_generator import (
     generate_typography_variables,
 )
 from app.core.design_tokens import (
-    DARK_THEME_TOKENS,
     BrandColors,
     BrandConfig,
     BrandDesignSystem,
@@ -132,19 +130,6 @@ def test_theme_variables_light():
     v = generate_theme_variables()
     assert v["--bg-primary"] == "#FFFFFF"
     assert v["--text-primary"] == "#111827"
-
-
-def test_theme_variables_dark():
-    v = generate_theme_variables(DARK_THEME_TOKENS)
-    assert v["--bg-primary"] == "#0F0F0F"
-    assert v["--text-primary"] == "#F9FAFB"
-
-
-def test_dark_mode_css():
-    css = generate_dark_mode_css()
-    assert ".dark {" in css
-    assert "--bg-primary: #0F0F0F;" in css
-    assert "--text-primary: #F9FAFB;" in css
 
 
 def test_brand_css_includes_semantic(b):

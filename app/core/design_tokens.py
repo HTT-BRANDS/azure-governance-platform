@@ -30,7 +30,6 @@ __all__ = [
     "get_google_fonts_url",
     "SemanticColors",
     "ThemeTokens",
-    "DARK_THEME_TOKENS",
 ]
 
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -144,19 +143,6 @@ class ThemeTokens(BaseModel):
     border_color: str = "#E5E7EB"
     sidebar_bg: str = "#FFFFFF"
     sidebar_border: str = "#E5E7EB"
-
-
-DARK_THEME_TOKENS = ThemeTokens(
-    bg_primary="#0F0F0F",
-    bg_secondary="#171717",
-    bg_tertiary="#262626",
-    text_primary="#F9FAFB",
-    text_secondary="#D1D5DB",
-    text_muted="#6B7280",
-    border_color="#374151",
-    sidebar_bg="#0F0F0F",
-    sidebar_border="#262626",
-)
 
 
 # ---------------------------------------------------------------------------

@@ -12,7 +12,6 @@ Updated for microsoft-group-management design system:
 import pytest
 
 from app.core.design_tokens import (
-    DARK_THEME_TOKENS,
     BrandColors,
     BrandDesignSystem,
     BrandTypography,
@@ -151,12 +150,6 @@ class TestThemeTokens:
         assert tt.bg_primary == "#FFFFFF"
         assert tt.text_primary == "#111827"
         assert tt.border_color == "#E5E7EB"
-
-    def test_dark_theme_tokens(self):
-        assert DARK_THEME_TOKENS.bg_primary == "#0F0F0F"
-        assert DARK_THEME_TOKENS.text_primary == "#F9FAFB"
-        assert DARK_THEME_TOKENS.border_color == "#374151"
-        assert DARK_THEME_TOKENS.sidebar_bg == "#0F0F0F"
 
 
 # ---------------------------------------------------------------------------
