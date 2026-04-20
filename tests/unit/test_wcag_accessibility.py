@@ -4,14 +4,21 @@ Validates that the application meets WCAG 2.2 AA standards through
 static analysis of CSS and HTML templates.
 
 Success Criteria covered:
-  SC 1.3.1 — Info and Relationships (semantic HTML landmarks)
-  SC 1.4.3 — Contrast (minimum 4.5:1 for normal text)
+  SC 1.3.1  — Info and Relationships (semantic HTML landmarks)
+  SC 1.4.3  — Contrast (minimum 4.5:1 for normal text)
+  SC 1.4.6  — Contrast (Enhanced) — spot checks for dark mode
   SC 1.4.11 — Non-text Contrast (3:1 for UI components)
-  SC 2.4.1 — Bypass Blocks (skip links)
-  SC 2.4.7 — Focus Visible (focus-visible indicators)
+  SC 2.4.1  — Bypass Blocks (skip links)
+  SC 2.4.7  — Focus Visible (focus-visible indicators, including ds primitives)
   SC 2.4.11 — Focus Not Obscured (Minimum)
-  SC 2.5.8 — Target Size (Minimum) — 24x24px touch targets
-  SC 4.1.2 — Name, Role, Value (ARIA attributes)
+  SC 2.5.7  — Dragging Movements
+  SC 2.5.8  — Target Size (Minimum) — 24×24 CSS px, audited on ds primitives
+  SC 3.2.6  — Consistent Help
+  SC 3.3.7  — Redundant Entry
+  SC 3.3.8  — Accessible Authentication (Minimum)
+  SC 4.1.2  — Name, Role, Value (ARIA attributes)
+
+Full audit findings + remediation history: docs/a11y/wcag-2.2-audit.md
 
 Guards the work done in commits:
   23bbd71 "fix: WCAG 2.2 AA design system hardening"
@@ -497,3 +504,147 @@ class TestAccessibleAuthentication:
         assert "Sign in with Microsoft" in login, (
             "Azure AD SSO must be the primary authentication method"
         )
+
+
+# ── Phase 4c additions — dark mode + ds-primitive coverage ──────
+class TestDarkModeContrast:
+    """WCAG SC 1.4.3 / 1.4.11: Dark mode must meet AA for text + non-text.
+
+    Phase 1 only tested muted text on dark. Phase 4c closes the gap by
+    auditing primary, secondary, and border contrast in the .dark block.
+    Every ratio is computed with app.core.color_utils.get_contrast_ratio.
+    """
+
+    def _dark_block(self, theme_css: str) -> str:
+        """Extract the raw .dark { ... } declaration block."""
+        m = re.search(r"\.dark\s*\{([^}]+)\}", theme_css)
+        assert m, ".dark block not found in design-tokens.css"
+        return m.group(1)
+
+    def _token(self, block: str, name: str) -> str:
+        """Pull a hex value for a custom property from the block."""
+        m = re.search(rf"--{name}:\s*(#[0-9a-fA-F]{{6}})", block)
+        assert m, f"--{name} not defined inside .dark block"
+        return m.group(1)
+
+    def test_dark_mode_primary_text_contrast(self, theme_css):
+        """Dark mode --text-primary on --bg-primary must pass AA (4.5:1)."""
+        b = self._dark_block(theme_css)
+        ratio = get_contrast_ratio(self._token(b, "text-primary"), self._token(b, "bg-primary"))
+        assert ratio >= 4.5, f"Dark mode primary text contrast: {ratio:.2f}:1 (need >= 4.5)"
+
+    def test_dark_mode_secondary_text_contrast(self, theme_css):
+        """Dark mode --text-secondary on --bg-primary must pass AA (4.5:1)."""
+        b = self._dark_block(theme_css)
+        ratio = get_contrast_ratio(self._token(b, "text-secondary"), self._token(b, "bg-primary"))
+        assert ratio >= 4.5, f"Dark mode secondary text contrast: {ratio:.2f}:1 (need >= 4.5)"
+
+    def test_dark_mode_border_contrast(self, theme_css):
+        """Dark mode --border-color on --bg-primary must pass AA for non-text (3:1).
+
+        Borders are UI components — 3:1 is the threshold from SC 1.4.11.
+        """
+        b = self._dark_block(theme_css)
+        ratio = get_contrast_ratio(self._token(b, "border-color"), self._token(b, "bg-primary"))
+        assert ratio >= 3.0, (
+            f"Dark mode border contrast: {ratio:.2f}:1 (need >= 3.0 for non-text). "
+            f"Borders must be distinguishable from background."
+        )
+
+    def test_dark_mode_text_secondary_on_surface(self, theme_css):
+        """Dark mode --text-secondary on --bg-secondary (cards/surfaces) passes AA."""
+        b = self._dark_block(theme_css)
+        ratio = get_contrast_ratio(self._token(b, "text-secondary"), self._token(b, "bg-secondary"))
+        assert ratio >= 4.5, (
+            f"Dark mode text-secondary on bg-secondary: {ratio:.2f}:1 (need >= 4.5). "
+            f"Most body text on cards uses these two tokens together."
+        )
+
+
+class TestDsButtonTargetSize:
+    """WCAG SC 2.5.8: ds_button must emit markup meeting 24×24 CSS px minimum.
+
+    Static analysis of the macro source. The rendered button inherits:
+      - padding: py-2 (0.5rem = 8px top + 8px bottom)
+      - font-size: text-sm (14px with 20px line-height)
+      - total height = 20 + 16 = 36px  →  comfortably above 24px floor
+    If someone swaps py-2 → py-0.5 in a future refactor, this test fires.
+    """
+
+    MACROS_FILE = ROOT / "app" / "templates" / "macros" / "ds.html"
+
+    def _macro_source(self, name: str) -> str:
+        """Return the raw body of a macro by name (between '{% macro foo' and '{% endmacro %}')."""
+        content = self.MACROS_FILE.read_text()
+        m = re.search(
+            r"\{%\s*macro\s+" + re.escape(name) + r"\s*\([^)]*\)\s*%\}(.*?)\{%\s*endmacro\s*%\}",
+            content,
+            re.DOTALL,
+        )
+        assert m, f"macro {name} not found in ds.html"
+        return m.group(1)
+
+    def test_ds_button_has_adequate_vertical_padding(self):
+        """ds_button's base classes must include py-2 or larger (=>16px vertical padding)."""
+        body = self._macro_source("ds_button")
+        # Accept any of py-2, py-2.5, py-3. Reject py-0, py-0.5, py-1, py-1.5.
+        adequate = re.search(r"\bpy-(2|2\.5|3|4)\b", body)
+        too_small = re.findall(r"\bpy-(0|0\.5|1|1\.5)\b", body)
+        assert adequate, "ds_button base class must include py-2 or larger"
+        assert not too_small, (
+            f"ds_button uses vertical padding {too_small!r} which may render <24px tall. "
+            f"WCAG 2.5.8 requires 24×24 CSS px minimum for interactive targets."
+        )
+
+    def test_ds_button_has_adequate_horizontal_padding(self):
+        """ds_button's base classes must include px-4 or similar (=>24px horizontal)."""
+        body = self._macro_source("ds_button")
+        adequate = re.search(r"\bpx-(3|4|5|6)\b", body)
+        assert adequate, (
+            "ds_button base class must include px-3 or larger to guarantee "
+            "horizontal target size >= 24px for short labels."
+        )
+
+    def test_ds_button_uses_text_sm_or_larger(self):
+        """text-sm = 14px with 20px line-height → height contributes ≥20px."""
+        body = self._macro_source("ds_button")
+        # text-xs would give 12px/16px line-height — borderline when combined with py-1.
+        assert re.search(r"\btext-(sm|base|lg|xl)\b", body), (
+            "ds_button must use text-sm or larger so line-height + padding >= 24px"
+        )
+
+
+class TestDsPrimitiveFocusVisible:
+    """WCAG SC 2.4.7: ds_button-rendered nodes must be covered by focus-visible rules.
+
+    ds_button renders either <a> (when href given) or <button> — both are
+    covered by the global button/a:focus-visible rule in design-utilities.css.
+    This test guards against accidentally disabling that coverage.
+    """
+
+    def test_global_focus_visible_covers_buttons_and_links(self, a11y_css):
+        """The comprehensive :focus-visible rule must still target <button> and <a>."""
+        # design-utilities.css has a compound selector covering all interactive elements.
+        # Verify both 'button:focus-visible' and 'a:focus-visible' appear in it.
+        assert "button:focus-visible" in a11y_css, (
+            "Global :focus-visible rule must cover <button> elements"
+        )
+        assert "a:focus-visible" in a11y_css, (
+            "Global :focus-visible rule must cover <a> elements (ds_button link mode)"
+        )
+
+    def test_focus_visible_has_outline_not_none(self, a11y_css):
+        """Focus-visible rule must set an outline (not 'outline: none' without replacement)."""
+        # Find the block containing button:focus-visible
+        idx = a11y_css.find("button:focus-visible")
+        assert idx >= 0
+        # Grab ~400 chars after the selector to inspect the declarations
+        block = a11y_css[idx : idx + 400]
+        # Must have 'outline' with a non-none value
+        assert "outline:" in block, "Focus-visible rule must declare an outline"
+        # Reject `outline: none` unless a replacement visual indicator exists in the same block
+        if "outline: none" in block or "outline:none" in block:
+            assert "box-shadow" in block or "border" in block, (
+                "Focus-visible rule sets outline:none but lacks a replacement "
+                "(box-shadow or border) — WCAG 2.4.7 violation."
+            )

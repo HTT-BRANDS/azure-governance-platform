@@ -203,9 +203,9 @@
   --text-primary:   #F9FAFB;
   --text-secondary: #D1D5DB;
   --text-muted:     #9CA3AF;  /* ~6.7:1 on #0F0F0F (WCAG AA) */
-  --border-color:   #374151;
-  --border-light:   #262626;
-  --border-default: #374151;
+  --border-color:   #6B7280;  /* 3.96:1 on #0F0F0F — passes WCAG 1.4.11 non-text (3:1) */
+  --border-light:   #4B5563;  /* subtle divider; 2.54:1 — decorative only, not active UI boundary */
+  --border-default: #6B7280;  /* synonym of border-color; same 3.96:1 compliance */
   --sidebar-bg:     #0F0F0F;
   --sidebar-border: #262626;
 
@@ -247,7 +247,7 @@
     --text-primary:   #F9FAFB;
     --text-secondary: #D1D5DB;
     --text-muted:     #9CA3AF;
-    --border-color:   #374151;
+    --border-color:   #6B7280;
     --sidebar-bg:     #0F0F0F;
     --sidebar-border: #262626;
   }
