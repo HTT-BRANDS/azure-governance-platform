@@ -201,3 +201,38 @@ class TestRouteRegistered:
 
         paths = {route.path for route in app.routes if hasattr(route, "path")}
         assert "/design-system" in paths, "/design-system not mounted"
+
+
+# ── Phase 3 Migration Tests ─────────────────────────────────────
+class TestMigratedPages:
+    """Pages migrated in Phase 3 must import + exercise ds macros."""
+
+    @pytest.mark.parametrize(
+        "page,required_macros",
+        [
+            ("pages/dashboard.html", ["ds_stat_card", "ds_card"]),
+        ],
+    )
+    def test_page_imports_ds_macros(self, page, required_macros):
+        """Every migrated page imports the ds macros it uses."""
+        content = (TEMPLATES_DIR / page).read_text()
+        assert 'from "macros/ds.html" import' in content, f"{page} must import macros/ds.html"
+        for macro in required_macros:
+            assert macro in content, (
+                f"{page} expected to use macro {macro} but does not reference it"
+            )
+
+    def test_dashboard_no_bespoke_stat_cards(self):
+        """After migration, dashboard.html should not reassemble stat cards inline.
+
+        Symptom of un-migrated card: the original inline pattern
+        `<p class="text-3xl font-bold text-primary-theme">` immediately
+        after a `p-6 border-l-4` wrapper. All stat cards now go through
+        `ds_stat_card`, which renders that markup from the macro body.
+        """
+        content = (TEMPLATES_DIR / "pages/dashboard.html").read_text()
+        # Level-2 summary cards used to inline this pattern 4 times.
+        assert 'border-l-4" style="border-color: var(--color-' not in content, (
+            'Bespoke border-l-4 + style="border-color" pattern still present — '
+            "migrate to ds_stat_card(border_accent=...)"
+        )

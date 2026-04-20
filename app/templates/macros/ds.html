@@ -107,25 +107,44 @@
    Single KPI metric card. Used inside ds_stats_row.
 
    Args:
-     label        — metric label, e.g. "Total Spend"
-     value        — metric value (str or number; not auto-formatted)
-     icon_svg     — optional inline SVG string (use Heroicons, 24x24)
-     icon_bg      — Tailwind classes for icon wrapper bg
-                    (default: brand primary tint)
-     icon_color   — Tailwind classes for icon stroke color
-     trend        — optional dict {"value": "+12%", "positive": True}
+     label         — metric label, e.g. "Total Spend"
+     value         — metric value (str or number; not auto-formatted)
+     icon_svg      — optional inline SVG string (use Heroicons, 24x24)
+     icon_bg       — Tailwind classes for icon wrapper bg
+                     (default: brand primary tint)
+     icon_color    — Tailwind classes for icon stroke color
+     trend         — optional dict {"value": "+12%", "positive": True}
+                     Colored red/green based on `positive`.
+     caption       — optional neutral secondary line (e.g. "3 orphaned resources")
+                     Use when you have a fact, not a trend.
+     caption_html  — if True, caption is rendered as raw HTML (for embedded
+                     <span class="text-danger">, etc.). Default False.
+     footer        — optional tertiary line, muted (e.g. "Synced 2m ago")
+     border_accent — optional semantic color for a left border:
+                     "success" | "warning" | "info" | "danger" | "brand"
 
    Example:
      {{ ds_stat_card(label="Tenants", value=42,
-                     icon_svg=HEROICON_BUILDING) }}
+                     icon_svg=HEROICON_BUILDING,
+                     trend={"value": "+2 this week", "positive": True},
+                     footer="Synced 3m ago") }}
 #}
-{% macro ds_stat_card(label, value, icon_svg="", icon_bg="bg-brand-primary-5 dark:bg-brand-primary-50",
+{% macro ds_stat_card(label, value, icon_svg="",
+                      icon_bg="bg-brand-primary-5 dark:bg-brand-primary-50",
                       icon_color="text-brand-primary dark:text-brand-secondary",
-                      trend=None) %}
+                      trend=None, caption=None, caption_html=False,
+                      footer=None, border_accent=None) %}
+{% set accent_class = {
+  "success": "border-l-4 border-l-success",
+  "warning": "border-l-4 border-l-warning",
+  "info":    "border-l-4 border-l-info",
+  "danger":  "border-l-4 border-l-danger",
+  "brand":   "border-l-4 border-l-brand-primary",
+}.get(border_accent, "") %}
 <article class="bg-surface-primary rounded-xl p-6 shadow-sm border border-default
-                hover:shadow-md transition-shadow">
+                hover:shadow-md transition-shadow {{ accent_class }}">
     <div class="flex items-center justify-between">
-        <div>
+        <div class="min-w-0">
             <p class="text-sm font-medium text-secondary-theme">{{ label }}</p>
             <p class="text-3xl font-bold text-primary-theme mt-1">{{ value }}</p>
             {% if trend %}
@@ -133,9 +152,17 @@
                 {{ trend.value }}
             </p>
             {% endif %}
+            {% if caption %}
+            <p class="text-sm text-secondary-theme mt-2">
+                {% if caption_html %}{{ caption|safe }}{% else %}{{ caption }}{% endif %}
+            </p>
+            {% endif %}
+            {% if footer %}
+            <p class="text-xs text-muted-theme mt-1">{{ footer }}</p>
+            {% endif %}
         </div>
         {% if icon_svg %}
-        <div class="p-3 rounded-xl {{ icon_bg }}" aria-hidden="true">
+        <div class="p-3 rounded-xl {{ icon_bg }} flex-shrink-0" aria-hidden="true">
             <span class="block w-6 h-6 {{ icon_color }}">{{ icon_svg|safe }}</span>
         </div>
         {% endif %}
