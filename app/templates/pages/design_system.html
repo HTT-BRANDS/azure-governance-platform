@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% from "macros/ds.html" import ds_page_shell, ds_card, ds_stat_card, ds_alert, ds_button, ds_card_grid, ds_stats_row %}
+
+{% block title %}Design System · Azure Governance{% endblock %}
+
+{# ── Tiny inline icon set (Heroicons) so the showcase is self-contained ── #}
+{% set icon_plus %}
+<svg viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+{% endset %}
+{% set icon_refresh %}
+<svg viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clip-rule="evenodd"/></svg>
+{% endset %}
+{% set icon_building %}
+<svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M3 4a2 2 0 012-2h14a2 2 0 012 2v16a1 1 0 01-1 1h-5v-5h-4v5H4a1 1 0 01-1-1V4zm4 4h2v2H7V8zm6 0h2v2h-2V8zM7 12h2v2H7v-2zm6 0h2v2h-2v-2z"/></svg>
+{% endset %}
+{% set icon_chart %}
+<svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+{% endset %}
+{% set icon_users %}
+<svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M4.5 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM14.25 8.625a3.375 3.375 0 116.75 0 3.375 3.375 0 01-6.75 0zM1.5 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM17.25 19.128l-.001.144a2.25 2.25 0 01-.233.96 10.088 10.088 0 005.06-1.01.75.75 0 00.42-.643 4.875 4.875 0 00-6.957-4.611 8.586 8.586 0 011.71 5.157v.003z"/></svg>
+{% endset %}
+{% set icon_dollar %}
+<svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v.816a3.836 3.836 0 00-1.72.756c-.712.566-1.112 1.35-1.112 2.178 0 .829.4 1.612 1.113 2.178.502.4 1.102.647 1.719.756v2.978a2.536 2.536 0 01-.921-.421l-.879-.66a.75.75 0 00-.9 1.2l.879.66c.533.4 1.169.645 1.821.75V18a.75.75 0 001.5 0v-.81a4.124 4.124 0 001.821-.749c.745-.559 1.179-1.344 1.179-2.191 0-.847-.434-1.632-1.179-2.191a4.122 4.122 0 00-1.821-.75V8.354c.29.082.559.213.786.393l.415.33a.75.75 0 00.933-1.175l-.415-.33a3.836 3.836 0 00-1.719-.755V6z" clip-rule="evenodd"/></svg>
+{% endset %}
+
+{% block content %}
+{% call ds_page_shell(
+     title="Design System",
+     subtitle="Live showcase of every ds-template primitive × variant. ADR-0005 Phase 2.",
+     breadcrumb=[{"label": "Home", "href": "/dashboard"}, {"label": "Design System"}]) %}
+
+  {# ── Section: Stat Cards ────────────────────────────────────────── #}
+  {% call ds_card(title="Stat Cards", subtitle="KPI metrics — used in dashboard headers.") %}
+    {% call ds_stats_row() %}
+      {{ ds_stat_card(label="Tenants",       value=42,        icon_svg=icon_building) }}
+      {{ ds_stat_card(label="Total Spend",   value="$127.5k", icon_svg=icon_dollar,
+                      trend={"value": "+12% MoM", "positive": true}) }}
+      {{ ds_stat_card(label="Active Users",  value="1,284",   icon_svg=icon_users,
+                      trend={"value": "-3 since yesterday", "positive": false}) }}
+      {{ ds_stat_card(label="Compliance %",  value="98.2%",   icon_svg=icon_chart,
+                      icon_bg="bg-brand-success-5",
+                      icon_color="text-brand-success-100") }}
+    {% endcall %}
+  {% endcall %}
+
+
+  {# ── Section: Cards ─────────────────────────────────────────────── #}
+  {% call ds_card(title="Cards", subtitle="Standard content surfaces.") %}
+    {% call ds_card_grid(columns="grid-cols-1 md:grid-cols-2 lg:grid-cols-3") %}
+
+      {% call ds_card(title="Card with title") %}
+        <p class="text-sm text-secondary-theme">
+          Normal card with a header. Hover for a subtle shadow lift.
+        </p>
+      {% endcall %}
+
+      {% call ds_card(title="Card with subtitle", subtitle="Last updated 2 min ago") %}
+        <p class="text-sm text-secondary-theme">
+          Subtitle text uses the secondary text token, sits under the title.
+        </p>
+      {% endcall %}
+
+      {% call ds_card() %}
+        <p class="text-sm text-secondary-theme">
+          Title-less card — just a styled surface. Useful for chart panels.
+        </p>
+      {% endcall %}
+
+    {% endcall %}
+  {% endcall %}
+
+
+  {# ── Section: Buttons ──────────────────────────────────────────── #}
+  {% call ds_card(title="Buttons", subtitle="4 variants × icon support × link mode.") %}
+    <div class="flex flex-wrap gap-3 items-center">
+      {{ ds_button("Primary",   variant="primary") }}
+      {{ ds_button("Secondary", variant="secondary") }}
+      {{ ds_button("Danger",    variant="danger") }}
+      {{ ds_button("Ghost",     variant="ghost") }}
+    </div>
+
+    <div class="flex flex-wrap gap-3 items-center mt-4">
+      {{ ds_button("Add tenant",    variant="primary",   icon_svg=icon_plus) }}
+      {{ ds_button("Refresh",       variant="secondary", icon_svg=icon_refresh) }}
+      {{ ds_button("Linked button", variant="ghost",     href="/dashboard") }}
+      {{ ds_button("Disabled",      variant="primary",   disabled=true) }}
+    </div>
+  {% endcall %}
+
+
+  {# ── Section: Alerts ─────────────────────────────────────────── #}
+  {% call ds_card(title="Alerts", subtitle="4 severities × optional title × dismissible.") %}
+    <div class="space-y-3">
+      {% call ds_alert(severity="info") %}
+        Plain info alert — no title, just a body.
+      {% endcall %}
+
+      {% call ds_alert(severity="success", title="Sync complete") %}
+        All 42 tenants synchronised in 3.2 seconds.
+      {% endcall %}
+
+      {% call ds_alert(severity="warning", title="Heads up", dismissible=true) %}
+        3 tenants haven't synced in over 24 hours. Click the X to dismiss.
+      {% endcall %}
+
+      {% call ds_alert(severity="error", title="Sync failed") %}
+        Could not reach the Azure AD endpoint for tenant
+        <code class="font-mono text-xs">contoso-prod</code>. Check credentials.
+      {% endcall %}
+    </div>
+  {% endcall %}
+
+
+  {# ── Section: Page Shell (meta) ─────────────────────────────── #}
+  {% call ds_card(title="Page Shell", subtitle="The wrapper you're already inside.") %}
+    <p class="text-sm text-secondary-theme">
+      This entire page is wrapped in
+      <code class="font-mono text-xs bg-bg-tertiary px-1 py-0.5 rounded">{% raw %}ds_page_shell{% endraw %}</code>.
+      It provides the title block + breadcrumb shown at the top, plus the
+      consistent <code class="font-mono text-xs bg-bg-tertiary px-1 py-0.5 rounded">p-4 sm:p-6 lg:p-8 space-y-8</code>
+      content padding/spacing.
+    </p>
+  {% endcall %}
+
+
+  {# ── Section: SWA Glassmorphism Tokens (dark-mode only) ───────── #}
+  {% call ds_card(title="SWA Glassmorphism (dark mode only)",
+                  subtitle="Toggle dark mode to see the surface tokens take effect.") %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div class="p-4 rounded-xl border border-default"
+           style="background: var(--surface, #f9fafb);">
+        <code class="font-mono text-xs text-secondary-theme">--surface</code>
+        <p class="mt-1 text-primary-theme">#161b22 (dark)</p>
+      </div>
+      <div class="p-4 rounded-xl border border-default"
+           style="background: var(--surface-2, #f3f4f6);">
+        <code class="font-mono text-xs text-secondary-theme">--surface-2</code>
+        <p class="mt-1 text-primary-theme">#1c2128 (dark)</p>
+      </div>
+      <div class="p-4 rounded-xl border border-default"
+           style="background: var(--surface-glass, rgba(243,244,246,0.7)); backdrop-filter: blur(8px);">
+        <code class="font-mono text-xs text-secondary-theme">--surface-glass</code>
+        <p class="mt-1 text-primary-theme">rgba(22,27,34,0.7) + blur</p>
+      </div>
+    </div>
+  {% endcall %}
+
+{% endcall %}
+{% endblock %}

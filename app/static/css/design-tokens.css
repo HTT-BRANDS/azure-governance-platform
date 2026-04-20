@@ -178,6 +178,19 @@
   --overlay-border:            #334155;
   --overlay-interactive:       #475569;
   --overlay-interactive-hover: #64748b;
+
+  /* ── SWA Layout + Shared Sizing (Domain-Intelligence ds-template) ────── */
+  --sidebar-width:    256px;
+  --header-height:    0px;
+  --min-target-size:  2.75rem;  /* 44px — WCAG 2.5.8 AAA */
+
+  /* ── SWA Radius — larger than Tailwind defaults for ds-template look ── */
+  --swa-radius:    12px;
+  --swa-radius-lg: 16px;
+  --swa-radius-xl: 20px;
+
+  /* ── SWA Motion — single source for transitions ──────────────────────── */
+  --swa-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ==========================================================================
@@ -195,6 +208,34 @@
   --border-default: #374151;
   --sidebar-bg:     #0F0F0F;
   --sidebar-border: #262626;
+
+  /* ── SWA Dark Glassmorphism (Domain-Intelligence ds-template lineage) ── */
+  /* These layer the SWA aesthetic ONTO the standard dark mode tokens. */
+  --bg:             #0a0a0f;
+  --bg-gradient:    linear-gradient(135deg, #0a0a0f 0%, #0d1117 50%, #111827 100%);
+  --surface:        #161b22;
+  --surface-2:      #1c2128;
+  --surface-3:      #21262d;
+  --surface-glass:  rgba(22, 27, 34, 0.7);
+  --border-dark:    #30363d;
+  --border-subtle:  rgba(48, 54, 61, 0.5);
+  --text-light:     #e6edf3;
+  --text-dim:       #8b949e;
+  --text-muted-dark:#6e7681;
+
+  /* SWA semantic accents — colorblind-friendly, dark-tuned */
+  --accent-blue:  #58a6ff;
+  --accent-glow:  rgba(88, 166, 255, 0.15);
+  --green-swa:    #3fb950;
+  --green-glow:   rgba(63, 185, 80, 0.15);
+  --yellow-swa:   #d29922;
+  --red-swa:      #f85149;
+  --purple-swa:   #bc8cff;
+  --orange-swa:   #f0883e;
+
+  /* SWA shadows — dark-mode-tuned (lighter shadows on dark surfaces) */
+  --swa-shadow:    0 4px 24px rgba(0, 0, 0, 0.3);
+  --swa-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
 }
 
 /* System preference fallback (when no explicit .light or .dark class set) */

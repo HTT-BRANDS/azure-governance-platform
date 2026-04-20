@@ -122,6 +122,66 @@ body {
 .border-overlay         { border-color: var(--overlay-border); }
 .bg-overlay-interactive { background-color: var(--overlay-interactive); }
 
+/* ── Danger Button (ds_button variant="danger") ─────────────────────── */
+/* Uses --color-error token so one knob controls all destructive actions. */
+.btn-danger {
+  background-color: var(--color-error);
+  color:            #ffffff;
+  transition:       background-color 0.15s ease;
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: #9A3412;  /* error token darkened ~10% */
+}
+/* Focus ring comes from the global :focus-visible rule — no override     */
+/* needed here; the brand-primary outline has strong contrast on red.     */
+
+/* ── Alert Variants (ds_alert macro — adapts to dark mode via tokens) ─── */
+/* Uses rgb() channels on semantic tokens so we get the light 5%-tint bg   */
+/* in light mode and a ~20% tint in dark mode.                              */
+.ds-alert-info {
+  background-color: #eff6ff;    /* blue-50  */
+  color:            #1e40af;    /* blue-800 */
+  border-color:     #bfdbfe;    /* blue-200 */
+}
+.dark .ds-alert-info {
+  background-color: rgba(30, 58, 138, 0.2);   /* blue-900/20 */
+  color:            #bfdbfe;                   /* blue-200    */
+  border-color:     #1e40af;                   /* blue-800    */
+}
+
+.ds-alert-success {
+  background-color: #f0fdf4;    /* green-50  */
+  color:            #166534;    /* green-800 */
+  border-color:     #bbf7d0;    /* green-200 */
+}
+.dark .ds-alert-success {
+  background-color: rgba(20, 83, 45, 0.2);     /* green-900/20 */
+  color:            #bbf7d0;                    /* green-200    */
+  border-color:     #166534;                    /* green-800    */
+}
+
+.ds-alert-warning {
+  background-color: #fffbeb;    /* amber-50  */
+  color:            #92400e;    /* amber-800 */
+  border-color:     #fde68a;    /* amber-200 */
+}
+.dark .ds-alert-warning {
+  background-color: rgba(120, 53, 15, 0.2);    /* amber-900/20 */
+  color:            #fde68a;                    /* amber-200    */
+  border-color:     #92400e;                    /* amber-800    */
+}
+
+.ds-alert-error {
+  background-color: #fef2f2;    /* red-50  */
+  color:            #991b1b;    /* red-800 */
+  border-color:     #fecaca;    /* red-200 */
+}
+.dark .ds-alert-error {
+  background-color: rgba(127, 29, 29, 0.2);    /* red-900/20 */
+  color:            #fecaca;                    /* red-200    */
+  border-color:     #991b1b;                    /* red-800    */
+}
+
 /* ── Hero Gradient (brand-tinted dark banner for dashboards) ─────────── */
 .bg-hero-gradient {
   background: linear-gradient(
