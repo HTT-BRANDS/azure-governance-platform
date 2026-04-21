@@ -4,7 +4,7 @@
   Part of the backward-compatible facade in macros/ds.html. See that file
   for the full library context and ADR-0005 for the layered CSS architecture.
 
-  Macros: ds_page_shell, ds_card_grid, ds_stats_row
+  Macros: ds_page_shell, ds_card_grid, ds_stats_row, ds_toolbar
 #}
 
 
@@ -71,5 +71,49 @@
 {% macro ds_stats_row(columns="grid-cols-1 md:grid-cols-2 lg:grid-cols-4", gap="gap-6") %}
 <div class="grid {{ columns }} {{ gap }}">
     {{ caller() }}
+</div>
+{% endmacro %}
+
+
+{# ─── ds_toolbar ──────────────────────────────────────────────────────
+   Page-level action bar — filters/search on the left, actions on the right.
+   Typical placement: above a table or card grid. The caller provides the
+   left slot (filters, search inputs) via {% call %}; the right slot is a
+   pre-rendered Markup string passed as `actions` (usually one or more
+   ds_button(...) invocations joined).
+
+   Why pre-rendered actions instead of a second {% call %} block? Jinja
+   macros only support ONE caller body, and composing ds_button at the
+   call site keeps the toolbar itself dumb about what an action is.
+
+   Args:
+     actions        — Markup | None; HTML for the right-side slot. Caller
+                      is responsible for invoking ds_button / passing safe
+                      markup. None hides the slot entirely.
+     extra_classes  — override knob for callers that need extra padding,
+                      margin, or background. No default surface — wrap in
+                      ds_card if you want one (composability over opinion).
+
+   Layout:
+     - Mobile (<md): flex-col; filters stack on top, actions below.
+     - md+: flex-row with justify-between — filters left, actions right.
+     - DOM order = filters first → natural tab flow for keyboard users.
+     - gap-3 between groups; inner filter slot wraps its children with
+       the same gap so search + dropdowns line up cleanly.
+
+   Example:
+     {% call ds_toolbar(actions=ds_button("Add User", variant="primary")) %}
+       <input type="search" placeholder="Search users…" class="...">
+       <select class="...">...</select>
+     {% endcall %}
+#}
+{% macro ds_toolbar(actions=None, extra_classes="") %}
+<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between {{ extra_classes }}">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3 md:flex-1 min-w-0">
+        {{ caller() }}
+    </div>
+    {% if actions %}
+    <div class="flex flex-wrap items-center gap-3">{{ actions|safe }}</div>
+    {% endif %}
 </div>
 {% endmacro %}

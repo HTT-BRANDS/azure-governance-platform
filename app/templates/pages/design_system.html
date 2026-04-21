@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/ds.html" import ds_page_shell, ds_card, ds_stat_card, ds_alert, ds_button, ds_card_grid, ds_stats_row %}
+{% from "macros/ds.html" import ds_page_shell, ds_card, ds_stat_card, ds_alert, ds_button, ds_card_grid, ds_stats_row, ds_toolbar %}
 
 {% block title %}Design System · Azure Governance{% endblock %}
 
@@ -84,6 +84,48 @@
       {{ ds_button("Refresh",       variant="secondary", icon_svg=icon_refresh) }}
       {{ ds_button("Linked button", variant="ghost",     href="/dashboard") }}
       {{ ds_button("Disabled",      variant="primary",   disabled=true) }}
+    </div>
+  {% endcall %}
+
+
+  {# ── Section: Toolbar ────────────────────────────────────────── #}
+  {% call ds_card(title="Toolbar", subtitle="Page action bar — filters/search left, actions right. Stacks on mobile.") %}
+    <div class="space-y-6">
+
+      {# Variant 1: search + filter dropdown + primary action (most common) #}
+      <div>
+        <p class="text-xs font-mono text-secondary-theme mb-2">search + filter + primary action</p>
+        {% call ds_toolbar(actions=ds_button("Add User", variant="primary", icon_svg=icon_plus)) %}
+          <label for="ds-toolbar-demo-search" class="sr-only">Search users</label>
+          <input id="ds-toolbar-demo-search"
+                 type="search"
+                 placeholder="Search users…"
+                 class="rounded-lg border-theme bg-surface-primary text-primary-theme px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-1 w-full sm:w-56"
+                 aria-label="Search users">
+          <label for="ds-toolbar-demo-role" class="sr-only">Filter by role</label>
+          <select id="ds-toolbar-demo-role"
+                  class="rounded-lg border-theme bg-surface-primary text-primary-theme px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-1"
+                  aria-label="Filter by role">
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="viewer">Viewer</option>
+          </select>
+        {% endcall %}
+      </div>
+
+      {# Variant 2: search-only (no actions slot) #}
+      <div>
+        <p class="text-xs font-mono text-secondary-theme mb-2">search only (no actions)</p>
+        {% call ds_toolbar() %}
+          <label for="ds-toolbar-demo-search2" class="sr-only">Search</label>
+          <input id="ds-toolbar-demo-search2"
+                 type="search"
+                 placeholder="Search…"
+                 class="rounded-lg border-theme bg-surface-primary text-primary-theme px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-1 w-full sm:w-72"
+                 aria-label="Search">
+        {% endcall %}
+      </div>
+
     </div>
   {% endcall %}
 
