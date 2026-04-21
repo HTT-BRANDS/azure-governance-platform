@@ -7,6 +7,15 @@ test isolation. FastAPI evaluates dependency_overrides at request time,
 not at client creation time, so per-test DB swapping works correctly.
 """
 
+import os
+
+# Default ENVIRONMENT=development for the test run. Settings defaults to
+# 'production' (safe-by-default) which triggers strict CORS validation and
+# produces a cryptic ValidationError during test collection when unset.
+# Test runners that need a different environment can export ENVIRONMENT
+# before invoking pytest; this only fills in the blank.
+os.environ.setdefault("ENVIRONMENT", "development")
+
 # Pre-import Azure modules to fix namespace package issues during test collection
 # This must happen before any other imports
 
