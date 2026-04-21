@@ -222,3 +222,28 @@
     </div>
 {% endcall %}
 {% endmacro %}
+
+
+{# ── ds_static_table — pre-populated table (caller supplies <tr>/<td> rows).
+   Use instead of ds_table when content is server-rendered (no HTMX swap).
+   Args: columns (list[str] headers), title (optional ds_card header),
+         caption (optional sr-only <caption>), extra_card_classes (→ ds_card).
+   A11y: <th scope="col"> + <caption class="sr-only"> (when set) for SR users.
+   {% call ds_static_table(columns=["Name","Status"], title="Tenants") %}<tr>
+     <td>Acme</td><td>Synced</td></tr>{% endcall %}
+#}
+{% macro ds_static_table(columns, title=None, caption=None,
+                         extra_card_classes="!p-0 overflow-hidden") %}
+{% set rows = caller %}
+{% call ds_card(title=title, extra_classes=extra_card_classes) %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-border-default">
+            {% if caption %}<caption class="sr-only">{{ caption }}</caption>{% endif %}
+            <thead class="bg-surface-tertiary"><tr>
+                {% for col in columns %}<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-theme uppercase tracking-wider">{{ col }}</th>{% endfor %}
+            </tr></thead>
+            <tbody class="bg-surface-primary divide-y divide-border-default">{{ rows() }}</tbody>
+        </table>
+    </div>
+{% endcall %}
+{% endmacro %}

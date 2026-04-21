@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/ds.html" import ds_page_shell, ds_card, ds_stat_card, ds_alert, ds_button, ds_card_grid, ds_stats_row %}
+{% from "macros/ds.html" import ds_page_shell, ds_card, ds_stat_card, ds_alert, ds_button, ds_card_grid, ds_stats_row, ds_static_table %}
 
 {% block title %}Design System · Azure Governance{% endblock %}
 
@@ -120,6 +120,31 @@
       consistent <code class="font-mono text-xs bg-bg-tertiary px-1 py-0.5 rounded">p-4 sm:p-6 lg:p-8 space-y-8</code>
       content padding/spacing.
     </p>
+  {% endcall %}
+
+
+  {# ── Section: Static Table ──────────────────────────────────── #}
+  {% call ds_card(title="Static Table",
+                  subtitle="Server-rendered rows via a caller block — no HTMX, no JS.") %}
+    {% call ds_static_table(columns=["Tenant", "Status", "Spend"],
+                            title="Recent activity",
+                            caption="Three most recent tenant sync results.") %}
+      <tr>
+        <td class="px-6 py-4 text-sm text-primary-theme">contoso-prod</td>
+        <td class="px-6 py-4 text-sm text-success">Synced</td>
+        <td class="px-6 py-4 text-sm text-secondary-theme">$12.4k</td>
+      </tr>
+      <tr>
+        <td class="px-6 py-4 text-sm text-primary-theme">fabrikam-dev</td>
+        <td class="px-6 py-4 text-sm text-warning">Pending</td>
+        <td class="px-6 py-4 text-sm text-secondary-theme">$3.1k</td>
+      </tr>
+      <tr>
+        <td class="px-6 py-4 text-sm text-primary-theme">northwind-qa</td>
+        <td class="px-6 py-4 text-sm text-danger">Failed</td>
+        <td class="px-6 py-4 text-sm text-secondary-theme">$0.8k</td>
+      </tr>
+    {% endcall %}
   {% endcall %}
 
 
