@@ -85,6 +85,13 @@ BANNED_GRAY_PATTERN = re.compile(
 # focus:outline-none without a ring replacement — kills native focus indicators
 BANNED_FOCUS_OUTLINE_NONE = re.compile(r"focus:outline-none")
 
+# border-theme is a ghost class — not defined in design-utilities.css, not a
+# Tailwind color key (no "theme" in tailwind.config.cjs). It gets silently
+# dropped by Tailwind, causing elements to fall back to the default border
+# color, which DIVERGES from --border-default in dark mode (#e5e7eb vs
+# #6B7280). Discovered via cwxu audit (2026-04); 21 sites fixed in 9v9u.
+BANNED_BORDER_THEME_PATTERN = re.compile(r"\bborder-theme\b")
+
 # Hardcoded hex colors in inline styles (bypasses design system)
 INLINE_HEX_PATTERN = re.compile(
     r"""style\s*=\s*["'][^"']*
@@ -185,6 +192,31 @@ class TestTemplateColorCompliance:
             f"Found {len(all_violations)} focus:outline-none in templates.\n"
             "This suppresses native focus indicators (WCAG 2.4.7 violation).\n"
             "Use focus-visible:ring-2 or let accessibility.css handle focus styles.\n"
+            + "\n".join(all_violations[:20])
+        )
+
+    def test_no_ghost_border_theme_class_in_templates(self, html_files):
+        """No `border-theme` class — it is not defined anywhere (9v9u).
+
+        `theme` is NOT a Tailwind color key (checked tailwind.config.cjs) and
+        `.border-theme` is NOT a rule in design-utilities.css. Templates that
+        use it get silently dropped by Tailwind, falling back to its default
+        border color — which coincides with --border-default in LIGHT mode but
+        diverges in DARK mode (fallback stays light while border-default
+        becomes #6B7280). Using `border-default` gives theme-aware behavior.
+
+        Guards the 9v9u normalization sweep (20 sites across 5 files).
+        """
+        all_violations = []
+        for f in html_files:
+            violations = _find_violations(f, BANNED_BORDER_THEME_PATTERN)
+            for line_num, _matched, _line_text in violations:
+                all_violations.append(f"  {f.relative_to(ROOT)}:{line_num}")
+
+        assert not all_violations, (
+            f"Found {len(all_violations)} `border-theme` ghost-class use(s) in templates.\n"
+            "`border-theme` is not defined (not a Tailwind color, not a utility rule). "
+            "Use `border-default` for theme-aware borders that honor dark mode.\n"
             + "\n".join(all_violations[:20])
         )
 
