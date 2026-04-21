@@ -84,9 +84,15 @@ class TestFilesExist:
         ds.html into a thin re-export facade. The facade should only
         contain import+alias plumbing and a short docblock; new primitives
         belong in the concern files, not here.
+
+        Budget growth: Phase 4b-ii..vi (py7u.2.2-2.6) each add one
+        re-export ``{% set %}`` line (ds_data_table, ds_modal, ds_tabs,
+        ds_form_field, ds_toolbar — 5 primitives). Post-4b-vi baseline is
+        ~50 lines; budget <55 keeps the facade thin while leaving minimal
+        headroom for future re-exports.
         """
         n = len(DS_MACROS.read_text().splitlines())
-        assert n < 50, f"ds.html facade is {n} lines — target <50 (see py7u.2.1)"
+        assert n < 55, f"ds.html facade is {n} lines — target <55 (see py7u.2.1/.2.6)"
 
     def test_ds_concern_files_exist(self):
         """Phase 4b-i: the 3 cohesion-based concern files must exist."""
@@ -129,6 +135,7 @@ class TestMacroDeclarations:
         "ds_card_grid",
         "ds_stats_row",
         "ds_static_table",
+        "ds_toolbar",
     ]
 
     @pytest.mark.parametrize("macro_name", REQUIRED_MACROS)
@@ -208,6 +215,96 @@ class TestShowcaseRenders:
     def test_link_button_mode_renders_anchor(self, rendered_showcase):
         """ds_button(href=...) should emit <a>, not <button>."""
         assert 'href="/dashboard"' in rendered_showcase
+
+
+# ── ds_toolbar primitive (py7u.2.6) ─────────────────────────────
+class TestToolbar:
+    """ds_toolbar is the page-level action bar primitive (filters left,
+    actions right; stacks on mobile). These tests guard its structural
+    contract so callers can rely on the layout utilities.
+    """
+
+    @pytest.fixture
+    def toolbar_env(self):
+        """Minimal Jinja env that can import macros/ds.html directly."""
+        return Environment(
+            loader=FileSystemLoader(str(TEMPLATES_DIR)),
+            autoescape=select_autoescape(["html", "xml"]),
+        )
+
+    def test_toolbar_renders_filters_and_actions(self, toolbar_env):
+        """Filter slot (caller) and actions slot both appear, filters FIRST
+        in DOM so keyboard tab order is natural (inputs before CTAs)."""
+        tmpl = toolbar_env.from_string(
+            '{% from "macros/ds.html" import ds_toolbar, ds_button %}'
+            '{% call ds_toolbar(actions=ds_button("Add", variant="primary")) %}'
+            '<input id="toolbar-filter" type="search">'
+            "{% endcall %}"
+        )
+        out = tmpl.render()
+        # Both slots present
+        assert 'id="toolbar-filter"' in out
+        assert "Add" in out
+        # Filters render BEFORE actions in source order
+        assert out.index('id="toolbar-filter"') < out.index(">Add<"), (
+            "filter slot must precede actions in DOM (tab order)"
+        )
+
+    def test_toolbar_responsive_flex_classes(self, toolbar_env):
+        """Outer container must use flex-col by default, flex-row at md+
+        with justify-between — the core responsive contract of the primitive.
+        """
+        tmpl = toolbar_env.from_string(
+            '{% from "macros/ds.html" import ds_toolbar %}'
+            "{% call ds_toolbar() %}<input>{% endcall %}"
+        )
+        out = tmpl.render()
+        for cls in (
+            "flex",
+            "flex-col",
+            "gap-3",
+            "md:flex-row",
+            "md:items-center",
+            "md:justify-between",
+        ):
+            assert cls in out, f"ds_toolbar missing responsive class {cls!r}"
+
+    def test_toolbar_without_actions_omits_actions_div(self, toolbar_env):
+        """When actions=None the right-side slot div is not rendered at all
+        (the caller shouldn't pay for an empty wrapper)."""
+        tmpl = toolbar_env.from_string(
+            '{% from "macros/ds.html" import ds_toolbar %}'
+            '{% call ds_toolbar() %}<input id="lonely">{% endcall %}'
+        )
+        out = tmpl.render()
+        assert 'id="lonely"' in out
+        # Only ONE inner flex-wrap div (the filters slot); actions div absent.
+        assert out.count("flex-wrap") == 0, (
+            "empty actions should not emit the flex-wrap actions wrapper"
+        )
+
+    def test_toolbar_extra_classes_forwarded(self, toolbar_env):
+        """extra_classes appends to the outer container for caller overrides."""
+        tmpl = toolbar_env.from_string(
+            '{% from "macros/ds.html" import ds_toolbar %}'
+            '{% call ds_toolbar(extra_classes="mb-8 custom-bg") %}'
+            "<input>{% endcall %}"
+        )
+        out = tmpl.render()
+        assert "mb-8" in out
+        assert "custom-bg" in out
+
+    def test_toolbar_shown_on_showcase(self, rendered_showcase):
+        """ds_toolbar appears in the /design-system showcase with both its
+        variants (search+filter+action, and search-only)."""
+        # Variant 1 marker
+        assert "Add User" in rendered_showcase
+        assert 'id="ds-toolbar-demo-search"' in rendered_showcase
+        assert 'id="ds-toolbar-demo-role"' in rendered_showcase
+        # Variant 2 marker
+        assert 'id="ds-toolbar-demo-search2"' in rendered_showcase
+        # Section title present
+        assert "Toolbar" in rendered_showcase
 
 
 # ── Design-tokens invariants ────────────────────────────────────

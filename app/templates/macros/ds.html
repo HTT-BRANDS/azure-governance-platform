@@ -10,6 +10,8 @@
 
     - macros/ds/layout.html   — ds_page_shell, ds_card_grid, ds_stats_row
     - macros/ds/display.html  — ds_card, ds_stat_card, ds_alert, ds_badge, ds_table, ds_static_table
+    - macros/ds/layout.html   — ds_page_shell, ds_card_grid, ds_stats_row, ds_toolbar
+    - macros/ds/display.html  — ds_card, ds_stat_card, ds_alert, ds_badge, ds_table
     - macros/ds/forms.html    — ds_button
 
   Add new primitives to the appropriate concern file AND re-export below.
@@ -38,6 +40,7 @@
 {% set ds_page_shell = _layout.ds_page_shell %}
 {% set ds_card_grid  = _layout.ds_card_grid %}
 {% set ds_stats_row  = _layout.ds_stats_row %}
+{% set ds_toolbar    = _layout.ds_toolbar %}
 
 {% set ds_card       = _display.ds_card %}
 {% set ds_stat_card  = _display.ds_stat_card %}
