@@ -128,6 +128,7 @@ class TestMacroDeclarations:
         "ds_button",
         "ds_card_grid",
         "ds_stats_row",
+        "ds_static_table",
     ]
 
     @pytest.mark.parametrize("macro_name", REQUIRED_MACROS)
@@ -318,4 +319,118 @@ class TestMigratedPages:
         assert 'border-l-4" style="border-color: var(--color-' not in content, (
             'Bespoke border-l-4 + style="border-color" pattern still present — '
             "migrate to ds_stat_card(border_accent=...)"
+        )
+
+
+# ── ds_static_table primitive (py7u.2.2) ───────────────────────
+class TestStaticTableDeclaration:
+    """Signature + render smoke tests for the ds_static_table primitive.
+
+    ds_static_table wraps the repeated card+table shell for pages that
+    server-render their rows (as opposed to the HTMX-swapped ds_table).
+    The {% call %} body supplies <tr>/<td> markup so consumers keep
+    control over cell layout while getting consistent chrome + a11y.
+    """
+
+    DISPLAY_HTML = DS_CONCERN_DIR / "display.html"
+
+    def test_macro_defined_with_required_columns_param(self):
+        """Signature must match the py7u.2.2 contract: columns required, rest keyword-optional."""
+        import re
+
+        content = self.DISPLAY_HTML.read_text()
+        match = re.search(
+            r"{%\s*macro\s+ds_static_table\(([^)]*)\)\s*%}",
+            content,
+            re.DOTALL,
+        )
+        assert match, "ds_static_table macro signature not found in display.html"
+        signature = match.group(1)
+
+        # `columns` must be the first positional (no default) — Jinja requires
+        # required params before defaults, same as Python.
+        first_param = signature.split(",")[0].strip()
+        assert first_param == "columns", (
+            f"ds_static_table first param must be `columns`, got `{first_param}`"
+        )
+
+        # Optional params present with defaults
+        for kw in ("title=None", "caption=None", "extra_card_classes="):
+            assert kw in signature, (
+                f"ds_static_table signature missing `{kw}` (see py7u.2.2 contract)"
+            )
+
+    @pytest.fixture
+    def macros_env(self):
+        """Jinja env loader scoped to the templates dir — for facade imports."""
+        return Environment(
+            loader=FileSystemLoader(str(TEMPLATES_DIR)),
+            autoescape=select_autoescape(["html", "xml"]),
+        )
+
+    @staticmethod
+    def _render(env: Environment, body: str) -> str:
+        """Render a tiny template that imports the facade and uses the macro."""
+        tmpl = env.from_string('{% from "macros/ds.html" import ds_static_table %}' + body)
+        return tmpl.render()
+
+    def test_minimal_render(self, macros_env):
+        """Minimal shape: no title, no caption, 2 columns, 3 rows."""
+        html = self._render(
+            macros_env,
+            '{% call ds_static_table(columns=["Name", "Status"]) %}'
+            "<tr><td>alpha</td><td>green</td></tr>"
+            "<tr><td>beta</td><td>amber</td></tr>"
+            "<tr><td>gamma</td><td>red</td></tr>"
+            "{% endcall %}",
+        )
+        assert ">Name<" in html and ">Status<" in html
+        # No <caption> when caption=None — screen readers get table alone
+        assert "<caption" not in html
+        # ds_card wrapper still renders, but header row is omitted (title=None)
+        assert "<section" in html
+        assert "card-" not in html  # aria-labelledby only emitted when titled
+        # Caller rows flow through the tbody
+        assert ">alpha<" in html and ">gamma<" in html
+
+    def test_full_render(self, macros_env):
+        """Full shape: title, caption, 4 columns, 10 rows with varied content."""
+        rows = "".join(
+            f"<tr><td>row{i}</td><td>x{i}</td><td>y{i}</td><td>z{i}</td></tr>" for i in range(10)
+        )
+        html = self._render(
+            macros_env,
+            '{% call ds_static_table(columns=["A","B","C","D"],'
+            ' title="Tenants", caption="Synced tenants snapshot") %}' + rows + "{% endcall %}",
+        )
+        # Title flows through ds_card header + aria-labelledby
+        assert "Tenants" in html
+        assert 'id="card-tenants"' in html
+        # sr-only caption for screen readers
+        assert '<caption class="sr-only">Synced tenants snapshot</caption>' in html
+        # 4 header cells, each with scope="col"
+        assert html.count('scope="col"') == 4
+        # All 10 caller rows came through
+        assert html.count("<tr>") >= 10
+
+    def test_empty_render(self, macros_env):
+        """Empty shape: title, caption, 4 columns, 0 rows (caller emits empty state)."""
+        html = self._render(
+            macros_env,
+            '{% call ds_static_table(columns=["A","B","C","D"],'
+            ' title="Nothing here", caption="No data") %}'
+            '<tr><td colspan="4" class="px-6 py-4 text-center text-muted-theme">'
+            "No results to display.</td></tr>{% endcall %}",
+        )
+        assert "Nothing here" in html
+        assert '<caption class="sr-only">No data</caption>' in html
+        assert "No results to display." in html
+        assert 'colspan="4"' in html
+
+    def test_showcase_demos_ds_static_table(self):
+        """The /design-system page must demo the new primitive (py7u.2.2)."""
+        content = SHOWCASE_HTML.read_text()
+        assert "ds_static_table" in content, (
+            "design_system.html must import/demo ds_static_table so the "
+            "showcase covers every primitive"
         )
