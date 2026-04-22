@@ -216,7 +216,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'KEY_VAULT_URL'
-          value: empty(keyVaultName) ? '' : 'https://${keyVaultName}.vault.azure.net'
+          value: empty(keyVaultName) ? '' : 'https://${keyVaultName}${az.environment().suffixes.keyvaultDns}'
         }
         {
           name: 'PYTHON_VERSION'
@@ -240,23 +240,23 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'AZURE_AD_ISSUER'
-          value: empty(azureAdTenantId) ? '' : 'https://login.microsoftonline.com/${azureAdTenantId}/v2.0'
+          value: empty(azureAdTenantId) ? '' : '${az.environment().authentication.loginEndpoint}${azureAdTenantId}/v2.0'
         }
         {
           name: 'AZURE_AD_TOKEN_ENDPOINT'
-          value: empty(azureAdTenantId) ? '' : 'https://login.microsoftonline.com/${azureAdTenantId}/oauth2/v2.0/token'
+          value: empty(azureAdTenantId) ? '' : '${az.environment().authentication.loginEndpoint}${azureAdTenantId}/oauth2/v2.0/token'
         }
         {
           name: 'AZURE_AD_AUTHORIZATION_ENDPOINT'
-          value: empty(azureAdTenantId) ? '' : 'https://login.microsoftonline.com/${azureAdTenantId}/oauth2/v2.0/authorize'
+          value: empty(azureAdTenantId) ? '' : '${az.environment().authentication.loginEndpoint}${azureAdTenantId}/oauth2/v2.0/authorize'
         }
         {
           name: 'AZURE_AD_JWKS_URI'
-          value: empty(azureAdTenantId) ? '' : 'https://login.microsoftonline.com/${azureAdTenantId}/discovery/v2.0/keys'
+          value: empty(azureAdTenantId) ? '' : '${az.environment().authentication.loginEndpoint}${azureAdTenantId}/discovery/v2.0/keys'
         }
         {
           name: 'JWT_SECRET_KEY'
-          value: !empty(keyVaultName) ? '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/jwt-secret-key)' : jwtSecretKey
+          value: !empty(keyVaultName) ? '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}${az.environment().suffixes.keyvaultDns}/secrets/jwt-secret-key)' : jwtSecretKey
         }
         {
           name: 'CORS_ORIGINS'

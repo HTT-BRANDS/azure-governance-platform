@@ -52,9 +52,6 @@ param resourceGroupName string
 @description('Resource group location')
 param location string = resourceGroup().location
 
-@description('Enable PR-based deployments')
-param enablePullRequestAuth bool = true
-
 @description('Tags to apply to resources')
 param tags object = {
   Application: 'Azure Governance Platform'
@@ -68,62 +65,10 @@ param tags object = {
 var normalizedEnvironment = environment == 'development' ? 'dev' : environment == 'production' ? 'prod' : environment
 
 var appRegistrationName = 'azure-governance-platform-oidc-${normalizedEnvironment}'
-var appRegistrationDescription = 'OIDC federation for GitHub Actions - ${githubRepo} (${normalizedEnvironment})'
-
 // GitHub OIDC issuer
 var githubOidcIssuer = 'https://token.actions.githubusercontent.com'
 
 // Federated credential configurations
-var federatedCredentials = concat(
-  // Main branch → Production deployments
-  [
-    {
-      name: 'main-branch'
-      subject: 'repo:${githubRepo}:ref:refs/heads/main'
-      description: 'GitHub Actions deployments from main branch'
-    }
-    {
-      name: 'dev-branch'
-      subject: 'repo:${githubRepo}:ref:refs/heads/dev'
-      description: 'GitHub Actions deployments from dev branch'
-    }
-  ],
-  // Tag-based deployments (version releases)
-  [
-    {
-      name: 'tag-deploy'
-      subject: 'repo:${githubRepo}:ref:refs/tags/v*'
-      description: 'GitHub Actions deployments from version tags'
-    }
-  ],
-  // Environment-based deployments (with approvals)
-  [
-    {
-      name: 'environment-production'
-      subject: 'repo:${githubRepo}:environment:production'
-      description: 'GitHub Actions deployments to production environment'
-    }
-    {
-      name: 'environment-staging'
-      subject: 'repo:${githubRepo}:environment:staging'
-      description: 'GitHub Actions deployments to staging environment'
-    }
-    {
-      name: 'environment-development'
-      subject: 'repo:${githubRepo}:environment:development'
-      description: 'GitHub Actions deployments to development environment'
-    }
-  ],
-  // Pull request validation (if enabled)
-  enablePullRequestAuth ? [
-    {
-      name: 'pull-request'
-      subject: 'repo:${githubRepo}:pull_request'
-      description: 'GitHub Actions PR validation'
-    }
-  ] : []
-)
-
 // -----------------------------------------------------------------------------
 // Azure AD App Registration
 // -----------------------------------------------------------------------------

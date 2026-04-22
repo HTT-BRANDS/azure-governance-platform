@@ -62,8 +62,7 @@ param enableVNetIntegration bool = false
 @description('Enable Azure Cache for Redis. Leave FALSE until: (a) App Service scaled to 2+ instances, (b) cache miss rate >20% sustained, or (c) memory pressure on App Service. See docs/COST_MODEL_AND_SCALING.md section 6.2 trigger #7. Redis C0 adds ~$16/mo.')
 param enableRedis bool = false
 
-@description('Admin username for SQL Server')
-@secure()
+@description('Admin username for SQL Server. Not marked @secure() because the username is an identifier, not a credential — the password (sqlAdminPassword) is the actual secret. Having it unsecured also silences the secure-parameter-default linter warning, which correctly flags @secure() params with hardcoded non-empty defaults.')
 param sqlAdminUsername string = 'sqladmin'
 
 @description('Admin password for SQL Server')
@@ -306,11 +305,13 @@ module appService 'modules/app-service.bicep' = {
     storageAccessKey: enableKeyVault ? existingKeyVault.getSecret('storage-access-key') : ''
   }
   dependsOn: [
+    // redis intentionally omitted: `redisUrl: enableRedis ? redis.outputs.connectionString : ''`
+    // above already creates an implicit module dependency on redis. Listing
+    // it here again fires no-unnecessary-dependson.
     storage
     keyVault
     storageKeySecret
     sqlServer
-    redis
   ]
 }
 

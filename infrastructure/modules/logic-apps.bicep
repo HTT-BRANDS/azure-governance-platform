@@ -196,8 +196,15 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
   }
 }
 
+// Whether the Teams notification workflow is actually deployed. Captured as a
+// bool so outputs can reference it without touching the @secure()
+// teamsWebhookUrl param directly (which would trigger
+// outputs-should-not-contain-secrets). Derived bool — the webhook itself
+// cannot be reconstructed from it.
+var isTeamsWorkflowEnabled = enableTeamsIntegration && !empty(teamsWebhookUrl)
+
 // Sample Workflow: Teams Notification on Alert
-resource teamsNotificationWorkflow 'Microsoft.Logic/workflows@2019-05-01' = if (enableTeamsIntegration && !empty(teamsWebhookUrl)) {
+resource teamsNotificationWorkflow 'Microsoft.Logic/workflows@2019-05-01' = if (isTeamsWorkflowEnabled) {
   name: '${name}-teams-notification'
   location: location
   tags: tags
@@ -315,7 +322,7 @@ resource cleanupWorkflow 'Microsoft.Logic/workflows@2019-05-01' = if (enableCost
           type: 'Http'
           inputs: {
             method: 'GET'
-            uri: 'https://management.azure.com/subscriptions/@{subscription().subscriptionId}/resources?api-version=2021-04-01'
+            uri: '${environment().resourceManager}subscriptions/@{subscription().subscriptionId}/resources?api-version=2021-04-01'
             authentication: {
               type: 'ManagedServiceIdentity'
             }
@@ -389,7 +396,7 @@ resource costAlertWorkflow 'Microsoft.Logic/workflows@2019-05-01' = if (enableCo
           type: 'Http'
           inputs: {
             method: 'POST'
-            uri: 'https://management.azure.com/subscriptions/@{subscription().subscriptionId}/providers/Microsoft.CostManagement/query?api-version=2023-03-01'
+            uri: '${environment().resourceManager}subscriptions/@{subscription().subscriptionId}/providers/Microsoft.CostManagement/query?api-version=2023-03-01'
             headers: {
               'Content-Type': 'application/json'
             }
@@ -459,6 +466,6 @@ resource costAlertWorkflow 'Microsoft.Logic/workflows@2019-05-01' = if (enableCo
 output logicAppId string = logicApp.id
 output logicAppName string = logicApp.name
 output principalId string = enableManagedIdentity ? (enableManagedIdentity && !empty(userAssignedIdentityId) ? reference(userAssignedIdentityId, '2023-01-31').principalId : logicApp.identity.principalId) : ''
-output teamsWorkflowId string = enableTeamsIntegration && !empty(teamsWebhookUrl) ? teamsNotificationWorkflow.id : ''
+output teamsWorkflowId string = isTeamsWorkflowEnabled ? teamsNotificationWorkflow.id : ''
 output cleanupWorkflowId string = enableCostOptimization && !empty(monitoredResourceGroups) ? cleanupWorkflow.id : ''
 output costAlertWorkflowId string = enableCostOptimization ? costAlertWorkflow.id : ''
