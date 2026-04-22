@@ -97,8 +97,8 @@ resource secondaryServer 'Microsoft.Sql/servers@2023-05-01-preview' = {
   name: secondaryServerName
   location: secondaryLocation
   tags: union(tags, { 
-    'Purpose': 'Geo-Replication Secondary'
-    'PrimaryServer': primaryServerName
+    Purpose: 'Geo-Replication Secondary'
+    PrimaryServer: primaryServerName
   })
   properties: {
     administratorLogin: adminUsername
@@ -116,8 +116,8 @@ resource secondaryDatabase 'Microsoft.Sql/servers/databases@2023-05-01-preview' 
   name: databaseName
   location: secondaryLocation
   tags: union(tags, { 
-    'Purpose': 'Geo-Replication Secondary'
-    'PrimaryServer': primaryServerName
+    Purpose: 'Geo-Replication Secondary'
+    PrimaryServer: primaryServerName
   })
   sku: {
     name: secondarySkuName

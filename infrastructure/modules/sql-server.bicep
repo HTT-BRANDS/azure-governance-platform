@@ -38,9 +38,6 @@ param tags object = {}
 @description('Enable TDE')
 param enableTde bool = true
 
-@description('Enable auditing')
-param enableAuditing bool = true
-
 // Determine SKU properties based on tier
 var isFreeTier = skuName == 'Free'
 var isBasicTier = skuName == 'Basic'
@@ -87,8 +84,8 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-05-01-preview' = {
   name: databaseName
   location: location
   tags: union(tags, isFreeTier ? {
-    'CostOptimization': 'FreeTier'
-    'SLA': 'None'
+    CostOptimization: 'FreeTier'
+    SLA: 'None'
   } : {})
   sku: skuConfig
   properties: {

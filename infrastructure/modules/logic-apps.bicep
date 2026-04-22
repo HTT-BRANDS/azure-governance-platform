@@ -33,9 +33,6 @@ param enableTeamsIntegration bool = true
 @secure()
 param teamsWebhookUrl string = ''
 
-@description('Enable Azure Monitor alerts integration')
-param enableMonitorAlerts bool = true
-
 @description('Enable cost optimization workflows')
 param enableCostOptimization bool = true
 

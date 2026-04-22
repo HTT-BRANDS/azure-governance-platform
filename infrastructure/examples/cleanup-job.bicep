@@ -36,12 +36,6 @@ param resourceTypesToClean array = [
   'Microsoft.Sql/servers/databases'
 ]
 
-@description('Tags to filter resources for cleanup')
-param cleanupTagFilters object = {
-  'Cleanup': 'true'
-  'Temporary': 'true'
-}
-
 @description('Tags to apply')
 param tags object = {
   Application: 'Resource Cleanup'

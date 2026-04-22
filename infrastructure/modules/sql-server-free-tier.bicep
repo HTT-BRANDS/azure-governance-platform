@@ -15,12 +15,6 @@ param adminUsername string
 @secure()
 param adminPassword string
 
-@description('Enable VNet integration for private connectivity')
-param enableVNetIntegration bool = false
-
-@description('VNet subnet ID for SQL server')
-param sqlSubnetId string = ''
-
 @description('Tags to apply')
 param tags object = {}
 
@@ -72,9 +66,9 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-05-01-preview' = {
   name: databaseName
   location: location
   tags: union(tags, {
-    'CostOptimization': 'FreeTier'
-    'Environment': 'Staging'
-    'SLA': 'None'
+    CostOptimization: 'FreeTier'
+    Environment: 'Staging'
+    SLA: 'None'
   })
   sku: freeTierSku
   properties: {

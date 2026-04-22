@@ -52,18 +52,6 @@ param resourceGroupName string
 @description('Resource group location')
 param location string = resourceGroup().location
 
-@description('Azure roles to assign to the GitHub Actions service principal')
-param roles array = [
-  'Website Contributor'
-  'Web Plan Contributor'
-]
-
-@description('Additional Azure roles for production (Key Vault access)')
-param productionRoles array = [
-  'Key Vault Secrets User'
-  'Monitoring Contributor'
-]
-
 @description('Enable PR-based deployments')
 param enablePullRequestAuth bool = true
 

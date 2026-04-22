@@ -134,9 +134,6 @@ param enableVnetIntegration bool = false
 @description('Virtual network subnet ID for integration')
 param vnetSubnetId string = ''
 
-@description('Enable private endpoints')
-param enablePrivateEndpoint bool = false
-
 @description('Enable zone redundancy for high availability')
 param enableZoneRedundancy bool = false
 
