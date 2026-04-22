@@ -1,0 +1,197 @@
+# core_stack.yaml
+# Canonical declaration of the runtime stack for azure-governance-platform.
+# Consumed by: release-gate-arbiter (Pillar 5 — Stack Coherence).
+#
+# Rule: add a new top-level stack component here BEFORE landing a PR that
+# introduces it to pyproject.toml / Dockerfile / infrastructure/. If a new
+# technology lands without updating this file, treat it as stack drift.
+#
+# Last reviewed: 2026-04-22 (release-gate submission v2.5.0)
+# Owner:         Tyler Granlund (t-granlund@users.noreply.github.com)
+
+schema_version: 1
+project: azure-governance-platform
+version: 2.5.0
+
+# ---------------------------------------------------------------------------
+# Language runtimes
+# ---------------------------------------------------------------------------
+runtimes:
+  python:
+    version: "3.12"
+    pinned_by:
+      - .python-version
+      - pyproject.toml         # requires-python = ">=3.12"
+      - Dockerfile             # FROM python:3.12-slim-bookworm
+    rationale: >
+      PEP 695 type parameters + structural pattern matching in app code.
+      Upgraded from 3.11 in b94c64b (CI repair, April 2026).
+  node:
+    version: ">=18.0.0"
+    scope: tests-only          # Playwright + GitHub Pages e2e suites
+    pinned_by:
+      - tests/e2e/github-pages/package.json (engines.node)
+
+# ---------------------------------------------------------------------------
+# Application framework
+# ---------------------------------------------------------------------------
+application:
+  framework:
+    name: FastAPI
+    version: ">=0.135.3"
+  asgi_server:
+    name: "uvicorn[standard]"
+    version: ">=0.44.0"
+  template_engine:
+    name: Jinja2
+    version: ">=3.1.0"
+  validation:
+    name: Pydantic
+    version: ">=2.5.0"
+    settings: pydantic-settings >= 2.1.0
+  scheduler:
+    name: APScheduler
+    version: ">=3.10.0"
+    purpose: in-process cron for data sync jobs (not Celery, not Temporal)
+
+# ---------------------------------------------------------------------------
+# Data layer
+# ---------------------------------------------------------------------------
+data:
+  orm:
+    name: SQLAlchemy
+    version: ">=2.0.49"
+    style: "2.x declarative + imperative hybrid; models in app/models/"
+  migrations:
+    name: Alembic
+    version: ">=1.18.4"
+    location: alembic/versions/
+    policy: >
+      All schema changes via alembic. Prod migrations run on app startup
+      (see app/core/database.py). Every migration must have a downgrade().
+  primary_database:
+    type: Azure SQL Database
+    driver: pyodbc via SQLAlchemy mssql+pyodbc dialect
+    sku_by_env:
+      dev: Basic
+      staging: Standard_S0
+      production: Standard_S0
+    odbc_runtime: "ODBC Driver 18 for SQL Server (installed in Dockerfile)"
+  cache:
+    name: FastAPI in-memory TTLCache
+    provider: cachetools
+    rationale: >
+      Redis explicitly NOT deployed anywhere (see sf24 ticket, commit 0f47f33).
+      Single-instance App Service + ~100% cache hit rate makes in-memory
+      sufficient. Flip enableRedis=true ONLY when scaled >= 2 instances OR
+      cache miss rate > 20% sustained (per docs/COST_MODEL_AND_SCALING.md §6.2).
+
+# ---------------------------------------------------------------------------
+# Authentication & Authorization
+# ---------------------------------------------------------------------------
+auth:
+  identity_provider: Microsoft Entra ID (Azure AD)
+  multi_tenant: true
+  federated_identity: OIDC (GitHub Actions -> Azure)
+  tokens:
+    name: PyJWT
+    version: ">=2.8.0 [crypto]"
+  secrets:
+    name: Azure Key Vault
+    access: azure-keyvault-secrets >= 4.7.0
+
+# ---------------------------------------------------------------------------
+# Azure SDKs — management-plane clients in use
+# ---------------------------------------------------------------------------
+azure_sdks:
+  identity: azure-identity >= 1.25.3
+  mgmt:
+    - azure-mgmt-resource >= 23.0.0, < 24.0.0
+    - azure-mgmt-costmanagement >= 4.0.0
+    - azure-mgmt-policyinsights >= 1.0.0
+    - azure-mgmt-security >= 5.0.0
+    - azure-mgmt-authorization >= 4.0.0
+    - azure-mgmt-subscription >= 3.1.1
+
+# ---------------------------------------------------------------------------
+# Hosting & deployment
+# ---------------------------------------------------------------------------
+hosting:
+  compute:
+    name: Azure App Service
+    os: Linux
+    mode: container (not code deployment)
+    app_name_by_env:
+      dev: app-governance-dev-001
+      staging: app-governance-staging-xncz
+      production: app-governance-prod
+    plan_sku_notes: >
+      Downsized April 16 2026 for cost optimization. Current constraints
+      surfaced via bd mvxt (staging cold-start ReadTimeouts).
+  container_registry:
+    name: GitHub Container Registry (GHCR)
+    organization: htt-brands
+    repository: ghcr.io/htt-brands/azure-governance-platform
+    migration_complete: 2026-04-17 (commit 399c209, closes 265y)
+    legacy_deleted: ghcr.io/tygranlund/* (no references remain)
+  deploy_mechanism:
+    tool: az webapp config container set + az webapp restart
+    workflow: .github/workflows/deploy-production.yml
+    note: >
+      NOT slot-swap. Direct image-pin update on a single slot. Rollback
+      procedure documented in docs/release-gate/rollback-v2.5.0.md.
+
+# ---------------------------------------------------------------------------
+# Infrastructure-as-code
+# ---------------------------------------------------------------------------
+iac:
+  language: Bicep
+  entry_point: infrastructure/main.bicep
+  parameter_files:
+    - infrastructure/parameters.dev.json
+    - infrastructure/parameters.staging.json
+    - infrastructure/parameters.production.json
+  modules_dir: infrastructure/modules/
+  deployment_tool: az deployment group create
+
+# ---------------------------------------------------------------------------
+# Observability
+# ---------------------------------------------------------------------------
+observability:
+  apm: "Azure Application Insights (Bicep module: modules/app-insights.bicep)"
+  logs: "Azure Log Analytics (Bicep module: modules/log-analytics.bicep)"
+  health_endpoints:
+    - /health           # app/main.py:522 — shallow liveness
+    - /healthz/data     # app/main.py:532 — dependency staleness check
+    - /health/detailed  # app/main.py:545 — deep health with stat breakdown
+
+# ---------------------------------------------------------------------------
+# CI/CD platform
+# ---------------------------------------------------------------------------
+cicd:
+  platform: GitHub Actions
+  workflows_dir: .github/workflows/
+  key_workflows:
+    - ci.yml                         # pytest + ruff + mypy
+    - security-scan.yml              # trivy FS + pip-audit
+    - deploy-staging.yml             # staging deploy + validation suite
+    - deploy-production.yml          # prod deploy + smoke tests
+    - accessibility.yml              # WCAG 2.2 AA checks
+    - gh-pages-tests.yml             # cross-browser on static docs site
+  supply_chain_controls:
+    present:
+      - .github/actions/verify-production-image  # a1sb regression guard
+      - Trivy FS scan in security-scan.yml
+      - pip-audit in security-scan.yml
+      - Dockerfile: non-root USER, pinned base image, multi-stage build
+    absent:
+      - SLSA L3 provenance                      # bd 7mk8 (P1) — blocks prod gate
+      - Sigstore cosign signing/verification    # bd 7mk8 (P1)
+      - SBOM generation + attestation           # bd 7mk8 (P1)
+
+# ---------------------------------------------------------------------------
+# Known deviations from the "default HTT SDLC stack"
+# ---------------------------------------------------------------------------
+deviations: []
+# (None declared at 2026-04-22. If a divergence from the HTT default stack
+#  is introduced, record it here with rationale and ADR reference.)

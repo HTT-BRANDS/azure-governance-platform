@@ -1,0 +1,182 @@
+# env-delta.yaml
+# Canonical declaration of *what differs* between dev / staging / production.
+# Consumed by: release-gate-arbiter (environment-delta audit).
+#
+# Rule: any config change whose runtime impact differs across environments
+# is recorded here. Secrets are referenced by *name*, never by value.
+# A value of `inherited` means: same as production (the reference env).
+#
+# Generated from: git diff v2.3.0..HEAD -- infrastructure/parameters.*.json
+# Last reviewed:  2026-04-22 (release-gate submission v2.5.0)
+
+schema_version: 1
+reference_environment: production
+
+# ---------------------------------------------------------------------------
+# Environments
+# ---------------------------------------------------------------------------
+environments:
+
+  dev:
+    purpose: individual contributor + branch-tip validation
+    azure:
+      subscription_ref: AZURE_DEV_SUBSCRIPTION_ID    # github var, not literal
+      location: westus2
+      secondary_location: eastus
+      resource_group_pattern: rg-governance-dev-*
+      app_service_name: app-governance-dev-001
+      container_image: ghcr.io/htt-brands/azure-governance-platform:main
+    data:
+      sql_sku: Basic
+      sql_deployed: true
+      enable_azure_sql_flag: false  # DRIFT — see bd mrgy (P3)
+      enable_redis: false
+    auth:
+      tenant_ref: dev-tenant         # Entra ID reference
+      multi_tenant: false
+    observability:
+      log_retention_days: 30
+    tags:
+      Environment: dev
+      CostCenter: IT-Dev
+      Owner: Dev-Team
+
+  staging:
+    purpose: pre-production validation environment
+    azure:
+      subscription_ref: AZURE_STAGING_SUBSCRIPTION_ID
+      location: westus2
+      secondary_location: westus2
+      resource_group_pattern: rg-governance-staging-*
+      app_service_name: app-governance-staging-xncz
+      app_service_url: https://app-governance-staging-xncz.azurewebsites.net
+      container_image: ghcr.io/htt-brands/azure-governance-platform:staging
+      container_registry: acrgovprod             # ACR reference (shared with prod)
+    data:
+      sql_sku: Standard_S0
+      sql_deployed: true
+      enable_azure_sql_flag: false  # DRIFT — see bd mrgy (P3)
+      enable_redis: false           # sf24 reconciled 2026-04-17
+    auth:
+      tenant_ref: staging-tenant
+      multi_tenant: true
+    observability:
+      log_retention_days: 14
+    cors_origins:
+      - https://app-governance-staging-xncz.azurewebsites.net
+    tags:
+      Environment: staging
+      ManagedBy: Bicep
+    known_issues:
+      - ticket: bd-mvxt
+        summary: "intermittent ReadTimeouts on validation suite; cold-start on resource-constrained plan (downsized April 16)." 
+
+  production:
+    purpose: 200+ franchise-location production workloads
+    azure:
+      subscription_ref: AZURE_SUBSCRIPTION_ID
+      location: eastus                           # DELTA vs staging/dev (westus2)
+      secondary_location: westus2
+      resource_group_pattern: rg-governance-prod-*
+      app_service_name: app-governance-prod
+      app_service_url: https://app-governance-prod.azurewebsites.net
+      container_image: ghcr.io/htt-brands/azure-governance-platform:latest
+      container_registry: acrgovprod
+    data:
+      sql_sku: Standard_S0
+      sql_deployed: true
+      enable_azure_sql_flag: true   # TRUTH — only env where param matches reality
+      enable_redis: false           # sf24 reconciled 2026-04-17
+    auth:
+      tenant_ref: production-tenant
+      multi_tenant: true
+    observability:
+      log_retention_days: 90        # DELTA — longer retention for audit/forensics
+    cors_origins:
+      - https://app-governance-prod.azurewebsites.net
+    tags:
+      Environment: production
+      ManagedBy: Bicep
+
+# ---------------------------------------------------------------------------
+# Recent deltas (must be populated for every release submission)
+# ---------------------------------------------------------------------------
+deltas_since_previous_release:
+  previous_tag: v2.3.0
+  current_tag:  v2.5.0
+  head_sha:     79d72c4
+  scan_command: git diff v2.3.0..HEAD -- infrastructure/parameters.*.json
+
+  infrastructure_parameters:
+    - file: infrastructure/parameters.staging.json
+      line: 43
+      key: containerImage
+      old: "ghcr.io/tygranlund/azure-governance-platform:staging"
+      new: "ghcr.io/htt-brands/azure-governance-platform:staging"
+      commit: 399c209
+      bd_ticket: 265y
+      classification: documentation-drift-fix
+      runtime_impact: NONE
+      rationale: >
+        Prod was already manually pinned to ghcr.io/htt-brands/... by
+        deploy-production.yml. Only the Bicep param files were stale. Had
+        anyone run `az deployment group create` against the pre-fix file,
+        that would have been a live bug; no one did.
+
+    - file: infrastructure/parameters.production.json
+      line: 43
+      key: containerImage
+      old: "ghcr.io/tygranlund/azure-governance-platform:latest"
+      new: "ghcr.io/htt-brands/azure-governance-platform:latest"
+      commit: 399c209
+      bd_ticket: 265y
+      classification: documentation-drift-fix
+      runtime_impact: NONE
+
+    - file: infrastructure/parameters.staging.json
+      line: 70
+      key: enableRedis
+      old: true
+      new: false
+      commit: 0f47f33
+      bd_ticket: sf24
+      classification: latent-footgun-fix
+      runtime_impact: NONE
+      rationale: >
+        Redis was never deployed in staging or prod. The app uses FastAPI
+        in-memory TTLCache (~100% hit rate). The enableRedis=true param
+        was a latent booby-trap — any az deployment would have spawned a
+        phantom ~$16/mo Azure Cache for Redis C0 that nothing would
+        connect to. Flipping to false aligns param file with deployed
+        reality.
+
+    - file: infrastructure/parameters.production.json
+      line: 67
+      key: enableRedis
+      old: true
+      new: false
+      commit: 0f47f33
+      bd_ticket: sf24
+      classification: latent-footgun-fix
+      runtime_impact: NONE
+
+# ---------------------------------------------------------------------------
+# Secrets (referenced by name only — actual values live in Key Vault / GH
+# environment secrets / repo variables)
+# ---------------------------------------------------------------------------
+secrets_inventory:
+  github_environment_secrets:
+    - AZURE_CLIENT_ID
+    - AZURE_TENANT_ID
+    - AZURE_SUBSCRIPTION_ID
+    - GHCR_PAT
+  azure_keyvault_secrets:
+    # Resolved via azure-keyvault-secrets SDK at runtime
+    - governance-db-connection-string   # per env
+    - azure-ad-app-client-secret        # per env (when USE_OIDC_FEDERATION=false)
+  repo_variables:
+    - GHCR_REGISTRY
+    - GHCR_REPOSITORY
+    - AZURE_APP_NAME          # per env
+    - AZURE_RESOURCE_GROUP    # per env
+    - PRODUCTION_URL
