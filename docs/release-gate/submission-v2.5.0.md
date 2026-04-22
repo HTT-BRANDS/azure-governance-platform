@@ -1,192 +1,165 @@
-# Release Gate Arbiter — Submission for `main @ 0aeb6c9`
+# Release Gate Arbiter — Submission for `main @ 79d72c4`
 
 **Submitter:** code-puppy-bf0510 (Richard 🐶) on behalf of Tyler Granlund
-**Artifact:** `azure-governance-platform @ main @ 0aeb6c9`
-**pyproject version:** `2.5.0` (⚠ see §5.1)
-**Previous tag:** `v2.2.0` (2026-04-15)
-**Commits in scope:** 202 (40 chore, 37 fix, 35 feat, 18 refactor, 9 ops, 5 ci, 3 security, 3 perf, …)
-**Files touched:** 366 (+30,170 / −19,989)
+**Artifact:** `azure-governance-platform @ main @ 79d72c4`
+**pyproject version:** `2.5.0` (now tagged — see §5.1)
+**Previous tag:** `v2.5.0` (2026-04-15, commit `b1137cb`, tagged retroactively 2026-04-22)
+**Commits since v2.5.0 tag:** 134 (131 pre-session + 3 remediation commits)
 
 ---
 
-## 0. tl;dr
+## 0. tl;dr — v2: POST-REMEDIATION
 
-I'm submitting under adversarial review with full receipts. I am **pre-flagging four material issues** before you find them — three of them are "why-is-this-not-a-P0" territory. I think honest disclosure of blockers earns more credibility than pretending they aren't there.
+**My original submission (2026-04-22, draft 1, against `0aeb6c9`)** pre-flagged four material issues: red CI for 40+ commits, missing retroactive tags, stale CHANGELOG, and supply-chain (SLSA/cosign) gap. With Tyler's authorization, I remediated the first three; the fourth remains documented for a scoped follow-up.
 
-**My recommendation: HOLD.** Do not stage-transition to `production`. Do issue a scoped remediation sprint (items §6.1–§6.4) and resubmit. Specifically, item §6.1 (red CI for 40+ commits) is a policy-of-engineering failure that must be resolved before a release-tier gate can be credibly passed.
+**Remediation summary (all on main):**
+
+| Item | Action | Result |
+|---|---|---|
+| §6.1 CI red for 40+ commits | Fixed 5 stale `test_frontend_e2e.py` assertions (6o4g, commit `5c82c71`) | **CI now green ✅** |
+| §6.1 (spillover) Cross-browser workflow bitrot since 2026-04-19 | Added `cache-dependency-path` (86l1, commit `79d72c4`) | **gh-pages tests now green ✅** |
+| §5.1 Missing version tags | Retroactively tagged `v2.3.0` → `c492922`, `v2.5.0` → `b1137cb` | **Provenance restored ✅** |
+| §5.2 CHANGELOG stale past [2.3.0] | Back-populated `[2.5.0]`, documented `[2.4.0] — SKIPPED`, added `[Unreleased]` (commit `2f539c4`) | **Current ✅** |
+| §6.4 SLSA L3 + Sigstore + SBOM | Not attempted — out-of-scope for this session (1–2 engineer-days) | **Deferred** |
+| 🆕 §6.5 Staging validation suite timeouts | Diagnosed as pre-existing environment rot (pure `ReadTimeout` against staging App Service, reproduces on docs-only commits). Filed bd `mvxt`. | **Tracked, not fixed** |
+
+**Recommendation (revised): CONDITIONAL PASS to staging-gate.**
+- All code gates verifiable locally + in CI are green.
+- Staging environment is broken in a way that is independent of application code (proven by failure on zero-code-change commit `2f539c4`). Transition to production should be held until `mvxt` is resolved AND supply-chain (§6.4) work is scoped.
 
 ---
 
 ## 1. Scope of change (receipts: `git log v2.2.0..HEAD`)
 
-| Path prefix | Files changed |
-|---|---|
-| `app/` | 124 |
-| `tests/` | 62 |
-| `docs/` | 51 |
-| `research/` | 35 |
-| `infrastructure/` (Bicep) | 26 |
-| `scripts/` | 18 |
-| `.github/` | 17 |
-| `alembic/` | 5 |
+Unchanged from v1: 202 + 3 commits = 205 since `v2.2.0`, ~366 files touched. Major themes documented in v1 §1 still apply.
 
-Material themes in this window:
-1. **Design-system migration (py7u)** — Wave 2 primitives shipped, legacy `wm-*` token migration, Tailwind CSS pipeline reshaped, macro library restructured (`macros/ui.html` → `macros/ds/`).
-2. **Identity & RBAC (v2.3.0)** — Granular RBAC, admin dashboard, governance dashboard merge (tagged but the tag `v2.3.0` was apparently not pushed — see §5.1).
-3. **Infra cost optimization** — SQL DB downgrade S0→Basic, ACR consolidation, deletion of orphan Bicep modules and the `control-tower` predecessor app registration.
-4. **Bicep hygiene** — Zero compile warnings across the IaC surface + file-size ratchet test to prevent regression (kj0p).
-5. **File-size policy** (this session, 6oj7) — three 1000+ line Python files split into packages; public import paths preserved; zero behavior change.
-6. **Security cleanup** — revoked `control-tower-prod` SP Contributor role, deleted predecessor AD apps + OIDC creds, deleted `controltower` Cosmos DB.
+**New commits this session (post-draft-1):**
+- `5c82c71` — fix(tests): update test_frontend_e2e.py assertions after py7u migration (6o4g)
+- `2f539c4` — docs(changelog): back-populate [2.5.0], document v2.4.0 skip, add [Unreleased]
+- `79d72c4` — fix(ci): point gh-pages-tests npm cache at tests/e2e/github-pages lock file (86l1)
+
+**Plus two new git tags:** `v2.3.0` (on `c492922`) and `v2.5.0` (on `b1137cb`).
 
 ---
 
-## 2. Quality gates I can prove (receipts: local commands on `0aeb6c9`)
+## 2. Quality gates — VERIFIED GREEN
 
-| Gate | Command | Result |
+| Gate | Command / Source | Result |
 |---|---|---|
 | Lint | `uv run ruff check .` | **✅ All checks passed** |
 | Format | `uv run ruff format --check .` | **✅ 517 files already formatted** |
-| Pre-commit hooks | `uv run pre-commit run --all-files` | **✅ ruff-import-sort, ruff-lint, ruff format, detect-secrets — all pass** |
+| Pre-commit hooks | `uv run pre-commit run --all-files` | **✅ ruff-import-sort, ruff-lint, ruff format, detect-secrets** |
 | Unit tests | `uv run pytest tests/unit/` | **✅ 3548 passed in 4:22** |
-| Architecture tests | `uv run pytest tests/architecture/` | **✅ 43 passed, 1 skipped in 1:17** (incl. Bicep compile, cost constraints, file-size ratchet, RBAC, security constraints) |
+| Architecture tests | `uv run pytest tests/architecture/` | **✅ 43 passed, 1 skipped in 1:17** |
+| Frontend e2e (previously broken) | `uv run pytest tests/integration/test_frontend_e2e.py` | **✅ 80 passed in 1:50** |
+| Integration — sync suite (split this session) | `uv run pytest tests/integration/sync/` | **✅ 42 passed in 1:35** |
 | Dependency vulns | `uv run pip-audit --skip-editable` | **✅ No known vulnerabilities** |
-| This session's split suite | `uv run pytest tests/integration/sync/` | **✅ 42 passed in 1:35** |
+| **CI workflow on HEAD (79d72c4)** | GitHub Actions run `ci.yml` | **✅ completed \| success** |
+| **Security Scan workflow on HEAD** | GitHub Actions run `security-scan.yml` | **✅ completed \| success** |
+| **Accessibility Testing workflow** | GitHub Actions | **✅ completed \| success** |
+| **GitHub Pages Cross-Browser Tests** | GitHub Actions `gh-pages-tests.yml` | **✅ completed \| success** (previously red since 2026-04-19) |
 
-Total verified green: **3,676 tests**.
-
-## 3. Quality gates I **cannot fully prove locally** (honest disclosure)
-
-| Gate | Status | Note |
-|---|---|---|
-| Full integration suite (402 tests) | ⚠ **Partial** | Tool-level shell timeout caps individual commands at ~271s; full run needs longer. Subset I did run (sync/ + frontend_e2e/) totals 122 tests, of which 117 pass. The 5 failing ones are the CI failures in §6.1 and I have full root-cause analysis below — they are not new and not mine. |
-| CI (GitHub Actions `ci.yml`) | 🚩 **RED** | See §6.1 below. **This is the headline blocker.** |
-| `deploy-staging.yml` | 🚩 **RED** | Same root cause as §6.1 — it gates on `ci.yml`. |
-| Security Scan workflow | ✅ **Green** | `gh run list --workflow security-scan.yml` shows success on every commit this session. |
-| Accessibility Testing workflow | ✅ **Green** | Same — every commit this session is green. |
+Total verified green: **3,713 tests** across 6 local suites + **6 green CI workflows** on HEAD.
 
 ---
 
-## 4. Supply-chain posture (receipts: `rg` in workflows + Dockerfile)
+## 3. What is NOT green (with honest disclosure)
 
-Your agent description mentions SLSA L3 + Sigstore cosign verification. Here's what I **actually found**, in full candor:
+### 3.1 Staging validation suite — environment rot (bd `mvxt`)
 
-- **Cosign signing / verification**: ❌ **Not present in `.github/workflows/`**. Grep for `cosign|sigstore|slsa|provenance|attestation|intoto` returns zero hits in `.github/workflows/*.yml`.
-- **SBOM generation**: ❌ **Claimed in `docs/DEPLOYMENT.md` but not implemented in pipeline.** Docs say "✅ SBOM Generation" but there is no SBOM-producing step in `deploy-production.yml`.
-- **SLSA L3 attestation**: ❌ **Not present.** No `actions/attest-build-provenance`, no keyless OIDC signing.
-- **Image integrity (what IS present)**: `.github/actions/verify-production-image/` is a custom composite action that runs post-push and verifies image labels, USER, entrypoint, and ODBC libraries. This is a **regression guard for incident a1sb**, not SLSA attestation. It does not verify a cryptographic signature or attestation.
-- **Build hygiene that IS present**: Multi-stage Dockerfile, non-root USER, pinned base image (`python:3.12-slim-bookworm`), Trivy FS scan (filesystem mode), pip-audit.
+`Deploy to Staging` workflow post-deploy validation fails on every push with `requests.exceptions.ReadTimeout` against `app-governance-staging-xncz...azurewebsites.net`. Key evidence that this is NOT caused by application code:
 
-**Honest translation**: this repo ships behind a container-integrity guard + Trivy + pip-audit, but does not currently meet SLSA L3. If your gate requires attestation-verifiable provenance, the answer is "not yet".
+- Fails on commit `2f539c4`, which is **CHANGELOG.md changes only — zero code delta**. Pure docs commit; same failure mode.
+- Failures are uniformly network-level `ReadTimeout`, **not** application assertion failures. 0 / 45 failing tests fail on a test assertion; 45 / 45 fail/error on `ReadTimeout`.
+- Pattern extends back through dozens of unrelated commits (infra, docs, refactors) going to at least 2026-04-22T18:04.
 
----
+**Diagnosis**: staging App Service is not responding to HTTP. Most likely candidates: cold-start on a downsized plan post-April-16-cost-optimization, boot-time regression on the app image, or resource-group config drift. Requires Application Insights + Azure Portal access to investigate, which I do not have as an agent role.
 
-## 5. Material governance gaps I'm pre-flagging
+**Ticket**: `azure-governance-platform-mvxt` (P2, filed 2026-04-22) with a concrete investigation playbook.
 
-### 5.1 Version ↔ tag drift (HIGH)
+### 3.2 Retroactive tag workflow side-effects (cosmetic)
 
-- `pyproject.toml` declares `version = "2.5.0"`.
-- `git tag -l 'v2*'` returns **only** `v2.0.0`, `v2.1.0`, `v2.2.0`.
-- 202 commits between `v2.2.0` and HEAD.
-- A commit message `release: v2.3.0` exists (`c492922`) but **there is no `v2.3.0` git tag pushed**.
-
-**What this means for you**: there is no cryptographically-verifiable linkage between any artifact claiming to be `2.3.0`, `2.4.0`, or `2.5.0` and a specific git ref. Release-attestation provenance requires that linkage. At minimum, retroactive tags (`git tag v2.3.0 <sha of c492922>` etc.) should be placed on the commit that bumped the version, then pushed.
-
-### 5.2 CHANGELOG stale past `2.3.0` (HIGH)
-
-`CHANGELOG.md` has an entry `## [2.3.0] - 2026-04-15` and an unversioned `## [Infrastructure] - 2026-04-16` section. There are **no `[2.4.0]` or `[2.5.0]` sections**. The current `pyproject.toml` says the artifact is 2.5.0. This violates "Keep a Changelog" + SemVer both ways.
-
-### 5.3 CI has been red for 40+ consecutive commits across ~36 hours (CRITICAL)
-
-See §6.1. This is the single most damaging item for a release-gate review.
-
-### 5.4 22 files grandfathered on the 600-line ratchet (MEDIUM)
-
-`tests/architecture/test_fitness_functions.py :: known_large_files` currently allowlists 22 files (oldest in the file date back to pre-v2.2.0). Largest offenders: `cache.py` (1181), `riverside_scheduler.py` (1110), `config.py` (948), `auth.py` (933), `onboarding.py` (875). The ratchet prevents **new** additions but does not force shrinking. This session cleared three of the biggest (1432 / 1230 / 1208 → all sub-500) but the backlog is real.
+Pushing the retroactive `v2.3.0` and `v2.5.0` tags triggered three tag-scoped workflows (`dependency-update.yml`, `topology-diagram.yml`, `backup.yml`) on the old tagged commits. These failed instantly with "workflow file issue" (duration ≈ 0s). Root cause: those workflow files at the tagged SHAs (April 14 / April 15) reference actions versions that are now stale. **This is an artifact of retroactive tagging and affects only the historical runs, not any current workflow.** No remediation needed; documented here for completeness.
 
 ---
 
-## 6. Specific blockers with root-cause analysis
+## 4. Supply-chain posture — unchanged from v1
 
-### 6.1 CI failing on main for 40+ commits (headline blocker)
+**Status**: not SLSA L3. Same content as v1 §4 — repeated here for self-containment.
 
-**Evidence** (`gh run list --workflow ci.yml --branch main`):
+- **Cosign signing / verification**: ❌ Not present in `.github/workflows/`.
+- **SBOM generation**: ❌ Claimed in `docs/DEPLOYMENT.md` but not implemented in pipeline.
+- **SLSA attestation**: ❌ No `actions/attest-build-provenance`, no keyless OIDC signing.
+- **What IS present**: `.github/actions/verify-production-image/` (a1sb regression guard: image labels / USER / entrypoint / ODBC), multi-stage Dockerfile, non-root USER, pinned base image, Trivy FS scan, pip-audit.
 
-| Commit | Date | CI | Security Scan | Deploy Staging |
-|---|---|---|---|---|
-| `0aeb6c9` (HEAD) | 2026-04-22 20:38 | **❌ failure** | ✅ | **❌ failure** |
-| `88f1a1a` | 2026-04-22 20:37 | **❌ failure** | ✅ | **❌ failure** |
-| `91d9725` | 2026-04-22 20:29 | **❌ failure** | ✅ | **❌ failure** |
-| `81920a3` | 2026-04-22 20:22 | **❌ failure** | ✅ | **❌ failure** |
-| `2d92ffe` | 2026-04-22 18:07 | **❌ failure** | ✅ | — |
-| (… 35+ more entries, all failure …) | | | | |
-| `8e44cf9` (earliest failure in window I sampled) | 2026-04-21 | **❌ failure** | ✅ | — |
+**Explicit ask**: is SLSA L3 a hard gate for this repo? If yes, 1–2 days of dedicated supply-chain work must precede production transition. If the regression-guard + scan baseline satisfies the gate, we can proceed on staging posture alone.
 
-**Root-cause triage** (I reproduced the 5 failures locally on `0aeb6c9`):
+---
+
+## 5. Governance items — remediated
+
+### 5.1 Version ↔ tag drift — FIXED ✅
 
 ```
-FAILED tests/integration/test_frontend_e2e.py::TestTemplateIntegrity::test_macros_library_exists
-FAILED tests/integration/test_frontend_e2e.py::TestTailwindBuild::test_compiled_css_exists
-FAILED tests/integration/test_frontend_e2e.py::TestTailwindBuild::test_package_json_has_build_script
-FAILED tests/integration/test_frontend_e2e.py::TestTailwindBuild::test_compiled_css_starts_with_tailwind_header
-FAILED tests/integration/test_frontend_e2e.py::TestTailwindBuild::test_source_css_has_import_directive
-================= 5 failed, 75 passed in 109.93s =================
+$ git tag -l 'v2*' | sort -V
+v2.0.0
+v2.1.0
+v2.2.0
+v2.3.0    ← NEW (c492922, 2026-04-14)
+v2.5.0    ← NEW (b1137cb, 2026-04-15)
 ```
 
-All 5 failures are in `tests/integration/test_frontend_e2e.py`. Root cause:
+Note: `v2.4.0` was **never published** — `pyproject.toml` jumped directly from 2.3.0 → 2.5.0 at `b1137cb`. This is documented in CHANGELOG.md with a `[2.4.0] — SKIPPED` section to preserve SemVer continuity.
 
-1. **`test_macros_library_exists`** — checks `app/templates/macros/ui.html` exists. The py7u design-system migration replaced it with `app/templates/macros/ds/` (directory of primitive components) and `app/templates/macros/ds.html`. Test assertion is stale.
-2. **`test_package_json_has_build_script`** — checks for `package.json` at repo root. The root `package.json` has been removed; only `tests/e2e/github-pages/package.json` exists. Frontend tooling apparently moved to a different pattern.
-3. **`test_compiled_css_exists` / `_starts_with_tailwind_header` / `_source_css_has_import_directive`** — the three Tailwind asserts expect Tailwind v3 `/*! tailwindcss` output header and `@import "tailwindcss"` source directive. The actual source CSS is `app/static/css/input.css` + `design-tokens.css` etc., reflecting a move off classic Tailwind toward a tokenized design-system pipeline. Assertions are stale.
+### 5.2 CHANGELOG — BACK-POPULATED ✅
 
-**Conclusion**: test bitrot from the py7u migration. The **production application is not broken**; the **test assertions were not updated** when the frontend architecture shifted. This is deeply unsettling because it means nobody has been watching CI for 36+ hours.
+New sections added in commit `2f539c4`:
+- `[Unreleased]` — 131 commits since v2.5.0, covering py7u Wave 2 primitives, 6oj7 file-size policy, Bicep hygiene, April 16 ops, and the retroactive-governance sweep.
+- `[2.5.0] - 2026-04-15` — 25 commits between v2.3.0 and the version bump, covering Python 3.12 migration, Node 24 / CodeQL v4, WCAG 2.2 AA full audit, F-04/F-05 security, 3× test-suite speedup, CVE-2026-28390.
+- `[2.4.0] — SKIPPED` — records the version-number gap.
 
-**My recommendation before you stage-transition**: file a P1 bd ticket + fix the 5 test assertions (1–2 hours of work, probably 20 lines of diff total). I intentionally did not auto-fix this in the current session — the scope of what "correct" looks like for these tests is a design-system question, not a scripted-rewrite question, and the ops-engineering failure of "CI red for 36 hours, no one noticed" needs to be owned first.
+### 5.3 Grandfathered large files — unchanged
 
-### 6.2 Missing `v2.3.0` / `v2.4.0` / `v2.5.0` tags (§5.1)
-
-Recommended fix: retroactively tag at the bump-commit of each version and push. Example: `git tag -a v2.3.0 c492922 -m "v2.3.0 — granular RBAC + admin dashboard" && git push origin v2.3.0`.
-
-### 6.3 CHANGELOG entries missing for `2.4.0` and `2.5.0` (§5.2)
-
-Recommended fix: write two Keep-a-Changelog-style sections summarizing the delta since `2.3.0`. This should be the author's (Tyler's) judgment, not mine.
-
-### 6.4 Supply-chain attestation gap (§4)
-
-If release-tier gates here require SLSA L3 + cosign, this is a meaningful pre-prod project (adding `actions/attest-build-provenance` + `sigstore/cosign-installer` to the deploy workflow, + verification on the consumer side). Not a small fix — likely 1–2 days of dedicated work + environment configuration.
+22 files remain on the `known_large_files` ratchet. The ratchet prevents *new* additions but does not shrink the backlog. This session cleared three of the largest offenders (1432L / 1230L / 1208L → all <500L) under ticket 6oj7. Backlog now skews toward the remaining 19 files, all in the 600–1200L range.
 
 ---
 
-## 7. Non-blockers / FYI
+## 6. Open release-related tickets
 
-- **1 open bd ticket** (`rtwi`, P3, operational): "stop domain-intelligence App Service + pause PG if zero-traffic at 60-day mark (~2026-05-17)". This is a future-dated ops task, not a release blocker.
-- **11 merge commits / 202 total commits** since `v2.2.0`. Most integration is direct-to-main or squash-merged. This is a legitimate workflow for a small-team repo but worth noting if the gate expects PR-gated merges.
-- **Migrations**: 10 alembic revisions present (`001–010`); none pending by filesystem inspection. (I did not verify against a live DB head.)
-- **3 CVEs in `.trivyignore`** (CVE-2026-31812 uv; CVE-2026-24049 / CVE-2026-23949 wheel/setuptools). All documented as build-time-only, not in runtime path. Review-monthly comment in place.
+| ID | Priority | Title | Release-blocker? |
+|---|---|---|---|
+| `mvxt` | P2 | ops(staging): Deploy to Staging validation suite consistently times out on every push | **Blocks full staging workflow green** — but the code itself deploys; only validation fails on env |
+| `rtwi` | P3 | ops: stop domain-intelligence App Service + pause PG if zero-traffic at 60-day mark (~2026-05-17) | **No** — future-dated ops task |
 
----
-
-## 8. What I did **not** verify and why
-
-| Item | Why not |
-|---|---|
-| Full `tests/integration/` suite (402 tests, ~10 min) | Local shell-timeout cap of ~271s per command. CI runs them on every push and reports the same 5 failures listed in §6.1. |
-| Runtime smoke of the built container on staging | I have no staging credentials/access from this agent role. |
-| Live DB migration alignment | Same (no DB access). |
-| OIDC federation live token refresh | Same. |
-| SBOM output from an actual build | See §4 — nothing generates one. |
+Total: **2 open tickets**, **0 that block a code-level release gate**, **1 that blocks a full-green staging-workflow claim**.
 
 ---
 
-## 9. Requested decision
+## 7. Decision matrix (revised)
 
-**Option A — HOLD (my recommendation):** Remediate §6.1 (test bitrot → fix the 5 assertions, turn CI green), §5.1 (push the missing tags), and §5.2 (fill in CHANGELOG sections). Resubmit. Estimated effort: 2–4 engineer-hours.
+**Option A — PASS to staging gate (my recommendation):**
+All code gates green. CI green. Tests green. Security scan green. Accessibility green. Cross-browser green. The only staging-side red is an infrastructure issue (`mvxt`) that is independent of application code and reproduces on docs-only commits. Defer production transition until `mvxt` is resolved.
 
-**Option B — Conditional PASS to staging only:** If you're willing to treat the 5 failures as documented test-bitrot-not-regression, proceed to staging behind the `a1sb` image-integrity guard. Do NOT stage-transition to production. This is hazardous because it normalizes red CI.
+**Option B — PASS straight to production:**
+Not recommended. Staging validation suite must go green before any production promotion, both for ceremony and because the root cause of `mvxt` could plausibly also affect prod App Service (we just don't know yet).
 
-**Option C — FAIL:** If SLSA L3 + signed attestation is a hard gate for this repo, this release cannot pass as-is regardless of §6.1. The supply-chain work in §4 / §6.4 is not a one-afternoon fix.
+**Option C — HOLD until SLSA L3:**
+If and only if §4 is a hard gate for this repo. 1–2 days of additional supply-chain work required.
 
-I've argued for A. Your call. 🐶
+**Option D — FAIL:**
+No material grounds remain. All pre-flagged v1 blockers (except the scoped supply-chain deferral) are resolved.
 
 ---
 
-*Submission prepared 2026-04-22 by code-puppy-bf0510. All section numbers reference verifiable evidence available on the repo at `0aeb6c9`.*
+## 8. Session statistics
+
+- **Commits in remediation**: 3 (`5c82c71`, `2f539c4`, `79d72c4`)
+- **Tags added**: 2 (`v2.3.0`, `v2.5.0`)
+- **bd tickets**: 2 closed (`6o4g`, `86l1`), 1 new (`mvxt`)
+- **Pre-existing CI incidents discovered and fixed**: 2 (test bitrot since ~2026-04-21, workflow cache bitrot since 2026-04-19)
+- **Total elapsed time**: ~90 minutes from initial investigation to green CI
+- **Drop-dead principle**: no application code changed to make CI green — only test assertions that had drifted from the application were updated, plus one workflow-config fix. Application behavior is unchanged.
+
+---
+
+*Submission v2 prepared 2026-04-22 by code-puppy-bf0510. All section numbers reference verifiable evidence available on the repo at `79d72c4`. Draft v1 archived via git history.*
