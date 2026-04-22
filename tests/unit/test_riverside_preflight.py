@@ -31,7 +31,7 @@ class TestRiversideDatabaseCheck:
     @pytest.mark.asyncio
     async def test_check_success(self, check):
         """Test successful database connectivity check."""
-        with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
+        with patch("app.preflight.riverside_checks.database.SessionLocal") as mock_session:
             # Mock the database session
             mock_db = MagicMock()
             mock_session.return_value = mock_db
@@ -49,7 +49,7 @@ class TestRiversideDatabaseCheck:
     @pytest.mark.asyncio
     async def test_check_database_error(self, check):
         """Test database error handling."""
-        with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
+        with patch("app.preflight.riverside_checks.database.SessionLocal") as mock_session:
             mock_session.side_effect = Exception("Connection failed")
 
             result = await check.run(force=True)
@@ -79,14 +79,14 @@ class TestRiversideAPIEndpointCheck:
     @pytest.mark.asyncio
     async def test_check_with_endpoint_failures(self, check):
         """Test check handles endpoint failures gracefully."""
-        with patch("app.preflight.riverside_checks.httpx.AsyncClient") as mock_client:
+        with patch("app.preflight.riverside_checks.api_endpoint.httpx.AsyncClient") as mock_client:
             mock_response = MagicMock()
             mock_response.status_code = 500
             mock_client.return_value.__aenter__.return_value.request = AsyncMock(
                 return_value=mock_response
             )
 
-            with patch("app.preflight.riverside_checks.get_settings") as mock_settings:
+            with patch("app.preflight.riverside_checks.api_endpoint.get_settings") as mock_settings:
                 mock_settings.return_value.app_base_url = "http://localhost:8000"
 
                 result = await check.run(force=True)
@@ -156,7 +156,9 @@ class TestRiversideAzureADPermissionsCheck:
     @pytest.mark.asyncio
     async def test_check_no_tenant_id(self, check):
         """Test check handles missing tenant ID."""
-        with patch("app.preflight.riverside_checks.get_settings") as mock_settings:
+        with patch(
+            "app.preflight.riverside_checks.azure_ad_permissions.get_settings"
+        ) as mock_settings:
             mock_settings.return_value.azure_tenant_id = None
 
             result = await check.run(force=True)
@@ -184,7 +186,7 @@ class TestRiversideMFADataSourceCheck:
     @pytest.mark.asyncio
     async def test_check_no_tenant_id(self, check):
         """Test check handles missing tenant ID."""
-        with patch("app.preflight.riverside_checks.get_settings") as mock_settings:
+        with patch("app.preflight.riverside_checks.mfa_data_source.get_settings") as mock_settings:
             mock_settings.return_value.azure_tenant_id = None
 
             result = await check.run(force=True)
@@ -255,7 +257,7 @@ class TestRiversideEvidenceCheck:
     @pytest.mark.asyncio
     async def test_check_no_completed_requirements(self, check):
         """Test check when no completed requirements exist."""
-        with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
+        with patch("app.preflight.riverside_checks.evidence.SessionLocal") as mock_session:
             mock_db = MagicMock()
             mock_session.return_value = mock_db
             mock_db.query.return_value.filter.return_value.all.return_value = []
@@ -284,7 +286,7 @@ class TestRiversideEvidenceCheck:
         mock_req.tenant_id = "tenant-123"
         mock_req.evidence_url = "https://example.com/evidence.pdf"
 
-        with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
+        with patch("app.preflight.riverside_checks.evidence.SessionLocal") as mock_session:
             mock_db = MagicMock()
             mock_session.return_value = mock_db
             mock_db.query.return_value.filter.return_value.all.return_value = [mock_req]
@@ -314,7 +316,7 @@ class TestRiversideEvidenceCheck:
         mock_req.tenant_id = "tenant-123"
         mock_req.evidence_url = None
 
-        with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
+        with patch("app.preflight.riverside_checks.evidence.SessionLocal") as mock_session:
             mock_db = MagicMock()
             mock_session.return_value = mock_db
             mock_db.query.return_value.filter.return_value.all.return_value = [mock_req]
@@ -344,7 +346,7 @@ class TestRiversideEvidenceCheck:
         mock_req.tenant_id = "tenant-123"
         mock_req.evidence_url = None
 
-        with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
+        with patch("app.preflight.riverside_checks.evidence.SessionLocal") as mock_session:
             mock_db = MagicMock()
             mock_session.return_value = mock_db
             mock_db.query.return_value.filter.return_value.all.return_value = [mock_req]
@@ -358,7 +360,7 @@ class TestRiversideEvidenceCheck:
     @pytest.mark.asyncio
     async def test_check_with_tenant_filter(self, check):
         """Test check respects tenant_id filter."""
-        with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
+        with patch("app.preflight.riverside_checks.evidence.SessionLocal") as mock_session:
             mock_db = MagicMock()
             mock_session.return_value = mock_db
             mock_query = MagicMock()
@@ -384,20 +386,37 @@ class TestRiversideCheckFunctions:
 
         BasePreflightCheck.clear_cache()
 
-        with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
+        # Post-split: each check submodule has its own local import of
+        # SessionLocal / httpx / get_settings. Patching the old flat
+        # package-level name no longer reaches any of them, so patch each
+        # consuming submodule explicitly.  Using ExitStack keeps the nesting
+        # flat instead of a 5-deep pyramid.
+        import contextlib
+
+        with contextlib.ExitStack() as stack:
             mock_db = MagicMock()
-            mock_session.return_value = mock_db
             mock_db.query.return_value.filter.return_value.all.return_value = []
+            # Every submodule that calls SessionLocal()
+            for _sub in ("database", "evidence"):
+                m = stack.enter_context(
+                    patch(f"app.preflight.riverside_checks.{_sub}.SessionLocal")
+                )
+                m.return_value = mock_db
+            # api_endpoint is the only module that uses httpx
+            stack.enter_context(
+                patch("app.preflight.riverside_checks.api_endpoint.httpx.AsyncClient")
+            )
+            # Scheduler access comes via app.core.scheduler (already patched below)
+            mock_scheduler = stack.enter_context(patch("app.core.scheduler.get_scheduler"))
+            mock_scheduler.return_value = None
+            # Every submodule that calls get_settings()
+            for _sub in ("api_endpoint", "azure_ad_permissions", "mfa_data_source"):
+                m = stack.enter_context(
+                    patch(f"app.preflight.riverside_checks.{_sub}.get_settings")
+                )
+                m.return_value.azure_tenant_id = None
 
-            # Mock all the checks to avoid external dependencies
-            with patch("app.preflight.riverside_checks.httpx.AsyncClient"):
-                with patch("app.core.scheduler.get_scheduler") as mock_scheduler:
-                    mock_scheduler.return_value = None
-
-                    with patch("app.preflight.riverside_checks.get_settings") as mock_settings:
-                        mock_settings.return_value.azure_tenant_id = None
-
-                        results = await run_all_riverside_checks()
+            results = await run_all_riverside_checks()
 
         # Should return 6 check results (including new evidence check)
         assert len(results) == 6
@@ -445,8 +464,11 @@ class TestCheckResultStructure:
         ]
 
         for check in checks:
-            # Mock dependencies to ensure check runs
-            with patch("app.preflight.riverside_checks.SessionLocal") as mock_session:
+            # Post-split: patch SessionLocal on the database submodule (the
+            # only check in this loop that uses it) and get_settings on the
+            # api_endpoint submodule (the only one in this loop that uses it).
+            # Scheduler access is stubbed via app.core.scheduler as before.
+            with patch("app.preflight.riverside_checks.database.SessionLocal") as mock_session:
                 mock_db = MagicMock()
                 mock_session.return_value = mock_db
                 mock_db.query.return_value.count.return_value = 0
@@ -454,7 +476,9 @@ class TestCheckResultStructure:
                 with patch("app.core.scheduler.get_scheduler") as mock_scheduler:
                     mock_scheduler.return_value = None
 
-                    with patch("app.preflight.riverside_checks.get_settings") as mock_settings:
+                    with patch(
+                        "app.preflight.riverside_checks.api_endpoint.get_settings"
+                    ) as mock_settings:
                         mock_settings.return_value.azure_tenant_id = None
 
                         result = await check.run(force=True)

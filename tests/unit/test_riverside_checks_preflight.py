@@ -130,7 +130,7 @@ class TestRiversideDatabaseCheckExecution:
         check = RiversideDatabaseCheck()
 
         with patch(
-            "app.preflight.riverside_checks.SessionLocal",
+            "app.preflight.riverside_checks.database.SessionLocal",
             side_effect=Exception("Connection refused"),
         ):
             result = await check._execute_check(tenant_id=None)
