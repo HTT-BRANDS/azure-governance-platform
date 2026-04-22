@@ -273,7 +273,7 @@ module appService 'modules/app-service.bicep' = {
     name: appServiceName
     location: location
     appServicePlanId: appServicePlan.outputs.planId
-    appInsightsConnectionString: enableAppInsights ? appInsights.outputs.connectionString : ''
+    appInsightsConnectionString: enableAppInsights ? appInsights!.outputs.connectionString : ''
     storageAccountName: validatedStorageName
     keyVaultName: enableKeyVault ? validatedKeyVaultName : ''
     sqlServerName: enableAzureSql ? sqlServerName : ''
@@ -290,11 +290,11 @@ module appService 'modules/app-service.bicep' = {
     jwtSecretKey: jwtSecretKey
     corsOrigins: corsOrigins
     adminEmails: adminEmails
-    redisUrl: enableRedis ? redis.outputs.connectionString : ''
+    redisUrl: enableRedis ? redis!.outputs.connectionString : ''
     storageAccessKey: enableKeyVault ? existingKeyVault.getSecret('storage-access-key') : ''
   }
   dependsOn: [
-    // redis intentionally omitted: `redisUrl: enableRedis ? redis.outputs.connectionString : ''`
+    // redis intentionally omitted: `redisUrl: enableRedis ? redis!.outputs.connectionString : ''`
     // above already creates an implicit module dependency on redis. Listing
     // it here again fires no-unnecessary-dependson.
     storage

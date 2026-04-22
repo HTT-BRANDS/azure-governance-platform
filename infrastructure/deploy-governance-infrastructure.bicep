@@ -224,7 +224,7 @@ module requireTagsAssignment './modules/policy-assignment.bicep' = if (enablePol
   params: {
     name: 'require-tags-assignment'
     displayName: 'Require Mandatory Tags Assignment'
-    policyDefinitionId: requireTagsPolicy.outputs.policyId
+    policyDefinitionId: requireTagsPolicy!.outputs.policyId
     parameters: {
       effect: {
         value: environment == 'production' ? 'Deny' : 'Audit'
@@ -239,7 +239,7 @@ module encryptionAssignment './modules/policy-assignment.bicep' = if (enablePoli
   params: {
     name: 'enforce-encryption-assignment'
     displayName: 'Enforce Encryption Assignment'
-    policyDefinitionId: encryptionPolicy.outputs.policyId
+    policyDefinitionId: encryptionPolicy!.outputs.policyId
     parameters: {
       effect: {
         value: 'Deny'
@@ -254,7 +254,7 @@ module publicStorageAssignment './modules/policy-assignment.bicep' = if (enableP
   params: {
     name: 'prevent-public-storage-assignment'
     displayName: 'Prevent Public Storage Access Assignment'
-    policyDefinitionId: publicStoragePolicy.outputs.policyId
+    policyDefinitionId: publicStoragePolicy!.outputs.policyId
     parameters: {
       effect: {
         value: 'Deny'
@@ -269,7 +269,7 @@ module complianceAuditAssignment './modules/policy-assignment.bicep' = if (enabl
   params: {
     name: 'compliance-audit-assignment'
     displayName: 'Compliance Audit Assignment'
-    policyDefinitionId: complianceAuditPolicy.outputs.policyId
+    policyDefinitionId: complianceAuditPolicy!.outputs.policyId
     parameters: {
       effect: {
         value: 'AuditIfNotExists'
@@ -286,21 +286,21 @@ output resourceGroupName string = resourceGroup.name
 output resourceGroupId string = resourceGroup.id
 
 // Logic Apps outputs
-output logicAppId string = enableLogicApps ? logicApp.outputs.logicAppId : ''
-output logicAppName string = enableLogicApps ? logicApp.outputs.logicAppName : ''
-output logicAppPrincipalId string = enableLogicApps ? logicApp.outputs.principalId : ''
+output logicAppId string = enableLogicApps ? logicApp!.outputs.logicAppId : ''
+output logicAppName string = enableLogicApps ? logicApp!.outputs.logicAppName : ''
+output logicAppPrincipalId string = enableLogicApps ? logicApp!.outputs.principalId : ''
 
 // Container instances outputs
-output migrationContainerId string = enableContainerInstances ? migrationContainer.outputs.containerGroupId : ''
-output processingContainerId string = enableContainerInstances ? processingContainer.outputs.containerGroupId : ''
-output cleanupContainerId string = enableContainerInstances ? cleanupContainer.outputs.containerGroupId : ''
+output migrationContainerId string = enableContainerInstances ? migrationContainer!.outputs.containerGroupId : ''
+output processingContainerId string = enableContainerInstances ? processingContainer!.outputs.containerGroupId : ''
+output cleanupContainerId string = enableContainerInstances ? cleanupContainer!.outputs.containerGroupId : ''
 
 // Workbook outputs
-output workbookId string = enableWorkbooks ? governanceWorkbook.outputs.workbookId : ''
-output workbookName string = enableWorkbooks ? governanceWorkbook.outputs.workbookName : ''
+output workbookId string = enableWorkbooks ? governanceWorkbook!.outputs.workbookId : ''
+output workbookName string = enableWorkbooks ? governanceWorkbook!.outputs.workbookName : ''
 
 // Policy outputs
-output requireTagsPolicyId string = enablePolicies ? requireTagsPolicy.outputs.policyId : ''
-output encryptionPolicyId string = enablePolicies ? encryptionPolicy.outputs.policyId : ''
-output publicStoragePolicyId string = enablePolicies ? publicStoragePolicy.outputs.policyId : ''
-output complianceAuditPolicyId string = enablePolicies ? complianceAuditPolicy.outputs.policyId : ''
+output requireTagsPolicyId string = enablePolicies ? requireTagsPolicy!.outputs.policyId : ''
+output encryptionPolicyId string = enablePolicies ? encryptionPolicy!.outputs.policyId : ''
+output publicStoragePolicyId string = enablePolicies ? publicStoragePolicy!.outputs.policyId : ''
+output complianceAuditPolicyId string = enablePolicies ? complianceAuditPolicy!.outputs.policyId : ''
