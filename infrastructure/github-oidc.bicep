@@ -1,4 +1,10 @@
-targetScope = 'subscription'
+targetScope = 'resourceGroup'
+
+// Deployed at resource-group scope because every resource in this file is
+// RG-scoped (deployment scripts, managed identity, role assignments). Use:
+//   az deployment group create -g <rg> -f infrastructure/github-oidc.bicep
+// Flipped from 'subscription' scope to resolve BCP135 errors; the previous
+// `existing` RG reference is no longer needed now that the file runs IN the RG.
 
 // =============================================================================
 // Azure Governance Platform - GitHub OIDC Federation Bicep Template
@@ -44,7 +50,7 @@ param azureTenantId string = tenant().tenantId
 param resourceGroupName string
 
 @description('Resource group location')
-param location string = deployment().location
+param location string = resourceGroup().location
 
 @description('Azure roles to assign to the GitHub Actions service principal')
 param roles array = [
@@ -131,13 +137,6 @@ var federatedCredentials = concat(
 )
 
 // -----------------------------------------------------------------------------
-// Resource Group (must exist)
-// -----------------------------------------------------------------------------
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' existing = {
-  name: resourceGroupName
-}
-
-// -----------------------------------------------------------------------------
 // Azure AD App Registration
 // -----------------------------------------------------------------------------
 // Note: Microsoft.Graph resources require Microsoft Graph Bicep extension
@@ -162,7 +161,7 @@ resource oidcSetupScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
     timeout: 'PT30M'
     retentionInterval: 'PT1H'
     cleanupPreference: 'OnSuccess'
-    arguments: '\'${appRegistrationName}\' \'${githubRepo}\' \'${azureTenantId}\' \'${resourceGroup.id}\' \'${normalizedEnvironment}\''
+    arguments: '\'${appRegistrationName}\' \'${githubRepo}\' \'${azureTenantId}\' \'${resourceGroup().id}\' \'${normalizedEnvironment}\''
     scriptContent: '''
 #!/bin/bash
 set -e
@@ -315,21 +314,9 @@ resource deploymentIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@20
 // Grants permission to create App Registrations and assign roles
 // -----------------------------------------------------------------------------
 resource deploymentIdentityRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(subscription().id, resourceGroup.id, deploymentIdentity.name, 'Contributor')
-  scope: resourceGroup
+  name: guid(subscription().id, resourceGroup().id, deploymentIdentity.name, 'Contributor')
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c') // Contributor
-    principalId: deploymentIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-// Additional role for creating app registrations
-resource appRegistrationRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(subscription().id, 'ApplicationDeveloper', deploymentIdentity.name)
-  scope: subscription()
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'cf1c38e5-3621-4004-a7cb-879624dced7c') // Application Developer
     principalId: deploymentIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }

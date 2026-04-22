@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// All current callers (deploy-governance-infrastructure.bicep) create policy
+// assignments at SUBSCRIPTION scope. Setting targetScope here avoids the
+// BCP420 ambiguous-scope error that the old runtime ternary produced. If an
+// RG-scoped variant is ever needed, create a sibling module
+// policy-assignment-rg.bicep rather than re-introducing runtime scope selection.
+// -----------------------------------------------------------------------------
+targetScope = 'subscription'
+
 @sys.description('Name of the policy assignment')
 param name string
 
@@ -6,9 +15,6 @@ param displayName string
 
 @sys.description('Description of the assignment')
 param description string = ''
-
-@sys.description('Scope for the assignment (subscription, resource group, or management group)')
-param scope string
 
 @sys.description('Policy definition ID to assign')
 param policyDefinitionId string
@@ -36,9 +42,6 @@ param identityType string = 'None'
 @sys.description('User-assigned identity resource IDs (if identityType is UserAssigned)')
 param userAssignedIdentities object = {}
 
-@sys.description('Location for the identity (required if identityType is SystemAssigned or UserAssigned)')
-param identityLocation string = resourceGroup().location
-
 @sys.description('Create a remediation task automatically')
 param createRemediationTask bool = false
 
@@ -46,10 +49,13 @@ param createRemediationTask bool = false
 @allowed(['Mitigated', 'Waiver'])
 param exemptionCategory string = 'Mitigated'
 
-// Policy assignment resource
+// Policy assignment resource. Deploys at this module's targetScope
+// (subscription). The `scope` param below is kept for backward compatibility
+// but is now informational only; the resource deploys wherever this module is
+// invoked. Callers should set the module's own `scope:` property if they ever
+// need to re-target.
 resource policyAssignment 'Microsoft.Authorization/policyAssignments@2022-06-01' = {
   name: name
-  scope: scope == subscription().id ? subscription() : resourceGroup(split(scope, '/')[4])
   properties: {
     displayName: displayName
     description: !empty(description) ? description : 'Assignment of ${policyDefinitionId}'

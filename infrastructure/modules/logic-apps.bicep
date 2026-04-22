@@ -51,14 +51,19 @@ param cleanupSchedule string = '0 0 2 * * *' // 2 AM daily
 @description('Resource age threshold in days for cleanup candidates')
 param cleanupAgeThresholdDays int = 30
 
-@description('Cost threshold for alerts (in USD)')
-param costAlertThreshold decimal = 1000.00
+@description('Cost threshold for alerts (in USD, whole dollars)')
+param costAlertThreshold int = 1000
 
 // Reference to existing storage account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
   name: storageAccountName
   scope: resourceGroup(storageAccountResourceGroup)
 }
+
+// Storage connection string, built once and reused.  Uses listKeys() as a
+// fallback; prefer Key Vault-backed secrets when the deployment model allows.
+var storageAccountKey = storageAccount.listKeys().keys[0].value // #nosec Key Vault preferred; listKeys fallback
+var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccountKey};EndpointSuffix=core.windows.net'
 
 // Build identity configuration
 var identityType = enableManagedIdentity ? (!empty(userAssignedIdentityId) ? 'UserAssigned' : 'SystemAssigned') : 'None'
@@ -113,11 +118,11 @@ resource logicApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'AzureWebJobsStorage'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value // #nosec — Key Vault preferred, listKeys is fallback};EndpointSuffix=core.windows.net'
+          value: storageConnectionString
         }
         {
           name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value // #nosec — Key Vault preferred, listKeys is fallback};EndpointSuffix=core.windows.net'
+          value: storageConnectionString
         }
         {
           name: 'WEBSITE_CONTENTSHARE'
@@ -154,14 +159,18 @@ resource logicApp 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
-// Storage Blob Data Contributor role for Logic App managed identity
-resource storageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableManagedIdentity) {
-  name: guid(storageAccount.id, logicApp.id, 'StorageBlobDataContributor')
-  scope: storageAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
-    principalId: enableManagedIdentity && !empty(userAssignedIdentityId) ? reference(userAssignedIdentityId, '2023-01-31').principalId : logicApp.identity.principalId
-    principalType: 'ServicePrincipal'
+// Storage Blob Data Contributor role for Logic App managed identity.
+// Deployed via sub-module because the storage account may live in a different
+// resource group (see storageAccountResourceGroup param). Role assignments
+// deploy at the scope of their target resource, and a single Bicep file can
+// only target one scope — hence the module indirection.
+module storageRoleAssignment './logic-app-storage-role.bicep' = if (enableManagedIdentity) {
+  name: 'logicAppStorageRoleDeploy'
+  scope: resourceGroup(storageAccountResourceGroup)
+  params: {
+    storageAccountName: storageAccountName
+    logicAppResourceId: logicApp.id
+    principalId: !empty(userAssignedIdentityId) ? reference(userAssignedIdentityId, '2023-01-31').principalId : logicApp.identity.principalId
   }
 }
 
@@ -247,24 +256,24 @@ resource teamsNotificationWorkflow 'Microsoft.Logic/workflows@2019-05-01' = if (
             body: {
               '@@type': 'MessageCard'
               '@@context': 'https://schema.org/extensions'
-              themeColor: "@{if(equals(triggerBody()['severity'], 'Critical'), 'FF0000', if(equals(triggerBody()['severity'], 'Warning'), 'FF9900', '0078D7'))}"
-              summary: "@{triggerBody()['alertName']}"
+              themeColor: '@{if(equals(triggerBody()[\'severity\'], \'Critical\'), \'FF0000\', if(equals(triggerBody()[\'severity\'], \'Warning\'), \'FF9900\', \'0078D7\'))}'
+              summary: '@{triggerBody()[\'alertName\']}'
               sections: [
                 {
-                  activityTitle: "Azure Governance Alert: @{triggerBody()['alertName']}"
-                  activitySubtitle: "@{triggerBody()['timestamp']}"
+                  activityTitle: 'Azure Governance Alert: @{triggerBody()[\'alertName\']}'
+                  activitySubtitle: '@{triggerBody()[\'timestamp\']}'
                   facts: [
                     {
                       name: 'Resource'
-                      value: "@{triggerBody()['resourceName']}"
+                      value: '@{triggerBody()[\'resourceName\']}'
                     }
                     {
                       name: 'Severity'
-                      value: "@{triggerBody()['severity']}"
+                      value: '@{triggerBody()[\'severity\']}'
                     }
                     {
                       name: 'Description'
-                      value: "@{triggerBody()['description']}"
+                      value: '@{triggerBody()[\'description\']}'
                     }
                   ]
                 }

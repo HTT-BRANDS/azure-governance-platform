@@ -81,7 +81,7 @@ module logicApp './modules/logic-apps.bicep' = if (enableLogicApps) {
     notificationEmail: notificationEmail
     monitoredResourceGroups: [resourceGroupName]
     cleanupSchedule: '0 0 2 * * *'
-    costAlertThreshold: environment == 'production' ? 1000.0 : 100.0
+    costAlertThreshold: environment == 'production' ? 1000 : 100
   }
 }
 
@@ -225,7 +225,6 @@ module requireTagsAssignment './modules/policy-assignment.bicep' = if (enablePol
   params: {
     name: 'require-tags-assignment'
     displayName: 'Require Mandatory Tags Assignment'
-    scope: subscription().id
     policyDefinitionId: requireTagsPolicy.outputs.policyId
     parameters: {
       effect: {
@@ -241,7 +240,6 @@ module encryptionAssignment './modules/policy-assignment.bicep' = if (enablePoli
   params: {
     name: 'enforce-encryption-assignment'
     displayName: 'Enforce Encryption Assignment'
-    scope: subscription().id
     policyDefinitionId: encryptionPolicy.outputs.policyId
     parameters: {
       effect: {
@@ -257,7 +255,6 @@ module publicStorageAssignment './modules/policy-assignment.bicep' = if (enableP
   params: {
     name: 'prevent-public-storage-assignment'
     displayName: 'Prevent Public Storage Access Assignment'
-    scope: subscription().id
     policyDefinitionId: publicStoragePolicy.outputs.policyId
     parameters: {
       effect: {
@@ -273,7 +270,6 @@ module complianceAuditAssignment './modules/policy-assignment.bicep' = if (enabl
   params: {
     name: 'compliance-audit-assignment'
     displayName: 'Compliance Audit Assignment'
-    scope: subscription().id
     policyDefinitionId: complianceAuditPolicy.outputs.policyId
     parameters: {
       effect: {

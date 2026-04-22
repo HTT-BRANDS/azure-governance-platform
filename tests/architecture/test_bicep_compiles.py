@@ -39,32 +39,14 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 INFRA_DIR = REPO_ROOT / "infrastructure"
 
-# Known-broken Bicep templates — grandfathered in.
+# Known-broken Bicep templates: grandfathered-in allowlist.
 #
-# These files have real, scoped issues that need architectural attention,
-# not trivial syntax fixes:
-#
-#   * github-oidc.bicep — BCP135 scope errors; declares subscription-scoped
-#     resources inside a resourceGroup-scoped file. Needs deployment-scope
-#     refactor.
-#   * deploy-governance-infrastructure.bicep — depends on policy-definition.
-#     Auto-heals when policy-definition is fixed.
-#   * modules/policy-definition.bicep — BCP135 scope error; resource type
-#     can't deploy at resourceGroup scope. Needs scope redesign.
-#   * modules/policy-assignment.bicep — BCP420 ambiguous scope expression.
-#     Needs scope simplification.
-#   * modules/logic-apps.bicep — BCP302 'decimal' is not a valid type;
-#     also string-termination errors on long lines. Needs syntax sweep
-#     against current Bicep version.
-#
-# Track in the issue tracker: see bd issue filed alongside this test.
-KNOWN_BROKEN_BICEP: set[str] = {
-    "infrastructure/github-oidc.bicep",
-    "infrastructure/deploy-governance-infrastructure.bicep",
-    "infrastructure/modules/policy-definition.bicep",
-    "infrastructure/modules/policy-assignment.bicep",
-    "infrastructure/modules/logic-apps.bicep",
-}
+# The initial audit (2026-04-21) found 10 broken templates. All were fixed
+# over the course of a single cleanup pass. The allowlist is kept as an empty
+# set so future regressions have a documented place to land, but the default
+# invariant is "empty": any addition must cite a bd issue explaining why the
+# file is broken and tracking the fix.
+KNOWN_BROKEN_BICEP: set[str] = set()
 
 
 def _az_bicep_available() -> bool:

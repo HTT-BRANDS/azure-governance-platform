@@ -1,3 +1,11 @@
+// -----------------------------------------------------------------------------
+// Policy definitions cannot deploy at resourceGroup scope (see BCP135). All
+// current callers (deploy-governance-infrastructure.bicep at subscription
+// scope) pin this module to subscription scope. For management-group policy
+// definitions, create a sibling policy-definition-mg.bicep instead.
+// -----------------------------------------------------------------------------
+targetScope = 'subscription'
+
 @sys.description('Name of the policy definition')
 param name string
 
