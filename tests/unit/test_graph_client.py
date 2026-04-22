@@ -262,7 +262,7 @@ class TestGraphClientCredential:
         client = GraphClient(tenant_id="t-001")
         assert client._credential is None
 
-    @patch("app.api.services.graph_client.ClientSecretCredential")
+    @patch("app.api.services.graph_client._base.ClientSecretCredential")
     def test_get_credential_creates_once(self, mock_csc):
         """Should create credential once and cache it."""
         # AzureClientManager is imported lazily inside _get_credential

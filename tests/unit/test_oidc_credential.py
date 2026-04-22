@@ -459,7 +459,7 @@ class TestGraphClientOidcPath:
 
         mock_cred = MagicMock()
 
-        with patch("app.api.services.graph_client.settings", mock_settings):
+        with patch("app.api.services.graph_client._base.settings", mock_settings):
             with patch("app.api.services.azure_client.azure_client_manager") as mock_manager:
                 mock_manager.get_credential.return_value = mock_cred
 
@@ -479,8 +479,8 @@ class TestGraphClientOidcPath:
         mock_settings.use_oidc_federation = False
         mock_settings.use_uami_auth = False
 
-        with patch("app.api.services.graph_client.settings", mock_settings):
-            with patch("app.api.services.graph_client.ClientSecretCredential") as mock_csc:
+        with patch("app.api.services.graph_client._base.settings", mock_settings):
+            with patch("app.api.services.graph_client._base.ClientSecretCredential") as mock_csc:
                 with patch("app.api.services.azure_client.AzureClientManager") as mock_mgr:
                     mock_mgr.return_value._resolve_credentials.return_value = (
                         "client-id",
@@ -506,7 +506,7 @@ class TestGraphClientOidcPath:
 
         mock_cred = MagicMock()
 
-        with patch("app.api.services.graph_client.settings", mock_settings):
+        with patch("app.api.services.graph_client._base.settings", mock_settings):
             with patch("app.api.services.azure_client.azure_client_manager") as mock_manager:
                 mock_manager.get_credential.return_value = mock_cred
 

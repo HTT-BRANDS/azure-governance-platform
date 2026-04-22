@@ -479,7 +479,6 @@ def test_file_size_limit():
     # allowlist from silently growing stale and masking re-introduced bloat.
     known_large_files = {
         "app/preflight/riverside_checks.py",
-        "app/api/services/graph_client.py",
         "app/core/riverside_scheduler.py",
         "app/services/backfill_service.py",
         "app/services/riverside_sync.py",
