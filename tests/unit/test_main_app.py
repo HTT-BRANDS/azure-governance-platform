@@ -57,6 +57,32 @@ class TestAppMetadata:
         assert app.description is not None
         assert "governance" in app.description.lower()
 
+    def test_app_description_has_no_commonmark_code_block_indent(self):
+        """Regression guard for ncxl: Swagger UI markdown rendering.
+
+        CommonMark treats lines with 4+ leading spaces as indented code blocks,
+        which caused the entire description to render as monospaced preformatted
+        text in Swagger UI (visible at docs/api/swagger/). The fix was to wrap
+        the triple-quoted description with textwrap.dedent() to strip the common
+        Python indent before FastAPI exports it into the OpenAPI spec.
+
+        This test catches any future regression where someone re-adds indent.
+        """
+        from app.main import app
+
+        assert app.description is not None
+        offending = [
+            (i, line)
+            for i, line in enumerate(app.description.splitlines(), start=1)
+            if line.startswith("    ")  # 4 spaces = CommonMark code block
+        ]
+        assert not offending, (
+            f"Found {len(offending)} line(s) in app.description with 4+ leading "
+            f"spaces. These will render as code blocks in Swagger UI. Wrap the "
+            f"description in textwrap.dedent(...) before passing to FastAPI().\n"
+            f"First offender: line {offending[0][0]}: {offending[0][1]!r}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Health Endpoints

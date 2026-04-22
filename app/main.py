@@ -1,6 +1,7 @@
 """Azure Multi-Tenant Governance Platform - Main Application."""
 
 import logging
+import textwrap
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -115,7 +116,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    description="""
+    # textwrap.dedent() strips the common 4-space indent that CommonMark
+    # would otherwise render as an indented code block in Swagger UI (ncxl).
+    description=textwrap.dedent("""
     **Azure Multi-Tenant Governance Platform**
 
     A comprehensive platform for managing Azure governance across multiple tenants.
@@ -177,7 +180,7 @@ app = FastAPI(
 
     For API support, contact the Cloud Governance Team or visit:
     [Documentation](https://github.com/htt-brands/azure-governance-platform/tree/main/docs)
-    """,
+    """).strip(),
     lifespan=lifespan,
     docs_url=None,  # Disabled - using custom routes with auth protection
     redoc_url=None,  # Disabled - using custom routes with auth protection
