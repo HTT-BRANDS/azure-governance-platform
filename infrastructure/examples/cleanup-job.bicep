@@ -4,7 +4,7 @@
 // =============================================================================
 
 @description('Name for the cleanup job')
-param jobName string = 'resource-cleanup-${utcNow('yyyyMMdd')}')
+param jobName string = 'resource-cleanup-${utcNow('yyyyMMdd')}'
 
 @description('Location for the resources')
 param location string = resourceGroup().location

@@ -4,7 +4,7 @@
 // =============================================================================
 
 @description('Name for the processing job')
-param jobName string = 'data-processor-${utcNow('yyyyMMdd-HHmm')}')
+param jobName string = 'data-processor-${utcNow('yyyyMMdd-HHmm')}'
 
 @description('Location for the resources')
 param location string = resourceGroup().location

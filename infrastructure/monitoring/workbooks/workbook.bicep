@@ -1,25 +1,25 @@
-@description('Name of the workbook')
+@sys.description('Name of the workbook')
 param name string
 
-@description('Display name of the workbook')
+@sys.description('Display name of the workbook')
 param displayName string = 'Azure Governance Platform Dashboard'
 
-@description('Location for the resource')
+@sys.description('Location for the resource')
 param location string = resourceGroup().location
 
-@description('Serialized JSON content of the workbook')
+@sys.description('Serialized JSON content of the workbook')
 param serializedData object
 
-@description('Category for the workbook')
+@sys.description('Category for the workbook')
 param category string = 'workbook'
 
-@description('Description of the workbook')
+@sys.description('Description of the workbook')
 param description string = 'Governance platform monitoring dashboard'
 
-@description('Tags to apply')
+@sys.description('Tags to apply')
 param tags object = {}
 
-@description('Source ID for the workbook (typically the resource ID of Log Analytics workspace)')
+@sys.description('Source ID for the workbook (typically the resource ID of Log Analytics workspace)')
 param sourceId string = ''
 
 // Generate unique workbook ID

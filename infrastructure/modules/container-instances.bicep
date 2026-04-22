@@ -23,8 +23,7 @@ param command array = []
 @description('Environment variables for the container')
 param environmentVariables array = []
 
-@description('Secure environment variables')
-@secure()
+@description('Secure environment variables. NOTE: @secure() was removed because Bicep no longer allows it on array params. For actual per-value secrecy, pass items with `secureValue` instead of `value` inside `environmentVariables`. Tracked as: follow-up refactor.')
 param secureEnvironmentVariables array = []
 
 @description('CPU cores allocated to the container')

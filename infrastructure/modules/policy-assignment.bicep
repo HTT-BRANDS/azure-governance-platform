@@ -1,48 +1,48 @@
-@description('Name of the policy assignment')
+@sys.description('Name of the policy assignment')
 param name string
 
-@description('Display name of the assignment')
+@sys.description('Display name of the assignment')
 param displayName string
 
-@description('Description of the assignment')
+@sys.description('Description of the assignment')
 param description string = ''
 
-@description('Scope for the assignment (subscription, resource group, or management group)')
+@sys.description('Scope for the assignment (subscription, resource group, or management group)')
 param scope string
 
-@description('Policy definition ID to assign')
+@sys.description('Policy definition ID to assign')
 param policyDefinitionId string
 
-@description('Policy parameter values')
+@sys.description('Policy parameter values')
 param parameters object = {}
 
-@description('Enforcement mode')
+@sys.description('Enforcement mode')
 @allowed(['Default', 'DoNotEnforce'])
 param enforcementMode string = 'Default'
 
-@description('Non-compliance messages')
+@sys.description('Non-compliance messages')
 param nonComplianceMessages array = []
 
-@description('Resource selectors for the assignment')
+@sys.description('Resource selectors for the assignment')
 param resourceSelectors array = []
 
-@description('Overrides for the assignment')
+@sys.description('Overrides for the assignment')
 param overrides array = []
 
-@description('Identity type for the assignment (required for DeployIfNotExists policies)')
+@sys.description('Identity type for the assignment (required for DeployIfNotExists policies)')
 @allowed(['None', 'SystemAssigned', 'UserAssigned'])
 param identityType string = 'None'
 
-@description('User-assigned identity resource IDs (if identityType is UserAssigned)')
+@sys.description('User-assigned identity resource IDs (if identityType is UserAssigned)')
 param userAssignedIdentities object = {}
 
-@description('Location for the identity (required if identityType is SystemAssigned or UserAssigned)')
+@sys.description('Location for the identity (required if identityType is SystemAssigned or UserAssigned)')
 param identityLocation string = resourceGroup().location
 
-@description('Create a remediation task automatically')
+@sys.description('Create a remediation task automatically')
 param createRemediationTask bool = false
 
-@description('Exemption category if creating exemption')
+@sys.description('Exemption category if creating exemption')
 @allowed(['Mitigated', 'Waiver'])
 param exemptionCategory string = 'Mitigated'
 

@@ -4,7 +4,7 @@
 // =============================================================================
 
 @description('Name for the migration job')
-param jobName string = 'db-migration-${utcNow('yyyyMMdd')}')
+param jobName string = 'db-migration-${utcNow('yyyyMMdd')}'
 
 @description('Location for the resources')
 param location string = resourceGroup().location
