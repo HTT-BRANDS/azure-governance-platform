@@ -100,3 +100,5 @@ research/*/raw-findings/
 
 # Tailwind v3 standalone binary (downloaded by scripts/bootstrap-css.sh)
 /bin/tailwindcss
+# Visual parity testing (py7u.4) — diff artifacts only, NOT baselines
+tests/e2e/visual_diffs/
