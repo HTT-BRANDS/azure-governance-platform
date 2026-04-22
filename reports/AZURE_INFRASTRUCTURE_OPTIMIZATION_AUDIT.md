@@ -373,21 +373,26 @@ az role assignment create --assignee $PRINCIPAL_ID --scope $ACR_ID --role AcrPul
 
 ### Recommended Bicep Changes
 
-See `infrastructure/modules/app-service-optimized.bicep` - ensure it includes:
+**Status (2026-04-22): all recommendations below are APPLIED** in
+`infrastructure/modules/app-service.bicep`. The former parallel
+`app-service-optimized.bicep` module was orphaned (zero callers) and has
+been deleted — its security hardening was already merged into the live
+module and its novel ideas (per-SKU auto-scale profiles, per-trigger
+auto-heal) were never adopted.
 
 ```bicep
-// Add these properties to webApp resource
+// Applied properties on the webApp resource (see module for exact shape):
 properties: {
   siteConfig: {
-    alwaysOn: true
-    http20Enabled: true
-    ftpsState: 'FtpsOnly'
-    minTlsVersion: '1.2'
-    use32BitWorkerProcess: false
-    healthCheckPath: '/health'
+    alwaysOn: true              // ✓ applied
+    http20Enabled: true         // ✓ applied (cherry-picked from deleted module)
+    ftpsState: 'Disabled'       // ✓ applied (stricter than the original 'FtpsOnly' rec)
+    minTlsVersion: '1.2'        // ✓ applied
+    use32BitWorkerProcess: false // ✓ applied
+    healthCheckPath: '/health'  // ✓ applied
   }
-  httpsOnly: true
-  clientAffinityEnabled: false
+  httpsOnly: true               // ✓ applied
+  clientAffinityEnabled: false  // ✓ applied
 }
 ```
 

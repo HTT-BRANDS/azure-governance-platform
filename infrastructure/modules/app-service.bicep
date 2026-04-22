@@ -113,6 +113,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
       numberOfWorkers: 1
       linuxFxVersion: linuxFxVersion
       alwaysOn: true
+      http20Enabled: true
       httpLoggingEnabled: true
       minTlsVersion: '1.2'
       scmMinTlsVersion: '1.2'
