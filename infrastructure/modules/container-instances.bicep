@@ -23,9 +23,6 @@ param command array = []
 @description('Environment variables for the container')
 param environmentVariables array = []
 
-@description('Secure environment variables. NOTE: @secure() was removed because Bicep no longer allows it on array params. For actual per-value secrecy, pass items with `secureValue` instead of `value` inside `environmentVariables`. Tracked as: follow-up refactor.')
-param secureEnvironmentVariables array = []
-
 @description('CPU cores allocated to the container')
 param cpuCores int = 1
 
@@ -121,7 +118,7 @@ var volumes = !empty(fileShareName) && !empty(storageAccountName) ? [
     azureFile: {
       shareName: fileShareName
       storageAccountName: storageAccountName
-      storageAccountKey: !empty(storageAccountKey) ? storageAccountKey : storageAccount.listKeys().keys[0].value // #nosec — Key Vault preferred, listKeys is fallback
+      storageAccountKey: !empty(storageAccountKey) ? storageAccountKey : storageAccount!.listKeys().keys[0].value // #nosec — Key Vault preferred, listKeys is fallback
     }
   }
 ] : []
@@ -131,12 +128,11 @@ var logAnalyticsConfig = !empty(logAnalyticsWorkspaceId) && !empty(logAnalyticsW
   workspaceId: logAnalyticsWorkspaceId
   workspaceKey: logAnalyticsWorkspaceKey
   logType: 'ContainerInsights'
-  metadata: [
-    {
-      name: 'job-type'
-      value: jobType
-    }
-  ]
+  // metadata is a plain dict (LogAnalyticsMetadata schema). Prior shape
+  // `[ { name, value } ]` was from an older ACI API version (BCP036).
+  metadata: {
+    'job-type': jobType
+  }
 } : null
 
 // Build identity configuration
@@ -188,7 +184,6 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2023-05-
           resources: resourcesConfig
           command: !empty(command) ? command : null
           environmentVariables: environmentVariables
-          secureEnvironmentVariables: secureEnvironmentVariables
           volumeMounts: volumeMounts
           ports: [
             {

@@ -159,7 +159,8 @@ resource failoverGroup 'Microsoft.Sql/servers/failoverGroups@2023-05-01-preview'
   parent: primaryServer
   name: failoverGroupName
   properties: {
-    serverName: primaryServerName
+    // serverName is implicit via `parent: primaryServer` - not a valid
+    // FailoverGroupProperties key (BCP037). Removed.
     partnerServers: [
       {
         id: secondaryServer.id
@@ -182,7 +183,15 @@ resource failoverGroup 'Microsoft.Sql/servers/failoverGroups@2023-05-01-preview'
 output primaryServerFqdn string = primaryServer.properties.fullyQualifiedDomainName
 output secondaryServerFqdn string = secondaryServer.properties.fullyQualifiedDomainName
 output failoverGroupName string = failoverGroup.name
-output failoverGroupFqdn string = failoverGroup.properties.readWriteEndpoint.fqdn
+// Failover group FQDNs are NOT on the endpoint objects (the schema there
+// only exposes failoverPolicy/targetServer). SQL Auto-Failover Groups always
+// publish two well-known DNS aliases:
+//   <groupName><sqlServerHostname>            = read-write (primary)
+//   <groupName>.secondary<sqlServerHostname>  = read-only  (secondary)
+// where sqlServerHostname is '.database.windows.net' on public cloud. Using
+// environment().suffixes.sqlServerHostname keeps this correct on Azure Gov
+// and Azure China too.
+output failoverGroupFqdn string = '${failoverGroup.name}${environment().suffixes.sqlServerHostname}'
 output secondaryLocation string = secondaryLocation
 output replicationStatus string = 'Active'
-output readOnlyEndpoint string = allowSecondaryReadOnly ? '${failoverGroup.properties.readOnlyEndpoint.fqdn}' : 'Disabled'
+output readOnlyEndpoint string = allowSecondaryReadOnly ? '${failoverGroup.name}.secondary${environment().suffixes.sqlServerHostname}' : 'Disabled'

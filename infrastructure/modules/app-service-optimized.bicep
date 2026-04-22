@@ -242,7 +242,9 @@ resource autoScaleSettings 'Microsoft.Insights/autoscalesettings@2022-10-01' = i
           }
         ]
       }
-      // Night mode profile - reduced capacity during off-peak hours
+      // Night mode profile - reduced capacity during off-peak hours.
+      // `rules: []` is required by the autoscale profile schema even when
+      // the profile only forces a fixed capacity (BCP035).
       {
         name: 'Night Mode'
         capacity: {
@@ -250,6 +252,7 @@ resource autoScaleSettings 'Microsoft.Insights/autoscalesettings@2022-10-01' = i
           maximum: string(autoScaleMaxInstances)
           default: '1'
         }
+        rules: []
         recurrence: {
           frequency: 'Week'
           schedule: {
@@ -362,11 +365,10 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
             count: 10
             timeInterval: '00:05:00'
           }
-          memoryRules: {
-            isEnabled: true
-            trigger: 'Above'
-            value: 85
-          }
+          // TODO: add `privateBytesInKB: <absolute-KB-threshold>` when the
+          // target SKU memory is known. The prior `memoryRules` block was
+          // not a valid AutoHealTriggers key (BCP037); the closest schema
+          // equivalent is `privateBytesInKB`, which is absolute not %.
         }
       }
       // App Insights Profiler settings
@@ -590,7 +592,7 @@ resource logsShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-0
 // Azure Files mount configuration
 resource azureStorageConfig 'Microsoft.Web/sites/config@2023-12-01' = if (enableAzureFiles) {
   parent: appService
-  name: 'azureStorageAccounts'
+  name: 'azurestorageaccounts'
   properties: {
     dataVolume: {
       type: 'AzureFiles'

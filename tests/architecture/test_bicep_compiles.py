@@ -48,6 +48,20 @@ INFRA_DIR = REPO_ROOT / "infrastructure"
 # file is broken and tracking the fix.
 KNOWN_BROKEN_BICEP: set[str] = set()
 
+# Known-warning Bicep templates: same ratchet shape as KNOWN_BROKEN_BICEP but
+# for COMPILES-WITH-WARNINGS rather than FAILS-TO-COMPILE.
+#
+# Audit (issue kj0p): warnings reduced from ~43 unique across 10 files to
+# ZERO across all 27 files. Allowlist starts empty; any addition must cite a
+# bd ticket explaining why the warning is waived.
+#
+# What this ratchet catches:
+#   * New hardcoded URLs (breaks sovereign cloud portability)
+#   * @secure() params with hardcoded non-empty defaults (security)
+#   * Unused params/vars (dead code)
+#   * Schema drift (BCP036/037/422/088/318/etc.) without explicit signoff
+KNOWN_WARNING_BICEP: set[str] = set()
+
 
 def _az_bicep_available() -> bool:
     """Return True if `az bicep build` can be invoked from this shell."""
@@ -82,6 +96,27 @@ def _compile_bicep(path: Path) -> tuple[bool, str]:
 
     stderr = result.stderr.decode("utf-8", errors="replace")
     return False, stderr
+
+
+def _compile_bicep_warnings(path: Path) -> list[str]:
+    """Return the list of `Warning ...` lines emitted for a single template.
+
+    az bicep writes warnings to stderr even on successful (returncode==0)
+    builds. We grep them out so the warnings-ratchet test can reason about
+    them independent of compile success.
+    """
+    try:
+        result = subprocess.run(
+            ["az", "bicep", "build", "--file", str(path), "--stdout"],
+            capture_output=True,
+            timeout=60,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return [f"(timed out collecting warnings for {path})"]
+    stderr = result.stderr.decode("utf-8", errors="replace")
+    # Warning lines look like `file.bicep(12,3) : Warning BCP037: ...`
+    return [line for line in stderr.splitlines() if " : Warning " in line]
 
 
 @pytest.fixture(scope="module")
@@ -152,4 +187,66 @@ def test_known_broken_bicep_allowlist_is_not_stale(
             f"\n{len(stale)} stale entries in KNOWN_BROKEN_BICEP:\n{summary}\n\n"
             "Remove them from the allowlist. Leaving stale entries lets future "
             "regressions slip through silently."
+        )
+
+
+@pytest.fixture(scope="module")
+def _bicep_warnings(_bicep_files: list[Path]) -> dict[str, list[str]]:
+    """Collect warnings for every Bicep file once, reuse across tests."""
+    if not _az_bicep_available():
+        pytest.skip("Azure CLI with bicep subcommand not available")
+    return {str(f.relative_to(REPO_ROOT)): _compile_bicep_warnings(f) for f in _bicep_files}
+
+
+def test_all_non_allowlisted_bicep_files_have_no_warnings(
+    _bicep_warnings: dict[str, list[str]],
+) -> None:
+    """Every Bicep file not in KNOWN_WARNING_BICEP must emit zero warnings."""
+    new_noisy: list[tuple[str, list[str]]] = []
+    for rel_path, warnings in _bicep_warnings.items():
+        if not warnings:
+            continue
+        if rel_path in KNOWN_WARNING_BICEP:
+            continue
+        new_noisy.append((rel_path, warnings))
+
+    if new_noisy:
+        lines: list[str] = []
+        for path, warnings in new_noisy:
+            lines.append(f"  x {path} ({len(warnings)} warning(s)):")
+            for w in warnings[:3]:
+                lines.append(f"      {w.strip()}")
+            if len(warnings) > 3:
+                lines.append(f"      ... +{len(warnings) - 3} more")
+        raise AssertionError(
+            f"\n{len(new_noisy)} Bicep file(s) emit warnings "
+            f"(not on the grandfather list):\n"
+            + "\n".join(lines)
+            + "\n\nEither fix the warning, or (for justified architectural reasons) "
+            "add its repo-relative path to KNOWN_WARNING_BICEP in this test."
+        )
+
+
+def test_known_warning_bicep_allowlist_is_not_stale(
+    _bicep_warnings: dict[str, list[str]],
+) -> None:
+    """Ratchet invariant: allowlisted files must STILL emit warnings.
+
+    If a listed file now has zero warnings, remove it from the allowlist.
+    Otherwise a future regression on that same file would sneak through.
+    """
+    stale: list[tuple[str, str]] = []
+    for allowlisted in KNOWN_WARNING_BICEP:
+        warnings = _bicep_warnings.get(allowlisted)
+        if warnings is None:
+            stale.append((allowlisted, "file no longer exists in repo"))
+            continue
+        if not warnings:
+            stale.append((allowlisted, "no longer has warnings - ratchet it out"))
+
+    if stale:
+        summary = "\n".join(f"  - {path}: {reason}" for path, reason in stale)
+        raise AssertionError(
+            f"\n{len(stale)} stale entries in KNOWN_WARNING_BICEP:\n{summary}\n\n"
+            "Remove them from the allowlist."
         )

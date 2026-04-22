@@ -284,7 +284,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
 // Configure AzureFiles mount for persistent storage
 resource azureStorageConfig 'Microsoft.Web/sites/config@2023-12-01' = {
   parent: appService
-  name: 'azureStorageAccounts'
+  name: 'azurestorageaccounts'
   properties: {
     dataVolume: {
       type: 'AzureFiles'
