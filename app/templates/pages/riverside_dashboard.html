@@ -273,8 +273,32 @@
     const STATUS_LABELS = {{ status_labels|tojson }};
     const PRIORITY_BAR_COLORS = {{ priority_bar_colors|tojson }};
 
+    // ─────────────────────────────────────────────────────────────────
+    // DOM helpers — null-safe to prevent TypeError spam when the element
+    // isn't on the page (e.g., countdown widget was removed, or this
+    // script somehow loads on a page where the target IDs don't exist).
+    // bd ref: azure-governance-platform (riverside JS defensive guards)
+    // ─────────────────────────────────────────────────────────────────
+    function setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+    function setStyleWidth(id, pct) {
+        const el = document.getElementById(id);
+        if (el) el.style.width = pct + '%';
+    }
+    function asNumber(v) {
+        // API occasionally returns numeric strings; coerce safely.
+        const n = typeof v === 'number' ? v : parseFloat(v);
+        return Number.isFinite(n) ? n : null;
+    }
+
     // Countdown timer
     function updateCountdown() {
+        // Bail early if the countdown widget isn't on this page — avoids
+        // flooding the console on every tick.
+        if (!document.getElementById('days')) return;
+
         const deadline = new Date('2026-07-08T00:00:00');
         const now = new Date();
         const diff = deadline - now;
@@ -285,10 +309,10 @@
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-            document.getElementById('days').textContent = days;
-            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
-            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
-            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+            setText('days', days);
+            setText('hours', hours.toString().padStart(2, '0'));
+            setText('minutes', minutes.toString().padStart(2, '0'));
+            setText('seconds', seconds.toString().padStart(2, '0'));
         }
     }
 
@@ -307,22 +331,39 @@
     }
 
     function updateDashboard(data) {
-        // Update summary cards
-        document.getElementById('maturity-score').textContent = data.overall_maturity != null ? data.overall_maturity.toFixed(1) + '/5.0' : 'N/A';
-        document.getElementById('maturity-progress').textContent = data.overall_maturity != null ? Math.round((data.overall_maturity / 5) * 100) + '%' : 'N/A';
-        document.getElementById('maturity-bar').style.width = (data.overall_maturity != null ? data.overall_maturity / 5 * 100 : 0) + '%';
+        // Summary cards — use asNumber() so string/number API drift doesn't
+        // crash .toFixed(). renderMetric() encapsulates the text/progress/bar
+        // trio so adding a fourth metric is a one-liner, not a six-line copy.
+        function renderMetric({label, progress, bar, value, suffix, divisor}) {
+            const n = asNumber(value);
+            if (n === null) {
+                setText(label, 'N/A');
+                setText(progress, 'N/A');
+                setStyleWidth(bar, 0);
+                return;
+            }
+            const displayed = n.toFixed(1) + (suffix ?? '');
+            setText(label, displayed);
+            setText(progress, divisor ? Math.round((n / divisor) * 100) + '%' : displayed);
+            setStyleWidth(bar, divisor ? (n / divisor) * 100 : n);
+        }
 
-        document.getElementById('mfa-coverage').textContent = data.overall_mfa_coverage != null ? data.overall_mfa_coverage.toFixed(1) + '%' : 'N/A';
-        document.getElementById('mfa-progress').textContent = data.overall_mfa_coverage != null ? data.overall_mfa_coverage.toFixed(1) + '%' : 'N/A';
-        document.getElementById('mfa-bar').style.width = (data.overall_mfa_coverage || 0) + '%';
+        renderMetric({
+            label: 'maturity-score', progress: 'maturity-progress', bar: 'maturity-bar',
+            value: data.overall_maturity, suffix: '/5.0', divisor: 5,
+        });
+        renderMetric({
+            label: 'mfa-coverage', progress: 'mfa-progress', bar: 'mfa-bar',
+            value: data.overall_mfa_coverage, suffix: '%',
+        });
+        renderMetric({
+            label: 'device-compliance', progress: 'device-progress', bar: 'device-bar',
+            value: data.overall_device_compliance, suffix: '%',
+        });
 
-        document.getElementById('device-compliance').textContent = data.overall_device_compliance != null ? data.overall_device_compliance.toFixed(1) + '%' : 'N/A';
-        document.getElementById('device-progress').textContent = data.overall_device_compliance != null ? data.overall_device_compliance.toFixed(1) + '%' : 'N/A';
-        document.getElementById('device-bar').style.width = (data.overall_device_compliance || 0) + '%';
-
-        document.getElementById('critical-gaps').textContent = data.total_critical_gaps;
-        document.getElementById('requirements-count').textContent = `${data.total_requirements_completed}/${data.total_requirements}`;
-        document.getElementById('requirements-bar').style.width = data.overall_completion_pct + '%';
+        setText('critical-gaps', data.total_critical_gaps);
+        setText('requirements-count', `${data.total_requirements_completed}/${data.total_requirements}`);
+        setStyleWidth('requirements-bar', data.overall_completion_pct ?? 0);
 
         // Update tenant table
         const tenantTable = document.getElementById('tenant-table');

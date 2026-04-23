@@ -175,12 +175,27 @@
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // DOM helpers — same null-safe pattern as riverside_dashboard.html.
+    // Prevents TypeError spam if the element is absent or the API field
+    // arrives as a string / null.
+    // ─────────────────────────────────────────────────────────────────
+    function setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+    function asNumber(v) {
+        const n = typeof v === 'number' ? v : parseFloat(v);
+        return Number.isFinite(n) ? n : null;
+    }
+
     function updateDashboard(data) {
-        // Update summary cards
-        document.getElementById('avg-security-score').textContent = data.average_security_score.toFixed(1);
-        document.getElementById('total-domains').textContent = data.total_domains;
-        document.getElementById('dmarc-compliant').textContent = data.dmarc_compliant;
-        document.getElementById('dkim-enabled').textContent = data.dkim_enabled;
+        // Summary cards
+        const score = asNumber(data.average_security_score);
+        setText('avg-security-score', score === null ? 'N/A' : score.toFixed(1));
+        setText('total-domains', data.total_domains ?? 0);
+        setText('dmarc-compliant', data.dmarc_compliant ?? 0);
+        setText('dkim-enabled', data.dkim_enabled ?? 0);
 
         // Update alert banner if critical issues
         updateAlertBanner(data.alerts);
