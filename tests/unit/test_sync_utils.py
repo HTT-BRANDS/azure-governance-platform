@@ -42,7 +42,7 @@ class TestTenantIsSyncEligible:
 
             assert tenant_is_sync_eligible(_tenant()) is True
 
-    def test_keyvault_mode_rejects_unknown_unconfigured_tenant(self):
+    def test_keyvault_mode_rejects_tenant_without_real_secret_path(self):
         with patch("app.core.sync.utils.settings") as settings:
             settings.use_uami_auth = False
             settings.use_oidc_federation = False
@@ -51,8 +51,8 @@ class TestTenantIsSyncEligible:
             settings.azure_client_secret = (
                 "shared-credential-placeholder"  # pragma: allowlist secret
             )
-            with patch("app.core.sync.utils.get_tenant_by_id", return_value=None):
-                assert tenant_is_sync_eligible(_tenant()) is False
+
+            assert tenant_is_sync_eligible(_tenant()) is False
 
     def test_keyvault_mode_allows_lighthouse_tenant(self):
         with patch("app.core.sync.utils.settings") as settings:
@@ -65,6 +65,26 @@ class TestTenantIsSyncEligible:
             )
 
             assert tenant_is_sync_eligible(_tenant(use_lighthouse=True)) is True
+
+    def test_keyvault_mode_allows_explicit_per_tenant_secret_ref(self):
+        with patch("app.core.sync.utils.settings") as settings:
+            settings.use_uami_auth = False
+            settings.use_oidc_federation = False
+            settings.key_vault_url = "https://vault.example"
+            settings.azure_client_id = "shared-client"
+            settings.azure_client_secret = (
+                "shared-credential-placeholder"  # pragma: allowlist secret
+            )
+
+            assert (
+                tenant_is_sync_eligible(
+                    _tenant(
+                        client_id="tenant-app-id",
+                        client_secret_ref="tenant-client-secret",  # pragma: allowlist secret
+                    )
+                )
+                is True
+            )
 
     def test_oidc_mode_requires_resolvable_app_id(self):
         with patch("app.core.sync.utils.settings") as settings:
@@ -81,7 +101,15 @@ class TestTenantIsSyncEligible:
 
 class TestGetSyncEligibleTenants:
     def test_filters_ineligible_tenants(self):
-        tenants = [_tenant(tenant_id="good-1"), _tenant(tenant_id="bad-1")]
+        tenants = [
+            _tenant(tenant_id="good-1", use_lighthouse=True),
+            _tenant(
+                tenant_id="good-2",
+                client_id="tenant-app-id",
+                client_secret_ref="secret-ref",  # pragma: allowlist secret
+            ),
+            _tenant(tenant_id="bad-1"),
+        ]
         with patch("app.core.sync.utils.settings") as settings:
             settings.use_uami_auth = False
             settings.use_oidc_federation = False
@@ -90,10 +118,6 @@ class TestGetSyncEligibleTenants:
             settings.azure_client_secret = (
                 "shared-credential-placeholder"  # pragma: allowlist secret
             )
-            with patch(
-                "app.core.sync.utils.get_tenant_by_id",
-                side_effect=lambda tenant_id: MagicMock() if tenant_id == "good-1" else None,
-            ):
-                eligible = get_sync_eligible_tenants(tenants)
+            eligible = get_sync_eligible_tenants(tenants)
 
-        assert [tenant.tenant_id for tenant in eligible] == ["good-1"]
+        assert [tenant.tenant_id for tenant in eligible] == ["good-1", "good-2"]

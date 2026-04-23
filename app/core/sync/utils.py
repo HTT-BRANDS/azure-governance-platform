@@ -8,7 +8,7 @@ import logging
 from collections.abc import Iterable
 
 from app.core.config import get_settings
-from app.core.tenants_config import get_app_id_for_tenant, get_tenant_by_id
+from app.core.tenants_config import get_app_id_for_tenant
 from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,11 @@ def tenant_is_sync_eligible(tenant: Tenant) -> bool:
     - Key Vault secret mode requires one of:
       * ``use_lighthouse=True``
       * explicit ``client_id`` + ``client_secret_ref``
-      * a known tenant entry in ``tenants_config`` for standard secret naming
+
+    A tenant merely existing in ``tenants_config`` is NOT sufficient in
+    secret mode. Scheduled jobs must only run when the tenant has an actual
+    credential path available; otherwise the scheduler will repeatedly invoke
+    syncs that can never authenticate and will spam alerts/logs.
     """
     if not tenant.is_active:
         return False
@@ -83,7 +87,7 @@ def tenant_is_sync_eligible(tenant: Tenant) -> bool:
     if tenant.client_id and tenant.client_secret_ref:
         return True
 
-    return get_tenant_by_id(tenant.tenant_id) is not None
+    return False
 
 
 def get_sync_eligible_tenants(tenants: Iterable[Tenant]) -> list[Tenant]:
