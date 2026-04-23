@@ -52,10 +52,11 @@ env:
   PRODUCTION_URL:       https://app-governance-prod.azurewebsites.net
 
 permissions:
-  id-token: write
+  id-token: write       # OIDC for Azure login + Sigstore keyless signing
   contents: read
   security-events: write
-  packages: write  # GHCR push
+  packages: write       # GHCR push
+  attestations: write   # actions/attest-* (SBOM + SLSA provenance)
 
 jobs:
   # ===========================================================================
@@ -318,6 +319,30 @@ jobs:
         uses: ./.github/actions/verify-production-image
         with:
           image-ref: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}@${{ steps.digest.outputs.digest }}
+
+      # ---------------------------------------------------------------------
+      # Supply-chain artifact #1: SBOM (Software Bill of Materials)
+      # Generates an SPDX-JSON SBOM of the pushed image via Syft (anchore/sbom-action),
+      # then attests it via Sigstore keyless signing and attaches it to the image
+      # as an OCI referrer so cosign verify-attestation can find it at deploy time.
+      # Closes bd 7mk8 (P0 Security #2).
+      # ---------------------------------------------------------------------
+      - name: Generate SBOM (Syft / SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}@${{ steps.digest.outputs.digest }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: true
+          upload-artifact-retention: 90
+
+      - name: Attest SBOM (Sigstore keyless → OCI referrer)
+        uses: actions/attest-sbom@v2
+        with:
+          subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          sbom-path: sbom.spdx.json
+          push-to-registry: true
 
       - name: Set image output
         id: set-output
