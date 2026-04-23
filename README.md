@@ -1,7 +1,7 @@
 # Azure Multi-Tenant Governance Platform
 
-[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](./CHANGELOG.md)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](./CHANGELOG.md)
+[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![Tests](https://img.shields.io/badge/tests-4,300+-brightgreen.svg)](./tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
