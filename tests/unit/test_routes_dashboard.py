@@ -12,7 +12,7 @@ Tests all dashboard endpoints with FastAPI TestClient:
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -486,6 +486,25 @@ class TestSyncHistoryTablePartial:
 
     @patch("app.api.routes.dashboard.templates")
     @patch("app.api.routes.dashboard.MonitoringService")
+    def test_sync_history_table_normalizes_naive_timestamps_for_template_rendering(
+        self, mock_monitoring_cls, mock_templates, authed_client
+    ):
+        """Naive timestamps are normalized before template datetime arithmetic."""
+        naive_started_at = datetime(2025, 4, 23, 12, 0, 0)
+        log = MagicMock(started_at=naive_started_at, ended_at=None)
+        monitoring = MagicMock()
+        monitoring.get_recent_logs.return_value = [log]
+        mock_monitoring_cls.return_value = monitoring
+        mock_templates.TemplateResponse.return_value = _html()
+
+        response = authed_client.get("/partials/sync-history-table")
+
+        assert response.status_code == 200
+        template_context = mock_templates.TemplateResponse.call_args.args[2]
+        assert template_context["logs"][0].started_at.tzinfo == UTC
+
+    @patch("app.api.routes.dashboard.templates")
+    @patch("app.api.routes.dashboard.MonitoringService")
     def test_sync_history_table_accepts_limit_parameter(
         self, mock_monitoring_cls, mock_templates, authed_client, mock_services
     ):
@@ -497,7 +516,9 @@ class TestSyncHistoryTablePartial:
 
         assert response.status_code == 200
         mock_services["monitoring"].get_recent_logs.assert_called_once_with(
-            limit=20, include_running=True
+            limit=20,
+            include_running=True,
+            tenant_ids=["test-tenant-123"],
         )
 
     @patch("app.api.routes.dashboard.templates")
@@ -514,5 +535,7 @@ class TestSyncHistoryTablePartial:
         assert response.status_code == 200
         # Default limit should be 15
         mock_services["monitoring"].get_recent_logs.assert_called_once_with(
-            limit=15, include_running=True
+            limit=15,
+            include_running=True,
+            tenant_ids=["test-tenant-123"],
         )

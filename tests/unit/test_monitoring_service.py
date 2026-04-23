@@ -499,6 +499,36 @@ class TestMonitoringServiceSyncJobs:
         assert len(result) == 2
         assert all(log.status != "running" for log in result)
 
+    def test_get_recent_logs_filters_by_tenant_ids(self, monitoring_service, mock_db):
+        """Test get_recent_logs can scope results to accessible tenants."""
+        query_mock = MagicMock()
+        filtered_by_type = MagicMock()
+        filtered_by_tenant = MagicMock()
+        filtered_by_status = MagicMock()
+        order_mock = MagicMock()
+        limit_mock = MagicMock()
+
+        mock_db.query.return_value = query_mock
+        query_mock.filter.return_value = filtered_by_type
+        filtered_by_type.filter.return_value = filtered_by_tenant
+        filtered_by_tenant.filter.return_value = filtered_by_status
+        filtered_by_status.order_by.return_value = order_mock
+        order_mock.limit.return_value = limit_mock
+        limit_mock.all.return_value = []
+
+        monitoring_service.get_recent_logs(
+            job_type="costs",
+            limit=10,
+            include_running=False,
+            tenant_ids=["tenant-123"],
+        )
+
+        query_mock.filter.assert_called_once()
+        filtered_by_type.filter.assert_called_once()
+        filtered_by_tenant.filter.assert_called_once()
+        filtered_by_status.order_by.assert_called_once()
+        order_mock.limit.assert_called_once_with(10)
+
 
 class TestMonitoringServiceAlertDetection:
     """Test suite for automatic alert detection."""

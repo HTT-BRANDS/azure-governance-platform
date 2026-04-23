@@ -30,6 +30,23 @@ router = APIRouter(
 )
 
 
+def _coerce_utc_datetime(value: datetime | None) -> datetime | None:
+    """Normalize datetimes to UTC-aware values for template-safe arithmetic."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
+def _prepare_sync_logs_for_display(logs: list[SyncJobLog]) -> list[SyncJobLog]:
+    """Normalize sync log datetimes before Jinja renders relative timestamps."""
+    for log in logs:
+        log.started_at = _coerce_utc_datetime(log.started_at)
+        log.ended_at = _coerce_utc_datetime(log.ended_at)
+    return logs
+
+
 async def _get_dashboard_data(
     db: Session,
     authz: TenantAuthorization,
@@ -186,8 +203,14 @@ async def sync_dashboard(
     # Get overall sync status
     overall_status = monitoring.get_overall_status()
 
-    # Get recent sync history (last 20 jobs)
-    recent_logs = monitoring.get_recent_logs(limit=20, include_running=True)
+    # Get recent sync history (last 20 jobs) filtered by accessible tenants
+    recent_logs = _prepare_sync_logs_for_display(
+        monitoring.get_recent_logs(
+            limit=20,
+            include_running=True,
+            tenant_ids=authz.accessible_tenant_ids,
+        )
+    )
 
     # Get active alerts
     active_alerts = monitoring.get_active_alerts()[:10]
@@ -244,7 +267,9 @@ async def _get_tenant_sync_status(
 
             if last_log:
                 # Calculate staleness
-                hours_since_sync = (datetime.now(UTC) - last_log.started_at).total_seconds() / 3600
+                started_at = _coerce_utc_datetime(last_log.started_at)
+                last_log.started_at = started_at
+                hours_since_sync = (datetime.now(UTC) - started_at).total_seconds() / 3600
                 expected_interval = 24  # hours
 
                 if last_log.status == "failed":
@@ -325,11 +350,20 @@ async def sync_status_card_partial(request: Request, db: Session = Depends(get_d
 
 @router.get("/partials/sync-history-table", response_class=HTMLResponse)
 async def sync_history_table_partial(
-    request: Request, limit: int = 15, db: Session = Depends(get_db)
+    request: Request,
+    limit: int = 15,
+    db: Session = Depends(get_db),
+    authz: TenantAuthorization = Depends(get_tenant_authorization),
 ):
     """HTMX partial: Recent sync jobs table."""
     monitoring = MonitoringService(db)
-    recent_logs = monitoring.get_recent_logs(limit=limit, include_running=True)
+    recent_logs = _prepare_sync_logs_for_display(
+        monitoring.get_recent_logs(
+            limit=limit,
+            include_running=True,
+            tenant_ids=authz.accessible_tenant_ids,
+        )
+    )
 
     return templates.TemplateResponse(
         request,

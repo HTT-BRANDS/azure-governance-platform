@@ -312,7 +312,11 @@ class MonitoringService:
         return query.all()
 
     def get_recent_logs(
-        self, job_type: str | None = None, limit: int = 50, include_running: bool = False
+        self,
+        job_type: str | None = None,
+        limit: int = 50,
+        include_running: bool = False,
+        tenant_ids: list[str] | None = None,
     ) -> list[SyncJobLog]:
         """Get recent sync job logs.
 
@@ -320,6 +324,8 @@ class MonitoringService:
             job_type: Optional specific job type to filter by
             limit: Maximum number of logs to return
             include_running: Whether to include currently running jobs
+            tenant_ids: Optional tenant IDs to restrict results to. ``None`` means
+                no tenant filtering; an empty list returns no tenant-scoped logs.
 
         Returns:
             List of SyncJobLog entries
@@ -327,6 +333,8 @@ class MonitoringService:
         query = self.db.query(SyncJobLog)
         if job_type:
             query = query.filter(SyncJobLog.job_type == job_type)
+        if tenant_ids is not None:
+            query = query.filter(SyncJobLog.tenant_id.in_(tenant_ids))
         if not include_running:
             query = query.filter(SyncJobLog.status != "running")
         return query.order_by(SyncJobLog.started_at.desc()).limit(limit).all()
