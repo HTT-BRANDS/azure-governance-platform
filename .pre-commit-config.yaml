@@ -38,5 +38,18 @@ repos:
             yarn\.lock
           )$
 
+  # env-delta.yaml: machine-enforced HTT P0 Security Requirement #7.
+  # Rejects literal secrets / UUIDs and schema drift before commit.
+  # See scripts/validate_env_delta.py + bd my5r.
+  - repo: local
+    hooks:
+      - id: env-delta-validate
+        name: env-delta schema + literal-rejection
+        entry: python scripts/validate_env_delta.py env-delta.yaml
+        language: system
+        pass_filenames: false
+        files: ^(env-delta\.yaml|scripts/validate_env_delta\.py)$
+        stages: [pre-commit]
+
   # Optional: Additional pre-commit hooks can be added here
   # Example: Code formatters, linters, etc.
