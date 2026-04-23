@@ -255,8 +255,9 @@ jobs:
     environment: production
 
     outputs:
-      image_full: ${{ steps.set-output.outputs.image_full }}
-      sha_tag:    ${{ steps.set-output.outputs.sha_tag }}
+      image_full:   ${{ steps.set-output.outputs.image_full }}
+      sha_tag:      ${{ steps.set-output.outputs.sha_tag }}
+      image_digest: ${{ steps.digest.outputs.digest }}  # immutable sha256:... — cosign verify pins on this
 
     steps:
       - uses: actions/checkout@v4
@@ -381,6 +382,52 @@ jobs:
       url: ${{ env.PRODUCTION_URL }}
 
     steps:
+      # -----------------------------------------------------------------
+      # Supply-chain gate: cosign 4-claim verify on BOTH attestations.
+      # Fails closed — any verification failure aborts deploy before a
+      # single Azure API call is made. The 4 claims per attestation:
+      #   1. subject        — pinned to image_digest (immutable sha256)
+      #   2. predicate-type — SLSA v1 provenance OR SPDX SBOM
+      #   3. cert-identity  — workflow ref regexp (main or release/*)
+      #   4. oidc-issuer    — Sigstore Fulcio (GitHub Actions)
+      # Policy source of truth: arbiter/policies/verify.yaml
+      # Closes bd 7mk8 (P0 Security #1 + #2 enforcement).
+      # -----------------------------------------------------------------
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.4.1'
+
+      - name: Verify SLSA provenance attestation (4-claim)
+        env:
+          IMAGE_REF: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}@${{ needs.build-image.outputs.image_digest }}
+          CERT_IDENTITY_REGEXP: '^https://github\.com/${{ github.repository }}/\.github/workflows/deploy-production\.yml@refs/heads/(main|release/.*)$'
+          OIDC_ISSUER: 'https://token.actions.githubusercontent.com'
+        run: |
+          set -euo pipefail
+          echo "Verifying SLSA provenance on: ${IMAGE_REF}"
+          cosign verify-attestation \
+            --type slsaprovenance1 \
+            --certificate-identity-regexp "${CERT_IDENTITY_REGEXP}" \
+            --certificate-oidc-issuer "${OIDC_ISSUER}" \
+            "${IMAGE_REF}" > /tmp/slsa-verdict.json
+          echo "::notice::SLSA provenance verified for ${IMAGE_REF}"
+
+      - name: Verify SBOM attestation (4-claim)
+        env:
+          IMAGE_REF: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}@${{ needs.build-image.outputs.image_digest }}
+          CERT_IDENTITY_REGEXP: '^https://github\.com/${{ github.repository }}/\.github/workflows/deploy-production\.yml@refs/heads/(main|release/.*)$'
+          OIDC_ISSUER: 'https://token.actions.githubusercontent.com'
+        run: |
+          set -euo pipefail
+          echo "Verifying SBOM attestation on: ${IMAGE_REF}"
+          cosign verify-attestation \
+            --type spdxjson \
+            --certificate-identity-regexp "${CERT_IDENTITY_REGEXP}" \
+            --certificate-oidc-issuer "${OIDC_ISSUER}" \
+            "${IMAGE_REF}" > /tmp/sbom-verdict.json
+          echo "::notice::SBOM attestation verified for ${IMAGE_REF}"
+
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
@@ -401,10 +448,13 @@ jobs:
           # GITHUB_TOKEN, which expires after the workflow ends. Without a PAT,
           # App Service restarts outside CI may fail to re-pull the image.
           GHCR_PASSWORD="${GHCR_PAT:-$GITHUB_TOKEN}"
+          # Deploy by DIGEST (not tag) so the exact cosign-verified artifact
+          # is what App Service pulls. Pinning to the mutable :sha-<commit>
+          # tag would open a TOCTOU window between verify and deploy.
           az webapp config container set \
             --name ${{ env.AZURE_APP_NAME }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --container-image-name ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}:${{ needs.build-image.outputs.sha_tag }} \
+            --container-image-name ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}@${{ needs.build-image.outputs.image_digest }} \
             --container-registry-url https://${{ env.GHCR_REGISTRY }} \
             --container-registry-user ${{ github.repository_owner }} \
             --container-registry-password "$GHCR_PASSWORD"
