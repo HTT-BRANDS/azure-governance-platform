@@ -344,6 +344,22 @@ jobs:
           sbom-path: sbom.spdx.json
           push-to-registry: true
 
+      # ---------------------------------------------------------------------
+      # Supply-chain artifact #2: SLSA L3 build provenance
+      # actions/attest-build-provenance@v2 produces an in-toto / SLSA v1
+      # provenance predicate and signs it via Sigstore keyless using the
+      # workflow's OIDC identity. Running on GitHub-hosted ephemeral runners
+      # with an untampered hosted builder, signed via Fulcio, and logged in
+      # Rekor satisfies SLSA Build Level 3 per the SLSA conformance matrix.
+      # Closes bd 7mk8 (P0 Security #1).
+      # ---------------------------------------------------------------------
+      - name: Attest SLSA build provenance (SLSA v1 / Build L3)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true
+
       - name: Set image output
         id: set-output
         run: |
