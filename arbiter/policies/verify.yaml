@@ -43,10 +43,10 @@ spec:
       required:
         - type: "slsaprovenance1"
           spec: "https://slsa.dev/provenance/v1"
-          produced_by: "actions/attest-build-provenance@v2"
+          produced_by: "actions/attest-build-provenance@e8998f94 (v2.4.0)"
         - type: "spdxjson"
           spec: "https://spdx.dev/spdx-specification-2-3/"
-          produced_by: "actions/attest-sbom@v2 (syft-generated)"
+          produced_by: "actions/attest-sbom@bd218ad0 (v2.4.0, syft-generated)"
 
     certificate_identity:
       # Claim 3 — WHICH workflow produced it.
@@ -111,11 +111,14 @@ spec:
   # ---------------------------------------------------------------------------
   ratchet_followups:
     - id: "7mk8-sha-pin"
-      description: "Pin actions/attest-build-provenance + actions/attest-sbom
-                    + sigstore/cosign-installer to full commit SHAs (not @v2 /
-                    @v3 major tags) for supply-chain-of-trust completeness."
-      severity: "low"
-      deadline: "2026-07-21"  # aligns with WAV-v2.5.0-7mk8 expiry
+      description: "DONE (bd dq49, 2026-04-23). All supply-chain tooling now
+                    pinned to full commit SHAs: attest-build-provenance=e8998f94,
+                    attest-sbom=bd218ad0, cosign-installer=7e8b541e, sbom-action=
+                    e22c3899. Dependabot will propose SHA-updating PRs on new
+                    releases."
+      severity: "resolved"
+      deadline: "2026-07-21"
+      resolved_by: "bd dq49"
     - id: "7mk8-rekor-offline"
       description: "Consider passing --rekor-url and --offline to cosign verify
                     for air-gapped production environments. N/A today because

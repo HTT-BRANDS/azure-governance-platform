@@ -329,7 +329,7 @@ jobs:
       # Closes bd 7mk8 (P0 Security #2).
       # ---------------------------------------------------------------------
       - name: Generate SBOM (Syft / SPDX)
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610  # v0.24.0
         with:
           image: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}@${{ steps.digest.outputs.digest }}
           format: spdx-json
@@ -338,7 +338,7 @@ jobs:
           upload-artifact-retention: 90
 
       - name: Attest SBOM (Sigstore keyless → OCI referrer)
-        uses: actions/attest-sbom@v2
+        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b  # v2.4.0
         with:
           subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
           subject-digest: ${{ steps.digest.outputs.digest }}
@@ -355,7 +355,7 @@ jobs:
       # Closes bd 7mk8 (P0 Security #1).
       # ---------------------------------------------------------------------
       - name: Attest SLSA build provenance (SLSA v1 / Build L3)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be  # v2.4.0
         with:
           subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
           subject-digest: ${{ steps.digest.outputs.digest }}
@@ -394,7 +394,7 @@ jobs:
       # Closes bd 7mk8 (P0 Security #1 + #2 enforcement).
       # -----------------------------------------------------------------
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5  # v3.10.1
         with:
           cosign-release: 'v2.4.1'
 
