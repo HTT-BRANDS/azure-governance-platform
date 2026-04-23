@@ -170,6 +170,7 @@ jobs:
           ENVIRONMENT: development
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ci-shared-secret-placeholder  # pragma: allowlist secret
 
   # ===========================================================================
   # Job 2: Security Scan
