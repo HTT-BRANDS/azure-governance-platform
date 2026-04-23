@@ -11,7 +11,7 @@ from app.api.services.monitoring_service import MonitoringService
 from app.core.circuit_breaker import COMPLIANCE_SYNC_BREAKER, circuit_breaker
 from app.core.database import get_db_context
 from app.core.retry import COMPLIANCE_SYNC_POLICY, retry_with_backoff
-from app.core.sync.utils import safe_truncate
+from app.core.sync.utils import get_sync_eligible_tenants, safe_truncate
 from app.models.compliance import ComplianceSnapshot, PolicyState
 from app.models.tenant import Tenant
 
@@ -43,9 +43,10 @@ async def sync_compliance():
             log_entry = monitoring.start_sync_job(job_type="compliance")
             log_id = log_entry.id
             tenants = db.query(Tenant).filter(Tenant.is_active).all()
-            tenant_data = [(t.id, t.name, t.tenant_id) for t in tenants]
+            eligible_tenants = get_sync_eligible_tenants(tenants)
+            tenant_data = [(t.id, t.name, t.tenant_id) for t in eligible_tenants]
 
-        logger.info(f"Found {len(tenant_data)} active tenants to sync for compliance")
+        logger.info(f"Found {len(tenant_data)} sync-eligible tenants to sync for compliance")
 
         for tenant_id, tenant_name, azure_tenant_id in tenant_data:
             logger.info(f"Syncing compliance for tenant: {tenant_name} ({azure_tenant_id})")

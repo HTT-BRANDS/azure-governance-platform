@@ -10,6 +10,7 @@ from app.api.services.monitoring_service import MonitoringService
 from app.core.circuit_breaker import IDENTITY_SYNC_BREAKER, circuit_breaker
 from app.core.database import get_db_context
 from app.core.retry import IDENTITY_SYNC_POLICY, retry_with_backoff
+from app.core.sync.utils import get_sync_eligible_tenants
 from app.models.identity import IdentitySnapshot, PrivilegedUser
 from app.models.tenant import Tenant
 
@@ -135,9 +136,10 @@ async def sync_identity():
             log_entry = monitoring.start_sync_job(job_type="identity")
             log_id = log_entry.id
             tenants = db.query(Tenant).filter(Tenant.is_active).all()
-            tenant_data = [(t.id, t.name, t.tenant_id) for t in tenants]
+            eligible_tenants = get_sync_eligible_tenants(tenants)
+            tenant_data = [(t.id, t.name, t.tenant_id) for t in eligible_tenants]
 
-        logger.info(f"Found {len(tenant_data)} active tenants to sync for identity")
+        logger.info(f"Found {len(tenant_data)} sync-eligible tenants to sync for identity")
 
         for tenant_id, tenant_name, azure_tenant_id in tenant_data:
             logger.info(f"Syncing identity for tenant: {tenant_name} ({azure_tenant_id})")

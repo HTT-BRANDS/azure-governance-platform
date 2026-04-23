@@ -191,8 +191,8 @@ class TestCredentialResolution:
                     assert client_secret == "kv-client-secret"
                     assert tenant == mock_tenant
 
-    def test_keyvault_fallback_to_settings(self):
-        """Test fallback to settings credentials when Key Vault secrets not found."""
+    def test_keyvault_missing_tenant_credentials_raises_error(self):
+        """Test Key Vault mode does not silently borrow shared creds for unknown tenants."""
         from app.api.services.azure_client import AzureClientManager
 
         self.mock_settings.key_vault_url = "https://test-kv.vault.azure.net/"
@@ -206,12 +206,34 @@ class TestCredentialResolution:
         with patch("app.api.services.azure_client.KEYVAULT_AVAILABLE", True):
             manager = AzureClientManager()
             with patch.object(manager, "_get_tenant_from_db", return_value=mock_tenant):
-                with patch.object(manager, "_fetch_key_vault_secret", return_value=None):
-                    client_id, client_secret, tenant = manager._resolve_credentials("tenant-123")
+                with patch("app.api.services.azure_client.get_tenant_by_id", return_value=None):
+                    with patch.object(manager, "_fetch_key_vault_secret", return_value=None):
+                        with pytest.raises(
+                            ValueError, match="not configured for per-tenant Key Vault credentials"
+                        ):
+                            manager._resolve_credentials("tenant-123")
 
-                    # Should fallback to lighthouse credentials
-                    assert client_id == "lighthouse-client-id"
-                    assert client_secret == "lighthouse-client-secret"
+    def test_keyvault_known_config_tenant_missing_secrets_raises_generic_error(self):
+        """Test known tenants still fail closed when expected Key Vault secrets are missing."""
+        from app.api.services.azure_client import AzureClientManager
+
+        self.mock_settings.key_vault_url = "https://test-kv.vault.azure.net/"
+
+        mock_tenant = MagicMock()
+        mock_tenant.tenant_id = "tenant-123"
+        mock_tenant.use_lighthouse = False
+        mock_tenant.client_id = None
+        mock_tenant.client_secret_ref = None
+
+        with patch("app.api.services.azure_client.KEYVAULT_AVAILABLE", True):
+            manager = AzureClientManager()
+            with patch.object(manager, "_get_tenant_from_db", return_value=mock_tenant):
+                with patch(
+                    "app.api.services.azure_client.get_tenant_by_id", return_value=MagicMock()
+                ):
+                    with patch.object(manager, "_fetch_key_vault_secret", return_value=None):
+                        with pytest.raises(ValueError, match="Could not resolve credentials"):
+                            manager._resolve_credentials("tenant-123")
 
     def test_no_credentials_available_raises_error(self):
         """Test error when no credentials can be resolved."""
@@ -231,7 +253,10 @@ class TestCredentialResolution:
             manager = AzureClientManager()
             with patch.object(manager, "_get_tenant_from_db", return_value=mock_tenant):
                 with patch.object(manager, "_fetch_key_vault_secret", return_value=None):
-                    with pytest.raises(ValueError, match="Could not resolve credentials"):
+                    with pytest.raises(
+                        ValueError,
+                        match="not configured for per-tenant Key Vault credentials",
+                    ):
                         manager._resolve_credentials("tenant-123")
 
 

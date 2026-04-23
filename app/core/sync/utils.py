@@ -5,8 +5,14 @@ SQLAlchemy sessions and cascade to kill ALL sync jobs (ADR-0010).
 """
 
 import logging
+from collections.abc import Iterable
+
+from app.core.config import get_settings
+from app.core.tenants_config import get_app_id_for_tenant, get_tenant_by_id
+from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 def safe_truncate(
@@ -44,3 +50,42 @@ def safe_truncate(
         },
     )
     return value[:max_len]
+
+
+def tenant_is_sync_eligible(tenant: Tenant) -> bool:
+    """Return whether a tenant is configured for scheduled Azure sync.
+
+    Eligibility is intentionally stricter than ``tenant.is_active`` so
+    background jobs do not hammer Azure with obviously incomplete or fake
+    tenant records.
+
+    Rules:
+    - inactive tenants are never eligible
+    - secret mode without Key Vault keeps legacy Lighthouse behavior
+    - OIDC/UAMI modes require a resolvable app/client ID
+    - Key Vault secret mode requires one of:
+      * ``use_lighthouse=True``
+      * explicit ``client_id`` + ``client_secret_ref``
+      * a known tenant entry in ``tenants_config`` for standard secret naming
+    """
+    if not tenant.is_active:
+        return False
+
+    if settings.use_uami_auth or settings.use_oidc_federation:
+        return bool(get_app_id_for_tenant(tenant.tenant_id) or tenant.client_id)
+
+    if not settings.key_vault_url:
+        return bool(settings.azure_client_id and settings.azure_client_secret)
+
+    if tenant.use_lighthouse:
+        return bool(settings.azure_client_id and settings.azure_client_secret)
+
+    if tenant.client_id and tenant.client_secret_ref:
+        return True
+
+    return get_tenant_by_id(tenant.tenant_id) is not None
+
+
+def get_sync_eligible_tenants(tenants: Iterable[Tenant]) -> list[Tenant]:
+    """Filter a tenant iterable down to scheduled-sync eligible tenants."""
+    return [tenant for tenant in tenants if tenant_is_sync_eligible(tenant)]

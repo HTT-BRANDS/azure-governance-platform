@@ -36,7 +36,7 @@ from azure.mgmt.subscription import SubscriptionClient
 
 from app.core.config import get_settings
 from app.core.database import SessionLocal
-from app.core.tenants_config import get_app_id_for_tenant
+from app.core.tenants_config import get_app_id_for_tenant, get_tenant_by_id
 
 # Optional Key Vault import with graceful handling
 try:
@@ -278,16 +278,33 @@ class AzureClientManager:
             logger.debug(f"Using Key Vault credentials for tenant {tenant_id}")
             return (client_id, client_secret, tenant)
 
-        # Fallback to settings if Key Vault lookup failed
+        # Fallback to settings only for classic no-Key-Vault mode, or when the
+        # tenant explicitly opts into Lighthouse credentials.
         if settings.azure_client_id and settings.azure_client_secret:
-            logger.warning(
-                f"Key Vault credentials not found for tenant {tenant_id}, "
-                f"falling back to settings credentials"
-            )
-            return (
-                str(settings.azure_client_id),
-                str(settings.azure_client_secret),
-                tenant,
+            if not settings.key_vault_url:
+                return (
+                    str(settings.azure_client_id),
+                    str(settings.azure_client_secret),
+                    tenant,
+                )
+            if tenant and tenant.use_lighthouse:
+                logger.debug(f"Using Lighthouse fallback credentials for tenant {tenant_id}")
+                return (
+                    str(settings.azure_client_id),
+                    str(settings.azure_client_secret),
+                    tenant,
+                )
+
+        known_config_tenant = get_tenant_by_id(tenant_id)
+        if (
+            settings.key_vault_url
+            and tenant
+            and not tenant.use_lighthouse
+            and not known_config_tenant
+        ):
+            raise ValueError(
+                f"Tenant {tenant_id} is not configured for per-tenant Key Vault credentials. "
+                "Add explicit tenant credentials, mark it use_lighthouse, or disable the tenant."
             )
 
         raise ValueError(

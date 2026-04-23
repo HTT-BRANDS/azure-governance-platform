@@ -186,6 +186,42 @@ class TestCostSync:
             assert mock_db_session.add.call_count >= 1
 
     @pytest.mark.asyncio
+    async def test_sync_costs_skips_ineligible_tenants(
+        self,
+        mock_azure_client_manager,
+        mock_db_session,
+        mock_get_db_context,
+        mock_tenant,
+    ):
+        """Test scheduled cost sync skips tenants that are not auth-configured."""
+        from app.models.monitoring import SyncJobLog
+
+        bad_tenant = MagicMock()
+        bad_tenant.id = "tenant-bad-uuid"
+        bad_tenant.tenant_id = "bad-tenant-id"
+        bad_tenant.name = "Bad Tenant"
+        bad_tenant.is_active = True
+
+        tenant_query = MagicMock()
+        tenant_query.filter.return_value = tenant_query
+        tenant_query.all.return_value = [mock_tenant, bad_tenant]
+
+        ghost_query = MagicMock()
+        ghost_query.filter.return_value.all.return_value = []
+        ghost_query.filter.return_value.first.return_value = None
+
+        mock_db_session.query.side_effect = lambda model: (
+            ghost_query if model is SyncJobLog else tenant_query
+        )
+        mock_azure_client_manager["costs"].list_subscriptions.return_value = []
+
+        with patch("app.core.sync.costs.get_sync_eligible_tenants", return_value=[mock_tenant]):
+            await sync_costs()
+
+        mock_azure_client_manager["costs"].list_subscriptions.assert_called_once_with(
+            mock_tenant.tenant_id
+        )
+
     async def test_sync_costs_multiple_tenants(
         self,
         mock_azure_client_manager,
