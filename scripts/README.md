@@ -76,6 +76,7 @@ Get up and running with GitHub CLI automation in 4 steps:
 | `verify-dev-deployment.sh` | Dev deployment health checks | Basic health, dashboard, API accessibility |
 | `smoke_test.py` | API smoke testing | Python-based endpoint testing, auth verification |
 | `diagnose-production.sh` | Production auth diagnostics | Settings validation, automated fixes, troubleshooting |
+| `verify-sync-recovery.sh` | Post-deploy sync verification helper | Copy-paste API, KQL, SQL, and log commands for issue 0gz3 |
 
 ### verify-and-test-deployment.sh Usage
 
