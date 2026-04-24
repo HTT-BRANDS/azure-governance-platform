@@ -2,7 +2,11 @@
 
 from unittest.mock import MagicMock, patch
 
-from app.core.sync.utils import get_sync_eligible_tenants, tenant_is_sync_eligible
+from app.core.sync.utils import (
+    build_sync_eligibility_decision,
+    get_sync_eligible_tenants,
+    tenant_is_sync_eligible,
+)
 
 
 def _tenant(**overrides):
@@ -97,6 +101,47 @@ class TestTenantIsSyncEligible:
                 assert tenant_is_sync_eligible(_tenant()) is False
             with patch("app.core.sync.utils.get_app_id_for_tenant", return_value="app-123"):
                 assert tenant_is_sync_eligible(_tenant()) is True
+
+
+class TestBuildSyncEligibilityDecision:
+    def test_keyvault_mode_reports_missing_db_declared_secret_path(self):
+        decision = build_sync_eligibility_decision(
+            tenant_is_active=True,
+            tenant_id="tenant-123",
+            tenant_client_id=None,
+            tenant_client_secret_ref=None,
+            tenant_use_lighthouse=False,
+            use_uami_auth=False,
+            use_oidc_federation=False,
+            key_vault_url="https://vault.example",
+            azure_client_id="shared-client",
+            azure_client_secret="shared-credential",  # pragma: allowlist secret
+            resolved_app_id=None,
+        )
+
+        assert decision.eligible is False
+        assert decision.auth_mode == "key_vault_secret"
+        assert decision.reason == "missing_db_declared_secret_path"
+
+    def test_oidc_mode_prefers_resolved_app_id(self):
+        decision = build_sync_eligibility_decision(
+            tenant_is_active=True,
+            tenant_id="tenant-123",
+            tenant_client_id=None,
+            tenant_client_secret_ref=None,
+            tenant_use_lighthouse=False,
+            use_uami_auth=False,
+            use_oidc_federation=True,
+            key_vault_url=None,
+            azure_client_id=None,
+            azure_client_secret=None,
+            resolved_app_id="app-123",
+        )
+
+        assert decision.eligible is True
+        assert decision.auth_mode == "oidc"
+        assert decision.reason == "oidc_app_id_resolved"
+        assert decision.resolved_app_id == "app-123"
 
 
 class TestGetSyncEligibleTenants:

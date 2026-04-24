@@ -78,6 +78,7 @@ Get up and running with GitHub CLI automation in 4 steps:
 | `diagnose-production.sh` | Production auth diagnostics | Settings validation, automated fixes, troubleshooting |
 | `verify-sync-recovery.sh` | Post-deploy sync verification helper | Copy-paste API, KQL, SQL, and log commands for issue 0gz3 |
 | `verify_sync_recovery_report.py` | Sync recovery evidence summarizer | Aggregates exported JSON into a verdict, dominant signatures, and alert burn-down report |
+| `investigate_sync_tenant_auth.py` | Tenant auth-path classifier | Classifies exported tenant rows, app settings, and Key Vault secret metadata for issue 918b |
 
 ### verify-and-test-deployment.sh Usage
 

@@ -6,6 +6,7 @@ SQLAlchemy sessions and cascade to kill ALL sync jobs (ADR-0010).
 
 import logging
 from collections.abc import Iterable
+from dataclasses import dataclass
 
 from app.core.config import get_settings
 from app.core.tenants_config import get_app_id_for_tenant
@@ -13,6 +14,16 @@ from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
+@dataclass(frozen=True)
+class SyncEligibilityDecision:
+    """Structured answer for whether a tenant should be scheduled to sync."""
+
+    eligible: bool
+    auth_mode: str
+    reason: str
+    resolved_app_id: str | None = None
 
 
 def safe_truncate(
@@ -52,6 +63,104 @@ def safe_truncate(
     return value[:max_len]
 
 
+def build_sync_eligibility_decision(
+    *,
+    tenant_is_active: bool,
+    tenant_id: str,
+    tenant_client_id: str | None,
+    tenant_client_secret_ref: str | None,
+    tenant_use_lighthouse: bool,
+    use_uami_auth: bool,
+    use_oidc_federation: bool,
+    key_vault_url: str | None,
+    azure_client_id: str | None,
+    azure_client_secret: str | None,
+    resolved_app_id: str | None,
+) -> SyncEligibilityDecision:
+    """Return a pure, reusable sync eligibility decision.
+
+    This keeps scheduler logic, tests, and read-only production investigation
+    tooling aligned around the same rules instead of letting each invent its
+    own little religion.
+    """
+    if not tenant_is_active:
+        return SyncEligibilityDecision(False, "inactive", "tenant_inactive")
+
+    if use_uami_auth:
+        app_id = resolved_app_id or tenant_client_id
+        return SyncEligibilityDecision(
+            eligible=bool(app_id),
+            auth_mode="uami",
+            reason="uami_app_id_resolved" if app_id else "missing_app_id_for_uami",
+            resolved_app_id=app_id,
+        )
+
+    if use_oidc_federation:
+        app_id = resolved_app_id or tenant_client_id
+        return SyncEligibilityDecision(
+            eligible=bool(app_id),
+            auth_mode="oidc",
+            reason="oidc_app_id_resolved" if app_id else "missing_app_id_for_oidc",
+            resolved_app_id=app_id,
+        )
+
+    has_shared_credentials = bool(azure_client_id and azure_client_secret)
+    if not key_vault_url:
+        return SyncEligibilityDecision(
+            eligible=has_shared_credentials,
+            auth_mode="shared_secret",
+            reason=(
+                "shared_settings_credentials_available"
+                if has_shared_credentials
+                else "missing_shared_settings_credentials"
+            ),
+        )
+
+    if tenant_use_lighthouse:
+        return SyncEligibilityDecision(
+            eligible=has_shared_credentials,
+            auth_mode="key_vault_secret",
+            reason=(
+                "lighthouse_shared_credentials_available"
+                if has_shared_credentials
+                else "lighthouse_missing_shared_settings_credentials"
+            ),
+        )
+
+    if tenant_client_id and tenant_client_secret_ref:
+        return SyncEligibilityDecision(
+            True,
+            "key_vault_secret",
+            "explicit_per_tenant_secret_ref",
+            resolved_app_id=tenant_client_id,
+        )
+
+    return SyncEligibilityDecision(
+        False,
+        "key_vault_secret",
+        "missing_db_declared_secret_path",
+    )
+
+
+def explain_tenant_sync_eligibility(tenant: Tenant) -> SyncEligibilityDecision:
+    """Return structured sync eligibility details for a tenant."""
+    return build_sync_eligibility_decision(
+        tenant_is_active=bool(tenant.is_active),
+        tenant_id=tenant.tenant_id,
+        tenant_client_id=tenant.client_id,
+        tenant_client_secret_ref=tenant.client_secret_ref,
+        tenant_use_lighthouse=bool(tenant.use_lighthouse),
+        use_uami_auth=bool(settings.use_uami_auth),
+        use_oidc_federation=bool(settings.use_oidc_federation),
+        key_vault_url=str(settings.key_vault_url) if settings.key_vault_url else None,
+        azure_client_id=str(settings.azure_client_id) if settings.azure_client_id else None,
+        azure_client_secret=(
+            str(settings.azure_client_secret) if settings.azure_client_secret else None
+        ),
+        resolved_app_id=get_app_id_for_tenant(tenant.tenant_id),
+    )
+
+
 def tenant_is_sync_eligible(tenant: Tenant) -> bool:
     """Return whether a tenant is configured for scheduled Azure sync.
 
@@ -59,35 +168,12 @@ def tenant_is_sync_eligible(tenant: Tenant) -> bool:
     background jobs do not hammer Azure with obviously incomplete or fake
     tenant records.
 
-    Rules:
-    - inactive tenants are never eligible
-    - secret mode without Key Vault keeps legacy Lighthouse behavior
-    - OIDC/UAMI modes require a resolvable app/client ID
-    - Key Vault secret mode requires one of:
-      * ``use_lighthouse=True``
-      * explicit ``client_id`` + ``client_secret_ref``
-
     A tenant merely existing in ``tenants_config`` is NOT sufficient in
     secret mode. Scheduled jobs must only run when the tenant has an actual
     credential path available; otherwise the scheduler will repeatedly invoke
     syncs that can never authenticate and will spam alerts/logs.
     """
-    if not tenant.is_active:
-        return False
-
-    if settings.use_uami_auth or settings.use_oidc_federation:
-        return bool(get_app_id_for_tenant(tenant.tenant_id) or tenant.client_id)
-
-    if not settings.key_vault_url:
-        return bool(settings.azure_client_id and settings.azure_client_secret)
-
-    if tenant.use_lighthouse:
-        return bool(settings.azure_client_id and settings.azure_client_secret)
-
-    if tenant.client_id and tenant.client_secret_ref:
-        return True
-
-    return False
+    return explain_tenant_sync_eligibility(tenant).eligible
 
 
 def get_sync_eligible_tenants(tenants: Iterable[Tenant]) -> list[Tenant]:

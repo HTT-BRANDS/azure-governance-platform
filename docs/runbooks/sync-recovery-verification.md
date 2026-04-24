@@ -248,6 +248,24 @@ ORDER BY name;
 
 Use this when failures persist for a specific tenant and you need to prove whether it is actually configured for the auth mode you expect.
 
+If you also export App Service settings and Key Vault secret **metadata only** (names, not values), summarize the expected auth path with:
+
+```bash
+uv run python scripts/investigate_sync_tenant_auth.py \
+  --tenants-json /path/to/tenants.json \
+  --app-settings-json /path/to/app-settings.json \
+  --keyvault-secrets-json /path/to/keyvault-secret-names.json \
+  --tenant-id ce62e17d-2feb-4e67-a115-8ea4af68da30 \
+  --tenant-id 0c0e35dc-188a-4eb3-b8ba-61752154b407 \
+  --tenant-id 3c7d2bf3-b597-4766-b5cb-2b489c2904d6 \
+  --tenant-id b5380912-79ec-452d-a6ca-6d897b19b294 \
+  --tenant-id 98723287-044b-4bbb-9294-19857d4128a0 \
+  --output-json /tmp/tenant-auth-investigation.json \
+  --output-md /tmp/tenant-auth-investigation.md
+```
+
+That report will tell you whether each noisy tenant looks like Lighthouse, explicit per-tenant secret-ref, OIDC/UAMI app-ID based, legacy standard Key Vault pair, or just plain misconfigured.
+
 ---
 
 ## Phase 3 — App Insights / KQL verification
