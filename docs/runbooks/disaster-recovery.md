@@ -101,40 +101,55 @@ curl https://app-governance-prod.azurewebsites.net/health
 # If still unhealthy: escalate to A.3 or A.4
 ```
 
-### A.3 Rollback to previous container image
+### A.3 Rollback to previous known-good container digest
 
-The `deploy-production.yml` workflow logs the prior digest in its output.
-The last **known-good** digest is also pinned in the latest closed
-release-gate submission (e.g., `docs/release-gate/submission-v<N>.md` →
-"Deployed digest" field).
+**Authoritative current-state source:**
+`docs/release-gate/rollback-current-state.yaml`
+
+Validate that artifact before using it:
 
 ```bash
-# Find previous digest from the second-to-last successful workflow run
-gh run list \
-  --workflow deploy-production.yml \
-  --status success \
-  --limit 2 \
-  --json databaseId,conclusion,headSha
+uv run python scripts/verify_release_rollback_state.py
+```
 
-# Skip the most recent (that's the current/broken one).
-# Use the SECOND row's SHA. Image tag convention: sha-<full-sha>
-PREV_SHA="<the-second-sha>"
+Production deploys now pin the App Service container by **digest**, not by a
+mutable `sha-<commit>` tag. Rollback must mirror that mechanic: repin the app
+back to a previously verified known-good digest, restart, then re-run the same
+health gates.
 
+```bash
+# 1. Inspect the currently configured production image ref (keep this as evidence)
+az webapp config container show \
+  -g rg-governance-production \
+  -n app-governance-prod \
+  --query "linuxFxVersion"
+
+# 2. Identify the previous known-good digest from release evidence / workflow receipts.
+#    Sources of truth, in order:
+#      a. latest successful deploy-production evidence bundle
+#      b. release evidence packet linked from the current RTM/submission
+#      c. current App Service config snapshot taken before the failing deploy
+PREV_DIGEST="sha256:<known-good-digest>"
+
+# 3. Re-pin production to the known-good digest
 az webapp config container set \
   -g rg-governance-production \
   -n app-governance-prod \
-  --container-image-name "ghcr.io/htt-brands/azure-governance-platform:sha-${PREV_SHA}"
+  --container-image-name "ghcr.io/htt-brands/azure-governance-platform@${PREV_DIGEST}" \
+  --container-registry-url https://ghcr.io \
+  --container-registry-user "${GITHUB_REPOSITORY_OWNER:-htt-brands}" \
+  --container-registry-password "$GHCR_PAT"
 
 az webapp restart -g rg-governance-production -n app-governance-prod
 sleep 120
 
 curl https://app-governance-prod.azurewebsites.net/health
-# Should return {"status":"healthy","version":"<previous-version>", ...}
+# Should return healthy on the previous known-good digest.
 ```
 
-**Post-rollback:** file a SEV1 incident ticket citing the broken SHA.
-Follow up with a proper release-gate submission for the fix — do NOT
-redeploy without the arbiter's involvement.
+**Post-rollback:** file a SEV1 incident ticket citing the bad and restored
+digests. Follow up with a proper release-gate submission for the fix — do NOT
+redeploy without updated evidence.
 
 ### A.4 Neither stopped nor a bad deploy — App Service runtime failure
 
@@ -428,14 +443,15 @@ The DR posture has these documented holes. Don't pretend otherwise.
 | No automated BACPAC export | SQL loss beyond 7-day PITR = data loss | Manual export procedure documented | Not yet filed as bd |
 | No status page | Customer communication ad-hoc during outage | Teams + email for now | Not yet filed as bd |
 | Single region by design | Region failure = full outage | Accepted per SLO 99.9% | Documented, not a gap |
-| Single on-call human (Tyler) | No coverage if Tyler is unavailable | Waiver in submission-v2.5.0 (expires 2026-06-22) | **Waiver expiring — file work item** |
+| Single on-call human (Tyler) | No coverage if Tyler is unavailable | Active waiver tracked in `docs/release-gate/rollback-current-state.yaml` and bd `azure-governance-platform-213e` (expires 2026-06-22) | **Waiver expiring — tracked** |
 | Bypass-then-attest in §7.2 | Breaks supply-chain integrity during GHCR outages | Requires Tyler approval + SEV1 retro | Accepted operational tradeoff |
 
 ---
 
 ## 11. References
 
-- `docs/release-gate/rollback-v<version>.md` — release-specific rollback
+- `docs/release-gate/rollback-current-state.yaml` — authoritative current rollback/waiver state
+- `docs/release-gate/rollback-v<version>.md` — historical release-specific rollback evidence
 - `docs/SLO.md` — error budget + severity framework
 - `docs/DATA_RETENTION_POLICY.md` — backup expectations
 - `docs/runbooks/GHCR_AUTH_QUICK_FIX.md` — GHCR-specific auth fixes

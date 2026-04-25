@@ -1,0 +1,62 @@
+schema_version: 1
+reviewed_on: "2026-04-24"
+source_of_truth: current-production-rollback-and-waiver-state
+repository: htt-brands/azure-governance-platform
+production:
+  workflow:
+    path: .github/workflows/deploy-production.yml
+    name: Deploy to Production
+    trigger: workflow_dispatch
+  app_service:
+    name: app-governance-prod
+    resource_group: rg-governance-production
+    url: https://app-governance-prod.azurewebsites.net
+  image:
+    registry: ghcr.io
+    repository: htt-brands/azure-governance-platform
+    deploy_reference: digest
+    rollback_reference: digest
+  health_checks:
+    primary: /health
+    additional:
+      - /health/detailed
+      - /healthz/data
+  deployment_controls:
+    ghcr_registry_password_secret: GHCR_PAT  # pragma: allowlist secret
+    azure_oidc_secrets:
+      - AZURE_CLIENT_ID
+      - AZURE_TENANT_ID
+      - AZURE_SUBSCRIPTION_ID
+    required_environment: production
+    required_reviewers_expected: true
+rollback:
+  mechanic: repin_previous_known_good_digest_and_restart
+  authoritative_steps:
+    - verify_attestations_for_target_digest_before_mutating_azure
+    - set_container_image_by_digest
+    - restart_app_service
+    - wait_for_startup_window_seconds: 120
+    - verify_primary_health_endpoint
+    - verify_deep_health_endpoints
+  digest_evidence_sources:
+    - successful_deploy_production_workflow_run
+    - release_evidence_bundle
+    - current_app_service_container_config_snapshot
+waiver:
+  status: active
+  type: single_human_rollback_coverage
+  owner: Tyler Granlund
+  current_authorized_humans:
+    - Tyler Granlund
+  second_human_issue: azure-governance-platform-213e
+  expires_on: "2026-06-22"
+  evidence_note: Until 213e is closed, rollback ownership remains single-human and must be disclosed as an active waiver in release evidence.
+  machine_verification:
+    requires_second_human_issue_link: true
+    requires_expiry_date: true
+    requires_current_authorized_humans: true
+references:
+  current_runbook: docs/runbooks/disaster-recovery.md
+  historical_release_plan: docs/release-gate/rollback-v2.5.0.md
+  release_evidence_aggregator_issue: azure-governance-platform-0nup
+  waiver_follow_up_issue: azure-governance-platform-213e

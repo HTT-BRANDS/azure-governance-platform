@@ -1,5 +1,7 @@
 # Rollback Plan — v2.5.0 → Previous Known-Good
 
+> **Historical artifact warning:** this document captures the v2.5.0 release-window rollback evidence as submitted at the time. For current production rollback commands, resource names, and waiver state, use `docs/release-gate/rollback-current-state.yaml` plus `scripts/verify_release_rollback_state.py`.
+
 **Scope**: production transition of artifact `79d72c4` (v2.5.0, pyproject 2.5.0).
 **Author**: code-puppy-bf0510 on behalf of Tyler Granlund.
 **Last reviewed**: 2026-04-22.
