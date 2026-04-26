@@ -36,6 +36,15 @@ No closure on `918b` without those answers.
 
 ## Evidence to export
 
+If you just want the scaffolding generated for you, run:
+
+```bash
+./scripts/collect-sync-tenant-auth-evidence.sh
+```
+
+That will create a timestamped evidence directory under `artifacts/918b/` with the Azure metadata exports, SQL/KQL query files, and an executable classifier wrapper for the five impacted tenant IDs.
+
+
 ### 1. Tenant rows from production DB
 
 Use the query from `docs/runbooks/sync-recovery-verification.md` §2.6 and export JSON with at least:
@@ -49,6 +58,9 @@ Use the query from `docs/runbooks/sync-recovery-verification.md` §2.6 and expor
 - `client_secret_ref`
 
 ### 2. Production App Service settings
+
+The helper script exports this automatically unless you enjoy typing the same command forever.
+
 
 Export **metadata only** from the production app:
 
@@ -69,6 +81,9 @@ You care especially about:
 
 ### 3. Key Vault secret names only
 
+The helper script exports this automatically too, because copy/paste fatigue is not a security control.
+
+
 Export **names/metadata only**, not secret values:
 
 ```bash
@@ -85,6 +100,15 @@ Retain the App Service / App Insights evidence that shows the fallback spam so y
 ---
 
 ## Run the classifier
+
+If you used the helper script, just run the generated wrapper inside the evidence directory:
+
+```bash
+artifacts/918b/<timestamp>/run-classifier.sh
+```
+
+Otherwise, use the raw command below.
+
 
 ```bash
 uv run python scripts/investigate_sync_tenant_auth.py \

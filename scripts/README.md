@@ -79,6 +79,7 @@ Get up and running with GitHub CLI automation in 4 steps:
 | `verify-sync-recovery.sh` | Post-deploy sync verification helper | Copy-paste API, KQL, SQL, and log commands for issue 0gz3 |
 | `verify_sync_recovery_report.py` | Sync recovery evidence summarizer | Aggregates exported JSON into a verdict, dominant signatures, and alert burn-down report |
 | `verify_release_rollback_state.py` | Rollback/waiver state validator | Confirms `docs/release-gate/rollback-current-state.yaml` still matches `deploy-production.yml` and linked waiver metadata |
+| `collect-sync-tenant-auth-evidence.sh` | 918b evidence scaffold | Creates a timestamped evidence bundle with prod app-settings metadata, Key Vault secret names, SQL/KQL query files, and a ready-to-run classifier wrapper |
 | `investigate_sync_tenant_auth.py` | Tenant auth-path classifier | Classifies exported tenant rows, app settings, and Key Vault secret metadata for issue 918b, including config status + recommended action per tenant |
 
 ### verify-and-test-deployment.sh Usage
