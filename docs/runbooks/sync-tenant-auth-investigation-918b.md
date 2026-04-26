@@ -60,7 +60,7 @@ Use the query from `docs/runbooks/sync-recovery-verification.md` §2.6 and expor
 ### 2. Production App Service settings
 
 The helper script exports this automatically unless you enjoy typing the same command forever.
-
+It writes a **sanitized metadata export**: safe values needed for classification are preserved, while secrets are reduced to presence-only markers instead of raw values.
 
 Export **metadata only** from the production app:
 

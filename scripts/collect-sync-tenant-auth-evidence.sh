@@ -108,7 +108,34 @@ printf 'Collecting 918b evidence into %s\n' "$OUTDIR"
 az webapp config appsettings list \
   --resource-group "$PROD_RG" \
   --name "$PROD_APP" \
-  -o json > "$APP_SETTINGS_JSON"
+  -o json | python -c "import json, sys
+SAFE_VALUE_NAMES = {
+    'ENVIRONMENT', 'DEBUG', 'LOG_LEVEL', 'PORT', 'WEBSITES_PORT',
+    'AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'USE_UAMI_AUTH',
+    'USE_OIDC_FEDERATION', 'OIDC_ALLOW_DEV_FALLBACK', 'KEY_VAULT_URL',
+    'TENANTS_CONFIG_PATH', 'DEPLOY_TIMESTAMP'
+}
+PRESENCE_ONLY_NAMES = {
+    'AZURE_CLIENT_SECRET', 'AZURE_AD_CLIENT_SECRET', 'DATABASE_URL',
+    'JWT_SECRET_KEY', 'APPINSIGHTS_INSTRUMENTATIONKEY',
+    'APPLICATIONINSIGHTS_CONNECTION_STRING', 'DOCKER_REGISTRY_SERVER_PASSWORD'
+}
+def sanitize(item):
+    if not isinstance(item, dict):
+        return item
+    result = dict(item)
+    name = str(item.get('name') or '')
+    value = item.get('value')
+    if name in SAFE_VALUE_NAMES:
+        return result
+    if name in PRESENCE_ONLY_NAMES or any(token in name for token in ('SECRET', 'PASSWORD', 'TOKEN', 'KEY')):
+        result['value'] = '__PRESENT__' if value not in (None, '') else None
+        return result
+    result['value'] = value
+    return result
+payload = json.load(sys.stdin)
+json.dump([sanitize(item) for item in payload], sys.stdout, indent=2)
+sys.stdout.write('\\n')" > "$APP_SETTINGS_JSON"
 
 az keyvault secret list \
   --vault-name "$PROD_KV" \
