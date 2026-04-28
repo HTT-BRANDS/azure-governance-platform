@@ -150,7 +150,10 @@ jobs:
 
       - name: Unit + integration tests
         if: ${{ inputs.skip_tests != 'true' }}
-        run: uv run pytest tests/unit/ tests/integration/ -q --tb=short
+        # ``-m 'not visual'`` deselects browser-required visual-parity
+        # tests (see tests/integration/test_sync_status_dark_mode.py).
+        # The dedicated ``browser-smoke`` job in ci.yml owns that surface.
+        run: uv run pytest tests/unit/ tests/integration/ -q --tb=short -m "not visual"
         env:
           ENVIRONMENT: development
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
