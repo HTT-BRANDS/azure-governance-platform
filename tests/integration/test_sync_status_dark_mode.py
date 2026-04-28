@@ -1,13 +1,22 @@
-"""Browser-backed regression tests for sync status card theme contrast."""
+"""Browser-backed regression tests for sync status card theme contrast.
+
+This module renders real templates inside a Chromium page to verify
+design-token theme contrast. It therefore requires a Playwright browser
+runtime and is tagged ``visual`` (declared in ``pyproject.toml``) so
+browser-less CI jobs can deselect it via ``-m 'not visual'``.
+"""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
 from playwright.sync_api import Page
 
 from app.core.templates import templates
+
+pytestmark = pytest.mark.visual
 
 CSS_FILES = [
     Path("app/static/css/design-tokens.css"),

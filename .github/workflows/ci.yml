@@ -59,7 +59,12 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Unit & integration tests
-        run: uv run pytest tests/unit/ tests/integration/ -q --tb=short
+        # Deselect ``visual`` marker — those tests require a Playwright
+        # browser runtime which is only installed in the ``browser-smoke``
+        # job. Keep the assertion explicit so a future visual-marked test
+        # leaking into this job fails fast and visibly, instead of erroring
+        # out at collection time on a missing browser executable.
+        run: uv run pytest tests/unit/ tests/integration/ -q --tb=short -m "not visual"
 
   # ===========================================================================
   # Job 2: Browser Smoke (required merge gate)
