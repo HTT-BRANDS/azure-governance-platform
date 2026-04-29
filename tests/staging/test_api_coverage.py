@@ -16,6 +16,8 @@ import requests
 # 401 = route exists, auth wall working
 # 400 = route exists, missing required input (e.g. POST without body)
 # 405 = route exists, wrong method — still confirms mount
+ROUTE_MOUNT_TIMEOUT_SECONDS = 30
+
 API_ROUTES = [
     # ── Core ────────────────────────────────────────────────────────────────
     ("/health", [200]),
@@ -66,11 +68,11 @@ class TestAPIRouteMounting:
         expected_statuses: list[int],
     ) -> None:
         """GET {path} must return one of {expected_statuses}, never 404."""
-        # openapi.json can be large; use 30s for schema endpoints
-        # Swagger/OpenAPI endpoints are slow on cold start (schema generation)
-        slow_paths = {"/openapi.json", "/docs", "/redoc"}
-        timeout = 30 if path in slow_paths else 10
-        resp = client.get(f"{staging_url}{path}", timeout=timeout)
+        # Route mounting validates existence, not latency. Staging runs on B1
+        # and can transiently exceed 10s immediately after deploy while still
+        # returning the correct status. Use a uniform timeout so CI reports real
+        # 404/500 routing failures instead of post-deploy Azure naps.
+        resp = client.get(f"{staging_url}{path}", timeout=ROUTE_MOUNT_TIMEOUT_SECONDS)
         assert resp.status_code in expected_statuses, (
             f"GET {path} → {resp.status_code} "
             f"(expected one of {expected_statuses}). "
