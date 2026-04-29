@@ -2,7 +2,7 @@
 
 **Branch:** `main` (clean working tree, up to date with origin)
 **Latest pushed HEAD at start of 2026-04-29 session:** `1a7e929`
-**Latest pushed HEAD at end of 2026-04-29 session:** `bc78195`
+**Latest pushed HEAD at end of 2026-04-29 session:** `a24d940`
 **Active P1 chain (unchanged from 2026-04-26):** `g1cc` → `918b` → `0gz3` → `0nup`
 
 > **Read this first if you are inheriting the platform mid-flight.**
@@ -77,6 +77,20 @@ After Tyler said "continue on next steps based on your recommendations outlined"
 - `3flq` Database Backup OIDC permission regression — filed after scheduled
   run `25089002576` failed at `azure/login@v2`; fixed with
   `permissions.id-token: write` plus actionlint shell quoting cleanup.
+- `xkgp` datetime.utcnow tech debt — split into safe commits:
+  - `e28ef73` tests/fixtures switched to `datetime.now(UTC)`.
+  - `92f6d11` runtime `app/core` and `scripts` switched to `datetime.now(UTC)` / callable UTC helper.
+  - Validation: `rg datetime.utcnow app scripts tests alembic` returns zero; full non-visual unit+integration suite passed (`4037 passed, 1 deselected`).
+
+### Partially implemented 2026-04-29
+- `cz89` weekly BACPAC export automation — code landed but issue remains open:
+  - `0a9097b` added `.github/workflows/bacpac-export.yml`, DR docs, retention policy update, and workflow contract tests.
+  - `5ebd880` made storage account discovery derive from target resource group when `AZURE_STORAGE_ACCOUNT` is unset.
+  - `82fb0a0` added Key Vault fallback for SQL admin password (`sql-admin-password`).
+  - `a24d940` records the staging validation blocker in bd.
+  - Local validation passed: `pytest tests/unit/test_bacpac_export_workflow.py`, `actionlint .github/workflows/bacpac-export.yml`, pre-commit.
+  - Staging dispatches progressed through hidden blockers: missing storage secret → missing SQL password → KV RBAC → missing staging KV secret → **current hard blocker: staging SQL Free edition does not support ImportExport** (`run 25126517281`, `UnSupportedImportExportEdition`).
+  - Also set GitHub staging environment secret `SQL_ADMIN_PASSWORD` from existing staging app `DATABASE_URL` without printing the value; do not treat that as final secrets architecture.
 
 ### Filed recently
 - 21 from planning-agent decomposition (Phases 0 cleanup + 0.5 + 1 + 1.5)
@@ -88,9 +102,8 @@ After Tyler said "continue on next steps based on your recommendations outlined"
 - `mvxt` — staging cold-start (P2, monitoring after 1st green; 2026-04-29 push runs still in progress when session closed)
 - `213e` — name second rollback human (P2, waiver expires 2026-06-22)
 - `aiob` — no frontend smoke/visual-regression in CI (P1)
-- `xkgp` — datetime.utcnow tech debt (P3; 266 hits across `app/`, `tests/`, `scripts/`, `alembic` as of 2026-04-29 — do not treat as one blind replace)
+- `cz89` — automate weekly BACPAC export (P4) — **partially implemented; open on staging Free-tier validation blocker**
 - `rtwi` — domain-intelligence App Service idle (P3, 2026-05-17 trigger)
-- `cz89` — automate weekly BACPAC export (P4)
 - `m4xw` — automate quarterly audit-log archive (P4)
 
 ### In_progress chain (unchanged P1)
@@ -162,7 +175,8 @@ For session-to-session context  → SESSION_HANDOFF.md (THIS FILE)
 ⚠️  Production still on stale image :6a7306a (Tyler must dispatch)
 ⚠️  backup.yml had a second regression after fifh: missing OIDC id-token permission; fixed in bc78195, next scheduled/manual run must verify actual backup lands
 ⚠️  bicep-drift-detection.yml scope mismatch fixed in 40bea97; next scheduled/manual run must verify all env matrix jobs reach real drift signal
-⚠️  push-triggered CI/staging/security runs for 40bea97/bc78195 were still in progress at session close
+⚠️  push-triggered CI/staging/security runs for latest commits were still in progress at session close
+⚠️  weekly BACPAC workflow exists, but staging validation is blocked because staging SQL is Free edition and Azure SQL ImportExport rejects Free (`UnSupportedImportExportEdition`)
 ```
 
 ---
