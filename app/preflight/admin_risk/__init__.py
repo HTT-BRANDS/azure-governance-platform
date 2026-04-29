@@ -1,26 +1,23 @@
-"""Compatibility imports for admin risk preflight checks.
+"""Admin risk check strategies split by identity risk domain."""
 
-The implementations live in :mod:`app.preflight.admin_risk` domain modules.
-Keep importing from this module to preserve the original public API.
-"""
-
-from app.core.database import SessionLocal
-from app.preflight.admin_risk import (
-    ADMIN_RISK_CHECK_STRATEGIES,
+from app.preflight.admin_risk.compliance import AdminComplianceGapCheck
+from app.preflight.admin_risk.constants import (
     CRITICAL_ROLES,
     INACTIVE_ADMIN_DAYS,
     OVERPRIVILEGED_ROLE_THRESHOLD,
     SHARED_ACCOUNT_INDICATORS,
-    AdminComplianceGapCheck,
-    AdminMfaCheck,
     AdminRiskSeverity,
-    InactiveAdminCheck,
-    OverprivilegedAccountCheck,
-    SharedAdminCheck,
+)
+from app.preflight.admin_risk.inactive import InactiveAdminCheck
+from app.preflight.admin_risk.mfa import AdminMfaCheck
+from app.preflight.admin_risk.overprivileged import OverprivilegedAccountCheck
+from app.preflight.admin_risk.registry import (
+    ADMIN_RISK_CHECK_STRATEGIES,
     build_admin_risk_checks,
     get_admin_risk_checks,
     run_all_admin_risk_checks,
 )
+from app.preflight.admin_risk.shared import SharedAdminCheck
 
 __all__ = [
     "ADMIN_RISK_CHECK_STRATEGIES",
@@ -33,7 +30,6 @@ __all__ = [
     "AdminRiskSeverity",
     "InactiveAdminCheck",
     "OverprivilegedAccountCheck",
-    "SessionLocal",
     "SharedAdminCheck",
     "build_admin_risk_checks",
     "get_admin_risk_checks",

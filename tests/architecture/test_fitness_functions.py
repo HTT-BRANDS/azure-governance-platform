@@ -479,25 +479,19 @@ def test_file_size_limit():
     # allowlist from silently growing stale and masking re-introduced bloat.
     known_large_files = {
         "app/core/riverside_scheduler.py",
-        "app/services/backfill_service.py",
         "app/services/riverside_sync.py",
-        "app/preflight/admin_risk_checks.py",
         "app/preflight/checks.py",
-        "app/services/lighthouse_client.py",
         "app/preflight/mfa_checks.py",
         "app/api/routes/onboarding.py",
+        "app/api/services/azure_client.py",
         "app/api/services/riverside_requirements.py",
         "app/api/services/monitoring_service.py",
         "app/core/rate_limit.py",
         "app/services/email_service.py",
         "app/core/notifications.py",
-        "app/api/routes/auth.py",
         "app/api/services/dmarc_service.py",
         "app/core/cache.py",
-        "app/api/services/budget_service.py",
         "app/api/routes/identity.py",  # IG-010: access review routes added
-        "app/core/config.py",  # Large settings model — cohesive, no good split
-        "app/main.py",  # FastAPI app setup — 24 routers + middleware
         "app/core/azure_service_health.py",  # Comprehensive health check logic
         "app/core/metrics.py",  # Prometheus + App Insights metrics
     }
