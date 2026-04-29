@@ -2,7 +2,7 @@
 
 **Branch:** `main` (clean working tree, up to date with origin)
 **Latest pushed HEAD at start of 2026-04-29 session:** `1a7e929`
-**Latest pushed HEAD at end of 2026-04-29 session:** `cc755ac`
+**Latest pushed work commit before final handoff metadata:** `cc755ac` (run `git log -1` for the handoff commit itself)
 **Active P1 chain (unchanged from 2026-04-26):** `g1cc` → `918b` → `0gz3` → `0nup`
 
 > **Read this first if you are inheriting the platform mid-flight.**
