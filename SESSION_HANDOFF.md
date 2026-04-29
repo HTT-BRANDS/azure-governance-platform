@@ -1,8 +1,8 @@
-# Session Handoff — 2026-04-28
+# Session Handoff — 2026-04-29
 
 **Branch:** `main` (clean working tree, up to date with origin)
-**Latest pushed HEAD at start of session:** `43eaff9`
-**Latest pushed HEAD at end of session (in flight):** see §End-of-Session Status
+**Latest pushed HEAD at start of 2026-04-29 session:** `1a7e929`
+**Latest pushed HEAD at end of 2026-04-29 session:** `bc78195`
 **Active P1 chain (unchanged from 2026-04-26):** `g1cc` → `918b` → `0gz3` → `0nup`
 
 > **Read this first if you are inheriting the platform mid-flight.**
@@ -61,27 +61,34 @@ After Tyler said "continue on next steps based on your recommendations outlined"
 
 ---
 
-## 📋 End-of-Session bd state
+## 📋 Current bd state (refreshed 2026-04-29)
 
-### Closed today (5 issues)
+### Closed 2026-04-28
 - `fkul` cleanup stale worktrees
 - `68g7` RUNBOOK.md
 - `2au0` AGENT_ONBOARDING.md
 - `0dhj` RTO/RPO docs
+- `fifh` broken `mda590/teams-notify` action in backup workflow
 - (V1 plan, redteam doc, V2 plan are docs-only commits, not bd issues)
 
-### Filed today (22 new issues)
-- 21 from planning-agent decomposition (Phases 0 cleanup + 0.5 + 1 + 1.5)
-- 1 from RTO/RPO follow-up (`uchp` — Q3 DR test, depends on `213e` + `fifh`)
+### Closed 2026-04-29
+- `q8lt` Bicep Drift Detection scope mismatch — fixed workflow to use
+  `az deployment sub what-if` for subscription-scoped `infrastructure/main.bicep`.
+- `3flq` Database Backup OIDC permission regression — filed after scheduled
+  run `25089002576` failed at `azure/login@v2`; fixed with
+  `permissions.id-token: write` plus actionlint shell quoting cleanup.
 
-### Still in `bd ready` (Tyler-blocking or other-blocked)
+### Filed recently
+- 21 from planning-agent decomposition (Phases 0 cleanup + 0.5 + 1 + 1.5)
+- `uchp` Q3 DR test, depends on `213e` + `fifh`
+- `3flq` backup OIDC token permission regression (filed and closed same session)
+
+### Still in `bd ready` (Tyler-blocking or autonomous)
 - `9lfn` — **Tyler-authored** SECRETS_OF_RECORD.md (P1, ~30 min). Bus-factor blocker.
-- `fifh` — broken `mda590/teams-notify` action in backup workflow (P2)
-- `q8lt` — Bicep Drift Detection scope mismatch (P2)
-- `mvxt` — staging cold-start (P2, monitoring after 1st green)
+- `mvxt` — staging cold-start (P2, monitoring after 1st green; 2026-04-29 push runs still in progress when session closed)
 - `213e` — name second rollback human (P2, waiver expires 2026-06-22)
 - `aiob` — no frontend smoke/visual-regression in CI (P1)
-- `xkgp` — datetime.utcnow tech debt (P3)
+- `xkgp` — datetime.utcnow tech debt (P3; 266 hits across `app/`, `tests/`, `scripts/`, `alembic` as of 2026-04-29 — do not treat as one blind replace)
 - `rtwi` — domain-intelligence App Service idle (P3, 2026-05-17 trigger)
 - `cz89` — automate weekly BACPAC export (P4)
 - `m4xw` — automate quarterly audit-log archive (P4)
@@ -98,7 +105,7 @@ After Tyler said "continue on next steps based on your recommendations outlined"
 
 Per planning-agent's analysis, smallest set that unblocks the autonomous pipeline:
 
-1. **Dispatch the prod deploy off `main`** (2 min) — unblocks `g1cc → 918b → 0gz3 → 0nup`. Prod is on stale `:6a7306a`; main is at HEAD `df21876` (pre-Phase-0.5 work) or beyond after the in-flight commit lands.
+1. **Dispatch the prod deploy off `main`** (2 min) — unblocks `g1cc → 918b → 0gz3 → 0nup`. Prod is still presumed on stale `:6a7306a`; latest main at session close is `bc78195`.
 2. **Author `SECRETS_OF_RECORD.md`** (issue `9lfn`, P1, ~30 min) — only Tyler knows where every credential lives. Unblocks RUNBOOK fully + raises bus-factor metric to 2.
 3. **Pick a name from V2 §11** (~15 min) — Switchyard / Aerie / Hangar / Meridian / Dispatch (or request more candidates). Unblocks Phase 3 prep.
 
@@ -139,7 +146,7 @@ For session-to-session context  → SESSION_HANDOFF.md (THIS FILE)
 
 ---
 
-## ⚙️ Environment health checks (verified 2026-04-28)
+## ⚙️ Environment health checks (verified 2026-04-29)
 
 ```
 ✅ uv venv working (Python 3.12.12)
@@ -153,8 +160,9 @@ For session-to-session context  → SESSION_HANDOFF.md (THIS FILE)
 ✅ git worktree list confirms only valid worktrees remain
 ⚠️  pre-commit missing from pyproject.toml dev deps (manual install needed after each venv rebuild)
 ⚠️  Production still on stale image :6a7306a (Tyler must dispatch)
-⚠️  backup.yml workflow red (bd fifh)
-⚠️  bicep-drift-detection.yml red across all 3 envs (bd q8lt)
+⚠️  backup.yml had a second regression after fifh: missing OIDC id-token permission; fixed in bc78195, next scheduled/manual run must verify actual backup lands
+⚠️  bicep-drift-detection.yml scope mismatch fixed in 40bea97; next scheduled/manual run must verify all env matrix jobs reach real drift signal
+⚠️  push-triggered CI/staging/security runs for 40bea97/bc78195 were still in progress at session close
 ```
 
 ---
@@ -166,7 +174,7 @@ If picking up cold:
 1. Read this `SESSION_HANDOFF.md` (5 min)
 2. Read `PORTFOLIO_PLATFORM_PLAN_V2.md` §1, §5, §9 (15 min)
 3. Run `bd ready` and `git status` to confirm state
-4. Start with one Phase 1 issue (`sl01` bi_bridge or `ewdp` lifecycle — likely simplest paper exercises) OR one Phase 1.5 file refactor (`oknl` auth.py is the cleanest cleavage)
+4. If prod deploy is still not dispatched, do **not** claim Phase 1. Prefer: monitor `mvxt`, then pick `aiob`, `xkgp` (split carefully), `cz89`, or `m4xw` from `bd ready`.
 
 If picking up after Tyler's minimum-viable-path lands:
 
@@ -176,21 +184,37 @@ If picking up after Tyler's minimum-viable-path lands:
 
 ---
 
-## 💾 End-of-Session Status (commit pending)
+## 💾 End-of-Session Status (2026-04-29)
 
-The Phase 0 cleanup + Phase 0.5 work is in flight as of this writing. To-be-committed:
+Committed and pushed this session:
 
-- `fkul`, `68g7`, `2au0`, `0dhj` closures (bd JSONL changes)
-- `uchp` new issue (bd JSONL changes)
-- `RUNBOOK.md` (new file, repo root)
-- `AGENT_ONBOARDING.md` (new file, repo root)
-- `docs/dr/rto-rpo.md` (new file)
-- `SESSION_HANDOFF.md` (this file, replacing 2026-04-26 version)
+- `40bea97` — `fix(ci): align Bicep drift what-if scope (bd q8lt)`
+  - Replaced resource-group-scoped Bicep drift `what-if` with subscription-scoped `az deployment sub what-if`.
+  - Added `tests/unit/test_bicep_drift_workflow.py` regression coverage.
+- `bc78195` — `fix(ci): grant backup workflow OIDC token permission (bd 3flq)`
+  - Filed + closed `3flq` after scheduled backup run `25089002576` failed before backup creation.
+  - Added `permissions: contents: read / id-token: write` for `azure/login@v2`.
+  - Added `tests/unit/test_backup_workflow_oidc.py`; actionlint clean for `backup.yml`.
 
-Next action by code-puppy: `git add -A && git commit && git push`.
+Validation run locally:
+
+- `.venv/bin/pytest tests/unit/test_bicep_drift_workflow.py -q`
+- `.venv/bin/pytest tests/unit/test_backup_workflow_oidc.py tests/unit/test_bicep_drift_workflow.py -q`
+- `az bicep build --file infrastructure/main.bicep --stdout`
+- `az deployment sub what-if --help` flag check
+- `actionlint .github/workflows/bicep-drift-detection.yml`
+- `actionlint .github/workflows/backup.yml`
+- `.venv/bin/pre-commit run --all-files`
+
+At handoff time:
+
+- Working tree clean and pushed to `origin/main`.
+- `gh run list --branch main --limit 10` showed push-triggered CI/security/staging runs still in progress.
+- `SECRETS_OF_RECORD.md` still absent; `9lfn` remains Tyler-only.
+- `gh run list --workflow=deploy-production.yml --limit 3` still showed no recent successful prod deploy off current main.
 
 ---
 
-*Authored 2026-04-28 by code-puppy-ab8d6a (Richard) for Tyler Granlund.*
+*Authored 2026-04-28 by code-puppy-ab8d6a; refreshed 2026-04-29 by code-puppy-661ed0 (Richard) for Tyler Granlund.*
 *This file is the canonical session-to-session memory for the platform.*
 *Update on every session close.*
