@@ -20,7 +20,7 @@ import json
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 # Azure SQL Free Tier Limits
@@ -124,8 +124,8 @@ def get_database_info(resource_group: str, server_name: str, database_name: str)
 
 def get_database_size(resource_group: str, server_name: str, database_name: str) -> dict:
     """Get database size information using space-used metric"""
-    end_time = datetime.utcnow().isoformat() + "Z"
-    start_time = (datetime.utcnow() - timedelta(hours=1)).isoformat() + "Z"
+    end_time = datetime.now(UTC).isoformat() + "Z"
+    start_time = (datetime.now(UTC) - timedelta(hours=1)).isoformat() + "Z"
 
     success, output = run_az_command(
         [
@@ -192,8 +192,8 @@ def get_metrics(
     hours: int = 168,  # 7 days
 ) -> list[float]:
     """Get Azure Monitor metrics for the database"""
-    end_time = datetime.utcnow().isoformat() + "Z"
-    start_time = (datetime.utcnow() - timedelta(hours=hours)).isoformat() + "Z"
+    end_time = datetime.now(UTC).isoformat() + "Z"
+    start_time = (datetime.now(UTC) - timedelta(hours=hours)).isoformat() + "Z"
 
     success, output = run_az_command(
         [
@@ -404,7 +404,7 @@ def generate_report(
     savings_annual = savings_monthly * 12
 
     result = EvaluationResult(
-        timestamp=datetime.utcnow().isoformat() + "Z",
+        timestamp=datetime.now(UTC).isoformat() + "Z",
         resource_group=resource_group,
         server_name=server_name,
         database_name=database_name,

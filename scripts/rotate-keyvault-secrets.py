@@ -34,7 +34,7 @@ import secrets
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -264,10 +264,10 @@ class KeyVaultSecretRotator:
 
             expires_on = None
             if expires_in_days:
-                expires_on = datetime.utcnow() + timedelta(days=expires_in_days)
+                expires_on = datetime.now(UTC) + timedelta(days=expires_in_days)
 
             rotated_tags = tags or {}
-            rotated_tags["rotated_at"] = datetime.utcnow().isoformat()
+            rotated_tags["rotated_at"] = datetime.now(UTC).isoformat()
             rotated_tags["rotated_by"] = os.environ.get("USER", "unknown")
 
             new_secret = client.set_secret(
@@ -368,7 +368,7 @@ class KeyVaultSecretRotator:
             "failed": len(failed),
             "success_rate": f"{len(successful) / max(len(self._rotation_log), 1) * 100:.1f}%",
             "details": [r.to_dict() for r in self._rotation_log],
-            "report_generated": datetime.utcnow().isoformat(),
+            "report_generated": datetime.now(UTC).isoformat(),
         }
 
     def save_report(self, output_path: str = "rotation-report.json") -> None:

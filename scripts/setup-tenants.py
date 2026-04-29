@@ -30,7 +30,13 @@ import re
 import sys
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
+
+
+def utc_now() -> datetime:
+    """Return the current UTC time for tenant setup timestamps."""
+    return datetime.now(UTC)
+
 
 # =============================================================================
 # EMBEDDED TENANT CONFIGURATION
@@ -268,8 +274,8 @@ class TenantSetupManager:
                 description = Column(Text)
                 is_active = Column(Boolean, default=True)
                 use_lighthouse = Column(Boolean, default=False)
-                created_at = Column(DateTime, default=datetime.utcnow)
-                updated_at = Column(DateTime, default=datetime.utcnow)
+                created_at = Column(DateTime, default=utc_now)
+                updated_at = Column(DateTime, default=utc_now)
 
             engine = create_engine(self.database_url)
             Base.metadata.create_all(engine)
@@ -288,7 +294,7 @@ class TenantSetupManager:
                         existing.client_secret_ref = config.key_vault_secret_name
                         existing.description = f"Riverside tenant: {config.name}"
                         existing.is_active = config.is_active
-                        existing.updated_at = datetime.utcnow()
+                        existing.updated_at = datetime.now(UTC)
                         self.results["updated"].append(code)
                     else:
                         print(f"\n✨ Creating new tenant: {code}")

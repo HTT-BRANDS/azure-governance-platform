@@ -33,7 +33,7 @@ import logging
 import os
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -283,10 +283,10 @@ class AzureServiceHealthMonitor:
                 status=status,
                 service=getattr(event, "service", "Unknown"),
                 region=getattr(event, "region", "Global"),
-                start_time=event.start_time if hasattr(event, "start_time") else datetime.utcnow(),
+                start_time=event.start_time if hasattr(event, "start_time") else datetime.now(UTC),
                 last_update_time=event.last_modified_time
                 if hasattr(event, "last_modified_time")
-                else datetime.utcnow(),
+                else datetime.now(UTC),
                 resolution_time=getattr(event, "resolution_time", None),
                 tracking_id=getattr(event, "tracking_id", None),
                 impact=getattr(event, "impact", ""),
@@ -317,7 +317,7 @@ class AzureServiceHealthMonitor:
                 resource_group=resource_group,
                 status=ResourceHealthStatus(availability.availability_state or "Unknown"),
                 event_type="AvailabilityState",
-                occurred_time=datetime.utcnow(),
+                occurred_time=datetime.now(UTC),
                 description=availability.summary or "",
                 reason_chronicity=getattr(availability, "reason_chronicity", ""),
                 reason_type=getattr(availability, "reason_type", ""),
@@ -550,7 +550,7 @@ class AzureServiceHealthMonitor:
 
             payload = {
                 "event_type": "azure_service_health",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "incident": incident.to_dict(),
                 "platform_impact": incident.is_platform_impacting,
             }
@@ -624,7 +624,7 @@ class AzureServiceHealthMonitor:
 
                         # Send resolution notification
                         incident.status = IncidentStatus.RESOLVED
-                        incident.resolution_time = datetime.utcnow()
+                        incident.resolution_time = datetime.now(UTC)
                         await self.send_notification(incident)
 
                 await asyncio.sleep(interval_seconds)
@@ -643,7 +643,7 @@ class AzureServiceHealthMonitor:
             client = self._get_service_health_client()
 
             # Calculate date range
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             start_time = end_time - timedelta(days=days)
 
             # List historical events
@@ -683,8 +683,8 @@ class AzureServiceHealthMonitor:
         return {
             "report_period": {
                 "days": days,
-                "start": (datetime.utcnow() - timedelta(days=days)).isoformat(),
-                "end": datetime.utcnow().isoformat(),
+                "start": (datetime.now(UTC) - timedelta(days=days)).isoformat(),
+                "end": datetime.now(UTC).isoformat(),
             },
             "summary": {
                 "total_incidents": total_incidents,
@@ -696,7 +696,7 @@ class AzureServiceHealthMonitor:
             "platform_health": platform_impacts,
             "recent_incidents": [i.to_dict() for i in history[:10]],
             "active_incidents": [i.to_dict() for i in self._active_incidents.values()],
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
         }
 
 
@@ -719,5 +719,5 @@ async def check_platform_health() -> dict[str, Any]:
     return {
         "service_health_incidents": len(monitor.get_active_incidents()),
         "platform_impact": monitor.check_platform_impact(),
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }

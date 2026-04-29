@@ -19,7 +19,7 @@ Usage:
 import argparse
 import logging
 import sys
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -101,7 +101,7 @@ def format_datetime(dt: datetime | None) -> str:
 def cmd_run(args: argparse.Namespace) -> int:
     """Handle run command."""
     # Calculate date range
-    end_date = datetime.utcnow()
+    end_date = datetime.now(UTC)
     start_date = end_date - timedelta(days=30 * args.months)
 
     logger.info(f"Starting backfill for {args.type}")

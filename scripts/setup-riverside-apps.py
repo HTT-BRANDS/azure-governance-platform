@@ -43,7 +43,7 @@ import string
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -498,7 +498,7 @@ class AppRegistrationManager:
 
         try:
             # Generate expiration date (2 years from now)
-            expiry_date = (datetime.utcnow() + timedelta(days=730)).strftime("%Y-%m-%d")
+            expiry_date = (datetime.now(UTC) + timedelta(days=730)).strftime("%Y-%m-%d")
 
             _, stdout, _ = run_az_command(
                 [

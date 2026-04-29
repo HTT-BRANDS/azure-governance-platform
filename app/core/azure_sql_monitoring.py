@@ -18,7 +18,7 @@ References:
 import logging
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import text
@@ -297,7 +297,7 @@ class AzureSQLMonitor:
                 else None,
                 dtu_limit=int(result.dtu_limit) if result.dtu_limit else None,
                 vcores=int(result.vcores) if result.vcores else None,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
         except Exception as e:
             logger.warning(f"Could not retrieve DTU metrics: {e}")
@@ -338,7 +338,7 @@ class AzureSQLMonitor:
                 "idle_sessions": result.idle_connections if result else 0,
                 "active_sessions": result.active_connections if result else 0,
                 "blocking_sessions": blocking or 0,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.warning(f"Could not retrieve connection stats: {e}")
@@ -355,7 +355,7 @@ class AzureSQLMonitor:
             overflow=pool_stats.get("overflow", 0),
             utilization_percent=pool_stats.get("utilization_percent", 0.0),
             wait_count=None,  # Would need custom pool implementation
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
 
     def get_missing_indexes(self) -> list[dict[str, Any]]:
@@ -412,7 +412,7 @@ class AzureSQLMonitor:
         start_time = time.time()
 
         report = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "query_store_enabled": self.is_query_store_enabled(),
             "dtu_metrics": None,
             "pool_metrics": None,

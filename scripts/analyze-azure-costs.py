@@ -42,7 +42,7 @@ import logging
 import os
 import sys
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -392,7 +392,7 @@ class AzureCostAnalyzer:
                 else "Transactions"
             )
 
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             start_time = end_time - timedelta(days=days_threshold)
 
             metrics = monitor_client.metrics.list(
@@ -475,7 +475,7 @@ class AzureCostAnalyzer:
         alerts = []
 
         # Get current month costs
-        today = datetime.utcnow()
+        today = datetime.now(UTC)
         first_day = today.replace(day=1)
 
         costs = self.get_detailed_costs(first_day, today)
@@ -517,7 +517,7 @@ class AzureCostAnalyzer:
         self, days: int = 30, group_by_tenant: bool = False, include_idle_resources: bool = False
     ) -> dict[str, Any]:
         """Generate comprehensive cost report."""
-        end_date = datetime.utcnow()
+        end_date = datetime.now(UTC)
         start_date = end_date - timedelta(days=days)
 
         logger.info(f"Generating cost report for {days} days...")
@@ -585,7 +585,7 @@ class AzureCostAnalyzer:
             else {},
             "idle_resources": [asdict(r) for r in idle_resources],
             "alerts": [asdict(a) for a in self._alerts],
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
         }
 
     def export_to_csv(self, report: dict[str, Any], output_path: str) -> None:
