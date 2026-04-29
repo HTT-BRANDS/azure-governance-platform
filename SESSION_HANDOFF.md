@@ -2,7 +2,7 @@
 
 **Branch:** `main` (clean working tree, up to date with origin)
 **Latest pushed HEAD at start of 2026-04-29 session:** `1a7e929`
-**Latest pushed work commit before final handoff metadata:** `3134576` (run `git log -1` for the handoff commit itself)
+**Latest pushed work commit before final handoff metadata:** `3496bc5` (run `git log -1` for the handoff commit itself)
 **Former P1 chain:** `g1cc` → `918b` → `0gz3` is now closed; `0nup` remains the next release-evidence gate.
 
 > **Read this first if you are inheriting the platform mid-flight.**
@@ -62,6 +62,25 @@ System for HTT Brands." Three documents were produced and pushed:
 - `DATA_CLASSIFICATION.md` success metric advanced from `0/6` to `3/6`.
 - Cleaned local production evidence artifacts after use; none were committed.
 
+
+### Continuation — 2026-04-29 late session (commits `10bd4fb`, `3496bc5`)
+- Closed `oknl` — behavior-preserving identity auth route split:
+  - `app/api/routes/auth.py`: `940 → 594` LOC.
+  - New `app/api/services/auth_service.py`: token cookie response, refresh-token grant, authorization-code grant, tenant sync helpers.
+  - New `app/schemas/auth.py`: auth request/response Pydantic models.
+  - Public route imports/backward-compatible aliases preserved.
+  - Baseline and after gate both passed:
+    `120 passed, 2 warnings` across auth unit + auth-flow integration tests.
+- Closed `lq11` — behavior-preserving shared config/keyvault split:
+  - `app/core/config.py`: `986 → 580` LOC.
+  - New `app/core/config_keyvault.py`: Key Vault secret-cache manager extracted from config.
+  - New `app/core/config_mixins.py`: database/Azure SQL/serverless/bulk/tracing settings grouped as inherited Pydantic fields.
+  - Existing `app/core/keyvault.py` with `KeyVaultClient` preserved; a temporary overwrite was caught by `tests/unit/test_keyvault.py` before commit and corrected.
+  - Baseline and after gate both passed:
+    `135 passed` across config/keyvault/logging/privacy/env-delta unit tests.
+- Phase 1.5 success metric advanced by 2 more oversized app files remediated (`auth.py`, `config.py`).
+- Latest pushed HEAD before this handoff update: `3496bc5`.
+- CI/security/staging for `3496bc5` may still be in progress; check `gh run list --branch main --limit 10`.
 
 ### Track D — Phase 0 hygiene (commit `41126f8`)
 - `.venv/` rebuilt (`uv venv --clear && uv sync --dev --frozen`); pytest 9.0.3 alive; 12/12 health_data smoke passes; **4,192 tests collected** (was claiming 3,800).
@@ -130,12 +149,13 @@ After Tyler said "continue on next steps based on your recommendations outlined"
 - `uchp` Q3 DR test, depends on `213e` + `fifh`
 - `3flq` backup OIDC token permission regression (filed and closed same session)
 
-### Still in `bd ready` after continuation (Tyler-blocking or autonomous)
+### Still in `bd ready` after late-session refactors (Tyler-blocking or autonomous)
 - `9lfn` — **Tyler-authored** SECRETS_OF_RECORD.md (P1, ~30 min). Bus-factor blocker.
-- `c10e` — resources domain README + DATA_CLASSIFICATION.
-- `ewdp` — lifecycle domain README + DATA_CLASSIFICATION.
-- `sl01` — bi_bridge domain README + DATA_CLASSIFICATION; currently assigned to Tyler.
-- Phase 1.5 refactors are starting to appear ready now that their boundary docs landed; only claim one at a time and respect the documented domain boundaries.
+- Phase 1.5 refactors now dominate ready work. Current ready list includes:
+  `bu72` app/main.py, `gvpt` app/core/cache.py, `wnpf` admin_risk_checks.py,
+  `a3oq` riverside_sync.py, `uxzr` backfill_service.py, `fbx8` riverside_scheduler.py,
+  `qb8u` budget_service.py, `2l4h` lighthouse_client.py.
+- `tg2z` — investigate remaining unrelated Riverside batch / DMARC active alerts after 0gz3 recovery.
 - `213e` — name second rollback human (P2, waiver expires 2026-06-22).
 - `cz89` — automate weekly BACPAC export (P4) remains open on the staging Free-tier ImportExport validation blocker.
 
@@ -213,7 +233,7 @@ For session-to-session context  → SESSION_HANDOFF.md (THIS FILE)
 ✅ Production deploy run `25131829042` succeeded; prod is on fresh attested digest `sha256:a76f3eeb9f7c0f28b27c196a8f9c8cf06368fc47875c51ea7a95f0bbbdd680e4`.
 ⚠️  backup.yml had a second regression after fifh: missing OIDC id-token permission; fixed in bc78195, next scheduled/manual run must verify actual backup lands
 ⚠️  bicep-drift-detection.yml scope mismatch fixed in 40bea97; next scheduled/manual run must verify all env matrix jobs reach real drift signal
-⚠️  Push-triggered CI/staging/security runs may still be in progress for the latest doc commits; check `gh run list --branch main --limit 10` next session.
+⚠️  Push-triggered CI/staging/security runs may still be in progress for the latest refactor commits; check `gh run list --branch main --limit 10` next session.
 ⚠️  weekly BACPAC workflow exists, but staging validation is blocked because staging SQL is Free edition and Azure SQL ImportExport rejects Free (`UnSupportedImportExportEdition`)
 ```
 
