@@ -27,6 +27,10 @@ on:
           - staging
           - production
 
+permissions:
+  contents: read
+  id-token: write # Required by azure/login@v2 OIDC federation.
+
 env:
   PYTHON_VERSION: '3.12'
   BACKUP_RETENTION_DAYS: 30
@@ -66,17 +70,17 @@ jobs:
           BACKUP_TYPE: ${{ github.event.inputs.backup_type || 'full' }}
         run: |
           python scripts/backup_database.py \
-            --type ${{ env.BACKUP_TYPE }} \
+            --type "$BACKUP_TYPE" \
             --output backup.sql.gz
 
           # Upload to Azure Blob Storage
           python scripts/upload_backup.py \
             --file backup.sql.gz \
-            --account ${{ env.AZURE_STORAGE_ACCOUNT }} \
-            --container ${{ env.AZURE_STORAGE_CONTAINER }}
+            --account "$AZURE_STORAGE_ACCOUNT" \
+            --container "$AZURE_STORAGE_CONTAINER"
 
-          echo "backup_file=backup.sql.gz" >> $GITHUB_OUTPUT
-          echo "backup_size=$(stat -c%s backup.sql.gz)" >> $GITHUB_OUTPUT
+          echo "backup_file=backup.sql.gz" >> "$GITHUB_OUTPUT"
+          echo "backup_size=$(stat -c%s backup.sql.gz)" >> "$GITHUB_OUTPUT"
 
       - name: Verify backup integrity
         run: |
@@ -100,9 +104,9 @@ jobs:
           AZURE_STORAGE_CONTAINER: ${{ secrets.AZURE_BACKUP_CONTAINER || 'database-backups' }}
         run: |
           python scripts/cleanup_backups.py \
-            --account ${{ env.AZURE_STORAGE_ACCOUNT }} \
-            --container ${{ env.AZURE_STORAGE_CONTAINER }} \
-            --retention-days ${{ env.BACKUP_RETENTION_DAYS }}
+            --account "$AZURE_STORAGE_ACCOUNT" \
+            --container "$AZURE_STORAGE_CONTAINER" \
+            --retention-days "$BACKUP_RETENTION_DAYS"
 
       # Teams notification — uses curl + MessageCard pattern matching
       # deploy-production.yml. Guarded by vars.TEAMS_WEBHOOK_CONFIGURED so
@@ -185,8 +189,8 @@ jobs:
           python scripts/backup_database.py --type full --output staging-backup.sql.gz
           python scripts/upload_backup.py \
             --file staging-backup.sql.gz \
-            --account ${{ env.AZURE_STORAGE_ACCOUNT }} \
-            --container ${{ env.AZURE_STORAGE_CONTAINER }}
+            --account "$AZURE_STORAGE_ACCOUNT" \
+            --container "$AZURE_STORAGE_CONTAINER"
 
       - name: Cleanup old staging backups
         env:
@@ -194,6 +198,6 @@ jobs:
           AZURE_STORAGE_CONTAINER: staging-backups
         run: |
           python scripts/cleanup_backups.py \
-            --account ${{ env.AZURE_STORAGE_ACCOUNT }} \
-            --container ${{ env.AZURE_STORAGE_CONTAINER }} \
+            --account "$AZURE_STORAGE_ACCOUNT" \
+            --container "$AZURE_STORAGE_CONTAINER" \
             --retention-days 7
