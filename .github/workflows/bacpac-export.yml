@@ -1,0 +1,190 @@
+# Weekly Azure SQL BACPAC export
+# Long-term recovery complement to Azure SQL Basic 7-day PITR.
+
+name: Weekly BACPAC Export
+
+on:
+  schedule:
+    # Sundays at 03:30 UTC, after the daily logical backup window.
+    - cron: '30 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to export'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DEFAULT_STORAGE_CONTAINER: bacpac-exports
+  RETENTION_MONTHS: '12'
+
+jobs:
+  export-bacpac:
+    name: BACPAC Export (${{ github.event.inputs.environment || 'production' }})
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    timeout-minutes: 90
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve export configuration
+        id: config
+        env:
+          TARGET_ENV: ${{ github.event.inputs.environment || 'production' }}
+          PROD_RESOURCE_GROUP: ${{ vars.BACPAC_PROD_RESOURCE_GROUP || 'rg-governance-production' }}
+          PROD_SQL_SERVER: ${{ vars.BACPAC_PROD_SQL_SERVER || 'sql-gov-prod-mylxq53d' }}
+          PROD_SQL_DATABASE: ${{ vars.BACPAC_PROD_SQL_DATABASE || 'governance' }}
+          STAGING_RESOURCE_GROUP: ${{ vars.BACPAC_STAGING_RESOURCE_GROUP || 'rg-governance-staging' }}
+          STAGING_SQL_SERVER: ${{ vars.BACPAC_STAGING_SQL_SERVER || 'sql-governance-staging-77zfjyem' }}
+          STAGING_SQL_DATABASE: ${{ vars.BACPAC_STAGING_SQL_DATABASE || 'governance' }}
+          STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
+          STORAGE_CONTAINER: ${{ secrets.AZURE_BACPAC_CONTAINER || vars.AZURE_BACPAC_CONTAINER || 'bacpac-exports' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$STORAGE_ACCOUNT" ]; then
+            echo "AZURE_STORAGE_ACCOUNT secret is required" >&2
+            exit 1
+          fi
+
+          case "$TARGET_ENV" in
+            production)
+              RESOURCE_GROUP="$PROD_RESOURCE_GROUP"
+              SQL_SERVER="$PROD_SQL_SERVER"
+              SQL_DATABASE="$PROD_SQL_DATABASE"
+              ;;
+            staging)
+              RESOURCE_GROUP="$STAGING_RESOURCE_GROUP"
+              SQL_SERVER="$STAGING_SQL_SERVER"
+              SQL_DATABASE="$STAGING_SQL_DATABASE"
+              ;;
+            *)
+              echo "Unsupported environment: $TARGET_ENV" >&2
+              exit 1
+              ;;
+          esac
+
+          TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          BLOB_NAME="$TARGET_ENV/$SQL_DATABASE-$TIMESTAMP.bacpac"
+          STORAGE_URI="https://${STORAGE_ACCOUNT}.blob.core.windows.net/${STORAGE_CONTAINER}/${BLOB_NAME}"
+
+          {
+            echo "target_env=$TARGET_ENV"
+            echo "resource_group=$RESOURCE_GROUP"
+            echo "sql_server=$SQL_SERVER"
+            echo "sql_database=$SQL_DATABASE"
+            echo "storage_account=$STORAGE_ACCOUNT"
+            echo "storage_container=$STORAGE_CONTAINER"
+            echo "blob_name=$BLOB_NAME"
+            echo "storage_uri=$STORAGE_URI"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Ensure BACPAC container exists
+        run: |
+          set -euo pipefail
+          az storage container create \
+            --account-name "${{ steps.config.outputs.storage_account }}" \
+            --name "${{ steps.config.outputs.storage_container }}" \
+            --auth-mode login \
+            --public-access off \
+            --output none
+
+      - name: Export Azure SQL database to BACPAC
+        id: export
+        env:
+          SQL_ADMIN_USER: ${{ vars.SQL_ADMIN_USER || 'sqladmin' }}
+          SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$SQL_ADMIN_PASSWORD" ]; then
+            echo "SQL_ADMIN_PASSWORD environment secret is required for az sql db export" >&2
+            exit 1
+          fi
+
+          STORAGE_KEY=$(az storage account keys list \
+            --account-name "${{ steps.config.outputs.storage_account }}" \
+            --query '[0].value' \
+            --output tsv)
+
+          az sql db export \
+            --resource-group "${{ steps.config.outputs.resource_group }}" \
+            --server "${{ steps.config.outputs.sql_server }}" \
+            --name "${{ steps.config.outputs.sql_database }}" \
+            --storage-key-type StorageAccessKey \
+            --storage-key "$STORAGE_KEY" \
+            --storage-uri "${{ steps.config.outputs.storage_uri }}" \
+            --admin-user "$SQL_ADMIN_USER" \
+            --admin-password "$SQL_ADMIN_PASSWORD" \
+            --output none
+
+          az storage blob set-tier \
+            --account-name "${{ steps.config.outputs.storage_account }}" \
+            --container-name "${{ steps.config.outputs.storage_container }}" \
+            --name "${{ steps.config.outputs.blob_name }}" \
+            --tier Cool \
+            --auth-mode login \
+            --output none
+
+          echo "bacpac_uri=${{ steps.config.outputs.storage_uri }}" >> "$GITHUB_OUTPUT"
+
+      - name: Delete expired BACPAC exports
+        run: |
+          set -euo pipefail
+          RETENTION_CUTOFF=$(date -u -d '365 days ago' '+%Y-%m-%dT%H:%MZ')
+
+          az storage blob delete-batch \
+            --account-name "${{ steps.config.outputs.storage_account }}" \
+            --source "${{ steps.config.outputs.storage_container }}" \
+            --pattern "${{ steps.config.outputs.target_env }}/*.bacpac" \
+            --if-unmodified-since "$RETENTION_CUTOFF" \
+            --auth-mode login \
+            --output none
+
+      - name: Notify Teams on success
+        if: success() && vars.TEAMS_WEBHOOK_CONFIGURED == 'true'
+        run: |
+          curl -X POST "${{ secrets.PRODUCTION_TEAMS_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"@type\": \"MessageCard\",
+              \"themeColor\": \"00a86b\",
+              \"title\": \"✅ Weekly BACPAC Export Complete\",
+              \"text\": \"**Environment:** ${{ steps.config.outputs.target_env }}<br>**Database:** ${{ steps.config.outputs.sql_server }}/${{ steps.config.outputs.sql_database }}<br>**Blob:** ${{ steps.config.outputs.blob_name }}<br>**Tier:** Cool<br>**Retention target:** ${{ env.RETENTION_MONTHS }} months<br>**Run:** ${{ github.run_id }}\",
+              \"potentialAction\": [{
+                \"@type\": \"OpenUri\",
+                \"name\": \"View Run\",
+                \"targets\": [{\"os\": \"default\", \"uri\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]
+              }]
+            }" || true
+
+      - name: Notify Teams on failure
+        if: failure() && vars.TEAMS_WEBHOOK_CONFIGURED == 'true'
+        run: |
+          curl -X POST "${{ secrets.PRODUCTION_TEAMS_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"@type\": \"MessageCard\",
+              \"themeColor\": \"d13438\",
+              \"title\": \"❌ Weekly BACPAC Export Failed\",
+              \"text\": \"**Environment:** ${{ steps.config.outputs.target_env || github.event.inputs.environment || 'production' }}<br>**Run:** ${{ github.run_id }}<br>Long-term SQL recovery export failed. PITR still covers only the platform window.\",
+              \"potentialAction\": [{
+                \"@type\": \"OpenUri\",
+                \"name\": \"View Run\",
+                \"targets\": [{\"os\": \"default\", \"uri\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]
+              }]
+            }" || true

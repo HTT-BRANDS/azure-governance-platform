@@ -230,10 +230,13 @@ restoring 60-day-old data to investigate a breach):
 2. Retain exports for 12 months.
 3. Cost: ~$0.50/mo for a 5-tenant deployment at current data volumes.
 
-**TODO — not yet automated:** The weekly BACPAC export is currently manual
-and not on the retention cron. File a bd ticket when data volumes or
-compliance requirements warrant it. At launch scale the manual quarterly
-export from §4 is sufficient.
+**Automation:** `.github/workflows/bacpac-export.yml` runs weekly against
+production and can be manually dispatched against staging or production. It
+exports Azure SQL to the `bacpac-exports` blob container, sets the blob access
+tier to Cool, and sends Teams success/failure notifications.
+
+Retention is operationally defined as 12 months. The workflow deletes expired
+BACPAC blobs after each successful export using a 365-day cutoff.
 
 ---
 

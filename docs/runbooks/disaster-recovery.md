@@ -263,6 +263,49 @@ az sql db update -g rg-governance-production \
 # Cost impact: +$9.82/mo. This is the documented trigger, not a surprise.
 ```
 
+### B.5 Long-term restore from BACPAC
+
+Use this only when PITR cannot reach the target recovery point (for example,
+a 60-day-old breach investigation). Weekly exports are created by
+`.github/workflows/bacpac-export.yml` and stored under the `bacpac-exports`
+container in Cool tier.
+
+```bash
+# 1. Identify the BACPAC to restore. Pick the newest export BEFORE the target time.
+az storage blob list \
+  --account-name "$AZURE_STORAGE_ACCOUNT" \
+  --container-name bacpac-exports \
+  --prefix production/ \
+  --auth-mode login \
+  -o table
+
+# 2. Restore to a NEW database. Do not overwrite production in-place.
+BACPAC_URI="https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/bacpac-exports/production/governance-YYYYMMDDTHHMMSSZ.bacpac"
+RESTORE_DB="governance-bacpac-restore-$(date -u +%Y%m%d%H%M%S)"
+STORAGE_KEY=$(az storage account keys list \
+  --account-name "$AZURE_STORAGE_ACCOUNT" \
+  --query '[0].value' \
+  --output tsv)
+
+az sql db import \
+  -g rg-governance-production \
+  -s sql-gov-prod-mylxq53d \
+  -n "$RESTORE_DB" \
+  --storage-key-type StorageAccessKey \
+  --storage-key "$STORAGE_KEY" \
+  --storage-uri "$BACPAC_URI" \
+  --admin-user "${SQL_ADMIN_USER:-sqladmin}" \
+  --admin-password "$SQL_ADMIN_PASSWORD"
+
+# 3. Validate row counts and critical tables in RESTORE_DB before any cutover.
+# 4. If business approves cutover: stop app, rename current DB aside, rename
+#    RESTORE_DB to governance, restart app, then verify /health.
+```
+
+**Required secrets/vars:** `AZURE_STORAGE_ACCOUNT`, `SQL_ADMIN_PASSWORD`, and
+optionally `SQL_ADMIN_USER`. Do not paste SQL admin credentials into tickets,
+commit messages, or chat. Yes, this sentence exists because entropy is mean.
+
 ---
 
 ## 5. Scenario C — Key Vault / managed identity outage
