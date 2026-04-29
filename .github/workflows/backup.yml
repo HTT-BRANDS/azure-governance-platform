@@ -104,30 +104,43 @@ jobs:
             --container ${{ env.AZURE_STORAGE_CONTAINER }} \
             --retention-days ${{ env.BACKUP_RETENTION_DAYS }}
 
+      # Teams notification — uses curl + MessageCard pattern matching
+      # deploy-production.yml. Guarded by vars.TEAMS_WEBHOOK_CONFIGURED so
+      # forks/dev environments without the webhook don't fail the workflow.
+      # Replaced broken `mda590/teams-notify@master` action 2026-04-28 (bd fifh).
       - name: Notify Teams on success
-        if: success()
-        uses: mda590/teams-notify@master
-        with:
-          webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
-          message: |
-            ✅ Database Backup Complete
-
-            **Environment:** ${{ github.event.inputs.environment || 'production' }}
-            **Backup Type:** ${{ github.event.inputs.backup_type || 'full' }}
-            **Backup Size:** ${{ steps.backup.outputs.backup_size }} bytes
-            **Retention:** ${{ env.BACKUP_RETENTION_DAYS }} days
-            **Timestamp:** ${{ github.event.repository.updated_at }}
+        if: success() && vars.TEAMS_WEBHOOK_CONFIGURED == 'true'
+        run: |
+          curl -X POST "${{ secrets.PRODUCTION_TEAMS_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"@type\": \"MessageCard\",
+              \"themeColor\": \"00a86b\",
+              \"title\": \"✅ Database Backup Complete\",
+              \"text\": \"**Environment:** ${{ github.event.inputs.environment || 'production' }}<br>**Backup Type:** ${{ github.event.inputs.backup_type || 'full' }}<br>**Backup Size:** ${{ steps.backup.outputs.backup_size }} bytes<br>**Retention:** ${{ env.BACKUP_RETENTION_DAYS }} days<br>**Run:** ${{ github.run_id }}\",
+              \"potentialAction\": [{
+                \"@type\": \"OpenUri\",
+                \"name\": \"View Run\",
+                \"targets\": [{\"os\": \"default\", \"uri\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]
+              }]
+            }" || true
 
       - name: Notify Teams on failure
-        if: failure()
-        uses: mda590/teams-notify@master
-        with:
-          webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
-          message: |
-            ❌ Database Backup Failed
-
-            **Environment:** ${{ github.event.inputs.environment || 'production' }}
-            **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        if: failure() && vars.TEAMS_WEBHOOK_CONFIGURED == 'true'
+        run: |
+          curl -X POST "${{ secrets.PRODUCTION_TEAMS_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"@type\": \"MessageCard\",
+              \"themeColor\": \"d13438\",
+              \"title\": \"❌ Database Backup Failed\",
+              \"text\": \"**Environment:** ${{ github.event.inputs.environment || 'production' }}<br>**Run:** ${{ github.run_id }}<br>This is an RPO regression — investigate immediately.\",
+              \"potentialAction\": [{
+                \"@type\": \"OpenUri\",
+                \"name\": \"View Run\",
+                \"targets\": [{\"os\": \"default\", \"uri\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}]
+              }]
+            }" || true
 
       - name: Upload backup artifact (for debugging)
         if: failure()
