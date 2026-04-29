@@ -10,141 +10,54 @@ import hmac
 import logging
 import os
 import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
-from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
-from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
+from app.api.services.auth_service import (
+    create_token_response_with_cookies,
+    handle_authorization_code,
+    handle_refresh_token,
+    sync_user_tenant_mappings,
+)
 from app.core.auth import (
-    TokenData,
     User,
     azure_ad_validator,
     blacklist_token,
     get_current_user,
-    is_token_blacklisted,
     jwt_manager,
 )
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.models.tenant import Tenant, UserTenant
+from app.schemas.auth import (
+    AzureADLoginRequest,
+    LogoutResponse,
+    RefreshTokenRequest,
+    TokenResponse,
+    UserInfoResponse,
+)
+from app.schemas.auth import (
+    TenantAccessInfo as TenantAccessInfo,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 
 
-# ============================================================================
-# Schemas
-# ============================================================================
-
-
-class TokenResponse(BaseModel):
-    """OAuth2 token response."""
-
-    access_token: str | None = None  # Can be None if sent as HttpOnly cookie
-    refresh_token: str | None = None  # Can be None if sent as HttpOnly cookie
-    token_type: str = "bearer"
-    expires_in: int  # Seconds until access token expires
-    scope: str | None = None
-    cookies_set: bool = True  # Indicates HttpOnly cookies were set server-side
-
-
-class RefreshTokenRequest(BaseModel):
-    """Refresh token request."""
-
-    refresh_token: str
-
-
-def create_token_response_with_cookies(
-    token_response: TokenResponse, request: Request
-) -> JSONResponse:
-    """Create JSON response with HttpOnly Secure cookies."""
-    response = JSONResponse(
-        content=token_response.model_dump(exclude={"access_token", "refresh_token"})
-    )
-
-    settings = get_settings()
-
-    # Determine if we should use Secure flag (always in production)
-    secure = settings.environment == "production"
-
-    # Set access token as HttpOnly cookie
-    if token_response.access_token:
-        response.set_cookie(
-            key="access_token",
-            value=token_response.access_token,
-            httponly=True,
-            secure=secure,
-            samesite="lax",
-            max_age=token_response.expires_in,
-            path="/",
-        )
-
-    # Set refresh token as HttpOnly cookie (longer lived)
-    if token_response.refresh_token:
-        response.set_cookie(
-            key="refresh_token",
-            value=token_response.refresh_token,
-            httponly=True,
-            secure=secure,
-            samesite="lax",
-            max_age=settings.jwt_refresh_token_expire_days * 24 * 3600,
-            path="/",
-        )
-
-    return response
-
-
-class UserInfoResponse(BaseModel):
-    """Current user info response."""
-
-    id: str
-    email: str | None = None
-    name: str | None = None
-    roles: list[str]
-    tenant_ids: list[str]
-    accessible_tenants: list[dict[str, Any]] = []
-    auth_provider: str
-    is_active: bool
-
-
-class AzureADLoginRequest(BaseModel):
-    """Azure AD OAuth2 callback request."""
-
-    code: str
-    redirect_uri: str
-    code_verifier: str | None = None  # PKCE
-    state: str | None = None  # OAuth state for audit logging
-
-
-class LogoutResponse(BaseModel):
-    """Logout response."""
-
-    message: str
-    revoked: bool
-
-
-class TenantAccessInfo(BaseModel):
-    """Tenant access information."""
-
-    tenant_id: str
-    name: str
-    role: str
-    permissions: dict[str, bool]
-
-
-# ============================================================================
-# Internal Authentication
-# ============================================================================
-
 # Dev-only credentials — never used outside ENVIRONMENT=development
 _DEV_USERNAME = "admin"
 _DEV_PASSWORD = "admin"
+
+# Backward-compatible private aliases for downstream imports/tests.
+_handle_refresh_token = handle_refresh_token
+_handle_authorization_code = handle_authorization_code
+_sync_user_tenant_mappings = sync_user_tenant_mappings
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -260,9 +173,9 @@ async def token_endpoint(
         TokenResponse with new tokens
     """
     if grant_type == "refresh_token":
-        return await _handle_refresh_token(refresh_token, db, request)
+        return await handle_refresh_token(refresh_token, db, request)
     elif grant_type == "authorization_code":
-        return await _handle_authorization_code(
+        return await handle_authorization_code(
             code, redirect_uri, client_id, client_secret, request
         )
     else:
@@ -272,175 +185,6 @@ async def token_endpoint(
         )
 
 
-async def _handle_refresh_token(
-    refresh_token: str | None,
-    db: Session,
-    request: Request,
-) -> TokenResponse:
-    """Handle refresh token grant."""
-    if not refresh_token:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Refresh token required",
-        )
-
-    # Check if refresh token has been revoked (e.g., already rotated)
-    if is_token_blacklisted(refresh_token):
-        logger.warning("Attempted use of blacklisted refresh token")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token has been revoked",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    try:
-        # Validate refresh token
-        payload = jwt_manager.decode_token(refresh_token)
-
-        if payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type",
-            )
-
-        user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token",
-            )
-
-        # Get user info from database
-        user_tenant_mappings = (
-            db.query(UserTenant)
-            .filter(UserTenant.user_id == user_id, UserTenant.is_active == True)  # noqa: E712
-            .all()
-        )
-
-        tenant_ids = [m.tenant.tenant_id for m in user_tenant_mappings if m.tenant]
-        roles = list({m.role for m in user_tenant_mappings}) or ["admin"]  # dev user gets admin
-
-        # Generate new tokens
-        settings = get_settings()
-        new_access_token = jwt_manager.create_access_token(
-            user_id=user_id,
-            roles=roles,
-            tenant_ids=tenant_ids,
-        )
-        new_refresh_token = jwt_manager.create_refresh_token(user_id=user_id)
-
-        # Blacklist the old refresh token (rotation = one-time use)
-        blacklist_token(refresh_token)
-
-        logger.info(f"Token refreshed for user: {user_id}")
-
-        token_response = TokenResponse(
-            access_token=new_access_token,
-            refresh_token=new_refresh_token,
-            token_type="bearer",
-            expires_in=settings.jwt_access_token_expire_minutes * 60,
-        )
-
-        return create_token_response_with_cookies(token_response, request)
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Token refresh failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token",
-        ) from e
-
-
-async def _handle_authorization_code(
-    code: str | None,
-    redirect_uri: str | None,
-    client_id: str | None,
-    client_secret: str | None,
-    request: Request | None = None,
-) -> TokenResponse:
-    """Handle authorization code grant with Azure AD."""
-    if not code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Authorization code required",
-        )
-
-    settings = get_settings()
-
-    # ── Validate redirect URI against whitelist ─────────────────
-    effective_redirect = redirect_uri or "http://localhost:8000/auth/callback"
-    if effective_redirect not in settings.allowed_redirect_uris:
-        logger.warning(
-            "Rejected authorization_code grant with unauthorized redirect_uri: "
-            f"{effective_redirect[:100]}"
-        )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid redirect URI",
-        )
-
-    # Exchange code for tokens with Azure AD
-    token_endpoint = settings.azure_ad_token_endpoint
-
-    async with httpx.AsyncClient() as client:
-        token_request = {
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": redirect_uri or "http://localhost:8000/auth/callback",
-            "client_id": client_id or settings.azure_ad_client_id,
-        }
-
-        if client_secret:
-            token_request["client_secret"] = client_secret
-
-        response = await client.post(
-            token_endpoint,
-            data=token_request,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-
-        if response.status_code != 200:
-            logger.error(f"Azure AD token exchange failed: {response.text}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Failed to exchange authorization code",
-            )
-
-        token_data = response.json()
-
-        # Validate the ID token and create our own tokens
-        id_token = token_data.get("id_token")
-        if id_token:
-            validated = await azure_ad_validator.validate_token(id_token)
-
-            # Create internal tokens
-            access_token = jwt_manager.create_access_token(
-                user_id=validated.sub,
-                email=validated.email,
-                name=validated.name,
-                roles=validated.roles,
-                tenant_ids=validated.tenant_ids,
-            )
-
-            refresh_token = jwt_manager.create_refresh_token(user_id=validated.sub)
-
-            token_response = TokenResponse(
-                access_token=access_token,
-                refresh_token=refresh_token,
-                token_type="bearer",
-                expires_in=settings.jwt_access_token_expire_minutes * 60,
-            )
-
-            return create_token_response_with_cookies(token_response, request)
-
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="Failed to process authorization code",
-    )
-
-
 # ============================================================================
 # Azure AD OAuth2
 # ============================================================================
@@ -448,7 +192,6 @@ async def _handle_authorization_code(
 
 def generate_code_verifier() -> str:
     """Generate a PKCE code verifier (random 128-character base64url string)."""
-    # 96 bytes of randomness = 128 base64url characters
     return base64.urlsafe_b64encode(secrets.token_bytes(96)).rstrip(b"=").decode("ascii")
 
 
@@ -593,7 +336,7 @@ async def azure_oauth_callback(
     is_admin = "admin" in roles
 
     try:
-        resolved_tenant_ids = await _sync_user_tenant_mappings(db, validated)
+        resolved_tenant_ids = await sync_user_tenant_mappings(db, validated)
     except Exception as e:
         logger.error(
             f"User tenant sync failed: {type(e).__name__}: {e}",
@@ -651,90 +394,6 @@ async def azure_oauth_callback(
     )
 
     return create_token_response_with_cookies(token_response, http_request)
-
-
-async def _sync_user_tenant_mappings(db: Session, token_data: TokenData) -> list[str]:
-    """Sync user tenant mappings based on Azure AD token claims.
-
-    Creates UserTenant records for any tenants the user has access to
-    via Azure AD group memberships. Falls back to the Azure AD 'tid'
-    claim when no group-based tenant IDs are found.
-
-    Individual tenant failures are logged but do not abort the entire
-    sync — the user can still authenticate with partial access.
-
-    Returns:
-        List of resolved Azure tenant IDs the user has access to.
-    """
-    import uuid
-
-    from app.models.tenant import Tenant
-
-    # Start with group-based tenant IDs; fall back to tid claim
-    candidate_ids = list(token_data.tenant_ids)
-    if not candidate_ids and token_data.azure_tenant_id:
-        candidate_ids = [token_data.azure_tenant_id]
-        logger.info(
-            f"No group-based tenants for {token_data.sub}, "
-            f"falling back to Azure AD tid: {token_data.azure_tenant_id}"
-        )
-
-    resolved: list[str] = []
-
-    for tenant_id in candidate_ids:
-        try:
-            # Find tenant by Azure tenant ID
-            tenant = db.query(Tenant).filter(Tenant.tenant_id == tenant_id).first()
-            if not tenant:
-                logger.debug(f"No local tenant record for Azure tenant {tenant_id}, skipping")
-                continue
-
-            resolved.append(tenant_id)
-
-            # Ensure a UserTenant mapping exists
-            existing = (
-                db.query(UserTenant)
-                .filter(
-                    UserTenant.user_id == token_data.sub,
-                    UserTenant.tenant_id == tenant.id,
-                )
-                .first()
-            )
-
-            if not existing:
-                mapping = UserTenant(
-                    id=str(uuid.uuid4()),
-                    user_id=token_data.sub,
-                    tenant_id=tenant.id,
-                    role="viewer",  # Default role
-                    is_active=True,
-                    can_view_costs=True,
-                    granted_by="azure_ad_sync",
-                    granted_at=datetime.now(UTC),
-                )
-                db.add(mapping)
-                db.commit()
-
-                logger.info(f"Created user tenant mapping: {token_data.sub} -> {tenant_id}")
-        except OperationalError as e:
-            logger.error(f"Database connection error syncing tenant {tenant_id}: {e}")
-            db.rollback()
-            continue
-        except SQLAlchemyError as e:
-            logger.error(f"Database error syncing tenant mapping for {tenant_id}: {e}")
-            db.rollback()
-            continue
-        except Exception as e:
-            logger.error(f"Failed to sync tenant mapping for {tenant_id}: {type(e).__name__}: {e}")
-            db.rollback()
-            continue
-
-    return resolved
-
-
-# ============================================================================
-# User Info & Session Management
-# ============================================================================
 
 
 @router.get("/me", response_model=UserInfoResponse)
@@ -808,7 +467,7 @@ async def refresh_token_endpoint(
     Returns:
         TokenResponse with new access and refresh tokens
     """
-    return await _handle_refresh_token(token_request.refresh_token, db, request)
+    return await handle_refresh_token(token_request.refresh_token, db, request)
 
 
 @router.post("/logout", response_model=LogoutResponse)
@@ -866,11 +525,6 @@ async def auth_health_check() -> dict[str, Any]:
         "token_endpoint": "/api/v1/auth/token",
         "authorization_endpoint": "/api/v1/auth/azure/login",
     }
-
-
-# ============================================================================
-# Staging-only: E2E test token endpoint
-# ============================================================================
 
 
 @router.post("/staging-token", include_in_schema=False)
