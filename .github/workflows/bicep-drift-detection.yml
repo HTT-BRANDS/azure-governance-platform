@@ -1,8 +1,8 @@
 # =============================================================================
 # Azure Governance Platform — Bicep Drift Detection (bd x692)
 # =============================================================================
-# Runs `az deployment group what-if` on the live Azure state against each
-# environment's parameter file, weekly. A non-zero changeset means the
+# Runs `az deployment sub what-if` on the live Azure state against each
+# environment's subscription-scoped parameter file, weekly. A non-zero changeset means the
 # deployed infra has drifted from the Bicep source-of-truth — exactly the
 # latent-footgun pattern that sf24 (Redis enableRedis=true) and 265y (GHCR
 # org drift) already demonstrated.
@@ -75,7 +75,7 @@ jobs:
       - name: Set subscription context
         run: az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
-      - name: Run az deployment group what-if
+      - name: Run az deployment sub what-if
         id: what_if
         env:
           RG: ${{ matrix.resource_group }}
@@ -83,11 +83,16 @@ jobs:
         run: |
           set -euo pipefail
 
+          # infrastructure/main.bicep declares targetScope = 'subscription',
+          # so drift detection must use subscription-scoped what-if. Using
+          # Resource-group-scoped what-if fails before it can detect drift.
+          DEPLOY_LOCATION=$(jq -r '.parameters.location.value // "eastus"' "$PARAMS")
+
           # Emit JSON for machine parsing; the human-readable form (default
           # `Format` output) is streamed to the log for auditors.
           echo "::group::Human-readable what-if"
-          az deployment group what-if \
-            --resource-group "$RG" \
+          az deployment sub what-if \
+            --location "$DEPLOY_LOCATION" \
             --template-file infrastructure/main.bicep \
             --parameters @"$PARAMS" \
             --result-format FullResourcePayloads \
@@ -96,8 +101,8 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::JSON what-if"
-          az deployment group what-if \
-            --resource-group "$RG" \
+          az deployment sub what-if \
+            --location "$DEPLOY_LOCATION" \
             --template-file infrastructure/main.bicep \
             --parameters @"$PARAMS" \
             --no-pretty-print \
@@ -197,7 +202,7 @@ jobs:
             echo "Either:"
             echo "1. **Update Bicep / parameter files** to match live state (preferred, if the"
             echo "   live state is correct), or"
-            echo "2. **Run \`az deployment group create\`** to re-sync live state to Bicep"
+            echo "2. **Run \`az deployment sub create\`** to re-sync live state to Bicep"
             echo "   (only if Bicep is correct and live has drifted)."
             echo ""
             for f in drift-summary-*.md; do
