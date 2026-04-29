@@ -2,7 +2,7 @@
 
 **Branch:** `main` (clean working tree, up to date with origin)
 **Latest pushed HEAD at start of 2026-04-29 session:** `1a7e929`
-**Latest pushed work commit before final handoff metadata:** `1765cee` (run `git log -1` for the handoff commit itself)
+**Latest pushed work commit before final handoff metadata:** `989ae03` (run `git log -1` for the handoff commit itself)
 **Active P1 chain (unchanged from 2026-04-26):** `g1cc` → `918b` → `0gz3` → `0nup`
 
 > **Read this first if you are inheriting the platform mid-flight.**
@@ -225,6 +225,9 @@ Committed and pushed this session:
   - Deferred `m4xw` to 2026-07-01 because current row count/requirements do not justify automation yet.
 - `1765cee` — `bd: defer domain-intelligence shutdown check`
   - Deferred `rtwi` to its explicit 2026-05-17 60-day zero-traffic trigger.
+- `989ae03` — `fix(ci): let staging health loop retry curl timeouts`
+  - Fixed the readiness loop bug where `bash -e` exited immediately on a curl timeout before the loop could capture `curl_exit` and retry.
+  - Validation: `pytest tests/unit/test_deploy_staging_workflow.py tests/unit/test_staging_api_coverage_contract.py`, `actionlint .github/workflows/deploy-staging.yml`, and full pre-commit all passed.
 
 Validation run locally:
 
@@ -239,7 +242,7 @@ Validation run locally:
 At handoff time:
 
 - Working tree clean and pushed to `origin/main`.
-- `mvxt` closed after staging runtime drift was corrected and push run `25128507657` completed `Deploy to Staging` successfully on `ef36023`.
+- `mvxt` closed after staging runtime drift was corrected and push run `25128507657` completed `Deploy to Staging` successfully on `ef36023`; later follow-up `989ae03` fixed a bash `set -e` bug discovered in the new health readiness loop.
 - `aiob` umbrella closed after confirming all child issues complete, `Browser Smoke` is a blocking CI job, and branch protection requires `Browser Smoke` + `Security Scan`.
 - `rtwi` and `m4xw` deferred to their actual trigger windows so `bd ready` stops showing future/YAGNI work.
 - `SECRETS_OF_RECORD.md` still absent; `9lfn` remains Tyler-only.
