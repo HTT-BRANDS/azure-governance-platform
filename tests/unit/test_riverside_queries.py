@@ -7,7 +7,7 @@ Traces: RC-001, RC-002, RC-003 — Riverside dashboard queries,
 MFA status reporting, maturity score calculations, and gap analysis.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -60,7 +60,7 @@ def _make_compliance(
     c.requirements_total = reqs_total
     c.critical_gaps_count = gaps
     c.last_assessment_date = date.today()
-    c.updated_at = datetime.utcnow()
+    c.updated_at = datetime.now(UTC)
     return c
 
 
@@ -111,8 +111,8 @@ def _make_requirement(
     r.owner = owner
     r.evidence_url = None
     r.evidence_notes = None
-    r.created_at = datetime.utcnow()
-    r.updated_at = datetime.utcnow()
+    r.created_at = datetime.now(UTC)
+    r.updated_at = datetime.now(UTC)
     return r
 
 

@@ -1,6 +1,6 @@
 """Unit tests for BrandConfig model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
@@ -99,7 +99,7 @@ class TestBrandConfigCreation:
         db_session.add(tenant)
         db_session.commit()
 
-        before_create = datetime.utcnow()
+        before_create = datetime.now(UTC)
         brand_config = BrandConfig(
             tenant_id=tenant.id,
             brand_name="Timestamp Brand",
@@ -108,10 +108,13 @@ class TestBrandConfigCreation:
         )
         db_session.add(brand_config)
         db_session.commit()
-        after_create = datetime.utcnow()
+        after_create = datetime.now(UTC)
 
-        assert before_create <= brand_config.created_at <= after_create
-        assert before_create <= brand_config.updated_at <= after_create
+        created_at = brand_config.created_at.replace(tzinfo=UTC)
+        updated_at = brand_config.updated_at.replace(tzinfo=UTC)
+
+        assert before_create <= created_at <= after_create
+        assert before_create <= updated_at <= after_create
 
 
 class TestBrandConfigToDict:

@@ -9,7 +9,7 @@ Tests for the riverside_scheduler module covering:
 - Notification integration
 """
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -116,7 +116,7 @@ class TestMaturityRegression:
             previous_score=3.5,
             current_score=3.0,
             score_drop=0.5,
-            last_assessment_date=datetime.utcnow(),
+            last_assessment_date=datetime.now(UTC),
         )
         assert regression.tenant_id == "test-tenant"
         assert regression.previous_score == 3.5
@@ -135,7 +135,7 @@ class TestThreatEscalation:
             vulnerability_count=50,
             malicious_domain_alerts=5,
             is_critical=True,
-            snapshot_date=datetime.utcnow(),
+            snapshot_date=datetime.now(UTC),
         )
         assert escalation.is_critical
         assert escalation.threat_score == 9.5
@@ -148,7 +148,7 @@ class TestThreatEscalation:
             vulnerability_count=20,
             malicious_domain_alerts=2,
             is_critical=False,
-            snapshot_date=datetime.utcnow(),
+            snapshot_date=datetime.now(UTC),
         )
         assert not escalation.is_critical
         assert escalation.threat_score == 7.5
@@ -435,12 +435,12 @@ class TestCheckMaturityRegressions:
         comp1 = MagicMock(spec=RiversideCompliance)
         comp1.tenant_id = "tenant-1"
         comp1.overall_maturity_score = 3.5
-        comp1.last_assessment_date = datetime.utcnow()
+        comp1.last_assessment_date = datetime.now(UTC)
 
         comp2 = MagicMock(spec=RiversideCompliance)
         comp2.tenant_id = "tenant-1"
         comp2.overall_maturity_score = 3.0
-        comp2.last_assessment_date = datetime.utcnow() - timedelta(days=7)
+        comp2.last_assessment_date = datetime.now(UTC) - timedelta(days=7)
 
         mock_query = MagicMock()
         mock_query.order_by.return_value = mock_query
@@ -459,12 +459,12 @@ class TestCheckMaturityRegressions:
         current = MagicMock(spec=RiversideCompliance)
         current.tenant_id = "tenant-1"
         current.overall_maturity_score = 2.5
-        current.last_assessment_date = datetime.utcnow()
+        current.last_assessment_date = datetime.now(UTC)
 
         previous = MagicMock(spec=RiversideCompliance)
         previous.tenant_id = "tenant-1"
         previous.overall_maturity_score = 3.0
-        previous.last_assessment_date = datetime.utcnow() - timedelta(days=7)
+        previous.last_assessment_date = datetime.now(UTC) - timedelta(days=7)
 
         mock_query = MagicMock()
         mock_query.order_by.return_value = mock_query
@@ -486,23 +486,23 @@ class TestCheckMaturityRegressions:
         t1_current = MagicMock(spec=RiversideCompliance)
         t1_current.tenant_id = "tenant-1"
         t1_current.overall_maturity_score = 2.0
-        t1_current.last_assessment_date = datetime.utcnow()
+        t1_current.last_assessment_date = datetime.now(UTC)
 
         t1_previous = MagicMock(spec=RiversideCompliance)
         t1_previous.tenant_id = "tenant-1"
         t1_previous.overall_maturity_score = 3.0
-        t1_previous.last_assessment_date = datetime.utcnow() - timedelta(days=7)
+        t1_previous.last_assessment_date = datetime.now(UTC) - timedelta(days=7)
 
         # Tenant 2: no regression
         t2_current = MagicMock(spec=RiversideCompliance)
         t2_current.tenant_id = "tenant-2"
         t2_current.overall_maturity_score = 4.0
-        t2_current.last_assessment_date = datetime.utcnow()
+        t2_current.last_assessment_date = datetime.now(UTC)
 
         t2_previous = MagicMock(spec=RiversideCompliance)
         t2_previous.tenant_id = "tenant-2"
         t2_previous.overall_maturity_score = 3.5
-        t2_previous.last_assessment_date = datetime.utcnow() - timedelta(days=7)
+        t2_previous.last_assessment_date = datetime.now(UTC) - timedelta(days=7)
 
         mock_query = MagicMock()
         mock_query.order_by.return_value = mock_query
@@ -521,7 +521,7 @@ class TestCheckMaturityRegressions:
         comp = MagicMock(spec=RiversideCompliance)
         comp.tenant_id = "tenant-1"
         comp.overall_maturity_score = 3.0
-        comp.last_assessment_date = datetime.utcnow()
+        comp.last_assessment_date = datetime.now(UTC)
 
         mock_query = MagicMock()
         mock_query.order_by.return_value = mock_query
@@ -568,7 +568,7 @@ class TestCheckThreatEscalations:
         threat.threat_score = 7.5  # Above HIGH threshold, below CRITICAL
         threat.vulnerability_count = 25
         threat.malicious_domain_alerts = 3
-        threat.snapshot_date = datetime.utcnow()
+        threat.snapshot_date = datetime.now(UTC)
 
         mock_subquery = MagicMock()
         mock_subquery.c = MagicMock()
@@ -596,7 +596,7 @@ class TestCheckThreatEscalations:
         threat.threat_score = 9.5  # Above CRITICAL threshold
         threat.vulnerability_count = 50
         threat.malicious_domain_alerts = 10
-        threat.snapshot_date = datetime.utcnow()
+        threat.snapshot_date = datetime.now(UTC)
 
         mock_subquery = MagicMock()
         mock_subquery.c = MagicMock()
@@ -623,7 +623,7 @@ class TestCheckThreatEscalations:
         threat.threat_score = 5.0  # Below HIGH threshold
         threat.vulnerability_count = 10
         threat.malicious_domain_alerts = 1
-        threat.snapshot_date = datetime.utcnow()
+        threat.snapshot_date = datetime.now(UTC)
 
         mock_subquery = MagicMock()
         mock_subquery.c = MagicMock()
@@ -756,7 +756,7 @@ class TestSendAlerts:
                 previous_score=3.5,
                 current_score=3.0,
                 score_drop=0.5,
-                last_assessment_date=datetime.utcnow(),
+                last_assessment_date=datetime.now(UTC),
             )
         ]
 
@@ -781,7 +781,7 @@ class TestSendAlerts:
                 vulnerability_count=50,
                 malicious_domain_alerts=5,
                 is_critical=True,
-                snapshot_date=datetime.utcnow(),
+                snapshot_date=datetime.now(UTC),
             )
         ]
 
@@ -881,7 +881,7 @@ class TestRunScheduledJobs:
                 previous_score=3.5,
                 current_score=3.0,
                 score_drop=0.5,
-                last_assessment_date=datetime.utcnow(),
+                last_assessment_date=datetime.now(UTC),
             )
         ]
         mock_send.return_value = [{"success": True}]
@@ -904,7 +904,7 @@ class TestRunScheduledJobs:
                 vulnerability_count=50,
                 malicious_domain_alerts=5,
                 is_critical=True,
-                snapshot_date=datetime.utcnow(),
+                snapshot_date=datetime.now(UTC),
             )
         ]
         mock_send.return_value = [{"success": True}]

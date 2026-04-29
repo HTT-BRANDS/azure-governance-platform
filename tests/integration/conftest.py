@@ -4,7 +4,7 @@ These fixtures provide authenticated test clients and seeded databases
 for testing the complete request/response cycle of API endpoints.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
@@ -206,7 +206,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
                 currency="USD",
                 service_name=service,
                 meter_category=f"{service} Category",
-                synced_at=datetime.utcnow(),
+                synced_at=datetime.now(UTC),
             )
             db_session.add(snapshot)
 
@@ -220,7 +220,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
                     currency="USD",
                     service_name=service,
                     meter_category=f"{service} Category",
-                    synced_at=datetime.utcnow(),
+                    synced_at=datetime.now(UTC),
                 )
                 db_session.add(snapshot2)
 
@@ -236,7 +236,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             "percentage_change": 150.0,
             "service_name": "Compute",
             "is_acknowledged": False,
-            "detected_at": datetime.utcnow() - timedelta(days=2),
+            "detected_at": datetime.now(UTC) - timedelta(days=2),
         },
         {
             "tenant_id": test_tenant_id,
@@ -248,7 +248,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             "percentage_change": 140.0,
             "service_name": "Storage",
             "is_acknowledged": False,
-            "detected_at": datetime.utcnow() - timedelta(days=1),
+            "detected_at": datetime.now(UTC) - timedelta(days=1),
         },
         {
             "tenant_id": test_tenant_id,
@@ -260,7 +260,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             "percentage_change": 100.0,
             "service_name": "AI",
             "is_acknowledged": False,
-            "detected_at": datetime.utcnow() - timedelta(hours=12),
+            "detected_at": datetime.now(UTC) - timedelta(hours=12),
         },
         {
             "tenant_id": test_tenant_id,
@@ -273,8 +273,8 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             "service_name": "Database",
             "is_acknowledged": True,
             "acknowledged_by": "user-123",
-            "acknowledged_at": datetime.utcnow() - timedelta(days=5),
-            "detected_at": datetime.utcnow() - timedelta(days=7),
+            "acknowledged_at": datetime.now(UTC) - timedelta(days=5),
+            "detected_at": datetime.now(UTC) - timedelta(days=7),
         },
         {
             "tenant_id": test_tenant_id,
@@ -287,8 +287,8 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             "service_name": "Networking",
             "is_acknowledged": True,
             "acknowledged_by": "user-456",
-            "acknowledged_at": datetime.utcnow() - timedelta(days=10),
-            "detected_at": datetime.utcnow() - timedelta(days=14),
+            "acknowledged_at": datetime.now(UTC) - timedelta(days=10),
+            "detected_at": datetime.now(UTC) - timedelta(days=14),
         },
     ]
 
@@ -298,7 +298,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
 
     # Create compliance snapshots
     for days_ago in range(7):
-        snapshot_date = datetime.utcnow() - timedelta(days=days_ago)
+        snapshot_date = datetime.now(UTC) - timedelta(days=days_ago)
         comp_snapshot = ComplianceSnapshot(
             tenant_id=test_tenant_id,
             subscription_id="sub-123",
@@ -308,7 +308,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             compliant_resources=85,
             non_compliant_resources=15,
             exempt_resources=5,
-            synced_at=datetime.utcnow(),
+            synced_at=datetime.now(UTC),
         )
         db_session.add(comp_snapshot)
 
@@ -342,7 +342,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             tenant_id=test_tenant_id,
             subscription_id="sub-123",
             **policy,
-            synced_at=datetime.utcnow(),
+            synced_at=datetime.now(UTC),
         )
         db_session.add(policy_state)
 
@@ -364,7 +364,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
     ]
 
     for res_data in resources:
-        resource = Resource(**res_data, synced_at=datetime.utcnow())
+        resource = Resource(**res_data, synced_at=datetime.now(UTC))
         db_session.add(resource)
 
         # Add tags
@@ -392,7 +392,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             stale_accounts_30d=2,
             stale_accounts_90d=1,
             service_principals=15,
-            synced_at=datetime.utcnow(),
+            synced_at=datetime.now(UTC),
         )
         db_session.add(identity_snapshot)
 
@@ -406,7 +406,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             "role_scope": "/",
             "is_permanent": 1,
             "mfa_enabled": 1,
-            "last_sign_in": datetime.utcnow() - timedelta(days=1),
+            "last_sign_in": datetime.now(UTC) - timedelta(days=1),
         },
         {
             "user_principal_name": "admin2@example.com",
@@ -416,7 +416,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
             "role_scope": "/",
             "is_permanent": 0,
             "mfa_enabled": 1,
-            "last_sign_in": datetime.utcnow() - timedelta(hours=12),
+            "last_sign_in": datetime.now(UTC) - timedelta(hours=12),
         },
     ]
 
@@ -424,7 +424,7 @@ def seeded_db(db_session, test_tenant_id: str, second_tenant_id: str):
         pu = PrivilegedUser(
             tenant_id=test_tenant_id,
             **pu_data,
-            synced_at=datetime.utcnow(),
+            synced_at=datetime.now(UTC),
         )
         db_session.add(pu)
 

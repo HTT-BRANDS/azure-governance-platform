@@ -4,7 +4,7 @@ Tests for the mfa_checks.py module to ensure all MFA compliance checks
 function correctly and return expected result structures.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -55,7 +55,7 @@ class TestMFATenantDataCheck:
 
             # Create stale MFA record (10 days old)
             stale_mfa = MagicMock()
-            stale_mfa.snapshot_date = datetime.utcnow() - timedelta(days=10)
+            stale_mfa.snapshot_date = datetime.now(UTC) - timedelta(days=10)
             mock_db.query.return_value.filter.return_value.order_by.return_value.first.return_value = stale_mfa
             mock_db.query.return_value.filter.return_value.count.return_value = 1
 
@@ -74,7 +74,7 @@ class TestMFATenantDataCheck:
 
             # Create fresh MFA record (1 day old)
             fresh_mfa = MagicMock()
-            fresh_mfa.snapshot_date = datetime.utcnow() - timedelta(days=1)
+            fresh_mfa.snapshot_date = datetime.now(UTC) - timedelta(days=1)
             mock_db.query.return_value.filter.return_value.order_by.return_value.first.return_value = fresh_mfa
             mock_db.query.return_value.filter.return_value.count.return_value = 5
 
@@ -406,7 +406,7 @@ class TestMFACheckFunctions:
 
             # Mock all data queries to return valid data
             mfa_record = MagicMock()
-            mfa_record.snapshot_date = datetime.utcnow() - timedelta(days=1)
+            mfa_record.snapshot_date = datetime.now(UTC) - timedelta(days=1)
             mfa_record.total_users = 100
             mfa_record.mfa_enrolled_users = 95
             mfa_record.mfa_coverage_percentage = 95.0
@@ -493,7 +493,7 @@ class TestCheckResultStructure:
 
             # Mock data for all checks
             mfa_record = MagicMock()
-            mfa_record.snapshot_date = datetime.utcnow() - timedelta(days=1)
+            mfa_record.snapshot_date = datetime.now(UTC) - timedelta(days=1)
             mfa_record.total_users = 100
             mfa_record.mfa_enrolled_users = 95
             mfa_record.mfa_coverage_percentage = 95.0

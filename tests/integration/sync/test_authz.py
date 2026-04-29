@@ -4,7 +4,7 @@ Split off from the former monolithic `tests/integration/test_sync_api.py`
 (issue 6oj7, 2026-04-22). Shared fixtures live in `./conftest.py`.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from app.core.database import get_db
 from app.main import app
@@ -25,8 +25,8 @@ class TestSyncTenantIsolation:
             job_type="costs_sync",
             tenant_id=test_tenant_id,
             status="completed",
-            started_at=datetime.utcnow() - timedelta(hours=2),
-            ended_at=datetime.utcnow() - timedelta(hours=1),
+            started_at=datetime.now(UTC) - timedelta(hours=2),
+            ended_at=datetime.now(UTC) - timedelta(hours=1),
             duration_ms=3600000,
             records_processed=150,
             errors_count=0,
@@ -35,8 +35,8 @@ class TestSyncTenantIsolation:
             job_type="costs_sync",
             tenant_id="other-tenant-999",
             status="completed",
-            started_at=datetime.utcnow() - timedelta(hours=3),
-            ended_at=datetime.utcnow() - timedelta(hours=2),
+            started_at=datetime.now(UTC) - timedelta(hours=3),
+            ended_at=datetime.now(UTC) - timedelta(hours=2),
             duration_ms=3600000,
             records_processed=100,
             errors_count=0,
@@ -63,7 +63,7 @@ class TestSyncTenantIsolation:
 
         metric = SyncJobMetrics(
             job_type="costs_sync",
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=100,
             successful_runs=95,
             failed_runs=5,
@@ -99,7 +99,7 @@ class TestSyncTenantIsolation:
             title="Accessible Alert",
             message="Test alert",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         alert2 = Alert(
             alert_type="long_duration",
@@ -109,7 +109,7 @@ class TestSyncTenantIsolation:
             title="Inaccessible Alert",
             message="Test alert",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         db.add_all([alert1, alert2])
         db.commit()
@@ -152,7 +152,7 @@ class TestSyncAdminAccess:
 
         metric1 = SyncJobMetrics(
             job_type="costs_sync",
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=100,
             successful_runs=95,
             failed_runs=5,
@@ -166,7 +166,7 @@ class TestSyncAdminAccess:
         )
         metric2 = SyncJobMetrics(
             job_type="compliance_sync",
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=50,
             successful_runs=48,
             failed_runs=2,

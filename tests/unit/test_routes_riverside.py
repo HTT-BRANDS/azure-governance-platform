@@ -12,7 +12,7 @@ Tests all Riverside endpoints with FastAPI TestClient:
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -46,7 +46,7 @@ def test_db_session(db_session):
         can_manage_resources=True,
         can_manage_compliance=True,
         granted_by="test",
-        granted_at=datetime.utcnow(),
+        granted_at=datetime.now(UTC),
     )
     db_session.add(user_tenant)
     db_session.commit()

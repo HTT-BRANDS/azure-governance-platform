@@ -4,7 +4,7 @@ Tests for the admin_risk_checks.py module to ensure all checks
 function correctly and return expected result structures.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -231,7 +231,7 @@ class TestInactiveAdminCheck:
             mock_user.user_principal_name = "inactive@example.com"
             mock_user.display_name = "Inactive Admin"
             mock_user.role_name = "User Administrator"
-            mock_user.last_sign_in = datetime.utcnow() - timedelta(days=100)
+            mock_user.last_sign_in = datetime.now(UTC) - timedelta(days=100)
             mock_user.mfa_enabled = 1
 
             mock_query = MagicMock()
@@ -303,7 +303,7 @@ class TestSharedAdminCheck:
             mock_user.role_name = "User Administrator"
             mock_user.tenant_id = "tenant-1"
             mock_user.mfa_enabled = 1
-            mock_user.last_sign_in = datetime.utcnow()
+            mock_user.last_sign_in = datetime.now(UTC)
 
             mock_query = MagicMock()
             mock_db.query.return_value = mock_query
@@ -329,7 +329,7 @@ class TestSharedAdminCheck:
             mock_user.role_name = "Backup Reader"
             mock_user.tenant_id = "tenant-1"
             mock_user.mfa_enabled = 0
-            mock_user.last_sign_in = datetime.utcnow()
+            mock_user.last_sign_in = datetime.now(UTC)
 
             mock_query = MagicMock()
             mock_db.query.return_value = mock_query
@@ -391,7 +391,7 @@ class TestAdminComplianceGapCheck:
                 mock_user.display_name = f"Admin {i}"
                 mock_user.role_name = "Reader"
                 mock_user.mfa_enabled = 1
-                mock_user.last_sign_in = datetime.utcnow() - timedelta(days=10)
+                mock_user.last_sign_in = datetime.now(UTC) - timedelta(days=10)
                 mock_user.tenant_id = "tenant-1"
                 mock_users.append(mock_user)
 
@@ -420,7 +420,7 @@ class TestAdminComplianceGapCheck:
                 mock_user.display_name = f"Admin {i}"
                 mock_user.role_name = f"Role {i}"
                 mock_user.mfa_enabled = 0
-                mock_user.last_sign_in = datetime.utcnow() - timedelta(days=100)
+                mock_user.last_sign_in = datetime.now(UTC) - timedelta(days=100)
                 mock_user.tenant_id = "tenant-1"
                 mock_users.append(mock_user)
 

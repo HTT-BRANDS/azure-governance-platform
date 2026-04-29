@@ -18,7 +18,7 @@ except ImportError:
     raise  # Re-raise the error since Azure SDK should be installed
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -331,7 +331,7 @@ def sample_users():
             "userPrincipalName": "test@example.com",
             "userType": "Member",
             "signInActivity": {
-                "lastSignInDateTime": (datetime.utcnow() - timedelta(days=5)).isoformat() + "Z"
+                "lastSignInDateTime": (datetime.now(UTC) - timedelta(days=5)).isoformat() + "Z"
             },
         },
         {
@@ -340,7 +340,7 @@ def sample_users():
             "userPrincipalName": "guest@example.com",
             "userType": "Guest",
             "signInActivity": {
-                "lastSignInDateTime": (datetime.utcnow() - timedelta(days=60)).isoformat() + "Z"
+                "lastSignInDateTime": (datetime.now(UTC) - timedelta(days=60)).isoformat() + "Z"
             },
         },
     ]

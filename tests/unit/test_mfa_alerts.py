@@ -4,7 +4,7 @@ Tests the MFAGapDetector class and related functions for detecting
 MFA enrollment gaps and triggering notifications across Riverside tenants.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 from sqlalchemy.orm import Session
@@ -28,7 +28,7 @@ class TestMFAComplianceStatus:
 
     def test_compliance_status_creation(self):
         """Test creating MFAComplianceStatus with default compliance."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         status = MFAComplianceStatus(
             tenant_id="HTT",
             user_mfa_percentage=96.0,
@@ -49,7 +49,7 @@ class TestMFAComplianceStatus:
 
     def test_compliance_status_below_thresholds(self):
         """Test compliance status below thresholds."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         status = MFAComplianceStatus(
             tenant_id="BCC",
             user_mfa_percentage=90.0,
@@ -67,7 +67,7 @@ class TestMFAComplianceStatus:
 
     def test_compliance_status_edge_cases(self):
         """Test compliance at exact thresholds."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Exactly at user threshold
         status = MFAComplianceStatus(
@@ -151,7 +151,7 @@ class TestMFAGapDetectorDetectGaps:
         mock_record.mfa_enrolled_users = 96
         mock_record.admin_accounts_total = 5
         mock_record.admin_accounts_mfa = 5
-        mock_record.snapshot_date = datetime.utcnow()
+        mock_record.snapshot_date = datetime.now(UTC)
 
         mock_session.query.return_value.filter.return_value.group_by.return_value.subquery.return_value = MagicMock()
         mock_session.query.return_value.join.return_value.all.return_value = [mock_record]
@@ -180,7 +180,7 @@ class TestMFAGapDetectorDetectGaps:
         mock_record.mfa_enrolled_users = 90
         mock_record.admin_accounts_total = 5
         mock_record.admin_accounts_mfa = 4
-        mock_record.snapshot_date = datetime.utcnow()
+        mock_record.snapshot_date = datetime.now(UTC)
 
         mock_session.query.return_value.filter.return_value.group_by.return_value.subquery.return_value = MagicMock()
         mock_session.query.return_value.join.return_value.all.return_value = [mock_record]
@@ -212,7 +212,7 @@ class TestMFAGapDetectorDetectGaps:
         compliant_record.mfa_enrolled_users = 96
         compliant_record.admin_accounts_total = 5
         compliant_record.admin_accounts_mfa = 5
-        compliant_record.snapshot_date = datetime.utcnow()
+        compliant_record.snapshot_date = datetime.now(UTC)
 
         non_compliant_record = MagicMock()
         non_compliant_record.tenant_id = "DCE"
@@ -222,7 +222,7 @@ class TestMFAGapDetectorDetectGaps:
         non_compliant_record.mfa_enrolled_users = 46
         non_compliant_record.admin_accounts_total = 3
         non_compliant_record.admin_accounts_mfa = 3
-        non_compliant_record.snapshot_date = datetime.utcnow()
+        non_compliant_record.snapshot_date = datetime.now(UTC)
 
         mock_session.query.return_value.filter.return_value.group_by.return_value.subquery.return_value = MagicMock()
         mock_session.query.return_value.join.return_value.all.return_value = [
@@ -271,7 +271,7 @@ class TestMFAGapDetectorCheckAdminCompliance:
         user_gap_record.mfa_enrolled_users = 90
         user_gap_record.admin_accounts_total = 5
         user_gap_record.admin_accounts_mfa = 5
-        user_gap_record.snapshot_date = datetime.utcnow()
+        user_gap_record.snapshot_date = datetime.now(UTC)
 
         # Record with admin gap
         admin_gap_record = MagicMock()
@@ -282,7 +282,7 @@ class TestMFAGapDetectorCheckAdminCompliance:
         admin_gap_record.mfa_enrolled_users = 96
         admin_gap_record.admin_accounts_total = 5
         admin_gap_record.admin_accounts_mfa = 4
-        admin_gap_record.snapshot_date = datetime.utcnow()
+        admin_gap_record.snapshot_date = datetime.now(UTC)
 
         mock_session.query.return_value.filter.return_value.group_by.return_value.subquery.return_value = MagicMock()
         mock_session.query.return_value.join.return_value.all.return_value = [
@@ -320,7 +320,7 @@ class TestMFAGapDetectorCheckUserCompliance:
         user_gap_record.mfa_enrolled_users = 90
         user_gap_record.admin_accounts_total = 5
         user_gap_record.admin_accounts_mfa = 5
-        user_gap_record.snapshot_date = datetime.utcnow()
+        user_gap_record.snapshot_date = datetime.now(UTC)
 
         # Record with only admin gap
         admin_gap_record = MagicMock()
@@ -331,7 +331,7 @@ class TestMFAGapDetectorCheckUserCompliance:
         admin_gap_record.mfa_enrolled_users = 96
         admin_gap_record.admin_accounts_total = 3
         admin_gap_record.admin_accounts_mfa = 2
-        admin_gap_record.snapshot_date = datetime.utcnow()
+        admin_gap_record.snapshot_date = datetime.now(UTC)
 
         mock_session.query.return_value.filter.return_value.group_by.return_value.subquery.return_value = MagicMock()
         mock_session.query.return_value.join.return_value.all.return_value = [
@@ -358,7 +358,7 @@ class TestMFAGapDetectorTriggerAlert:
         mock_should_notify.return_value = True
         mock_send.return_value = {"success": True}
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         status = MFAComplianceStatus(
             tenant_id="HTT",
             user_mfa_percentage=96.0,
@@ -389,7 +389,7 @@ class TestMFAGapDetectorTriggerAlert:
         mock_should_notify.return_value = True
         mock_send.return_value = {"success": True}
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         status = MFAComplianceStatus(
             tenant_id="BCC",
             user_mfa_percentage=90.0,
@@ -418,7 +418,7 @@ class TestMFAGapDetectorTriggerAlert:
         """Test alert respects cooldown period."""
         mock_should_notify.return_value = False
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         status = MFAComplianceStatus(
             tenant_id="FN",
             user_mfa_percentage=90.0,
@@ -445,7 +445,7 @@ class TestMFAGapDetectorTriggerAlert:
         mock_should_notify.return_value = False  # Would normally block
         mock_send.return_value = {"success": True}
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         status = MFAComplianceStatus(
             tenant_id="TLL",
             user_mfa_percentage=90.0,
@@ -492,7 +492,7 @@ class TestMFAGapDetectorCheckAndAlert:
         mock_record.mfa_enrolled_users = 90
         mock_record.admin_accounts_total = 5
         mock_record.admin_accounts_mfa = 5
-        mock_record.snapshot_date = datetime.utcnow()
+        mock_record.snapshot_date = datetime.now(UTC)
 
         mock_session.query.return_value.filter.return_value.group_by.return_value.subquery.return_value = MagicMock()
         mock_session.query.return_value.join.return_value.all.return_value = [mock_record]
@@ -570,7 +570,7 @@ class TestConvenienceFunctions:
         mock_detector.trigger_alert = mock_trigger
         mock_detector_class.return_value = mock_detector
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         status = MFAComplianceStatus(
             tenant_id="DCE",
             user_mfa_percentage=90.0,

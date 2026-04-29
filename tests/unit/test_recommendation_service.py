@@ -10,7 +10,7 @@ Minimum 8 tests covering all public methods and edge cases.
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
@@ -78,8 +78,8 @@ class TestRecommendationService:
             rec.recommended_state = json.dumps({"size": "Standard_D2s_v3"})
             rec.implementation_effort = "Medium"
             rec.is_dismissed = 0 if i < 10 else 1  # Last 2 are dismissed
-            rec.created_at = datetime.utcnow() - timedelta(days=i)
-            rec.updated_at = datetime.utcnow() - timedelta(days=i)
+            rec.created_at = datetime.now(UTC) - timedelta(days=i)
+            rec.updated_at = datetime.now(UTC) - timedelta(days=i)
             recommendations.append(rec)
 
         return recommendations

@@ -7,7 +7,7 @@ Tests CSV export endpoints:
 """
 
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -40,7 +40,7 @@ def test_db_session(db_session):
         can_manage_resources=True,
         can_manage_compliance=True,
         granted_by="test",
-        granted_at=datetime.utcnow(),
+        granted_at=datetime.now(UTC),
     )
     db_session.add(user_tenant)
 
@@ -154,7 +154,7 @@ def test_export_resources_success(authed_client):
             is_orphaned=False,
             estimated_monthly_cost=150.00,
             tags={"Environment": "Production", "Owner": "DevOps"},
-            last_synced=datetime.utcnow(),
+            last_synced=datetime.now(UTC),
         ),
         MagicMock(
             id="res-2",
@@ -171,7 +171,7 @@ def test_export_resources_success(authed_client):
             is_orphaned=False,
             estimated_monthly_cost=500.00,
             tags={},
-            last_synced=datetime.utcnow(),
+            last_synced=datetime.now(UTC),
         ),
     ]
 

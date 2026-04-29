@@ -12,7 +12,7 @@ Tests all DMARC endpoints with FastAPI TestClient:
 """
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -37,7 +37,7 @@ def test_db_session(db_session):
         adkim="r",
         aspf="r",
         is_valid=True,
-        synced_at=datetime.utcnow(),
+        synced_at=datetime.now(UTC),
     )
     db_session.add(dmarc_record)
 
@@ -50,8 +50,8 @@ def test_db_session(db_session):
         key_size=2048,
         key_type="rsa",
         is_aligned=True,
-        last_rotated=datetime.utcnow() - timedelta(days=90),
-        synced_at=datetime.utcnow(),
+        last_rotated=datetime.now(UTC) - timedelta(days=90),
+        synced_at=datetime.now(UTC),
     )
     db_session.add(dkim_record)
 
@@ -63,7 +63,7 @@ def test_db_session(db_session):
         domain="example.com",
         message="DMARC policy changed from reject to quarantine",
         is_acknowledged=False,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     db_session.add(alert)
 
@@ -122,7 +122,7 @@ def mock_dmarc_service():
     ack_result.id = "alert-123"
     ack_result.is_acknowledged = True
     ack_result.acknowledged_by = "admin@example.com"
-    ack_result.acknowledged_at = datetime.utcnow()
+    ack_result.acknowledged_at = datetime.now(UTC)
     service.acknowledge_alert = AsyncMock(return_value=ack_result)
 
     service.sync_dmarc_records = AsyncMock(return_value=[{"domain": "example.com"}])

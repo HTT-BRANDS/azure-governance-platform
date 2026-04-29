@@ -10,7 +10,7 @@ Tests recommendation endpoints:
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -53,7 +53,7 @@ def test_db_session(db_session):
         can_manage_resources=True,
         can_manage_compliance=True,
         granted_by="test",
-        granted_at=datetime.utcnow(),
+        granted_at=datetime.now(UTC),
     )
     db_session.add(user_tenant)
 
@@ -98,7 +98,7 @@ def mock_recommendations():
     The route has response_model=list[Recommendation], so mock data
     MUST match the schema — MagicMock attributes won't cut it.
     """
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     return [
         Recommendation(
             id=1,
@@ -193,7 +193,7 @@ def test_get_recommendations_by_category(authed_client):
 
     NOTE: get_recommendations_by_category is SYNC (route does NOT await it).
     """
-    datetime.utcnow()
+    datetime.now(UTC)
     mock_by_category = [
         RecommendationsByCategory(
             category=RecommendationCategory.COST_OPTIMIZATION,
@@ -289,7 +289,7 @@ def test_dismiss_recommendation_success(authed_client):
     mock_response = DismissRecommendationResponse(
         success=True,
         recommendation_id=recommendation_id,
-        dismissed_at=datetime.utcnow(),
+        dismissed_at=datetime.now(UTC),
     )
 
     with patch("app.api.routes.recommendations.RecommendationService") as MockService:

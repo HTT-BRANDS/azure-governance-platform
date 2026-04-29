@@ -60,7 +60,7 @@ def test_db_session(db_session):
         can_manage_resources=True,
         can_manage_compliance=True,
         granted_by="test",
-        granted_at=datetime.utcnow(),
+        granted_at=datetime.now(UTC),
     )
     db_session.add(user_tenant)
 
@@ -187,7 +187,7 @@ def mock_services():
                 job_type="costs",
                 tenant_id="dashboard-tenant-123",
                 status="completed",
-                started_at=datetime.utcnow(),
+                started_at=datetime.now(UTC),
                 duration_ms=5000,
             ),
         ]

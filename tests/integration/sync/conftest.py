@@ -9,7 +9,7 @@ Split from the former monolithic tests/integration/test_sync_api.py
 to the original versions.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -134,7 +134,7 @@ def db_with_monitoring_data(seeded_db, test_tenant_id, second_tenant_id):
         status = statuses[i % len(statuses)]
         tenant_id = test_tenant_id if i % 2 == 0 else second_tenant_id
 
-        started_at = datetime.utcnow() - timedelta(days=days_ago, hours=i)
+        started_at = datetime.now(UTC) - timedelta(days=days_ago, hours=i)
         ended_at = started_at + timedelta(minutes=15) if status != "running" else None
         duration_ms = 900000 if status != "running" else None
 
@@ -155,7 +155,7 @@ def db_with_monitoring_data(seeded_db, test_tenant_id, second_tenant_id):
     for job_type in job_types:
         metric = SyncJobMetrics(
             job_type=job_type,
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=50,
             successful_runs=45,
             failed_runs=5,
@@ -166,9 +166,9 @@ def db_with_monitoring_data(seeded_db, test_tenant_id, second_tenant_id):
             avg_records_processed=150,
             total_records_processed=7500,
             total_errors=10,
-            last_run_at=datetime.utcnow() - timedelta(hours=1),
-            last_success_at=datetime.utcnow() - timedelta(hours=1),
-            last_failure_at=datetime.utcnow() - timedelta(days=1),
+            last_run_at=datetime.now(UTC) - timedelta(hours=1),
+            last_success_at=datetime.now(UTC) - timedelta(hours=1),
+            last_failure_at=datetime.now(UTC) - timedelta(days=1),
             last_error_message="Previous error",
         )
         seeded_db.add(metric)
@@ -192,8 +192,8 @@ def db_with_monitoring_data(seeded_db, test_tenant_id, second_tenant_id):
             title=f"Alert {i}: {alert_type}",
             message=f"Test alert message for {job_type}",
             is_resolved=is_resolved,
-            created_at=datetime.utcnow() - timedelta(days=i),
-            resolved_at=datetime.utcnow() - timedelta(days=i - 1) if is_resolved else None,
+            created_at=datetime.now(UTC) - timedelta(days=i),
+            resolved_at=datetime.now(UTC) - timedelta(days=i - 1) if is_resolved else None,
             resolved_by="user-123" if is_resolved else None,
         )
         seeded_db.add(alert)

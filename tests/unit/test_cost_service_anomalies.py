@@ -10,7 +10,7 @@ Tests for anomaly detection, acknowledgment, and grouping.
 """
 
 import sys
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -64,7 +64,7 @@ class TestCostServiceAnomalies:
             anomaly.id = i + 1
             anomaly.tenant_id = "tenant-1"
             anomaly.subscription_id = "sub-1"
-            anomaly.detected_at = datetime.utcnow() - timedelta(days=i)
+            anomaly.detected_at = datetime.now(UTC) - timedelta(days=i)
             anomaly.anomaly_type = "spike"
             anomaly.description = f"Cost spike detected {i}"
             anomaly.expected_cost = 100.0
@@ -73,7 +73,7 @@ class TestCostServiceAnomalies:
             anomaly.service_name = "Compute" if i % 2 == 0 else "Storage"
             anomaly.is_acknowledged = i < 2  # First 2 are acknowledged
             anomaly.acknowledged_by = "admin@test.com" if i < 2 else None
-            anomaly.acknowledged_at = datetime.utcnow() if i < 2 else None
+            anomaly.acknowledged_at = datetime.now(UTC) if i < 2 else None
             anomalies.append(anomaly)
         return anomalies
 

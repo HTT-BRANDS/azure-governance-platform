@@ -11,7 +11,7 @@ with summary statistics and error handling.
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from app.preflight.models import (
     CheckCategory,
@@ -47,8 +47,8 @@ class TestJSONReportGeneration:
         report = PreflightReport(
             id="test-run",
             results=results,
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow() + timedelta(seconds=5),
+            started_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC) + timedelta(seconds=5),
             categories_requested=[CheckCategory.AZURE_SECURITY, CheckCategory.MFA_COMPLIANCE],
             fail_fast=False,
         )
@@ -108,8 +108,8 @@ class TestJSONReportGeneration:
         report = PreflightReport(
             id="test-run",
             results=results,
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC),
             categories_requested=[],
             fail_fast=False,
         )
@@ -140,8 +140,8 @@ class TestJSONReportGeneration:
         report = PreflightReport(
             id="test-run",
             results=[result],
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC),
             categories_requested=[],
             fail_fast=False,
         )
@@ -179,8 +179,8 @@ class TestMarkdownReportGeneration:
         report = PreflightReport(
             id="test-run",
             results=results,
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC),
             categories_requested=[CheckCategory.AZURE_SECURITY],
             fail_fast=False,
         )
@@ -215,8 +215,8 @@ class TestMarkdownReportGeneration:
         report = PreflightReport(
             id="test-run",
             results=results,
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC),
             categories_requested=[],
             fail_fast=False,
         )
@@ -274,8 +274,8 @@ class TestSummaryCalculation:
         report = PreflightReport(
             id="test-run",
             results=results,
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow() + timedelta(seconds=10),
+            started_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC) + timedelta(seconds=10),
             categories_requested=[],
             fail_fast=False,
         )
@@ -298,8 +298,8 @@ class TestEmptyResults:
         report = PreflightReport(
             id="empty-run",
             results=[],
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC),
             categories_requested=[],
             fail_fast=False,
         )
@@ -318,8 +318,8 @@ class TestEmptyResults:
         report = PreflightReport(
             id="empty-run",
             results=[],
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
+            completed_at=datetime.now(UTC),
             categories_requested=[],
             fail_fast=False,
         )

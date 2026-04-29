@@ -10,7 +10,7 @@ Tests monitoring endpoints:
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 import pytest
@@ -43,7 +43,7 @@ def test_db_session(db_session):
         can_manage_resources=True,
         can_manage_compliance=True,
         granted_by="test",
-        granted_at=datetime.utcnow(),
+        granted_at=datetime.now(UTC),
     )
     db_session.add(user_tenant)
 
@@ -140,7 +140,7 @@ def test_get_sync_job_metrics_all_jobs(authed_client):
             "tenant_id": "test-tenant-123",
             "duration_seconds": 15.2,
             "status": "completed",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
         {
             "job_id": "sync-2",
@@ -148,7 +148,7 @@ def test_get_sync_job_metrics_all_jobs(authed_client):
             "tenant_id": "test-tenant-123",
             "duration_seconds": 8.7,
             "status": "completed",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
     ]
 
@@ -196,14 +196,14 @@ def test_get_query_metrics_all(authed_client):
             "query_type": "SELECT",
             "duration_ms": 25.5,
             "slow": False,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
         {
             "query_id": "q-2",
             "query_type": "JOIN",
             "duration_ms": 250.8,
             "slow": True,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
     ]
 

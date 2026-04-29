@@ -1,6 +1,6 @@
 """Unit tests for ComplianceService."""
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
@@ -208,8 +208,8 @@ class TestComplianceServiceGetComplianceSummary:
         snapshot.compliant_resources = compliant
         snapshot.non_compliant_resources = non_compliant
         snapshot.exempt_resources = exempt
-        snapshot.snapshot_date = datetime.utcnow().date()
-        snapshot.synced_at = datetime.utcnow()
+        snapshot.snapshot_date = datetime.now(UTC).date()
+        snapshot.synced_at = datetime.now(UTC)
         return snapshot
 
     @pytest.mark.asyncio
@@ -430,7 +430,7 @@ class TestComplianceServiceGetScoresByTenant:
         snapshot.compliant_resources = 100
         snapshot.non_compliant_resources = 10
         snapshot.exempt_resources = 5
-        snapshot.synced_at = datetime.utcnow()
+        snapshot.synced_at = datetime.now(UTC)
         return snapshot
 
     @pytest.mark.asyncio

@@ -12,7 +12,7 @@ Covered endpoints:
 - GET /api/v1/resources/tagging - Tagging compliance
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -40,7 +40,7 @@ def seeded_resource_db(seeded_db, test_tenant_id: str, second_tenant_id: str):
             "resource_id": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-0",
             "tenant_id": test_tenant_id,
             "subscription_id": "sub-123",
-            "detected_at": datetime.utcnow() - timedelta(days=7),
+            "detected_at": datetime.now(UTC) - timedelta(days=7),
             "idle_type": "low_cpu",
             "description": "VM with CPU utilization < 5% for 7 days",
             "estimated_monthly_savings": 150.00,
@@ -51,7 +51,7 @@ def seeded_resource_db(seeded_db, test_tenant_id: str, second_tenant_id: str):
             "resource_id": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1",
             "tenant_id": test_tenant_id,
             "subscription_id": "sub-123",
-            "detected_at": datetime.utcnow() - timedelta(days=14),
+            "detected_at": datetime.now(UTC) - timedelta(days=14),
             "idle_type": "no_connections",
             "description": "VM with no connections for 14 days",
             "estimated_monthly_savings": 75.50,
@@ -62,7 +62,7 @@ def seeded_resource_db(seeded_db, test_tenant_id: str, second_tenant_id: str):
             "resource_id": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-2",
             "tenant_id": test_tenant_id,
             "subscription_id": "sub-123",
-            "detected_at": datetime.utcnow() - timedelta(days=30),
+            "detected_at": datetime.now(UTC) - timedelta(days=30),
             "idle_type": "unused_disk",
             "description": "Unattached disk for 30 days",
             "estimated_monthly_savings": 25.00,
@@ -73,28 +73,28 @@ def seeded_resource_db(seeded_db, test_tenant_id: str, second_tenant_id: str):
             "resource_id": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-3",
             "tenant_id": test_tenant_id,
             "subscription_id": "sub-123",
-            "detected_at": datetime.utcnow() - timedelta(days=10),
+            "detected_at": datetime.now(UTC) - timedelta(days=10),
             "idle_type": "low_cpu",
             "description": "VM with low CPU (reviewed)",
             "estimated_monthly_savings": 100.00,
             "idle_days": 10,
             "is_reviewed": 1,
             "reviewed_by": "user-123",
-            "reviewed_at": datetime.utcnow() - timedelta(days=2),
+            "reviewed_at": datetime.now(UTC) - timedelta(days=2),
             "review_notes": "Keeping for backup purposes",
         },
         {
             "resource_id": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-4",
             "tenant_id": test_tenant_id,
             "subscription_id": "sub-123",
-            "detected_at": datetime.utcnow() - timedelta(days=5),
+            "detected_at": datetime.now(UTC) - timedelta(days=5),
             "idle_type": "no_connections",
             "description": "VM with no connections (reviewed)",
             "estimated_monthly_savings": 50.00,
             "idle_days": 5,
             "is_reviewed": 1,
             "reviewed_by": "user-456",
-            "reviewed_at": datetime.utcnow() - timedelta(days=1),
+            "reviewed_at": datetime.now(UTC) - timedelta(days=1),
             "review_notes": "Archival storage, keep",
         },
     ]

@@ -10,7 +10,7 @@ Tests preflight endpoints:
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -44,7 +44,7 @@ def test_db_session(db_session):
         can_manage_resources=True,
         can_manage_compliance=True,
         granted_by="test",
-        granted_at=datetime.utcnow(),
+        granted_at=datetime.now(UTC),
     )
     db_session.add(user_tenant)
     db_session.commit()
@@ -95,8 +95,8 @@ def mock_preflight_report():
     """Mock preflight report matching current PreflightReport schema."""
     return PreflightReport(
         id=str(uuid.uuid4()),
-        started_at=datetime.utcnow(),
-        completed_at=datetime.utcnow(),
+        started_at=datetime.now(UTC),
+        completed_at=datetime.now(UTC),
         duration_seconds=15.5,
         total_checks=10,
         passed_count=8,

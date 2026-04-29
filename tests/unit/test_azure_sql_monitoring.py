@@ -11,7 +11,7 @@ Covers:
 Phase B.2 of the test coverage sprint.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 from app.core.azure_sql_monitoring import (
@@ -452,7 +452,7 @@ class TestGetFullReport:
                 overflow=0,
                 utilization_percent=40.0,
                 wait_count=None,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
             report = monitor.get_full_report()
 

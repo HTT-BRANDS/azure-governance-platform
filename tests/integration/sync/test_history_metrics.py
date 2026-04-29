@@ -4,7 +4,7 @@ Split off from the former monolithic `tests/integration/test_sync_api.py`
 (issue 6oj7, 2026-04-22). Shared fixtures live in `./conftest.py`.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from app.core.database import get_db
 from app.main import app
@@ -27,8 +27,8 @@ class TestSyncHistoryEndpoint:
             job_type="costs_sync",
             tenant_id="test-tenant-123",
             status="completed",
-            started_at=datetime.utcnow() - timedelta(hours=2),
-            ended_at=datetime.utcnow() - timedelta(hours=1),
+            started_at=datetime.now(UTC) - timedelta(hours=2),
+            ended_at=datetime.now(UTC) - timedelta(hours=1),
             duration_ms=3600000,
             records_processed=150,
             errors_count=0,
@@ -74,8 +74,8 @@ class TestSyncHistoryEndpoint:
             job_type="costs_sync",
             tenant_id="test-tenant-123",
             status="completed",
-            started_at=datetime.utcnow() - timedelta(hours=2),
-            ended_at=datetime.utcnow() - timedelta(hours=1),
+            started_at=datetime.now(UTC) - timedelta(hours=2),
+            ended_at=datetime.now(UTC) - timedelta(hours=1),
             duration_ms=3600000,
             records_processed=150,
             errors_count=0,
@@ -84,8 +84,8 @@ class TestSyncHistoryEndpoint:
             job_type="compliance_sync",
             tenant_id="test-tenant-123",
             status="completed",
-            started_at=datetime.utcnow() - timedelta(hours=3),
-            ended_at=datetime.utcnow() - timedelta(hours=2),
+            started_at=datetime.now(UTC) - timedelta(hours=3),
+            ended_at=datetime.now(UTC) - timedelta(hours=2),
             duration_ms=3600000,
             records_processed=100,
             errors_count=0,
@@ -112,8 +112,8 @@ class TestSyncHistoryEndpoint:
                 job_type="costs_sync",
                 tenant_id="test-tenant-123",
                 status="completed",
-                started_at=datetime.utcnow() - timedelta(hours=i + 1),
-                ended_at=datetime.utcnow() - timedelta(hours=i),
+                started_at=datetime.now(UTC) - timedelta(hours=i + 1),
+                ended_at=datetime.now(UTC) - timedelta(hours=i),
                 duration_ms=3600000,
                 records_processed=100,
                 errors_count=0,
@@ -148,8 +148,8 @@ class TestSyncHistoryEndpoint:
             job_type="costs_sync",
             tenant_id=test_tenant_id,
             status="completed",
-            started_at=datetime.utcnow() - timedelta(hours=2),
-            ended_at=datetime.utcnow() - timedelta(hours=1),
+            started_at=datetime.now(UTC) - timedelta(hours=2),
+            ended_at=datetime.now(UTC) - timedelta(hours=1),
             duration_ms=3600000,
             records_processed=150,
             errors_count=0,
@@ -158,8 +158,8 @@ class TestSyncHistoryEndpoint:
             job_type="costs_sync",
             tenant_id="other-tenant-999",
             status="completed",
-            started_at=datetime.utcnow() - timedelta(hours=3),
-            ended_at=datetime.utcnow() - timedelta(hours=2),
+            started_at=datetime.now(UTC) - timedelta(hours=3),
+            ended_at=datetime.now(UTC) - timedelta(hours=2),
             duration_ms=3600000,
             records_processed=100,
             errors_count=0,
@@ -198,7 +198,7 @@ class TestSyncMetricsEndpoint:
 
         metric = SyncJobMetrics(
             job_type="costs_sync",
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=100,
             successful_runs=95,
             failed_runs=5,
@@ -209,9 +209,9 @@ class TestSyncMetricsEndpoint:
             avg_records_processed=200,
             total_records_processed=20000,
             total_errors=5,
-            last_run_at=datetime.utcnow() - timedelta(hours=1),
-            last_success_at=datetime.utcnow() - timedelta(hours=1),
-            last_failure_at=datetime.utcnow() - timedelta(days=1),
+            last_run_at=datetime.now(UTC) - timedelta(hours=1),
+            last_success_at=datetime.now(UTC) - timedelta(hours=1),
+            last_failure_at=datetime.now(UTC) - timedelta(days=1),
             last_error_message="Previous error",
         )
         db.add(metric)
@@ -262,7 +262,7 @@ class TestSyncMetricsEndpoint:
 
         metric1 = SyncJobMetrics(
             job_type="costs_sync",
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=100,
             successful_runs=95,
             failed_runs=5,
@@ -276,7 +276,7 @@ class TestSyncMetricsEndpoint:
         )
         metric2 = SyncJobMetrics(
             job_type="compliance_sync",
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=50,
             successful_runs=48,
             failed_runs=2,
@@ -307,7 +307,7 @@ class TestSyncMetricsEndpoint:
 
         metric1 = SyncJobMetrics(
             job_type="costs_sync",
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=100,
             successful_runs=95,
             failed_runs=5,
@@ -321,7 +321,7 @@ class TestSyncMetricsEndpoint:
         )
         metric2 = SyncJobMetrics(
             job_type="compliance_sync",
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=50,
             successful_runs=48,
             failed_runs=2,

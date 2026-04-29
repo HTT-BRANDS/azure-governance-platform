@@ -7,6 +7,7 @@ This is a CRITICAL security test suite - any failure here indicates
 a potential security vulnerability in the tenant isolation layer.
 """
 
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -381,7 +382,6 @@ class TestCrossTenantWritePrevention:
         in another tenant, they cannot acknowledge it.
         """
         # First, create an anomaly in tenant 2 that tenant 1 user shouldn't access
-        from datetime import datetime
 
         from app.models.cost import CostAnomaly
 
@@ -395,7 +395,7 @@ class TestCrossTenantWritePrevention:
             percentage_change=100.0,
             service_name="Compute",
             is_acknowledged=False,
-            detected_at=datetime.utcnow(),
+            detected_at=datetime.now(UTC),
         )
         seeded_db.add(anomaly)
         seeded_db.commit()
@@ -417,7 +417,6 @@ class TestCrossTenantWritePrevention:
         If a user tries to bulk-acknowledge anomalies including ones from
         unauthorized tenants, those should be filtered out or result in error.
         """
-        from datetime import datetime
 
         from app.models.cost import CostAnomaly
 
@@ -432,7 +431,7 @@ class TestCrossTenantWritePrevention:
             percentage_change=100.0,
             service_name="Compute",
             is_acknowledged=False,
-            detected_at=datetime.utcnow(),
+            detected_at=datetime.now(UTC),
         )
         anomaly2 = CostAnomaly(
             tenant_id=second_tenant_id,
@@ -444,7 +443,7 @@ class TestCrossTenantWritePrevention:
             percentage_change=100.0,
             service_name="Storage",
             is_acknowledged=False,
-            detected_at=datetime.utcnow(),
+            detected_at=datetime.now(UTC),
         )
         seeded_db.add_all([anomaly1, anomaly2])
         seeded_db.commit()

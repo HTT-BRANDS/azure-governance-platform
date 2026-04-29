@@ -4,7 +4,7 @@ Split off from the former monolithic `tests/integration/test_sync_api.py`
 (issue 6oj7, 2026-04-22). Shared fixtures live in `./conftest.py`.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from app.core.database import get_db
 from app.main import app
@@ -29,7 +29,7 @@ class TestSyncAlertsEndpoint:
             title="High Failure Rate",
             message="Sync job failure rate exceeded threshold",
             is_resolved=False,
-            created_at=datetime.utcnow() - timedelta(hours=2),
+            created_at=datetime.now(UTC) - timedelta(hours=2),
         )
         db.add(alert)
         db.commit()
@@ -77,7 +77,7 @@ class TestSyncAlertsEndpoint:
             title="Costs Alert",
             message="Test alert",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         alert2 = Alert(
             alert_type="long_duration",
@@ -87,7 +87,7 @@ class TestSyncAlertsEndpoint:
             title="Compliance Alert",
             message="Test alert",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         db.add_all([alert1, alert2])
         db.commit()
@@ -114,7 +114,7 @@ class TestSyncAlertsEndpoint:
             title="Critical Alert",
             message="Test alert",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         alert2 = Alert(
             alert_type="long_duration",
@@ -124,7 +124,7 @@ class TestSyncAlertsEndpoint:
             title="Warning Alert",
             message="Test alert",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         db.add_all([alert1, alert2])
         db.commit()
@@ -157,7 +157,7 @@ class TestSyncAlertsEndpoint:
             title="Active Alert",
             message="Test alert",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         alert2 = Alert(
             alert_type="long_duration",
@@ -167,8 +167,8 @@ class TestSyncAlertsEndpoint:
             title="Resolved Alert",
             message="Test alert",
             is_resolved=True,
-            created_at=datetime.utcnow() - timedelta(hours=5),
-            resolved_at=datetime.utcnow() - timedelta(hours=1),
+            created_at=datetime.now(UTC) - timedelta(hours=5),
+            resolved_at=datetime.now(UTC) - timedelta(hours=1),
             resolved_by="user-123",
         )
         db.add_all([alert1, alert2])
@@ -200,7 +200,7 @@ class TestSyncAlertsEndpoint:
             title="Accessible Alert",
             message="Test alert",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         alert2 = Alert(
             alert_type="long_duration",
@@ -210,7 +210,7 @@ class TestSyncAlertsEndpoint:
             title="Inaccessible Alert",
             message="Test alert",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         db.add_all([alert1, alert2])
         db.commit()
@@ -252,7 +252,7 @@ class TestResolveAlertEndpoint:
             title="Test Alert",
             message="Test alert message",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         db.add(alert)
         db.commit()
@@ -313,7 +313,7 @@ class TestResolveAlertEndpoint:
             title="Test Alert",
             message="Test alert message",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         db.add(alert)
         db.commit()

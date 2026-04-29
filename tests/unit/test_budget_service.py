@@ -4,7 +4,7 @@ Tests budget CRUD operations, Azure sync, threshold checking, and alert manageme
 """
 
 import sys
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -76,8 +76,8 @@ class TestBudgetServiceCRUD:
         budget.resource_group = None
         budget.azure_budget_id = None
         budget.etag = None
-        budget.created_at = datetime.utcnow()
-        budget.updated_at = datetime.utcnow()
+        budget.created_at = datetime.now(UTC)
+        budget.updated_at = datetime.now(UTC)
         budget.last_synced_at = None
         budget.thresholds = []
         budget.alerts = MagicMock()
@@ -249,7 +249,7 @@ class TestBudgetServiceAlerts:
         alert.current_spend = 850.0
         alert.forecasted_spend = None
         alert.utilization_percentage = 85.0
-        alert.triggered_at = datetime.utcnow()
+        alert.triggered_at = datetime.now(UTC)
         alert.acknowledged_at = None
         alert.acknowledged_by = None
         alert.resolved_at = None

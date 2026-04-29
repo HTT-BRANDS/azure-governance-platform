@@ -4,7 +4,7 @@ Split off from the former monolithic `tests/integration/test_sync_api.py`
 (issue 6oj7, 2026-04-22). Shared fixtures live in `./conftest.py`.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -83,7 +83,7 @@ class TestSyncStatusEndpoint:
         mock_job = MagicMock()
         mock_job.id = "costs_sync"
         mock_job.name = "Sync Costs"
-        mock_job.next_run_time = datetime.utcnow() + timedelta(hours=1)
+        mock_job.next_run_time = datetime.now(UTC) + timedelta(hours=1)
         mock_scheduler.get_jobs.return_value = [mock_job]
 
         with patch("app.api.routes.sync.get_scheduler", return_value=mock_scheduler):

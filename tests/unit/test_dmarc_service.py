@@ -10,7 +10,7 @@ Comprehensive tests for DMARC/DKIM email security monitoring including:
 
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -74,7 +74,7 @@ def sample_dmarc_record():
         fo="1",
         ri=86400,
         is_valid=True,
-        synced_at=datetime.utcnow(),
+        synced_at=datetime.now(UTC),
     )
 
 
@@ -89,12 +89,12 @@ def sample_dkim_record():
         is_enabled=True,
         key_size=2048,
         key_type="RSA",
-        last_rotated=datetime.utcnow() - timedelta(days=30),
-        next_rotation_due=datetime.utcnow() + timedelta(days=150),
+        last_rotated=datetime.now(UTC) - timedelta(days=30),
+        next_rotation_due=datetime.now(UTC) + timedelta(days=150),
         dns_record_value="v=DKIM1; k=rsa; p=MIGfMA0GCS...",
         is_aligned=True,
         selector_status="active",
-        synced_at=datetime.utcnow(),
+        synced_at=datetime.now(UTC),
     )
 
 
@@ -104,7 +104,7 @@ def sample_dmarc_report():
     return DMARCReport(
         id=str(uuid.uuid4()),
         tenant_id="tenant-001",
-        report_date=datetime.utcnow() - timedelta(days=1),
+        report_date=datetime.now(UTC) - timedelta(days=1),
         domain="example.com",
         messages_total=1000,
         messages_passed=950,
@@ -120,7 +120,7 @@ def sample_dmarc_report():
         source_domains=json.dumps(["mail.partner1.com", "mail.partner2.com"]),
         reporter="google.com",
         report_id="123456789",
-        synced_at=datetime.utcnow(),
+        synced_at=datetime.now(UTC),
     )
 
 
@@ -302,7 +302,7 @@ class TestSecurityScoreCalculation:
                 domain="domain1.com",
                 policy="reject",
                 is_valid=True,
-                synced_at=datetime.utcnow(),
+                synced_at=datetime.now(UTC),
             ),
             DMARCRecord(
                 id=str(uuid.uuid4()),
@@ -310,7 +310,7 @@ class TestSecurityScoreCalculation:
                 domain="domain2.com",
                 policy="quarantine",
                 is_valid=True,
-                synced_at=datetime.utcnow(),
+                synced_at=datetime.now(UTC),
             ),
         ]
 
@@ -322,7 +322,7 @@ class TestSecurityScoreCalculation:
                 selector="default",
                 is_enabled=True,
                 is_aligned=True,
-                synced_at=datetime.utcnow(),
+                synced_at=datetime.now(UTC),
             ),
             DKIMRecord(
                 id=str(uuid.uuid4()),
@@ -331,7 +331,7 @@ class TestSecurityScoreCalculation:
                 selector="default",
                 is_enabled=True,
                 is_aligned=False,
-                synced_at=datetime.utcnow(),
+                synced_at=datetime.now(UTC),
             ),
         ]
 
@@ -348,19 +348,19 @@ class TestDKIMRecordValidation:
 
     def test_dkim_key_rotation_fresh(self, sample_dkim_record):
         """Test DKIM key is not stale when recently rotated."""
-        sample_dkim_record.last_rotated = datetime.utcnow() - timedelta(days=30)
+        sample_dkim_record.last_rotated = datetime.now(UTC) - timedelta(days=30)
         assert sample_dkim_record.is_key_stale is False
         assert sample_dkim_record.days_since_rotation == 30
 
     def test_dkim_key_rotation_stale(self, sample_dkim_record):
         """Test DKIM key is stale after 180 days."""
-        sample_dkim_record.last_rotated = datetime.utcnow() - timedelta(days=181)
+        sample_dkim_record.last_rotated = datetime.now(UTC) - timedelta(days=181)
         assert sample_dkim_record.is_key_stale is True
         assert sample_dkim_record.days_since_rotation == 181
 
     def test_dkim_key_rotation_boundary(self, sample_dkim_record):
         """Test DKIM key staleness at 180-day boundary."""
-        sample_dkim_record.last_rotated = datetime.utcnow() - timedelta(days=180)
+        sample_dkim_record.last_rotated = datetime.now(UTC) - timedelta(days=180)
         assert sample_dkim_record.is_key_stale is False
         assert sample_dkim_record.days_since_rotation == 180
 
@@ -412,12 +412,12 @@ class TestComplianceTrends:
             DMARCReport(
                 id=str(uuid.uuid4()),
                 tenant_id="tenant-001",
-                report_date=datetime.utcnow() - timedelta(days=i),
+                report_date=datetime.now(UTC) - timedelta(days=i),
                 domain="example.com",
                 messages_total=1000,
                 messages_passed=950 - (i * 10),
                 messages_failed=50 + (i * 10),
-                synced_at=datetime.utcnow(),
+                synced_at=datetime.now(UTC),
             )
             for i in range(5)
         ]
@@ -490,7 +490,7 @@ class TestAlertManagement:
             message="DKIM key rotation overdue",
             domain="example.com",
             is_acknowledged=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
 
         # Setup mock query

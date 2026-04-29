@@ -14,7 +14,7 @@ Minimum 8 tests covering all critical paths and edge cases.
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -50,7 +50,7 @@ class TestMonitoringServiceAlerts:
         def mock_add(obj):
             # Simulate database behavior
             obj.id = 1
-            obj.created_at = datetime.utcnow()
+            obj.created_at = datetime.now(UTC)
 
         mock_db.add.side_effect = mock_add
         mock_db.refresh.return_value = None
@@ -85,7 +85,7 @@ class TestMonitoringServiceAlerts:
         def mock_add(obj):
             obj.id = 2
             obj.severity = "error"
-            obj.created_at = datetime.utcnow()
+            obj.created_at = datetime.now(UTC)
             # Verify details were serialized
             assert obj.details_json == json.dumps(details)
 
@@ -120,7 +120,7 @@ class TestMonitoringServiceAlerts:
         def mock_add(obj):
             obj.id = 3
             obj.severity = "error"
-            obj.created_at = datetime.utcnow()
+            obj.created_at = datetime.now(UTC)
 
         mock_db.add.side_effect = mock_add
         mock_db.refresh.return_value = None
@@ -342,7 +342,7 @@ class TestMonitoringServiceSyncJobs:
     ):
         """Test complete_sync_job marks job as completed and calculates duration."""
         # Setup
-        start_time = datetime.utcnow() - timedelta(seconds=30)
+        start_time = datetime.now(UTC) - timedelta(seconds=30)
         mock_log = MagicMock(spec=SyncJobLog)
         mock_log.id = 1
         mock_log.job_type = "costs"
@@ -379,7 +379,7 @@ class TestMonitoringServiceSyncJobs:
     ):
         """Test complete_sync_job handles failed status with error message."""
         # Setup
-        start_time = datetime.utcnow() - timedelta(seconds=15)
+        start_time = datetime.now(UTC) - timedelta(seconds=15)
         mock_log = MagicMock(spec=SyncJobLog)
         mock_log.id = 2
         mock_log.job_type = "identity"
@@ -448,9 +448,9 @@ class TestMonitoringServiceSyncJobs:
         """Test get_recent_logs returns logs ordered by started_at."""
         # Setup
         mock_logs = [
-            MagicMock(id=3, job_type="costs", started_at=datetime.utcnow()),
-            MagicMock(id=2, job_type="costs", started_at=datetime.utcnow() - timedelta(hours=1)),
-            MagicMock(id=1, job_type="identity", started_at=datetime.utcnow() - timedelta(hours=2)),
+            MagicMock(id=3, job_type="costs", started_at=datetime.now(UTC)),
+            MagicMock(id=2, job_type="costs", started_at=datetime.now(UTC) - timedelta(hours=1)),
+            MagicMock(id=1, job_type="identity", started_at=datetime.now(UTC) - timedelta(hours=2)),
         ]
 
         query_mock = MagicMock()
@@ -609,7 +609,7 @@ class TestMonitoringServiceAlertDetection:
     def test_check_stale_syncs_creates_alert(self, mock_create_alert, monitoring_service, mock_db):
         """Test check_stale_syncs detects jobs that haven't run recently."""
         # Setup - create metrics with last run 3 days ago (stale for 24h expected interval)
-        old_time = datetime.utcnow() - timedelta(hours=72)
+        old_time = datetime.now(UTC) - timedelta(hours=72)
         mock_metrics = MagicMock(spec=SyncJobMetrics)
         mock_metrics.job_type = "costs"
         mock_metrics.last_run_at = old_time
@@ -698,8 +698,8 @@ class TestMonitoringServiceStats:
 
         mock_metric = MagicMock(spec=SyncJobMetrics)
         mock_metric.job_type = "costs"
-        mock_metric.last_run_at = datetime.utcnow()
-        mock_metric.last_success_at = datetime.utcnow()
+        mock_metric.last_run_at = datetime.now(UTC)
+        mock_metric.last_success_at = datetime.now(UTC)
         mock_metric.last_failure_at = None
         mock_metric.success_rate = 0.98
         mock_get_metrics.return_value = [mock_metric]

@@ -12,7 +12,7 @@ Tests all sync management endpoints with FastAPI TestClient:
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -47,7 +47,7 @@ def test_db_session(db_session):
         can_manage_resources=True,
         can_manage_compliance=True,
         granted_by="test",
-        granted_at=datetime.utcnow(),
+        granted_at=datetime.now(UTC),
     )
     db_session.add(user_tenant)
 
@@ -56,8 +56,8 @@ def test_db_session(db_session):
         job_type="costs",
         tenant_id=tenant.id,
         status="completed",
-        started_at=datetime.utcnow(),
-        ended_at=datetime.utcnow(),
+        started_at=datetime.now(UTC),
+        ended_at=datetime.now(UTC),
         duration_ms=5000,
         records_processed=150,
         errors_count=0,
@@ -74,7 +74,7 @@ def test_db_session(db_session):
         title="Sync Failed",
         message="Compliance sync failed after 3 retries",
         is_resolved=False,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     db_session.add(alert)
 
@@ -137,8 +137,8 @@ def mock_monitoring_service():
             job_type="costs",
             tenant_id="sync-tenant-123",
             status="completed",
-            started_at=datetime.utcnow(),
-            ended_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
+            ended_at=datetime.now(UTC),
             duration_ms=5000,
             records_processed=150,
             errors_count=0,
@@ -149,7 +149,7 @@ def mock_monitoring_service():
         MagicMock(
             job_type="costs",
             tenant_id="sync-tenant-123",
-            calculated_at=datetime.utcnow(),
+            calculated_at=datetime.now(UTC),
             total_runs=50,
             successful_runs=48,
             failed_runs=2,
@@ -160,8 +160,8 @@ def mock_monitoring_service():
             avg_records_processed=145,
             total_records_processed=7250,
             total_errors=2,
-            last_run_at=datetime.utcnow(),
-            last_success_at=datetime.utcnow(),
+            last_run_at=datetime.now(UTC),
+            last_success_at=datetime.now(UTC),
             last_failure_at=None,
             last_error_message=None,
         ),
@@ -176,7 +176,7 @@ def mock_monitoring_service():
             title="Sync Failed",
             message="Compliance sync failed",
             is_resolved=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
             resolved_at=None,
             resolved_by=None,
         ),
@@ -192,7 +192,7 @@ def mock_monitoring_service():
         id=1,
         alert_type="sync_failure",
         is_resolved=True,
-        resolved_at=datetime.utcnow(),
+        resolved_at=datetime.now(UTC),
         resolved_by="admin@example.com",
     )
     return service
@@ -262,7 +262,7 @@ class TestSyncStatusEndpoint:
         mock_job = MagicMock()
         mock_job.id = "costs-sync"
         mock_job.name = "Cost Sync Job"
-        mock_job.next_run_time = datetime.utcnow()
+        mock_job.next_run_time = datetime.now(UTC)
 
         scheduler = MagicMock()
         scheduler.get_jobs.return_value = [mock_job]

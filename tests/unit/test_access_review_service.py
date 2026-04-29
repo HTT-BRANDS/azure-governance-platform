@@ -23,7 +23,7 @@ Coverage:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -92,7 +92,7 @@ class TestListStaleAssignments:
     async def test_happy_path_stale_user_returned(self):
         """A user inactive >90 days appears in the result list."""
         svc = _fresh_service()
-        last_sign_in = datetime.utcnow() - timedelta(days=100)
+        last_sign_in = datetime.now(UTC) - timedelta(days=100)
 
         with (
             patch.object(
@@ -125,7 +125,7 @@ class TestListStaleAssignments:
     async def test_user_inactive_over_90_days_is_stale(self):
         """Exactly 91 days inactive qualifies as stale."""
         svc = _fresh_service()
-        last_sign_in = datetime.utcnow() - timedelta(days=91)
+        last_sign_in = datetime.now(UTC) - timedelta(days=91)
 
         with (
             patch.object(
@@ -171,7 +171,7 @@ class TestListStaleAssignments:
     async def test_recent_sign_in_is_not_stale(self):
         """A user who signed in yesterday is NOT returned."""
         svc = _fresh_service()
-        last_sign_in = datetime.utcnow() - timedelta(days=1)
+        last_sign_in = datetime.now(UTC) - timedelta(days=1)
 
         with (
             patch.object(
@@ -398,13 +398,13 @@ class TestHelpers:
     def test_is_stale_old_sign_in(self):
         """Sign-in older than STALE_THRESHOLD_DAYS is stale."""
         svc = _fresh_service()
-        old = datetime.utcnow() - timedelta(days=STALE_THRESHOLD_DAYS + 1)
+        old = datetime.now(UTC) - timedelta(days=STALE_THRESHOLD_DAYS + 1)
         assert svc._is_stale(old) is True
 
     def test_is_stale_recent_sign_in(self):
         """Sign-in within the threshold is NOT stale."""
         svc = _fresh_service()
-        recent = datetime.utcnow() - timedelta(days=10)
+        recent = datetime.now(UTC) - timedelta(days=10)
         assert svc._is_stale(recent) is False
 
     def test_days_inactive_none_returns_none(self):
@@ -415,7 +415,7 @@ class TestHelpers:
     def test_days_inactive_calculates_correctly(self):
         """days_inactive returns the approximate number of days since sign-in."""
         svc = _fresh_service()
-        last = datetime.utcnow() - timedelta(days=30)
+        last = datetime.now(UTC) - timedelta(days=30)
         assert svc._days_inactive(last) == 30
 
     def test_parse_graph_datetime_valid(self):
@@ -452,7 +452,7 @@ class TestAccessReviewRoutes:
                     assignment_id="asgn-abc",
                     tenant_id="test-tenant-123",
                     status="pending",
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(UTC),
                 ),
             ]
         )
@@ -476,8 +476,8 @@ class TestAccessReviewRoutes:
                 assignment_id="asgn-abc",
                 tenant_id="test-tenant-123",
                 status="approved",
-                created_at=datetime.utcnow(),
-                resolved_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
+                resolved_at=datetime.now(UTC),
             )
         )
 
@@ -582,7 +582,7 @@ class TestParallelSignInFetch:
     async def test_gather_called_for_multiple_users(self):
         """asyncio.gather is used to fetch sign-in activity for multiple users in parallel."""
         svc = _fresh_service()
-        last_sign_in = datetime.utcnow() - timedelta(days=100)
+        last_sign_in = datetime.now(UTC) - timedelta(days=100)
 
         two_assignments = [
             _build_assignment(assignment_id="asgn-001", user_id="user-001"),
@@ -617,7 +617,7 @@ class TestParallelSignInFetch:
     async def test_multiple_stale_users_all_returned(self):
         """All stale users are returned when multiple are fetched in parallel."""
         svc = _fresh_service()
-        last_sign_in = datetime.utcnow() - timedelta(days=100)
+        last_sign_in = datetime.now(UTC) - timedelta(days=100)
 
         two_assignments = [
             _build_assignment(assignment_id="asgn-001", user_id="user-001"),
@@ -705,7 +705,7 @@ class TestAccessReviewUserContext:
                     assignment_id="asgn-abc",
                     tenant_id="test-tenant-123",
                     status="pending",
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(UTC),
                     user_id="user-xyz",
                     user_display_name="Alice Admin",
                     role_name="Global Administrator",

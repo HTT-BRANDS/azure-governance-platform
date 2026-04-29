@@ -11,7 +11,7 @@ Minimum 11 tests covering all public methods and edge cases.
 """
 
 import sys
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -204,7 +204,7 @@ class TestIdentityServicePrivilegedAccounts:
         user1.role_scope = "/"
         user1.is_permanent = True
         user1.mfa_enabled = False
-        user1.last_sign_in = datetime.utcnow() - timedelta(days=100)
+        user1.last_sign_in = datetime.now(UTC) - timedelta(days=100)
         users.append(user1)
 
         # Low risk: Member, MFA enabled, not permanent, recent sign-in
@@ -217,7 +217,7 @@ class TestIdentityServicePrivilegedAccounts:
         user2.role_scope = "/"
         user2.is_permanent = False
         user2.mfa_enabled = True
-        user2.last_sign_in = datetime.utcnow() - timedelta(days=1)
+        user2.last_sign_in = datetime.now(UTC) - timedelta(days=1)
         users.append(user2)
 
         # Medium risk: Member, no MFA, permanent
@@ -230,7 +230,7 @@ class TestIdentityServicePrivilegedAccounts:
         user3.role_scope = "/subscriptions/sub-1"
         user3.is_permanent = True
         user3.mfa_enabled = False
-        user3.last_sign_in = datetime.utcnow() - timedelta(days=15)
+        user3.last_sign_in = datetime.now(UTC) - timedelta(days=15)
         users.append(user3)
 
         return users
@@ -314,7 +314,7 @@ class TestIdentityServiceRiskCalculation:
         user.user_type = "Guest"
         user.mfa_enabled = False
         user.is_permanent = True
-        user.last_sign_in = datetime.utcnow() - timedelta(days=100)
+        user.last_sign_in = datetime.now(UTC) - timedelta(days=100)
 
         result = identity_service._calculate_risk_level(user)
 
@@ -327,7 +327,7 @@ class TestIdentityServiceRiskCalculation:
         user.user_type = "Member"
         user.mfa_enabled = False
         user.is_permanent = True
-        user.last_sign_in = datetime.utcnow() - timedelta(days=10)
+        user.last_sign_in = datetime.now(UTC) - timedelta(days=10)
 
         result = identity_service._calculate_risk_level(user)
 
@@ -340,7 +340,7 @@ class TestIdentityServiceRiskCalculation:
         user.user_type = "Member"
         user.mfa_enabled = True
         user.is_permanent = False
-        user.last_sign_in = datetime.utcnow() - timedelta(days=1)
+        user.last_sign_in = datetime.now(UTC) - timedelta(days=1)
 
         result = identity_service._calculate_risk_level(user)
 
