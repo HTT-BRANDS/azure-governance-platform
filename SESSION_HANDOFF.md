@@ -2,7 +2,7 @@
 
 **Branch:** `main` (clean working tree, up to date with origin)
 **Latest pushed HEAD at start of 2026-04-29 session:** `1a7e929`
-**Latest pushed work commit before final handoff metadata:** `7c0295a` (run `git log -1` for the handoff commit itself)
+**Latest pushed work commit before final handoff metadata:** `de52073` (run `git log -1` for the handoff commit itself)
 **Former P1 chain:** `g1cc` → `918b` → `0gz3` is now closed; `0nup` remains the next release-evidence gate.
 
 > **Read this first if you are inheriting the platform mid-flight.**
@@ -110,7 +110,20 @@ System for HTT Brands." Three documents were produced and pushed:
   - Baseline/after platform gate both passed: `143 passed`.
 - Phase 1.5 success metric advanced by 6 oversized app files remediated in this late-session block (`auth.py`, `config.py`, `lighthouse_client.py`, `budget_service.py`, `backfill_service.py`, `main.py`).
 - Latest pushed HEAD before this handoff update: `7c0295a`.
-- CI/security/staging for `7c0295a` may still be queued/in progress; check `gh run list --branch main --limit 10`.
+- Pack Leader parallel batch closed after this handoff section was first written:
+  - `gvpt` ✅ — `app/core/cache.py` split into `app/core/cache/`; merge `1c07eb3`; validation `22 passed`.
+  - `wnpf` ✅ — `app/preflight/admin_risk_checks.py` split into `app/preflight/admin_risk/`; merge `75f8b06`; validation `26 passed`.
+  - `a3oq` ✅ — `app/services/riverside_sync.py` split into `app/services/riverside_sync/`; merge `22ebe70`; validation Riverside sync/API gates `33 passed` + `36 passed`.
+  - `tg2z` ✅ — repo-supported Riverside/DMARC alert investigation documented at `docs/operations/riverside-dmarc-alert-investigation-2026-04-29.md`; merge `a062345`; no live secrets/alerts fabricated.
+  - Handoff closeout commit: `015d58b`.
+- Closed `fbx8` — behavior-preserving Compliance-domain Riverside scheduler split:
+  - `app/core/riverside_scheduler.py`: `1110 → 533` LOC.
+  - Extracted scheduler DTO/threshold constants, database-backed compliance checks, DeadlineTracker jobs, and MFA alert scheduler helpers.
+  - Public import/patch surface preserved for constants, DTOs, check functions, senders, `run_*` wrappers, scheduler init/get/manual trigger, and MFA/deadline helpers.
+  - Baseline/after Riverside scheduler gate both passed: `144 passed`.
+  - Commit: `de52073`.
+- Latest pushed HEAD before this handoff update: `de52073`.
+- CI/security/staging for `de52073` may still be queued/in progress; check `gh run list --branch main --limit 10`.
 
 ### Track D — Phase 0 hygiene (commit `41126f8`)
 - `.venv/` rebuilt (`uv venv --clear && uv sync --dev --frozen`); pytest 9.0.3 alive; 12/12 health_data smoke passes; **4,192 tests collected** (was claiming 3,800).
@@ -181,12 +194,9 @@ After Tyler said "continue on next steps based on your recommendations outlined"
 
 ### Still in `bd ready` after late-session refactors (Tyler-blocking or autonomous)
 - `9lfn` — **Tyler-authored** SECRETS_OF_RECORD.md (P1, ~30 min). Bus-factor blocker.
-- Phase 1.5 refactors still dominate ready work. Current autonomous ready list includes:
-  `gvpt` app/core/cache.py, `wnpf` admin_risk_checks.py,
-  `a3oq` riverside_sync.py, and `fbx8` riverside_scheduler.py.
-- `tg2z` — investigate remaining unrelated Riverside batch / DMARC active alerts after 0gz3 recovery.
-- `213e` — name second rollback human (P2, waiver expires 2026-06-22).
+- `213e` — name second rollback human (P2, waiver expires 2026-06-22). Tyler-only.
 - `cz89` — automate weekly BACPAC export (P4) remains open on the staging Free-tier ImportExport validation blocker.
+- Phase 1.5 autonomous ready refactor queue was drained in the Pack Leader batch plus `fbx8`; run `bd ready` for any newly unblocked work before inventing tasks.
 
 ### Deferred out of `bd ready` 2026-04-29
 - `rtwi` — deferred to 2026-05-17 trigger date; zero-traffic shutdown script is already scaffolded.
@@ -262,7 +272,7 @@ For session-to-session context  → SESSION_HANDOFF.md (THIS FILE)
 ✅ Production deploy run `25131829042` succeeded; prod is on fresh attested digest `sha256:a76f3eeb9f7c0f28b27c196a8f9c8cf06368fc47875c51ea7a95f0bbbdd680e4`.
 ⚠️  backup.yml had a second regression after fifh: missing OIDC id-token permission; fixed in bc78195, next scheduled/manual run must verify actual backup lands
 ⚠️  bicep-drift-detection.yml scope mismatch fixed in 40bea97; next scheduled/manual run must verify all env matrix jobs reach real drift signal
-⚠️  Push-triggered CI/staging/security runs may still be queued/in progress for latest refactor commits (`8c1373b`, `7c0295a`); check `gh run list --branch main --limit 10` next session.
+⚠️  Push-triggered CI/staging/security runs may still be queued/in progress for latest refactor commits through `de52073`; check `gh run list --branch main --limit 10` next session.
 ⚠️  weekly BACPAC workflow exists, but staging validation is blocked because staging SQL is Free edition and Azure SQL ImportExport rejects Free (`UnSupportedImportExportEdition`)
 ```
 
@@ -352,8 +362,9 @@ At handoff time:
   - `c8e43bf` budget service split (`qb8u`)
   - `8c1373b` backfill service split (`uxzr`)
   - `7c0295a` FastAPI app wiring split (`bu72`)
-- `bd ready` after the pack-leader batch should be rechecked live. Expected remaining items: Tyler-only `9lfn`, autonomous refactor `fbx8`, Tyler decision `213e`, and blocked/low-priority `cz89` (plus anything unblocked by new closures).
-- Remaining files >600 LOC in `app/` after the latest Phase 1.5 batch should be rechecked live; `cache.py`, `admin_risk_checks.py`, and `riverside_sync.py` were remediated in the pack-leader batch. Known remaining candidates include `identity.py`, `onboarding.py`, `azure_client.py`, `dmarc_service.py`, `monitoring_service.py`, `riverside_requirements.py`, `azure_service_health.py`, `metrics.py`, `notifications.py`, `rate_limit.py`, `riverside_scheduler.py`, `checks.py`, `mfa_checks.py`, and `email_service.py`.
+- Pack Leader parallel batch then closed `gvpt`, `wnpf`, `a3oq`, and `tg2z`; `fbx8` was closed serially afterward.
+- `bd ready` now shows 3 items: Tyler-only `9lfn`, Tyler-only `213e`, and blocked/low-priority `cz89`.
+- Remaining files >600 LOC in `app/` after this session: `identity.py`, `onboarding.py`, `azure_client.py`, `dmarc_service.py`, `monitoring_service.py`, `riverside_requirements.py`, `azure_service_health.py`, `metrics.py`, `notifications.py`, `rate_limit.py`, `checks.py`, `mfa_checks.py`, `email_service.py`.
 
 ---
 
