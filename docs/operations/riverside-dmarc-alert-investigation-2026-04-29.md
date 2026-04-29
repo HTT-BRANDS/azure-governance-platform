@@ -30,13 +30,19 @@ Verified from this worktree:
   (`costs`, `compliance`, `resources`, `identity`) completed with zero errors
   and that the remaining Riverside/DMARC alerts were explicitly out of scope.
 
-Not verified live in this session:
+Live checks attempted or not attempted:
 
-- Azure CLI is not authenticated locally (`az account show` returned no JSON),
-  so App Insights KQL, App Service log download, Azure SQL, and Key Vault reads
-  were unavailable.
-- Protected application APIs such as `/api/v1/dmarc/summary` returned `401`
-  without a bearer token.
+- Public unauthenticated checks were attempted for the production health endpoint
+  and GitHub Actions run status, as listed above.
+- Protected application APIs such as `/api/v1/dmarc/summary` were attempted and
+  returned `401` without a bearer token.
+- During the docs-fix review, `az account show -o json` returned an authenticated
+  `HTT-CORE` Azure CLI account. This only proves the current local CLI state; it
+  does not prove what credentials were available during the original evidence
+  collection.
+- No App Insights KQL, App Service log download, Azure SQL, or Key Vault live
+  reads are claimed in this note. Those checks still require an authorized
+  production principal/scope and should not be inferred from repository evidence.
 - No alert rows were resolved or suppressed. No tenant configuration or secret
   state was changed.
 
