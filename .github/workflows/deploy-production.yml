@@ -488,6 +488,34 @@ jobs:
       - name: Set subscription context
         run: az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Capture previous-good container image (pre-deploy)
+        id: prev-good
+        run: |
+          # Save the currently-deployed image so we can roll back if the new
+          # one fails its health gate. linuxFxVersion looks like:
+          #   DOCKER|ghcr.io/htt-brands/control-tower@sha256:<digest>
+          # Per docs/runbooks/disaster-recovery.md §A.3 (auto-rollback automates
+          # this scenario; A.4 covers the rollback-also-failed case).
+          PREV=$(az webapp config show \
+            --name ${{ env.AZURE_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "linuxFxVersion" -o tsv)
+          if [ -z "$PREV" ]; then
+            echo "::warning::Could not capture previous-good linuxFxVersion. Auto-rollback will be unavailable for this run."
+          else
+            echo "Captured previous-good image: $PREV"
+          fi
+          # GitHub Actions does not allow '|' or other special chars in outputs
+          # in some legacy paths; base64-encode to be safe across renderers.
+          ENC=$(printf '%s' "$PREV" | base64)
+          echo "previous_image_b64=${ENC}" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Pre-deploy state"
+            echo ""
+            echo "- Previous-good image: \`$PREV\`"
+            echo "- New image to deploy: \`@${{ needs.build-image.outputs.image_digest }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Update container image and restart App Service
         env:
           GHCR_PAT: ${{ secrets.GHCR_PAT }}
@@ -515,19 +543,132 @@ jobs:
       - name: Wait for startup (120s — allows migrations to run)
         run: sleep 120
 
-      - name: Health gate
+      - name: Health gate with auto-rollback
+        id: health-gate
+        env:
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREV_IMAGE_B64: ${{ steps.prev-good.outputs.previous_image_b64 }}
+          NEW_DIGEST: ${{ needs.build-image.outputs.image_digest }}
         run: |
-          for i in 1 2 3; do
-            STATUS=$(curl -sf ${{ env.PRODUCTION_URL }}/health -w "%{http_code}" -o /dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ Health check passed (attempt $i)"
+          set +e
+
+          # ---- Probe helper: /health is gating, deeper endpoints advisory ----
+          probe() {
+            local label="$1"
+            local h1 h2 h3
+            h1=$(curl -sf "${{ env.PRODUCTION_URL }}/health" -w "%{http_code}" -o /dev/null --max-time 10 || echo "000")
+            h2=$(curl -sf "${{ env.PRODUCTION_URL }}/health/detailed" -w "%{http_code}" -o /dev/null --max-time 10 || echo "000")
+            h3=$(curl -sf "${{ env.PRODUCTION_URL }}/healthz/data" -w "%{http_code}" -o /dev/null --max-time 10 || echo "000")
+            echo "[$label] /health=$h1 /health/detailed=$h2 /healthz/data=$h3"
+            # /health 200 is gating; the deeper endpoints may be 503 during
+            # cold-start and that's acceptable as long as /health is up.
+            [ "$h1" = "200" ]
+          }
+
+          # ---- 5-minute probe loop, every 10s (30 attempts) ----
+          DEPLOY_START=$(date +%s)
+          for i in $(seq 1 30); do
+            if probe "attempt $i/30"; then
+              ELAPSED=$(( $(date +%s) - DEPLOY_START ))
+              echo "::notice::Health check passed on attempt $i (${ELAPSED}s)"
+              {
+                echo "## ✅ Health gate result"
+                echo ""
+                echo "- Passed on attempt **$i/30**"
+                echo "- Time-to-healthy: **${ELAPSED}s**"
+                echo "- Image deployed: \`@${NEW_DIGEST}\`"
+              } >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
-            echo "⏳ Health check failed (HTTP $STATUS), retrying in 30s..."
+            sleep 10
+          done
+
+          # ---- Health gate failed: enter auto-rollback ----
+          ELAPSED=$(( $(date +%s) - DEPLOY_START ))
+          echo "::error::Health checks failed for ${ELAPSED}s. Initiating auto-rollback."
+
+          if [ -z "$PREV_IMAGE_B64" ]; then
+            {
+              echo "## 🔴 Auto-rollback FAILED — no previous image captured"
+              echo ""
+              echo "- Health failed for **${ELAPSED}s** after deploy."
+              echo "- No previous-good image was captured pre-deploy."
+              echo "- **Manual intervention required.** Page on-call."
+              echo "- Refer to docs/runbooks/disaster-recovery.md §A.4."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          PREV_IMAGE=$(printf '%s' "$PREV_IMAGE_B64" | base64 -d)
+          # linuxFxVersion = "DOCKER|ghcr.io/...@sha256:..." — strip the prefix.
+          PREV_REF=$(printf '%s' "$PREV_IMAGE" | sed 's|^DOCKER||')
+          echo "::warning::Rolling back to: $PREV_REF"
+
+          GHCR_PASSWORD="${GHCR_PAT:-$GITHUB_TOKEN}"
+          ROLLBACK_START=$(date +%s)
+
+          if ! az webapp config container set \
+            --name ${{ env.AZURE_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --container-image-name "$PREV_REF" \
+            --container-registry-url https://${{ env.GHCR_REGISTRY }} \
+            --container-registry-user ${{ github.repository_owner }} \
+            --container-registry-password "$GHCR_PASSWORD"; then
+            {
+              echo "## 🔴🔴 Auto-rollback FAILED — 'az webapp config container set' errored"
+              echo ""
+              echo "- Health failed for **${ELAPSED}s** after deploy of \`@${NEW_DIGEST}\`."
+              echo "- Tried to roll back to \`$PREV_REF\`."
+              echo "- The Azure CLI command itself failed."
+              echo "- **SEV1. Page on-call.** Refer to docs/runbooks/disaster-recovery.md §A.4."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 2
+          fi
+
+          az webapp restart \
+            --name ${{ env.AZURE_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
+
+          echo "Waiting 120s for rollback startup..."
+          sleep 120
+
+          # ---- Re-probe health on the rolled-back image ----
+          for i in 1 2 3; do
+            if probe "post-rollback $i/3"; then
+              ROLLBACK_ELAPSED=$(( $(date +%s) - ROLLBACK_START ))
+              {
+                echo "## ⚠️  Auto-rollback succeeded — bad deploy reverted"
+                echo ""
+                echo "- Rolled back from: \`@${NEW_DIGEST}\`"
+                echo "- Rolled back to:   \`$PREV_REF\`"
+                echo "- Time degraded:    **${ELAPSED}s**"
+                echo "- Rollback duration: **${ROLLBACK_ELAPSED}s**"
+                echo ""
+                echo "Production is back on the previous-good image. The bad"
+                echo "deploy must be investigated before re-attempt."
+                echo ""
+                echo "**Workflow failing intentionally** so the deploy is"
+                echo "recorded as not-successful in release evidence."
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error::Workflow failing — rollback succeeded but deploy did not."
+              exit 1
+            fi
             sleep 30
           done
-          echo "❌ Health check failed after 3 attempts"
-          exit 1
+
+          # ---- Rollback ALSO failed → page hard ----
+          {
+            echo "## 🔴🔴 CRITICAL — Auto-rollback ALSO failed"
+            echo ""
+            echo "- Failed deploy of: \`@${NEW_DIGEST}\`"
+            echo "- Attempted rollback to: \`$PREV_REF\`"
+            echo "- Health endpoints still failing after rollback + 120s wait + 3 probes."
+            echo ""
+            echo "**SEV1. Page on-call. Production is in a degraded state.**"
+            echo "Refer to docs/runbooks/disaster-recovery.md §A.4 for next steps."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 3
 
   # ===========================================================================
   # Job 5: Smoke Tests
