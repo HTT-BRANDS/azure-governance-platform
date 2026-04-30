@@ -1,4 +1,4 @@
-# RUNBOOK — Operating the Platform Without Tyler
+# RUNBOOK — Operating HTT Control Tower Without Tyler
 
 **Purpose:** If Tyler is unavailable for 2+ weeks (PTO, illness, recruitment,
 bus), this is the entry-point doc for whoever picks up operational
@@ -39,10 +39,12 @@ your leisure. If anything is unhealthy: jump to §5 (Triage) immediately.
 
 ## 1. What This Platform Is
 
-A multi-tenant Azure governance hub run by HTT Brands. Single FastAPI
-instance, App Service B1 in HTT-CORE subscription, serving cost
-visibility / identity audits / compliance evidence across five Azure
-tenants (HTT, BCC, FN, TLL, DCE).
+HTT Control Tower is a multi-tenant internal governance hub run by HTT Brands.
+Single FastAPI instance, App Service B1 in HTT-CORE subscription, serving cost
+visibility, identity audits, compliance evidence, resource visibility, lifecycle
+workflows, and BI/evidence read models across five Azure tenants (HTT, BCC, FN,
+TLL, DCE). It is unrelated to AWS Control Tower; the name is internal-only unless
+HTT runs separate legal/name clearance.
 
 **Source of truth for architecture:** `INFRASTRUCTURE_END_TO_END.md`
 **Source of truth for current strategic direction:** `PORTFOLIO_PLATFORM_PLAN_V2.md`
@@ -73,7 +75,7 @@ Detailed walkthrough: [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
 ### What "deploy" does mechanically
 1. GitHub Actions OIDC-federates into HTT-CORE Azure tenant (no stored secrets).
-2. Builds Docker image, pushes to GHCR (`ghcr.io/htt-brands/azure-governance-platform`).
+2. Builds Docker image, pushes to GHCR. Current deployed path remains `ghcr.io/htt-brands/azure-governance-platform` until the repo/GHCR cutover; target path is `ghcr.io/htt-brands/control-tower`.
 3. SLSA Build L3 provenance attested + SBOM (Syft/SPDX-JSON) attached as OCI referrer.
 4. Cosign 4-claim verification gates the deploy job (subject digest + predicate
    type + cert identity + OIDC issuer). Fails closed if verification fails.
@@ -97,7 +99,7 @@ gh run rerun <run-id>
 az webapp config container set \
   --name app-governance-prod \
   --resource-group rg-governance-prod \
-  --container-image-name ghcr.io/htt-brands/azure-governance-platform@sha256:<digest>
+  --container-image-name ghcr.io/htt-brands/control-tower@sha256:<digest>
 ```
 
 ### If a feature is broken but the platform is up
@@ -238,7 +240,7 @@ cause is Azure SQL spinning up dev environment continuously. Check
 ## 9. Where Things Live (Repo Geography)
 
 ```
-azure-governance-platform/
+control-tower/
 ├── app/                    # FastAPI application
 ├── infrastructure/         # Bicep IaC for all 3 environments
 ├── docs/                   # Detailed docs, ADRs, runbooks

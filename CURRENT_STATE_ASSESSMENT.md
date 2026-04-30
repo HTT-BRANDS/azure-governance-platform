@@ -1,7 +1,7 @@
-# Current State Assessment — HTT Portfolio Platform
+# Current State Assessment — HTT Control Tower
 
 **Assessment Date:** 2026-04-30
-**HEAD assessed:** `00c3745` (`ops(backup): restore backup config evidence trail`)
+**HEAD assessed:** `f9f7c60` (`docs(status): close backup validation`) plus rebrand branch audit in progress
 **Source of truth for in-flight detail:** [`SESSION_HANDOFF.md`](./SESSION_HANDOFF.md), `bd ready`, and GitHub Actions run history.
 
 > This file is a reality dashboard. If it says "green," it needs a run ID or
@@ -11,12 +11,11 @@
 
 ## TL;DR
 
-The platform runtime is up in both environments, but continuity work is still in
-progress.
+HTT Control Tower runtime is up in both environments. Backup/RPO validation is green; Tyler-only continuity work remains.
 
 - Production health: `https://app-governance-prod.azurewebsites.net/health` returns `healthy` / `2.5.0`.
 - Staging health: `https://app-governance-staging-xnczpwyv.azurewebsites.net/health` returns `healthy` / `2.5.0`.
-- Mainline CI and Security Scan were green for `00c3745`.
+- Mainline CI, Security Scan, Pages, browser tests, accessibility, and staging deploy were green for `f9f7c60`.
 - GitHub Pages deployed for `246e454`, and cross-browser tests passed after the homepage title compatibility fix.
 - Staging deploy run `25168188519` passed QA, security, build/push, deploy, and staging validation.
 - Scheduled/manual Database Backup is green and bd `jzpa` is closed: staging schema backup passed end-to-end (`25169438794`), production schema backup passed end-to-end (`25171354807`), and no temporary `GitHubActions-*` SQL firewall rules remained afterward.
@@ -30,7 +29,7 @@ progress.
 |---|---|---|---|
 | Production | <https://app-governance-prod.azurewebsites.net/health> | ✅ `healthy`, version `2.5.0` | Checked 2026-04-30 during this session. |
 | Staging | <https://app-governance-staging-xnczpwyv.azurewebsites.net/health> | ✅ `healthy`, version `2.5.0` | The older `xncz` hostname is stale; use `xnczpwyv`. |
-| GitHub Pages | <https://htt-brands.github.io/azure-governance-platform/> | ✅ Deploy and browser checks passed for `246e454` | Public site is refreshed with continuity status and portfolio-platform framing. |
+| GitHub Pages | <https://htt-brands.github.io/azure-governance-platform/> | ✅ Latest deploy/browser checks passed for `f9f7c60` | URL remains the old repo slug until the GitHub repo rename cutover. Content is being rebranded to Control Tower. |
 
 ---
 
@@ -57,7 +56,6 @@ progress.
 | bd | Priority | Owner | Status |
 |---|---|---|---|
 | `9lfn` | P1 | Tyler | Ready — finish non-secret `SECRETS_OF_RECORD.md` inventory. |
-| `jzpa` | P1 | `code-puppy-661ed0` | In progress — backup workflow config/tooling validation. |
 | `213e` | P2 | Tyler | Ready — name second rollback human before waiver expiry. |
 
 Blocked:
@@ -72,7 +70,7 @@ Blocked:
 
 ## Backup / RPO truth
 
-The backup story is not green yet.
+The backup story is green now. The earlier failures remain documented below because receipts matter and amnesia is not observability.
 
 1. `fifh` fixed the broken Teams notify action.
 2. `3flq` fixed OIDC permission for Azure login.
@@ -86,7 +84,7 @@ The backup story is not green yet.
 10. Production schema backup then created, uploaded, verified, and completed retention cleanup in run `25171161761`; only the firewall cleanup step failed because `az sql server firewall-rule delete` does not support `--yes`.
 11. The leftover firewall rule was removed manually, the unsupported flag was removed from `backup.yml`, and production validation passed end-to-end in run `25171354807`. Post-run checks found no temporary `GitHubActions-*` SQL firewall rules in production or staging. bd `jzpa` is closed.
 
-Do **not** declare RPO backup hygiene complete until production and staging backup evidence runs pass and bd `jzpa` is closed with run IDs.
+RPO backup hygiene is complete for the current schema-only validation scope: production and staging evidence runs passed and bd `jzpa` is closed with run IDs.
 
 ---
 

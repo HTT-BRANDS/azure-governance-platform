@@ -1,4 +1,4 @@
-"""Custom Prometheus metrics for Azure Governance Platform.
+"""Custom Prometheus metrics for HTT Control Tower.
 
 Provides application-specific metrics beyond the default FastAPI instrumentation:
 - Sync operation duration and success rates

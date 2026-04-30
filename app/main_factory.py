@@ -12,9 +12,10 @@ def create_application(settings, lifespan: Callable[[FastAPI], AsyncIterator[Non
         title=settings.app_name,
         version=settings.app_version,
         description=textwrap.dedent("""
-        **Azure Multi-Tenant Governance Platform**
+        **HTT Control Tower**
 
-        A comprehensive platform for managing Azure governance across multiple tenants.
+        HTT's internal multi-brand governance hub for cost, identity, compliance, resources,
+        lifecycle, and evidence workflows across multiple tenants.
 
         ## Key Features
 
@@ -22,7 +23,7 @@ def create_application(settings, lifespan: Callable[[FastAPI], AsyncIterator[Non
         * **Compliance Monitoring** - Continuous compliance assessment with CIS, ISO 27001, SOC 2, and custom frameworks
         * **Resource Management** - Inventory and lifecycle management for Azure resources
         * **Identity Governance** - MFA tracking, access reviews, and identity hygiene
-        * **Riverside Compliance** - Specialized tracking for Riverside Company requirements
+        * **Riverside Compliance** - Specialized evidence tracking for Riverside Company requirements
         * **DMARC Monitoring** - Email security posture monitoring
 
         ## Authentication
@@ -71,8 +72,8 @@ def create_application(settings, lifespan: Callable[[FastAPI], AsyncIterator[Non
 
         ## Support
 
-        For API support, contact the Cloud Governance Team or visit:
-        [Documentation](https://github.com/htt-brands/azure-governance-platform/tree/main/docs)
+        For API support, contact the HTT Control Tower Team or visit:
+        [Documentation](https://github.com/htt-brands/control-tower/tree/main/docs)
         """).strip(),
         lifespan=lifespan,
         docs_url=None,
@@ -102,6 +103,6 @@ def create_application(settings, lifespan: Callable[[FastAPI], AsyncIterator[Non
         contact={"name": "Cloud Governance Team", "email": "cloud-governance@example.com"},
         license_info={
             "name": "MIT",
-            "url": "https://github.com/htt-brands/azure-governance-platform/blob/main/LICENSE",
+            "url": "https://github.com/htt-brands/control-tower/blob/main/LICENSE",
         },
     )

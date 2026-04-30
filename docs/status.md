@@ -1,21 +1,21 @@
 ---
-title: Platform Status
+title: Control Tower Status
 ---
 
-# Platform Status
+# Control Tower Status
 
-Updated: `2026-04-30T14:35:59.554836+00:00`
+Updated: `2026-04-30T17:12:19.016645+00:00`
 Source: GitHub Pages build fallback; no committed `scripts/audit_output.json` was available.
 
 ## Current mainline health
 
 | Signal | Status | Evidence |
 |---|---|---|
-| CI | ⏳ In progress | Run `25169432815` is still running for `bf4685f`; previous run `25168188513` was green. |
-| Security Scan | ✅ Green | Run `25169432889` passed for `bf4685f`; `UV_VERSION` is pinned to `0.9.27` across setup-uv workflows. |
-| Deploy to Staging | ⏳ In progress | Run `25169432814` is still running; previous run `25168188519` passed QA/security/build/deploy/validation. |
-| Deploy GitHub Pages | ✅ Green | Run `25169432895` published Pages for `bf4685f`. |
-| GitHub Pages Cross-Browser Tests | ⏳ In progress | Run `25169432848` is still running; previous run `25168188537` was green. |
+| CI | ✅ Green | Run `25171482414` passed for `f9f7c60`. |
+| Security Scan | ✅ Green | Run `25171482365` passed for `f9f7c60`; `UV_VERSION` is pinned to `0.9.27` across setup-uv workflows. |
+| Deploy to Staging | ✅ Green | Run `25171482459` passed for `f9f7c60`. |
+| Deploy GitHub Pages | ✅ Green | Run `25171483184` published Pages for `f9f7c60`. |
+| GitHub Pages Cross-Browser Tests | ✅ Green | Run `25171483199` passed for `f9f7c60`. |
 | Topology Diagram | ⚠️ Follow-up | Run `25168188576` generated a timestamp-only topology diff but could not push to protected `main`; local commit includes the refreshed diagram. |
 
 ## Ready work

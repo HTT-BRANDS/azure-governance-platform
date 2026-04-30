@@ -93,7 +93,7 @@ class TestOnboardingLandingPage:
         response = client.get("/onboarding/")
 
         assert response.status_code == 200
-        assert "Azure Governance Platform" in response.text
+        assert "HTT Control Tower" in response.text
         assert "hx-" in response.text  # HTMX attributes present
 
     def test_content_type_is_html(self, client):

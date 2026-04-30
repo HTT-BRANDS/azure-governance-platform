@@ -1,4 +1,4 @@
-"""Azure Multi-Tenant Governance Platform - Main Application."""
+"""HTT Control Tower - Main Application."""
 
 import logging
 from contextlib import asynccontextmanager
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
     scheduler = None
     riverside_sched = None
 
-    logger.info("Starting Azure Governance Platform...")
+    logger.info("Starting HTT Control Tower...")
     init_db()
     logger.info("Database initialized")
 

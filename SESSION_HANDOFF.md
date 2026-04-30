@@ -1,8 +1,8 @@
 # Session Handoff — 2026-04-30
 
-**Branch:** `main` (clean working tree, up to date with origin after final push)
+**Branch:** `control-tower-internal-rebrand` for the current rebrand work; previous pushed baseline was `main`.
 **Latest pushed HEAD at start of 2026-04-29 session:** `1a7e929`
-**Latest pushed work commit before 2026-04-30 handoff metadata:** `4b30db7` (run `git log -1` for the handoff commit itself)
+**Latest pushed baseline before Control Tower rebrand branch:** `f9f7c60` (`docs(status): close backup validation`)
 **Former P1 chain:** `g1cc` → `918b` → `0gz3` is now closed; `0nup` remains the next release-evidence gate.
 
 > **Read this first if you are inheriting the platform mid-flight.**
@@ -30,6 +30,24 @@ System for HTT Brands." Three documents were produced and pushed:
 ---
 
 ## ✅ What got done this session (chronological)
+
+### Continuation — 2026-04-30 Control Tower internal rebrand branch
+- Tyler selected **Control Tower** as the internal product/repo name.
+- Created branch `control-tower-internal-rebrand` from current `main` baseline `f9f7c60`.
+- Applied product/display-name rebrand across current runtime surfaces:
+  - `pyproject.toml` / `uv.lock` package renamed from `azure-governance-platform` to `control-tower`.
+  - App defaults, OpenAPI metadata, templates, onboarding flow, tracing service name, Docker labels, README, docs hub, runbook, status renderer, and current-state docs now say HTT Control Tower.
+  - Tests updated for the new display name.
+- Added `docs/control-tower-internal-rebrand-plan.md` documenting what was renamed now and what remains a separate cutover.
+- Filed bd `0dsr` for the actual GitHub repo/GHCR/Pages cutover. Do **not** rename Azure resources or bd issue IDs as part of that task.
+- Intentionally left these operational identifiers unchanged for now:
+  - deployed GHCR path `ghcr.io/htt-brands/azure-governance-platform`,
+  - current Pages URL `https://htt-brands.github.io/azure-governance-platform/`,
+  - JWT issuer string `azure-governance-platform`,
+  - historical bd IDs such as `azure-governance-platform-9lfn`.
+- Validation for this branch:
+  - `.venv/bin/pytest tests/unit/test_version.py tests/unit/test_config.py tests/unit/test_main_app.py tests/unit/test_onboarding.py tests/unit/test_templates.py tests/unit/test_tracing.py -q` → `128 passed`.
+  - `.venv/bin/pre-commit run --all-files` → passed.
 
 ### Continuation — 2026-04-30 morning resume (commit `4b30db7`)
 - Checked live CI after the 2026-04-29 pack/scheduler split handoff and found latest `main` red:

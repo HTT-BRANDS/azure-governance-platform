@@ -29,19 +29,19 @@ def render(report: dict[str, Any] | None) -> str:
     now = datetime.now(UTC).isoformat()
     if not report:
         return (
-            "---\ntitle: Platform Status\n---\n\n"
-            "# Platform Status\n\n"
+            "---\ntitle: Control Tower Status\n---\n\n"
+            "# Control Tower Status\n\n"
             f"Updated: `{now}`\n"
             "Source: GitHub Pages build fallback; no committed "
             "`scripts/audit_output.json` was available.\n\n"
             "## Current mainline health\n\n"
             "| Signal | Status | Evidence |\n"
             "|---|---|---|\n"
-            "| CI | ⏳ In progress | Run `25169432815` is still running for `bf4685f`; previous run `25168188513` was green. |\n"
-            "| Security Scan | ✅ Green | Run `25169432889` passed for `bf4685f`; `UV_VERSION` is pinned to `0.9.27` across setup-uv workflows. |\n"
-            "| Deploy to Staging | ⏳ In progress | Run `25169432814` is still running; previous run `25168188519` passed QA/security/build/deploy/validation. |\n"
-            "| Deploy GitHub Pages | ✅ Green | Run `25169432895` published Pages for `bf4685f`. |\n"
-            "| GitHub Pages Cross-Browser Tests | ⏳ In progress | Run `25169432848` is still running; previous run `25168188537` was green. |\n"
+            "| CI | ✅ Green | Run `25171482414` passed for `f9f7c60`. |\n"
+            "| Security Scan | ✅ Green | Run `25171482365` passed for `f9f7c60`; `UV_VERSION` is pinned to `0.9.27` across setup-uv workflows. |\n"
+            "| Deploy to Staging | ✅ Green | Run `25171482459` passed for `f9f7c60`. |\n"
+            "| Deploy GitHub Pages | ✅ Green | Run `25171483184` published Pages for `f9f7c60`. |\n"
+            "| GitHub Pages Cross-Browser Tests | ✅ Green | Run `25171483199` passed for `f9f7c60`. |\n"
             "| Topology Diagram | ⚠️ Follow-up | Run `25168188576` generated a timestamp-only topology diff but could not push to protected `main`; local commit includes the refreshed diagram. |\n\n"
             "## Ready work\n\n"
             "| bd | Status | Owner | Notes |\n"
@@ -86,10 +86,10 @@ def render(report: dict[str, Any] | None) -> str:
 
     lines: list[str] = [
         "---",
-        "title: Platform Status",
+        "title: Control Tower Status",
         "---",
         "",
-        "# Platform Status",
+        "# Control Tower Status",
         "",
         f"Generated: `{report.get('generated_at', now)}`",
         f"Environment: **{report.get('environment', 'unknown')}**",

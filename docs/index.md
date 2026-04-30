@@ -1,18 +1,22 @@
 ---
-title: Azure Governance Platform
+title: HTT Control Tower
 ---
 
-# HTT Portfolio Platform — Azure Governance
+# HTT Control Tower
 
-HTT-owned portfolio governance platform for Azure cost, identity, compliance,
-resources, lifecycle, and evidence workflows. Riverside is one evidence
-consumer, not the platform identity. This page is the self-updating project hub:
-every push to `main` refreshes GitHub Pages, status docs, and topology assets.
+HTT Control Tower is HTT's internal multi-brand governance hub for cost,
+identity, compliance, resources, lifecycle, and evidence workflows. Riverside is
+one evidence consumer, not the platform identity. This page is the self-updating
+project hub: every push to `main` refreshes GitHub Pages, status docs, and
+topology assets.
+
+_Naming note: Control Tower is HTT's internal name for this platform. It is
+unrelated to AWS Control Tower._
 
 ## Live links
 
 - **Project board** — <https://github.com/orgs/htt-brands/projects> (pinned board: Azure Governance)
-- **Repository** — <https://github.com/htt-brands/azure-governance-platform>
+- **Repository** — <https://github.com/htt-brands/control-tower> _(target after repo rename cutover)_
 - **Staging app** — <https://app-governance-staging-xnczpwyv.azurewebsites.net>
 - **Continuity status** — [operations/continuity-status.html](operations/continuity-status.html)
 

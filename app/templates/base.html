@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="gpc-enabled" content="{{ 'true' if request.state.gpc_enabled else 'false' }}">
-    <title>{% block title %}Azure Governance Platform{% endblock %}</title>
+    <title>{% block title %}HTT Control Tower{% endblock %}</title>
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -117,7 +117,7 @@
         <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center text-sm text-muted-theme">
                 <div class="flex items-center gap-4">
-                    <span>Azure Governance Platform v{{ app_version | default("1.8.0") }}</span>
+                    <span>HTT Control Tower v{{ app_version | default("1.8.0") }}</span>
                     <a href="/privacy" class="hover:text-primary-theme underline">Privacy Policy</a>
                     <a href="/api/v1/accessibility/wcag-checklist" class="hover:text-primary-theme underline">Accessibility</a>
                 </div>

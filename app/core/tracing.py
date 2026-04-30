@@ -31,7 +31,7 @@ def setup_tracing(app) -> trace.Tracer | None:
     # Configure resource
     resource = Resource.create(
         {
-            SERVICE_NAME: "azure-governance-platform",
+            SERVICE_NAME: "control-tower",
             SERVICE_VERSION: settings.app_version,
             "deployment.environment": settings.environment,
         }

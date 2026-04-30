@@ -74,7 +74,7 @@ class Settings(RuntimeSettingsMixin, BaseSettings):
         default=None, alias="AZURE_MANAGED_IDENTITY_OBJECT_ID"
     )
 
-    app_name: str = "Azure Governance Platform"
+    app_name: str = "HTT Control Tower"
     app_version: str = __version__
     debug: bool = False
     log_level: str = "INFO"
