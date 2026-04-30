@@ -40,10 +40,14 @@ covers **§A.4** (runtime failure not caught by health), **§B** (database),
 | Field | Value |
 |---|---|
 | Name | **Dustin Boyd** |
-| Role / org | 🔴 TODO Tyler (HTT IT / role title) |
+| UPN | `dustin.boyd-admin@httbrands.com` |
+| Display name | Dustin Boyd - Admin |
+| Object ID (HTT tenant) | `22ddf06b-0dd8-4fd6-9b30-23fedc2442fa` |
+| Role / org | IT Operations Support Lead (HTT) |
 | Backup contact method | 🔴 TODO Tyler (Teams handle + cell + email) |
 | Date nominated | 2026-04-30 |
 | Date accepted | 🔴 TODO Tyler (after Dustin confirms) |
+| Tenant directory roles | Global Administrator, HTT-BI-Admins, SG-DCE-Sync-Users (verified 2026-04-30) |
 
 ---
 
@@ -56,14 +60,14 @@ need the same access.
 
 | Access | Why it's still needed | Status | Evidence pointer |
 |---|---|---|---|
-| GitHub repo | Read repo, inspect Actions runs (incl. auto-rollback decision summaries), dispatch `deploy-production.yml` | 🔴 TODO | 🔴 TODO |
-| GitHub `production` environment | Approve / re-run prod deploys, including emergency forward-fixes | 🔴 TODO | 🔴 TODO |
-| Azure HTT-CORE subscription | Run `az` against `rg-governance-production` for §A.4, §B, §C, §F | 🔴 TODO | 🔴 TODO |
-| Azure Key Vault `kv-governance-prod-*` | Recover soft-deleted secrets per §C.3 | 🔴 TODO | 🔴 TODO |
-| Azure SQL `sqldb-governance-prod` | Trigger PITR restore per §B.3 | 🔴 TODO | 🔴 TODO |
-| GHCR (`ghcr.io/htt-brands/control-tower`) | List/inspect digests; **only needed for §A.4 manual rollback when auto-rollback failed** | 🔴 TODO | 🔴 TODO |
-| Teams ops channel | Receive incident notifications (auto-rollback posts here too); coordinate with Tyler | 🔴 TODO | 🔴 TODO |
-| `SECRETS_OF_RECORD.md` | Pointer inventory for KV/storage account secrets — required for §B/§C/§F (blocked on bd `9lfn`) | 🔴 TODO | 🔴 TODO |
+| GitHub repo | Read repo, inspect Actions runs (incl. auto-rollback decision summaries), dispatch `deploy-production.yml` | 🔴 **TODO Tyler** — Dustin not in `HTT-BRANDS` org (verified 2026-04-30; only members are `htt-db`, `t-granlund`) | Tyler must invite via org settings |
+| GitHub `production` environment | Approve / re-run prod deploys, including emergency forward-fixes | 🔴 **TODO Tyler** — env has **zero** protection rules / required reviewers; Dustin must first join the org. **Separate gap filed as bd `gm9h` for env-reviewer governance** | `gh api /repos/HTT-BRANDS/control-tower/environments/production` returns `protection_rules: []` |
+| Azure HTT-CORE subscription | Run `az` against `rg-governance-production` for §A.4, §B, §C, §F | ✅ **Verified 2026-04-30** — Dustin holds `Owner` AND `Contributor` at `/subscriptions/32a28177-6fb2-4668-a528-6d6cafb9665e` | `az role assignment list --assignee 22ddf06b-0dd8-4fd6-9b30-23fedc2442fa --all` |
+| Azure Key Vault `kv-gov-prod` | Recover soft-deleted secrets per §C.3 (KV uses **legacy access policies**, not RBAC, so subscription Owner does NOT auto-grant data-plane access) | ✅ **Granted 2026-04-30** by code-puppy via `az keyvault set-policy` — full all-permissions matching Tyler's entry | KV access policy count went 3 → 4; Dustin's policy verified post-grant |
+| Azure SQL `sql-gov-prod-mylxq53d` | Trigger PITR restore per §B.3 (**management plane** — Owner role is sufficient for `Microsoft.Sql/servers/databases/restore/action`); SQL Entra admin not currently set on the server (separate finding) | ✅ Management plane via subscription Owner. ⚠️ For data-plane queries against the restored DB, a SQL Entra admin must exist first — Tyler's call whether to set | Subscription RBAC verified above |
+| GHCR (`ghcr.io/htt-brands/control-tower`) | List/inspect digests; **only needed for §A.4 manual rollback when auto-rollback failed** | 🔴 TODO — gated on org membership above; once in `HTT-BRANDS` org with `read:packages` scope, GHCR access follows org permissions | n/a |
+| Teams ops channel | Receive incident notifications (auto-rollback posts here too); coordinate with Tyler | 🔴 **TODO Tyler** — manual add via Teams admin / channel owner | n/a |
+| `SECRETS_OF_RECORD.md` | Pointer inventory for KV/storage account secrets — required for §B/§C/§F | 🔴 **Blocked on bd `9lfn`** — file does not yet exist | 🔴 |
 
 ---
 
@@ -170,6 +174,7 @@ Do not close `213e` until all are true:
 - bd `213e` — name a second rollback human (this checklist's tracker)
 - bd `39yp` — auto-rollback implementation (commit `d9d9d88`)
 - bd `q46o` — this rewrite
+- bd `gm9h` — production environment has zero protection rules (separate governance gap)
 - bd `9lfn` — `SECRETS_OF_RECORD.md` authorship (Tyler-only, blocks §3 reading)
 - `docs/runbooks/disaster-recovery.md` — scenario procedures
 - `docs/release-gate/rollback-current-state.yaml` — current waiver state
