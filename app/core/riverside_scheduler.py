@@ -38,6 +38,9 @@ from app.core.riverside_scheduler_checks import (
 from app.core.riverside_scheduler_deadlines import (
     add_deadline_tracker_jobs,
 )
+from app.core.riverside_scheduler_deadlines import (
+    schedule_deadline_checks as _schedule_deadline_checks,
+)
 from app.core.riverside_scheduler_mfa_alerts import (
     remove_mfa_alert_checks_from_scheduler,
     schedule_mfa_alert_checks_on_scheduler,
@@ -71,6 +74,11 @@ MFA_ADMIN_TARGET_PERCENTAGE = _MFA_ADMIN_TARGET_PERCENTAGE
 MFA_USER_TARGET_PERCENTAGE = _MFA_USER_TARGET_PERCENTAGE
 THREAT_SCORE_CRITICAL_THRESHOLD = _THREAT_SCORE_CRITICAL_THRESHOLD
 THREAT_SCORE_HIGH_THRESHOLD = _THREAT_SCORE_HIGH_THRESHOLD
+
+
+async def schedule_deadline_checks() -> dict[str, Any]:
+    """Run deadline tracker checks and send configured deadline notifications."""
+    return await _schedule_deadline_checks()
 
 
 async def check_mfa_compliance(db=None) -> list[MFAComplianceResult]:
