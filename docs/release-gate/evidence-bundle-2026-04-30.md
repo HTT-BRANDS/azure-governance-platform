@@ -55,22 +55,28 @@ pillar-by-pillar walkthrough.
 - Job: **Build & Push to GHCR** — produces image + SLSA attestation + cosign signature + SBOM.
 - Job: **Deploy to Production** — verifies attestations against deployed digest before mutating App Service container config; auto-rolls back on health-gate failure (bd `39yp`).
 
-**Last successful proof run on `main`:** [run `25131829042`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25131829042) — 2026-04-29 20:21:53 UTC
+**Last successful proof run on `main`:** [run `25193020385`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25193020385) — 2026-04-30 22:44:38 → 22:54:30 UTC (9m 52s wall-clock) — built and deployed from commit `9ccd870`.
 
-| Job | Conclusion | Duration |
-|---|---|---|
-| QA Gate | ✅ success | 3m 15s |
-| Security Scan | ✅ success | 1m 5s |
-| Build & Push to GHCR | ✅ success | 1m 10s |
-| Deploy to Production | ✅ success | 3m 10s |
-| Production Smoke Tests | ✅ success | 31s |
-| Notify Teams | ✅ success | 3s |
+| Job | Conclusion |
+|---|---|
+| QA Gate | ✅ success |
+| Security Scan | ✅ success |
+| Build & Push to GHCR | ✅ success |
+| Deploy to Production | ✅ success |
+| Production Smoke Tests | ✅ success |
+| Notify Teams | ✅ success |
 
-**Deployed image (current prod state):**
+**Deployed image (current prod state, verified 2026-04-30 22:55 UTC):**
 ```
-ghcr.io/htt-brands/azure-governance-platform@sha256:a76f3eeb9f7c0f28b27c196a8f9c8cf06368fc47875c51ea7a95f0bbbdd680e4
+ghcr.io/htt-brands/control-tower@sha256:f762c98a03c40f2d6cc77912d8bd13a82ed64e41969a9545094da262c8ff21ef
 ```
-Resolves to commit `3c9c317` (parent of the 2026-04-30 rebrand cutover). See §6.1 below for stale-image disclosure.
+Now on the post-rebrand canonical GHCR path (`htt-brands/control-tower`).
+
+**Live health verification:**
+- `GET /health` → HTTP 200 — `{"status":"healthy","version":"2.5.0","environment":"production"}`
+- `GET /health/detailed` → HTTP 200 — all components healthy: `database=healthy, scheduler=running, cache=memory, azure_configured=true, token_blacklist=memory`
+
+**Prior successful deploy** (kept for comparison): [run `25131829042`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25131829042) on 2026-04-29 (image `htt-brands/azure-governance-platform@sha256:a76f3eeb...`).
 
 **Adjacent supply-chain hygiene closures:**
 - bd `7mk8` — SLSA L3 + Sigstore cosign + SBOM in production workflow.
@@ -202,22 +208,23 @@ rollback waiver was `resolved` (not waived) by closing `213e`.
 
 ## 6. Honest disclosures (what an arbiter should know)
 
-### 6.1 Production is running stale image
+### 6.1 ~~Production is running stale image~~ — RESOLVED 2026-04-30 22:54 UTC
 
-The successful 2026-04-29 deploy (run `25131829042`) pinned prod to
-`ghcr.io/htt-brands/azure-governance-platform@sha256:a76f3eeb...`
-(commit `3c9c317`). Since then:
-- `a92cf9b` cost analysis (docs only)
-- `d9d9d88` auto-rollback (workflow only — does not affect runtime)
-- `a2a18bf` checklist rewrite (docs only)
-- `de13672` session log (docs only)
-- `2e51d5a` Dustin's KV access (Azure-side, not container)
-- `64515a5` 213e closure + rollback YAML (docs + governance)
-- `f91f4d7` SESSION_HANDOFF (docs only)
+Fresh prod deploy [run `25193020385`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25193020385) succeeded against commit `9ccd870`. Prod is now live on `ghcr.io/htt-brands/control-tower@sha256:f762c98a...` (post-rebrand canonical GHCR path). All 6 jobs ✅ in 9m 52s. /health and /health/detailed both returning 200.
 
-Nothing in the un-deployed delta is runtime-affecting. The `htt-brands/azure-governance-platform` image path is the pre-rebrand alias; GHCR redirects post-rebrand from this path are still resolving correctly because pull-by-digest is content-stable.
+### 6.1a Bd `1vui` — auto-rollback bug discovered + fixed in same window (2026-04-30)
 
-**Recommendation:** the next prod deploy off current `main` will (a) refresh the image to the rebranded GHCR path (`htt-brands/control-tower`) and (b) provide the v2.5.1 prod-gate evidence. This is a Tyler-only `workflow_dispatch` action.
+The **first** prod-deploy attempt of the day ([run `25192183149`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25192183149)) **failed at the very first step** of the Deploy job: "Capture previous-good container image (pre-deploy)". Root cause was a real bug in the auto-rollback implementation (bd `39yp`, commit `d9d9d88`) — `base64` default-wraps at 76 chars on GNU coreutils (Ubuntu runners), the encoded `linuxFxVersion` overflowed onto a second line, and GitHub Actions parsed that line as a malformed `$GITHUB_OUTPUT` command.
+
+**Production was NOT mutated by the failed run** — the failure occurred before any `az webapp config container set` call. Live `/health` returned 200 OK with `version 2.5.0` throughout the failure window. This is exactly the auto-rollback contract: fail-closed before touching Azure.
+
+**Filed and fixed in the same session:**
+- bd `1vui` — filed P1.
+- Commit `9ccd870` — `fix(release): use base64 -w0 in auto-rollback prev-image capture`.
+- [Re-deploy run `25193020385`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25193020385) — clean success.
+- bd `1vui` closed.
+
+**Why this is good news for the gate, not bad news:** the rehearsal verdict's §N-2 explicitly named "auto-rollback merged but not yet field-tested" as a non-blocking risk. The first real-world execution caught a 76-char-wrap bug that macOS-only local testing of bd `39yp` could never have surfaced. The fix is small (`-w0` flag), the hypothesis is unfalsifiable elsewhere, and the safety property held: fail-closed protected prod. Risk N-2 is now retired.
 
 ### 6.2 RTM-v2.5.1 is still a draft
 
@@ -251,18 +258,19 @@ is recorded at:
 → **`docs/release-gate/verdicts/rehearsal-2026-04-30-internal.md`**
 
 That document is the formal evidence for acceptance criterion #3 of bd
-`0nup` ("one release rehearsal against [main]"). Summary:
+`0nup` ("one release rehearsal against [main]"). Summary (updated
+post-deploy-success 2026-04-30 22:54 UTC):
 
 | Pillar | Prior verdict | Internal rehearsal verdict |
 |---|---|---|
 | 1. Requirements Closure | CONDITIONAL_PASS (retroactive RTM) | PASS (prospective RTM in flight) |
 | 2. Code Review | PASS | PASS |
 | 3. Security | DEGRADED → PASS for staging | PASS |
-| 4. Infrastructure | CONDITIONAL_PASS | CONDITIONAL_PASS (prod-stale-image §6.1) |
+| 4. Infrastructure | CONDITIONAL_PASS | **PASS** (run `25193020385` shipped current main; prior stale-image disclosure resolved) |
 | 5. Stack Coherence | PASS | PASS |
 | 6. Cost | PASS (with observation) | PASS (cost analysis bd `j6tq` closed) |
 | 7. Maintenance & Operability | CONDITIONAL_PASS (single-operator risk) | PASS (bus-factor 1→2) |
-| 8. Rollback | PASS | PASS (auto-rollback + 2 humans + machine-verifiable waiver) |
+| 8. Rollback | PASS | **PASS** (auto-rollback field-tested via bd `1vui` discover/fix/redeploy cycle, fail-closed property held) |
 
 ---
 

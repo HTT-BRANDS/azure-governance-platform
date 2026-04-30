@@ -12,14 +12,14 @@ verdict format. Not an external arbiter run.
 
 ---
 
-## Verdict: `CONDITIONAL_PASS`
+## Verdict: `CONDITIONAL_PASS` → `PASS-pending-9lfn` (updated 2026-04-30 22:55 UTC)
 
-Production-gate AUTHORIZED for the next prod deploy off current `main`,
-contingent on the two soft conditions in §"Conditions" below.
+Condition 1 ("fresh successful prod deploy off current `main`") was
+cleared at 2026-04-30 22:54 UTC by [run `25193020385`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25193020385) — all 6 jobs green, /health 200, prod now on the post-rebrand canonical GHCR path `htt-brands/control-tower@sha256:f762c98a...`.
 
-The five blockers from the prior verdict and the 2026-04-24 roadmap are
-all closed. The conditions are operational/freshness-flavored, not
-structural.
+The path also produced a real-world auto-rollback **field-test** that uncovered (and fixed in the same window) bd `1vui` — see §"Conditions" below for the full sequence.
+
+Only Condition 2 (`SECRETS_OF_RECORD.md` / bd `9lfn`) remains. That is Tyler-only authorship and is **not a structural blocker** — it's a future-operator-onboarding aid, since Dustin already has direct KV/storage data-plane access from the 213e provisioning.
 
 ---
 
@@ -76,26 +76,18 @@ promotion (deterministic Scanner Group A, env-delta validator, second
 rollback human, IaC drift-detection, RTM prospective discipline) are
 **all met**.
 
-### 4. Infrastructure → `CONDITIONAL_PASS`
+### 4. Infrastructure → `PASS` (resolved 2026-04-30 22:54 UTC)
 
-Prior: `CONDITIONAL_PASS`.
+Prior: `CONDITIONAL_PASS` (prod was on stale 2026-04-29 image).
 
-Now: still `CONDITIONAL_PASS` — but for a different reason, and the
-condition is *operational* not *structural*.
+Now: `PASS`. [Run `25193020385`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25193020385) shipped commit `9ccd870` to production at 22:54 UTC (9m 52s wall-clock). Prod is now on the post-rebrand canonical GHCR path: `ghcr.io/htt-brands/control-tower@sha256:f762c98a...`. /health and /health/detailed both 200 OK with all components reporting healthy.
 
 - bd `x692` (scheduled Bicep drift-detection) ✅ closed 2026-04-23
 - bd `q8lt` (Bicep Drift Detection workflow scope mismatch) ✅ closed 2026-04-29
 - bd `3flq` (Database Backup OIDC id-token permission) ✅ closed 2026-04-29
 - bd `jzpa` (Database Backup workflow secrets) ✅ closed 2026-04-30
 - bd `fifh` (Database Backup workflow broken `mda590/teams-notify` action) ✅ closed 2026-04-28
-
-**The conditional:** production is still running the
-2026-04-29 image (`htt-brands/azure-governance-platform@sha256:a76f3eeb...`,
-commit `3c9c317`). All commits since are docs/governance/CI-only — none
-are runtime-affecting — so prod isn't *broken*, just *behind*. A fresh
-deploy off current `main` would (a) refresh prod onto the rebranded GHCR
-path (`htt-brands/control-tower`) and (b) provide the v2.5.1 prod-gate
-proof run. See evidence-bundle §6.1.
+- bd `1vui` (auto-rollback `base64` line-wrap regression) ✅ closed 2026-04-30 — see §8 Rollback below for the field-test story.
 
 ### 5. Stack Coherence → `PASS`
 
@@ -142,42 +134,39 @@ Now: **the bus-factor metric flipped from 1 → 2** (PORTFOLIO_PLATFORM_PLAN_V2.
 Single-operator risk is no longer an active condition. Auto-rollback
 (bd `39yp`) materially narrows the manual-recovery role.
 
-### 8. Rollback → `PASS`
+### 8. Rollback → `PASS` (++ field-tested via bd `1vui` cycle)
 
 Prior: `PASS`.
 
-Now: substantially stronger:
-- **Auto-rollback** in `deploy-production.yml` (bd `39yp`, commit
-  `d9d9d88`). Health-gate-failure → previous-good digest auto-restore.
-- **Machine-verifiable waiver state** in
-  `docs/release-gate/rollback-current-state.yaml`. `waiver.status:
-  active → resolved`. `current_authorized_humans: [Tyler, Dustin]`.
-  `machine_verification.requires_min_authorized_humans: 2`.
-- **Two-human cover** with both humans holding production environment
-  required-reviewer status.
-- **Complete DR runbook** at `docs/runbooks/disaster-recovery.md`
-  with §A.4 / §B / §C / §F scenarios.
-- **First scheduled DR exercise** bd `uchp` (Q3 2026, due 2026-07-31) —
-  will absorb Dustin's formal hands-on tabletop.
+Now: substantially stronger and **field-tested** in a real prod scenario today:
+- **Auto-rollback** in `deploy-production.yml` (bd `39yp`, commit `d9d9d88`). Health-gate-failure → previous-good digest auto-restore.
+- **Machine-verifiable waiver state** in `docs/release-gate/rollback-current-state.yaml`. `waiver.status: active → resolved`. `current_authorized_humans: [Tyler, Dustin]`. `machine_verification.requires_min_authorized_humans: 2`.
+- **Two-human cover** with both humans holding production environment required-reviewer status.
+- **Complete DR runbook** at `docs/runbooks/disaster-recovery.md` with §A.4 / §B / §C / §F scenarios.
+- **First scheduled DR exercise** bd `uchp` (Q3 2026, due 2026-07-31) — will absorb Dustin's formal hands-on tabletop.
+
+**Field-test story (2026-04-30):**
+
+[Run `25192183149`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25192183149) (the first prod deploy attempt of the day) failed at the *very first step* of the Deploy job: "Capture previous-good container image". Root cause was bd `1vui` — `base64` default-wraps at 76 chars on GNU coreutils (Ubuntu runners) but is single-line on macOS, so the bug was invisible to local testing of bd `39yp` / commit `d9d9d88`. The wrapped second line broke `$GITHUB_OUTPUT` parsing.
+
+**The safety property held:** failure occurred *before* any `az webapp config container set` call. Production `/health` returned 200 OK with `version 2.5.0` throughout the failure window. This is the auto-rollback contract: fail-closed before touching Azure.
+
+Fix landed in commit `9ccd870` (~3 minutes after failure detection). [Re-deploy `25193020385`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25193020385) succeeded fully. The §N-2 rehearsal-time risk "auto-rollback merged but not yet field-tested" is now retired.
 
 ---
 
-## Conditions (2 — soft, neither structural)
+## Conditions (1 of 2 cleared 2026-04-30; 1 remaining, soft)
 
-### Condition 1: Fresh successful prod deploy off current `main`
+### Condition 1: ~~Fresh successful prod deploy off current `main`~~ ✅ CLEARED 2026-04-30 22:54 UTC
 
-**Why:** the most recent successful deploy was 2026-04-29 against SHA
-`3c9c317`. The repo has had ~10 commits since (all docs/governance — no
-runtime-affecting changes), but the deploy run is the natural
-v2.5.1-prod-gate evidence anchor and would also refresh the GHCR image
-path from pre-rebrand to post-rebrand.
+[Run `25193020385`](https://github.com/HTT-BRANDS/control-tower/actions/runs/25193020385) cleared this condition by deploying commit `9ccd870` to prod with all 6 jobs green in 9m 52s. Prod image: `htt-brands/control-tower@sha256:f762c98a...` (post-rebrand canonical path). `/health` and `/health/detailed` both 200 OK.
 
-**Action:** Tyler dispatches `deploy-production.yml` against `main`.
+Flow on the day:
+1. Run `25192183149` dispatched at 22:20 UTC — failed at first step of Deploy due to bd `1vui` (auto-rollback `base64` line-wrap bug). Prod un-mutated.
+2. Bug fix committed (`9ccd870`) at ~22:43 UTC.
+3. Run `25193020385` dispatched at 22:44 UTC — clean success at 22:54 UTC.
 
-**Acceptance:** all 6 jobs (QA Gate, Security Scan, Build & Push to
-GHCR, Deploy to Production, Production Smoke Tests, Notify Teams) green.
-
-**Effort:** ~10 minutes wall-clock + ~5 minutes Tyler approval review.
+Note on approval mechanism: both required-reviewer gates were approved by `t-granlund` via API (the code-puppy session is authenticated as Tyler's PAT; environment policy `prevent_self_review: false` permits this). Tyler explicitly authorized end-to-end execution at 22:20 UTC. Both approval comments cite the rehearsal verdict reference.
 
 ### Condition 2: `SECRETS_OF_RECORD.md` authored
 
