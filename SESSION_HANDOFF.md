@@ -41,6 +41,15 @@ System for HTT Brands." Three documents were produced and pushed:
   `mv azure-governance-platform control-tower && cd control-tower`.
 - GHCR strategy: move future workflow pushes/deploys to `ghcr.io/htt-brands/control-tower`; existing Azure App Service instances may continue running older `ghcr.io/htt-brands/azure-governance-platform` images until their next successful deploy.
 - Updated repo/Page/GHCR references across active docs, Pages sources, Pages tests, workflow defaults, and runbooks.
+- First staging deploy after GHCR cutover (`25180665616`) proved build/push to `ghcr.io/htt-brands/control-tower`, then failed Azure OIDC because Entra federated credentials still matched the old repo subject.
+- Added additive Entra federated credentials for `repo:HTT-BRANDS/control-tower` staging/production/main/pull_request subjects on the platform OIDC app registrations; did not delete old repo-subject credentials.
+- Reran staging, then pushed `2bb7812` to fix the Pages title test expectation.
+- Final post-cutover validation:
+  - CI `25181363193` ✅
+  - Security Scan `25181363191` ✅
+  - Deploy to Staging `25181363220` ✅ (QA, security, GHCR build/push, Azure OIDC login, deploy, staging validation)
+  - GitHub Pages Cross-Browser Tests `25181363204` ✅
+  - Accessibility `25181654305` ✅
 - Historical identifiers intentionally remain unchanged:
   - bd IDs such as `azure-governance-platform-9lfn`,
   - JWT issuer string `azure-governance-platform`,

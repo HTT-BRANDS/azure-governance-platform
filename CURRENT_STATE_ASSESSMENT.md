@@ -1,7 +1,7 @@
 # Current State Assessment — HTT Control Tower
 
 **Assessment Date:** 2026-04-30
-**HEAD assessed:** `c71da5f` on `main` (`Merge pull request #8 from HTT-BRANDS/control-tower-internal-rebrand`); repo slug cutover to `HTT-BRANDS/control-tower` is in progress under bd `0dsr`.
+**HEAD assessed:** `2bb7812` on `main` (`test(pages): expect Control Tower homepage title`); repo slug cutover to `HTT-BRANDS/control-tower` is complete under bd `0dsr`.
 **Source of truth for in-flight detail:** [`SESSION_HANDOFF.md`](./SESSION_HANDOFF.md), `bd ready`, and GitHub Actions run history.
 
 > This file is a reality dashboard. If it says "green," it needs a run ID or
@@ -15,8 +15,8 @@ HTT Control Tower runtime is up in both environments. Backup/RPO validation is g
 
 - Production health: `https://app-governance-prod.azurewebsites.net/health` returns `healthy` / `2.5.0`.
 - Staging health: `https://app-governance-staging-xnczpwyv.azurewebsites.net/health` returns `healthy` / `2.5.0`.
-- Mainline CI, Security Scan, Pages, browser tests, accessibility, and staging deploy were green for `f9f7c60` before the rebrand merge.
-- Rebrand PR #8 merged to `main` as `c71da5f`; refreshed PR checks passed on `d298d43` before merge.
+- Mainline CI, Security Scan, Pages browser tests, accessibility, and staging deploy are green for `2bb7812` after the repo/GHCR/Pages cutover.
+- Rebrand PR #8 merged to `main` as `c71da5f`; cutover commits `ddbd883` and `2bb7812` completed the repo/GHCR/Pages follow-through.
 - Staging deploy run `25171482459` passed QA, security, build/push, deploy, and staging validation for `f9f7c60`.
 - Scheduled/manual Database Backup is green and bd `jzpa` is closed: staging schema backup passed end-to-end (`25169438794`), production schema backup passed end-to-end (`25171354807`), and no temporary `GitHubActions-*` SQL firewall rules remained afterward.
 - Tyler-only continuity gates remain: `9lfn` secret inventory completion and `213e` second rollback human.
@@ -29,7 +29,7 @@ HTT Control Tower runtime is up in both environments. Backup/RPO validation is g
 |---|---|---|---|
 | Production | <https://app-governance-prod.azurewebsites.net/health> | ✅ `healthy`, version `2.5.0` | Checked 2026-04-30 during this session. |
 | Staging | <https://app-governance-staging-xnczpwyv.azurewebsites.net/health> | ✅ `healthy`, version `2.5.0` | The older `xncz` hostname is stale; use `xnczpwyv`. |
-| GitHub Pages | <https://htt-brands.github.io/control-tower/> | 🟡 Awaiting first post-rename Pages deploy/browser run from `main` | Repo URL is now `HTT-BRANDS/control-tower`; Pages defaults were updated under bd `0dsr`. |
+| GitHub Pages | <https://htt-brands.github.io/control-tower/> | ✅ Pages deploy/browser checks passed for `2bb7812` | Repo URL is now `HTT-BRANDS/control-tower`; old Pages path is no longer canonical. |
 
 ---
 
@@ -59,7 +59,7 @@ HTT Control Tower runtime is up in both environments. Backup/RPO validation is g
 | bd | Priority | Owner | Status |
 |---|---|---|---|
 | `9lfn` | P1 | Tyler | Ready — finish non-secret `SECRETS_OF_RECORD.md` inventory. |
-| `0dsr` | P2 | Richard | In progress — PR #8 merged; repo renamed to `HTT-BRANDS/control-tower`; GHCR/Page URL workflow updates pending validation. |
+| `0dsr` | P2 | Richard | Closed — repo renamed, GHCR moved to `ghcr.io/htt-brands/control-tower`, Pages URL cut over, staging validated. |
 | `213e` | P2 | Tyler | Ready — name second rollback human before waiver expiry. |
 
 Blocked:
@@ -101,7 +101,7 @@ The public GitHub Pages site now has:
 - `docs/status.md` fallback content that shows current CI/backup/continuity state even when `scripts/audit_output.json` is absent.
 - Continuity links to `RUNBOOK.md`, `SECRETS_OF_RECORD.md`, RTO/RPO, and BACPAC validation decision docs.
 
-PR #8 Pages cross-browser checks passed before merge. After bd `0dsr` lands, verify the normal `Deploy GitHub Pages` and `GitHub Pages Cross-Browser Tests` runs publish and test `https://htt-brands.github.io/control-tower/` from `main`.
+Post-cutover Pages and browser validation passed from `main`: GitHub Pages Cross-Browser Tests `25181363204` and Deploy GitHub Pages `25180665629`. Staging deploy `25181363220` also proved the new GHCR path and Azure OIDC credentials after additive federated credentials were created for the `HTT-BRANDS/control-tower` subjects.
 
 ---
 

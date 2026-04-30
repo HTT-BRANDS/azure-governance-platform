@@ -50,7 +50,7 @@ def render(report: dict[str, Any] | None) -> str:
             "| bd | Status | Owner | Notes |\n"
             "|---|---|---|---|\n"
             "| `9lfn` | Ready | Tyler | `SECRETS_OF_RECORD.md` skeleton exists; Tyler must fill non-secret inventory rows. |\n"
-            "| `0dsr` | In progress | Richard | PR #8 merged; repo renamed to `HTT-BRANDS/control-tower`; GHCR and Pages workflow defaults updated pending post-push validation. |\n"
+            "| `0dsr` | Closed | Richard | Repo renamed to `HTT-BRANDS/control-tower`; GHCR moved to `ghcr.io/htt-brands/control-tower`; Pages/browser and staging validations passed. |\n"
             "| `213e` | Ready | Tyler | Second rollback human must be named and tabletop exercise recorded. |\n"
             "| `jzpa` | Closed | code-puppy-661ed0 | Backup workflow validated: staging schema backup `25169438794`, production schema backup `25171354807`; no temporary SQL firewall rules left behind. |\n\n"
             "## Blocked work\n\n"
