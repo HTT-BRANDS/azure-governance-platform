@@ -2,22 +2,24 @@
 title: Azure Governance Platform
 ---
 
-# Azure Governance Platform
+# HTT Portfolio Platform — Azure Governance
 
-Production-ready multi-tenant Azure governance platform for Head-to-Toe Brands
-(Riverside Capital portfolio company). This page is the self-updating project
-hub — every push to `main` refreshes the audit status, topology diagram, and
-Riverside timeline below.
+HTT-owned portfolio governance platform for Azure cost, identity, compliance,
+resources, lifecycle, and evidence workflows. Riverside is one evidence
+consumer, not the platform identity. This page is the self-updating project hub:
+every push to `main` refreshes GitHub Pages, status docs, and topology assets.
 
 ## Live links
 
 - **Project board** — <https://github.com/orgs/htt-brands/projects> (pinned board: Azure Governance)
 - **Repository** — <https://github.com/htt-brands/azure-governance-platform>
 - **Staging app** — <https://app-governance-staging-xnczpwyv.azurewebsites.net>
+- **Continuity status** — [operations/continuity-status.html](operations/continuity-status.html)
 
 ## What's on this page
 
-- [Platform status](status.md) — tenant health, consent, UI-fixture leaks (refreshed from `scripts/audit_output.json`).
+- [Platform status](status.md) — current CI/backup/continuity notes plus audit output when available.
+- [Continuity status](operations/continuity-status.html) — DR, backup, bus-factor, and blocked validation state.
 - [Riverside timeline](riverside-timeline.md) — countdown to **July 8, 2026** and per-domain maturity.
 - Architecture diagram — embedded below (regenerated from Azure Resource Graph on every push).
 

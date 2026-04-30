@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Continuity Status — Azure Governance Platform</title>
+  <meta name="description" content="Current continuity, DR, backup, and bus-factor status for the HTT Brands Azure Governance Platform.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23500711'/><text x='16' y='22' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffc957' text-anchor='middle'>HT</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/main.css">
+  <link rel="stylesheet" href="../assets/icons.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <div class="nav-inner">
+      <a href="../" class="nav-logo" aria-label="Home">HT</a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="../architecture/">Architecture</a>
+        <a href="../operations/" class="active">Operations</a>
+        <a href="../api/">API</a>
+        <a href="../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="breadcrumb"><a href="../">Home</a><span>›</span><a href="./">Operations</a><span>›</span> Continuity Status</div>
+      <h1 class="page-title">Continuity Status</h1>
+      <p class="page-subtitle">Current DR, backup, bus-factor, and release-readiness state as of 2026-04-30.</p>
+    </div>
+  </div>
+
+  <main id="main">
+    <section class="section">
+      <div class="grid grid--3">
+        <div class="card">
+          <h2 class="card-title">CI / deploy</h2>
+          <p class="card-description">Latest mainline CI, security scan, staging deploy, Pages deploy, and Pages cross-browser checks are green.</p>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Human gates</h2>
+          <p class="card-description">Two Tyler-owned items remain ready: <code>9lfn</code> secret inventory completion and <code>213e</code> second rollback human.</p>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Backup watch</h2>
+          <p class="card-description">Scheduled Database Backup run <code>25145371945</code> exposed missing prod/staging backup secret names. Names are configured; validation remains bd <code>jzpa</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--alt">
+      <div class="section-header">
+        <h2 class="section-title">Current work queue</h2>
+        <p class="section-subtitle">What is claimable vs blocked right now</p>
+      </div>
+      <div class="doc-list">
+        <div class="doc-list-item">
+          <h3>Ready — Tyler-owned</h3>
+          <p><code>9lfn</code>: fill <a href="https://github.com/HTT-BRANDS/azure-governance-platform/blob/main/SECRETS_OF_RECORD.md">SECRETS_OF_RECORD.md</a> with non-secret pointers, access, and rotation metadata.</p>
+          <p><code>213e</code>: name a second rollback human and complete <a href="../dr/second-rollback-human-checklist.md">the readiness/tabletop checklist</a>.</p>
+        </div>
+        <div class="doc-list-item">
+          <h3>Ready — operational follow-up</h3>
+          <p><code>jzpa</code>: validate production and staging scheduled backups after configuring <code>DATABASE_URL</code> / <code>AZURE_STORAGE_ACCOUNT</code> and adding SQLAlchemy fallback for absent <code>mssqlscripter</code>.</p>
+        </div>
+        <div class="doc-list-item">
+          <h3>Blocked</h3>
+          <p><code>cz89</code>: weekly BACPAC export code exists, but staging validation is blocked by Azure SQL Free edition ImportExport support. See <a href="../dr/bacpac-validation-decision.md">BACPAC validation decision</a>.</p>
+          <p><code>0nup</code> and <code>uchp</code> remain blocked by <code>213e</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Continuity documents</h2>
+        <p class="section-subtitle">Canonical places to update — no treasure maps hidden under the carpet</p>
+      </div>
+      <div class="grid grid--2">
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform/blob/main/RUNBOOK.md" class="doc-card">
+          <div class="doc-card-title">RUNBOOK.md</div>
+          <div class="doc-card-description">Emergency operating entry point, deploy/rollback flow, alert triage, and successor readiness pointers.</div>
+          <div class="doc-card-link">Open →</div>
+        </a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform/blob/main/SECRETS_OF_RECORD.md" class="doc-card">
+          <div class="doc-card-title">SECRETS_OF_RECORD.md</div>
+          <div class="doc-card-description">Safe skeleton for credential pointers. Tyler must fill values as non-secret references only.</div>
+          <div class="doc-card-link">Open →</div>
+        </a>
+        <a href="../dr/rto-rpo.md" class="doc-card">
+          <div class="doc-card-title">RTO / RPO</div>
+          <div class="doc-card-description">Stated recovery targets, quarterly test cadence, and known DR gaps.</div>
+          <div class="doc-card-link">Open →</div>
+        </a>
+        <a href="../dr/bacpac-validation-decision.md" class="doc-card">
+          <div class="doc-card-title">BACPAC validation decision</div>
+          <div class="doc-card-description">Options and runbooks for unblocking long-term SQL export validation.</div>
+          <div class="doc-card-link">Open →</div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">HT</div>
+      <div class="footer-links">
+        <a href="../architecture/">Architecture</a>
+        <a href="../operations/">Operations</a>
+        <a href="../api/">API</a>
+        <a href="../decisions/">Decisions</a>
+        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>HTT-owned portfolio platform · Continuity state current as of 2026-04-30</p>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    const toggle = document.querySelector('.nav-toggle');
+    const navLinks = document.querySelector('.nav-links');
+    if (toggle && navLinks) {
+      toggle.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        const isOpen = navLinks.classList.contains('open');
+        this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

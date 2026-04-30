@@ -230,13 +230,21 @@ restoring 60-day-old data to investigate a breach):
 2. Retain exports for 12 months.
 3. Cost: ~$0.50/mo for a 5-tenant deployment at current data volumes.
 
-**Automation:** `.github/workflows/bacpac-export.yml` runs weekly against
-production and can be manually dispatched against staging or production. It
-exports Azure SQL to the `bacpac-exports` blob container, sets the blob access
-tier to Cool, and sends Teams success/failure notifications.
+**Automation status:** `.github/workflows/bacpac-export.yml` exists and can be
+manually dispatched against staging or production, but bd `cz89` remains blocked
+until Tyler selects a validation path. Current blocker: staging Azure SQL Free
+edition does not support ImportExport. See `docs/dr/bacpac-validation-decision.md`.
 
-Retention is operationally defined as 12 months. The workflow deletes expired
-BACPAC blobs after each successful export using a 365-day cutoff.
+The older scheduled logical backup workflow (`.github/workflows/backup.yml`) is
+also under watch: run `25145371945` on 2026-04-30 showed production and staging
+jobs were missing `DATABASE_URL` and `AZURE_STORAGE_ACCOUNT`. Those environment
+secret names were configured on 2026-04-30, and `backup_database.py` now falls
+back to SQLAlchemy when optional `mssqlscripter` is absent. This remains tracked
+as bd `jzpa` until production and staging evidence runs pass.
+
+Retention is operationally defined as 12 months. Once validated, the BACPAC
+workflow deletes expired BACPAC blobs after each successful export using a
+365-day cutoff.
 
 ---
 
@@ -256,6 +264,7 @@ BACPAC blobs after each successful export using a 365-day cutoff.
 
 | Date | Change | Rationale |
 |---|---|---|
+| 2026-04-30 | Clarified BACPAC validation blocker (`cz89`) and scheduled backup secret gap (`jzpa`) | Keep public policy aligned with live DR/backup evidence |
 | 2026-04-23 | Initial policy — matches existing `retention_service.py` defaults, adds audit-log 7yr + offboarding SLA | First formal retention contract |
 
 ---

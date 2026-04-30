@@ -80,7 +80,11 @@ A credential class is complete when every row has:
 | Repository / environments | `GHCR_PAT` | App Service GHCR pull fallback | Tyler | 🔴 TODO / none risk accepted | 2026-04-10 per RUNBOOK | 🔴 TODO | Confirm actual expiration in GitHub |
 | Repository / environments | `PRODUCTION_TEAMS_WEBHOOK` | Production/deploy/BACPAC alerting | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Rotate in Teams connector if exposed |
 | Staging environment | `SQL_ADMIN_PASSWORD` | Staging BACPAC export | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Current stopgap was set from staging app `DATABASE_URL`; document final source |
+| Staging environment | `DATABASE_URL` | Scheduled staging database backup (`backup.yml`) | Tyler | GitHub environment secret | 🔴 TODO | 2026-04-30 | Set from staging App Service setting without printing value; validation pending bd `jzpa`. |
+| Staging environment | `AZURE_STORAGE_ACCOUNT` | Scheduled staging database backup upload target | Tyler | GitHub environment secret | 🔴 TODO | 2026-04-30 | Set to `stgovstagingxnczpwyv`; validation pending bd `jzpa`. |
 | Production environment | `SQL_ADMIN_PASSWORD` | Production BACPAC export | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Prefer Key Vault fallback if possible |
+| Production environment | `DATABASE_URL` | Scheduled production database backup (`backup.yml`) | Tyler | GitHub environment secret | 🔴 TODO | 2026-04-30 | Set from production App Service setting without printing value; validation pending bd `jzpa`. |
+| Production environment | `AZURE_STORAGE_ACCOUNT` | Scheduled production database backup upload target | Tyler | GitHub environment secret | 🔴 TODO | 2026-04-30 | Set to `stgovprodbkup001`; validation pending bd `jzpa`. |
 
 ---
 

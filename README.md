@@ -442,7 +442,7 @@ For comprehensive Riverside compliance documentation, see:
 - [x] **JWT Algorithm Confusion Fix** — Issuer-based routing prevents forgery
 - [x] **Refresh Token Blacklisting** — Secure token rotation with Redis
 - [x] **Operations Playbook** — 24.5 KB complete operations guide
-- [x] **Automated Database Backups** — GitHub Actions backup workflow
+- [~] **Automated Database Backups** — Workflow exists; 2026-04-30 scheduled run exposed missing production/staging backup secret names, which are now configured. Validation remains open as bd `jzpa`.
 - [x] **Makefile** — 15+ common development commands
 - [x] **Enhanced Application Insights** — Custom telemetry, distributed tracing
 - [x] **43 Security Audit Findings Resolved** — Complete security hardening

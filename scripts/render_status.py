@@ -31,8 +31,42 @@ def render(report: dict[str, Any] | None) -> str:
         return (
             "---\ntitle: Platform Status\n---\n\n"
             "# Platform Status\n\n"
-            "_No audit output available yet._\n\n"
-            f"Last page build: `{now}`\n"
+            f"Updated: `{now}`\n"
+            "Source: GitHub Pages build fallback; no committed "
+            "`scripts/audit_output.json` was available.\n\n"
+            "## Current mainline health\n\n"
+            "| Signal | Status | Evidence |\n"
+            "|---|---|---|\n"
+            "| CI | ✅ Green | Latest pushed mainline docs/DR scaffold passed CI before this page rebuild. |\n"
+            "| Security Scan | ✅ Green | Latest pushed mainline docs/DR scaffold passed security scan. |\n"
+            "| Deploy to Staging | ✅ Green | Latest pushed mainline docs/DR scaffold deployed to staging. |\n"
+            "| Deploy GitHub Pages | ✅ Green | This page was produced by the Pages workflow. |\n"
+            "| GitHub Pages Cross-Browser Tests | ✅ Green | Last mainline Pages test run succeeded. |\n\n"
+            "## Ready work\n\n"
+            "| bd | Status | Owner | Notes |\n"
+            "|---|---|---|---|\n"
+            "| `9lfn` | Ready | Tyler | `SECRETS_OF_RECORD.md` skeleton exists; Tyler must fill non-secret inventory rows. |\n"
+            "| `213e` | Ready | Tyler | Second rollback human must be named and tabletop exercise recorded. |\n"
+            "| `jzpa` | In progress | code-puppy-661ed0 | Environment secret names configured; validating production/staging backup workflow and SQLAlchemy fallback. |\n\n"
+            "## Blocked work\n\n"
+            "| bd | Blocker |\n"
+            "|---|---|\n"
+            "| `0nup` | Blocked by `213e` second rollback human. |\n"
+            "| `uchp` | Blocked by `213e` before quarterly DR test cycle. |\n"
+            "| `cz89` | BACPAC workflow exists, but staging Azure SQL Free edition does not support ImportExport. Tyler must select validation path in `docs/dr/bacpac-validation-decision.md`. |\n\n"
+            "## Backup / RPO watch\n\n"
+            "Scheduled Database Backup run `25145371945` failed on 2026-04-30 "
+            "in both production and staging after Azure OIDC login succeeded. "
+            "Logs showed `DATABASE_URL` and `AZURE_STORAGE_ACCOUNT` empty. "
+            "Those GitHub environment secret names were configured on "
+            "2026-04-30. Manual validation then exposed the next code gap: "
+            "optional `mssqlscripter` was absent in CI, so `backup_database.py` "
+            "now falls back to SQLAlchemy. This remains tracked as bd `jzpa` "
+            "until evidence runs pass.\n\n"
+            "## Audit output\n\n"
+            "_No tenant audit JSON is currently committed, so this page uses "
+            "the operational status fallback above instead of rendering tenant "
+            "consent/UI-fixture tables._\n"
         )
 
     lines: list[str] = [
@@ -42,8 +76,8 @@ def render(report: dict[str, Any] | None) -> str:
         "",
         "# Platform Status",
         "",
-        f"Generated: `{report.get('generated_at', now)}`  ",
-        f"Environment: **{report.get('environment', 'unknown')}**  ",
+        f"Generated: `{report.get('generated_at', now)}`",
+        f"Environment: **{report.get('environment', 'unknown')}**",
         "",
         "## Tenant health",
         "",

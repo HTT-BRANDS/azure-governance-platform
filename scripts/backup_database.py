@@ -15,6 +15,7 @@ Environment Variables:
 
 import argparse
 import gzip
+import importlib.util
 import logging
 import os
 import subprocess
@@ -121,10 +122,15 @@ def backup_mssql(url: str, backup_type: str, output_path: str) -> None:
     parsed = urlparse(url)
     dbname = parsed.path.lstrip("/")
 
-    # Try mssql-scripter first (Python-based, easier to install)
-    try:
-        import subprocess
+    # Try mssql-scripter first (Python-based, easier to install). The package is
+    # optional in CI; if it is absent, fall back to SQLAlchemy instead of failing
+    # before a backup file exists. Very glamorous plumbing, naturally.
+    if importlib.util.find_spec("mssqlscripter") is None:
+        logger.warning("mssql-scripter not installed, using SQLAlchemy fallback")
+        backup_with_sqlalchemy(url, backup_type, output_path)
+        return
 
+    try:
         cmd = [
             "python",
             "-m",

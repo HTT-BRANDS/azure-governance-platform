@@ -134,7 +134,7 @@ Quarterly. Next test: **2026-07-31** (Q3 2026).
 2. **No completed backup of GitHub Actions secrets.** `AZURE_CLIENT_ID`, `GHCR_PAT`, `PRODUCTION_TEAMS_WEBHOOK`, etc. are stored manually. Their loss requires re-creation. `SECRETS_OF_RECORD.md` now exists as a safe skeleton, but Tyler must fill the non-secret inventory rows before bd `9lfn` can close.
 3. **No tested restore.** All numbers in §1 are stated, not validated. Until the 2026-07-31 test cycle completes successfully, treat them as aspirational.
 4. **No region failover capability.** Single-region (West US 2). Mitigation requires SQL Standard tier + geo-redundant config (~$30/mo extra). Not currently justified by criticality.
-5. **`backup.yml` workflow** — fix shipped 2026-04-28 in commit `<this commit>` (replaced broken `mda590/teams-notify@master` action with curl-based MessageCard pattern matching `deploy-production.yml` convention; bd `fifh` closed). Awaiting next scheduled run (nightly 03:00 UTC) for end-to-end verification. Until that run lands green, treat scheduled backup verification as best-effort.
+5. **`backup.yml` workflow** — notify action and OIDC permission fixes shipped (`fifh`, `3flq` closed). Scheduled run `25145371945` on 2026-04-30 exposed production/staging environment gaps: `DATABASE_URL` and `AZURE_STORAGE_ACCOUNT` were empty. Those secret names were configured on 2026-04-30, and `backup_database.py` now falls back to SQLAlchemy when optional `mssqlscripter` is absent. Tracked as bd `jzpa` until production and staging validation runs land green.
 
 ---
 
