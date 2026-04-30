@@ -132,10 +132,13 @@ PAGES=https://htt-brands.github.io/control-tower
 # Landing
 curl -s -o /dev/null -w "GET /                              -> HTTP %{http_code}\n" $PAGES/
 
-# Section landings
-for path in architecture operations api decisions status; do
+# Section landings (HTML index pages — Jekyll is disabled)
+for path in architecture operations api decisions; do
   curl -s -o /dev/null -w "GET /$path/                          -> HTTP %{http_code}\n" $PAGES/$path/
 done
+
+# Status fallback (served as raw markdown — see scripts/render_status.py)
+curl -s -o /dev/null -w "GET /status.md                          -> HTTP %{http_code}\n" $PAGES/status.md
 
 # Continuity status (the "where are we" page on Pages)
 curl -s -o /dev/null -w "GET /operations/continuity-status.html -> HTTP %{http_code}\n" \
