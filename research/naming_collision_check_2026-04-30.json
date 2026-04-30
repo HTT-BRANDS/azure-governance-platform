@@ -1,0 +1,368 @@
+{
+  "disclaimer": "Lightweight public collision check only; not trademark/legal clearance.",
+  "generated_at_utc": "2026-04-30T16:53:43Z",
+  "results": [
+    {
+      "domains_with_dns": [
+        "switchyard.com",
+        "switchyard.io",
+        "switchyard.dev",
+        "switchyard.cloud",
+        "switchyard.ai"
+      ],
+      "github_repo_count": 157,
+      "name": "switchyard",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "aerie.com",
+        "aerie.io",
+        "aerie.app",
+        "aerie.dev",
+        "aerie.cloud",
+        "aerie.ai"
+      ],
+      "github_repo_count": 532,
+      "name": "aerie",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "hangar.com",
+        "hangar.io",
+        "hangar.app",
+        "hangar.dev",
+        "hangar.cloud",
+        "hangar.ai"
+      ],
+      "github_repo_count": 1403,
+      "name": "hangar",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "dispatch.com",
+        "dispatch.io",
+        "dispatch.app",
+        "dispatch.dev",
+        "dispatch.cloud",
+        "dispatch.ai"
+      ],
+      "github_repo_count": 21305,
+      "name": "dispatch",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "meridian.com",
+        "meridian.io",
+        "meridian.app",
+        "meridian.dev",
+        "meridian.cloud",
+        "meridian.ai"
+      ],
+      "github_repo_count": 3390,
+      "name": "meridian",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "concourse.com",
+        "concourse.io",
+        "concourse.app",
+        "concourse.dev",
+        "concourse.ai"
+      ],
+      "github_repo_count": 3631,
+      "name": "concourse",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "waypoint.com",
+        "waypoint.io",
+        "waypoint.app",
+        "waypoint.dev",
+        "waypoint.cloud",
+        "waypoint.ai"
+      ],
+      "github_repo_count": 3537,
+      "name": "waypoint",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "switchboard.com",
+        "switchboard.io",
+        "switchboard.app",
+        "switchboard.dev",
+        "switchboard.cloud",
+        "switchboard.ai"
+      ],
+      "github_repo_count": 1256,
+      "name": "switchboard",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "crossdock.com",
+        "crossdock.io",
+        "crossdock.app",
+        "crossdock.ai"
+      ],
+      "github_repo_count": 46,
+      "name": "crossdock",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [
+        "yardmaster.com",
+        "yardmaster.ai"
+      ],
+      "github_repo_count": 17,
+      "name": "yardmaster",
+      "notes": [],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [
+        "interlock.com",
+        "interlock.io",
+        "interlock.app",
+        "interlock.dev",
+        "interlock.ai"
+      ],
+      "github_repo_count": null,
+      "name": "interlock",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [
+        "conductor.com",
+        "conductor.io",
+        "conductor.app",
+        "conductor.dev",
+        "conductor.cloud",
+        "conductor.ai"
+      ],
+      "github_repo_count": null,
+      "name": "conductor",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "relaydeck.com",
+        "relaydeck.app"
+      ],
+      "github_repo_count": null,
+      "name": "relaydeck",
+      "notes": [],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [
+        "portico.com",
+        "portico.io",
+        "portico.app",
+        "portico.dev",
+        "portico.cloud",
+        "portico.ai"
+      ],
+      "github_repo_count": null,
+      "name": "portico",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "cartographer.com",
+        "cartographer.io",
+        "cartographer.app",
+        "cartographer.cloud",
+        "cartographer.ai"
+      ],
+      "github_repo_count": null,
+      "name": "cartographer",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "tessera.com",
+        "tessera.io",
+        "tessera.app",
+        "tessera.dev",
+        "tessera.ai"
+      ],
+      "github_repo_count": 8702,
+      "name": "tessera",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": true,
+      "pypi_exists": true
+    },
+    {
+      "domains_with_dns": [
+        "loomline.com",
+        "loomline.app"
+      ],
+      "github_repo_count": 2,
+      "name": "loomline",
+      "notes": [],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [],
+      "github_repo_count": 0,
+      "name": "brandyard",
+      "notes": [
+        "no DNS found for checked common domains"
+      ],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [
+        "tenantforge.com",
+        "tenantforge.io",
+        "tenantforge.app"
+      ],
+      "github_repo_count": 6,
+      "name": "tenantforge",
+      "notes": [],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [
+        "portfolium.com",
+        "portfolium.io",
+        "portfolium.ai"
+      ],
+      "github_repo_count": 132,
+      "name": "portfolium",
+      "notes": [],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [
+        "fleetglass.com"
+      ],
+      "github_repo_count": 0,
+      "name": "fleetglass",
+      "notes": [],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [],
+      "github_repo_count": 2,
+      "name": "hubwright",
+      "notes": [
+        "no DNS found for checked common domains"
+      ],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [
+        "cloudfolio.com",
+        "cloudfolio.io",
+        "cloudfolio.app",
+        "cloudfolio.ai"
+      ],
+      "github_repo_count": 24,
+      "name": "cloudfolio",
+      "notes": [
+        "many common domains resolve"
+      ],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [
+        "brandplane.com",
+        "brandplane.app"
+      ],
+      "github_repo_count": 2,
+      "name": "brandplane",
+      "notes": [],
+      "npm_exists": false,
+      "pypi_exists": false
+    },
+    {
+      "domains_with_dns": [],
+      "github_repo_count": 1,
+      "name": "operatorium",
+      "notes": [
+        "no DNS found for checked common domains"
+      ],
+      "npm_exists": false,
+      "pypi_exists": false
+    }
+  ],
+  "tlds_checked": [
+    "com",
+    "io",
+    "app",
+    "dev",
+    "cloud",
+    "ai"
+  ]
+}
