@@ -98,8 +98,8 @@ See [CHANGELOG.md](./CHANGELOG.md) for version history.
 ```bash
 # Clone the repository
 # Current repo URL until bd 0dsr completes the GitHub repo rename cutover
-git clone https://github.com/htt-brands/azure-governance-platform.git
-cd azure-governance-platform
+git clone https://github.com/htt-brands/control-tower.git
+cd control-tower
 
 # Create virtual environment
 uv venv

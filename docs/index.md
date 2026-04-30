@@ -16,7 +16,7 @@ unrelated to AWS Control Tower._
 ## Live links
 
 - **Project board** — <https://github.com/orgs/htt-brands/projects> (pinned board: Control Tower / Azure Governance during cutover)
-- **Repository** — <https://github.com/htt-brands/azure-governance-platform> _(current; target slug `control-tower` is tracked by bd `0dsr`)_
+- **Repository** — <https://github.com/htt-brands/control-tower>
 - **Staging app** — <https://app-governance-staging-xnczpwyv.azurewebsites.net>
 - **Continuity status** — [operations/continuity-status.html](operations/continuity-status.html)
 

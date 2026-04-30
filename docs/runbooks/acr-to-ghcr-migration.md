@@ -70,7 +70,7 @@ This runbook documents the migration from **Azure Container Registry (ACR)** to 
    
    env:
      GHCR_REGISTRY: ghcr.io
-     GHCR_REPOSITORY: htt-brands/azure-governance-platform
+     GHCR_REPOSITORY: htt-brands/control-tower
    
    steps:
      - uses: docker/login-action@v3

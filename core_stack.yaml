@@ -1,5 +1,5 @@
 # core_stack.yaml
-# Canonical declaration of the runtime stack for azure-governance-platform.
+# Canonical declaration of the runtime stack for HTT Control Tower.
 # Consumed by: release-gate-arbiter (Pillar 5 — Stack Coherence).
 #
 # Rule: add a new top-level stack component here BEFORE landing a PR that
@@ -10,7 +10,7 @@
 # Owner:         Tyler Granlund (t-granlund@users.noreply.github.com)
 
 schema_version: 1
-project: azure-governance-platform
+project: control-tower
 version: 2.5.0
 
 # ---------------------------------------------------------------------------
@@ -131,7 +131,7 @@ hosting:
   container_registry:
     name: GitHub Container Registry (GHCR)
     organization: htt-brands
-    repository: ghcr.io/htt-brands/azure-governance-platform
+    repository: ghcr.io/htt-brands/control-tower
     migration_complete: 2026-04-17 (commit 399c209, closes 265y)
     legacy_deleted: ghcr.io/tygranlund/* (no references remain)
   deploy_mechanism:

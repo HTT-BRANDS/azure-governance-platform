@@ -53,7 +53,7 @@ npm run test:debug
 ### Test Deployed Site (Default)
 
 ```bash
-# Tests run against https://htt-brands.github.io/azure-governance-platform/
+# Tests run against https://htt-brands.github.io/control-tower/
 npm test
 ```
 
@@ -219,7 +219,7 @@ myNewPage: {
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GH_PAGES_URL` | `https://htt-brands.github.io/azure-governance-platform/` | Base URL to test |
+| `GH_PAGES_URL` | `https://htt-brands.github.io/control-tower/` | Base URL to test |
 | `LOCAL_SERVER_PORT` | - | Port for local server mode |
 | `CI` | - | Set by CI environments, affects retries and workers |
 

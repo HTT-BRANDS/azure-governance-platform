@@ -31,6 +31,21 @@ System for HTT Brands." Three documents were produced and pushed:
 
 ## ✅ What got done this session (chronological)
 
+### Continuation — 2026-04-30 Control Tower repo/GHCR/Pages cutover (bd `0dsr`)
+- Tyler approved **Control Tower** as the platform name.
+- Merged PR #8 to `main` as `c71da5f` after refreshed checks passed on `d298d43`.
+- Renamed archived predecessor repo `HTT-BRANDS/control-tower` → `HTT-BRANDS/control-tower-legacy-2026`, then re-archived it.
+- Renamed active platform repo `HTT-BRANDS/azure-governance-platform` → `HTT-BRANDS/control-tower`.
+- Updated local `origin` to `https://github.com/HTT-BRANDS/control-tower.git`.
+- Local clone directory is still `/Users/tygranlund/dev/01-htt-brands/azure-governance-platform`; either keep it or rename manually after the session with:
+  `mv azure-governance-platform control-tower && cd control-tower`.
+- GHCR strategy: move future workflow pushes/deploys to `ghcr.io/htt-brands/control-tower`; existing Azure App Service instances may continue running older `ghcr.io/htt-brands/azure-governance-platform` images until their next successful deploy.
+- Updated repo/Page/GHCR references across active docs, Pages sources, Pages tests, workflow defaults, and runbooks.
+- Historical identifiers intentionally remain unchanged:
+  - bd IDs such as `azure-governance-platform-9lfn`,
+  - JWT issuer string `azure-governance-platform`,
+  - old image references in archived evidence/docs where they describe past state.
+
 ### Continuation — 2026-04-30 Control Tower internal rebrand branch
 - Tyler selected **Control Tower** as the internal product/repo name.
 - Created branch `control-tower-internal-rebrand` from current `main` baseline `f9f7c60`.
@@ -41,9 +56,8 @@ System for HTT Brands." Three documents were produced and pushed:
 - Added `docs/control-tower-internal-rebrand-plan.md` documenting what was renamed now and what remains a separate cutover.
 - Filed bd `0dsr` for the actual GitHub repo/GHCR/Pages cutover. Do **not** rename Azure resources or bd issue IDs as part of that task.
 - Intentionally left these operational identifiers unchanged for now:
-  - deployed GHCR path `ghcr.io/htt-brands/azure-governance-platform`,
-  - current Pages URL `https://htt-brands.github.io/azure-governance-platform/`,
-  - JWT issuer string `azure-governance-platform`,
+  - deployed GHCR path `ghcr.io/htt-brands/azure-governance-platform` until the next environment deploy,
+  - JWT issuer string `azure-governance-platform`, 
   - historical bd IDs such as `azure-governance-platform-9lfn`.
 - Validation for this branch:
   - `.venv/bin/pytest tests/unit/test_version.py tests/unit/test_config.py tests/unit/test_main_app.py tests/unit/test_onboarding.py tests/unit/test_templates.py tests/unit/test_tracing.py -q` → `128 passed`.

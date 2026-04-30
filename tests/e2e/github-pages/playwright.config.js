@@ -31,7 +31,7 @@ module.exports = defineConfig({
   // Shared settings for all the projects below
   use: {
     // Base URL to use in actions like `await page.goto('/')`
-    baseURL: process.env.GH_PAGES_URL || 'https://htt-brands.github.io/azure-governance-platform/',
+    baseURL: process.env.GH_PAGES_URL || 'https://htt-brands.github.io/control-tower/',
     
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',

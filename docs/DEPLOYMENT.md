@@ -33,7 +33,7 @@ Or deploy via CLI:
 
 ```bash
 # Clone the repository
-git clone https://github.com/htt-brands/azure-governance-platform.git
+git clone https://github.com/htt-brands/control-tower.git
 cd azure-governance-platform
 
 # Run the deployment script

@@ -3,7 +3,7 @@
  * Defines all pages, their URLs, expected titles, and key selectors
  */
 
-const BASE_URL = process.env.GH_PAGES_URL || 'https://htt-brands.github.io/azure-governance-platform';
+const BASE_URL = process.env.GH_PAGES_URL || 'https://htt-brands.github.io/control-tower';
 
 /**
  * Hub Pages - HTML landing pages

@@ -4,7 +4,7 @@ title: Control Tower Status
 
 # Control Tower Status
 
-Updated: `2026-04-30T17:29:44.322088+00:00`
+Updated: `2026-04-30T17:49:16.089183+00:00`
 Source: GitHub Pages build fallback; no committed `scripts/audit_output.json` was available.
 
 ## Current mainline / rebrand health
@@ -26,7 +26,7 @@ Source: GitHub Pages build fallback; no committed `scripts/audit_output.json` wa
 | bd | Status | Owner | Notes |
 |---|---|---|---|
 | `9lfn` | Ready | Tyler | `SECRETS_OF_RECORD.md` skeleton exists; Tyler must fill non-secret inventory rows. |
-| `0dsr` | Ready | Tyler/Richard | Execute GitHub repo/GHCR/Pages Control Tower cutover after PR #8 merge decision. |
+| `0dsr` | In progress | Richard | PR #8 merged; repo renamed to `HTT-BRANDS/control-tower`; GHCR and Pages workflow defaults updated pending post-push validation. |
 | `213e` | Ready | Tyler | Second rollback human must be named and tabletop exercise recorded. |
 | `jzpa` | Closed | code-puppy-661ed0 | Backup workflow validated: staging schema backup `25169438794`, production schema backup `25171354807`; no temporary SQL firewall rules left behind. |
 

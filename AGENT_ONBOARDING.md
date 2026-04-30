@@ -19,8 +19,8 @@ platform does.
 ```bash
 # Clone
 # Current repo URL until bd 0dsr completes the GitHub repo rename cutover
-git clone https://github.com/HTT-BRANDS/azure-governance-platform.git
-cd azure-governance-platform
+git clone https://github.com/HTT-BRANDS/control-tower.git
+cd control-tower
 
 # Bootstrap
 uv venv --clear && uv sync --dev --frozen
@@ -77,7 +77,7 @@ Read the V2 plan first. Everything else makes more sense after.
 ## 3. Repo Tour (~10 min)
 
 ```
-azure-governance-platform/
+control-tower/
 ├── app/                        # The FastAPI application
 │   ├── main.py                 # FastAPI wiring (1050 LOC; will split per bd bu72)
 │   ├── api/

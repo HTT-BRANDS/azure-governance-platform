@@ -82,7 +82,7 @@ function buildPage({ title, section, sectionLabel, breadcrumbSlug, htmlContent }
         <a href="../../operations/"${activeNav('operations')}>Operations</a>
         <a href="../../api/"${activeNav('api')}>API</a>
         <a href="../../decisions/"${activeNav('decisions')}>Decisions</a>
-        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="https://github.com/HTT-BRANDS/control-tower" target="_blank" rel="noopener">GitHub ↗</a>
       </div>
     </div>
   </nav>
@@ -114,7 +114,7 @@ ${htmlContent}
         <a href="../../operations/">Operations</a>
         <a href="../../api/">API</a>
         <a href="../../decisions/">Decisions</a>
-        <a href="https://github.com/HTT-BRANDS/azure-governance-platform" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/HTT-BRANDS/control-tower" target="_blank" rel="noopener">GitHub</a>
       </div>
     </div>
     <div class="footer-bottom">

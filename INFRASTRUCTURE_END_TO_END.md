@@ -55,7 +55,7 @@ HTT Control Tower is an internal multi-tenant governance application serving 5 b
 | Key Vault           | `kv-gov-prod`                                            | Standard, soft delete       |
 | App Insights        | `governance-appinsights`                                 | Receiving telemetry         |
 | Log Analytics       | `governance-logs`                                        | Per-GB (free tier)          |
-| Container Registry  | `ghcr.io/htt-brands/azure-governance-platform` (GHCR)    | Primary image source        |
+| Container Registry  | `ghcr.io/htt-brands/control-tower` (GHCR)                | Primary image source        |
 | Alert Rules         | 7 metric alerts + 2 availability tests                   | ~$0.60/mo                   |
 
 > **Note:** Legacy `acrgovprod` ACR was deleted on Apr 16, 2026 — prod pulls from GHCR exclusively.
@@ -139,7 +139,7 @@ All IaC lives in `infrastructure/`:
 
 Repo target after rename: https://github.com/HTT-BRANDS/control-tower
 
-Current deployed image/resource references may still use `azure-governance-platform` until the GHCR/repo cutover completes.
+Current deployed image/resource references may still use `azure-governance-platform` until each environment completes its next successful deploy from `ghcr.io/htt-brands/control-tower`.
 Workflows (`.github/workflows/`):
 
 | Workflow                             | Trigger                  | Purpose                                          |
@@ -209,7 +209,7 @@ All pipelines use **OIDC Workload Identity Federation** — zero stored client s
 
 ## 9. Documentation Surface
 
-- **GitHub Pages site:** https://htt-brands.github.io/azure-governance-platform/
+- **GitHub Pages site:** https://htt-brands.github.io/control-tower/
 - **Key docs in repo:** `ARCHITECTURE.md`, `CURRENT_STATE_ASSESSMENT.md`, `WIGGUM_ROADMAP.md`, `TRACEABILITY_MATRIX.md`, `SECURITY_IMPLEMENTATION.md`, `CHANGELOG.md`, `REQUIREMENTS.md`, `AZURE_DEVOPS_DEPLOYMENT_GUIDE.md`, `STAGING_DEPLOYMENT.md`, `DEPENDENCY_MANAGEMENT.md`
 
 ---
@@ -289,7 +289,7 @@ domain.
 
 1. User hits `https://app-governance-prod.azurewebsites.net`
 2. Azure Front Door / App Service terminates TLS (HTTPS only, HSTS enforced)
-3. Container pulled from `ghcr.io/htt-brands/azure-governance-platform:2.2.0` runs on App Service (B1 Linux)
+3. Container pulled from `ghcr.io/htt-brands/control-tower:2.2.0` runs on App Service (B1 Linux)
 4. FastAPI app authenticates via OIDC against the appropriate tenant UAMI
 5. Secrets resolved from Key Vault (`kv-gov-prod`) via managed identity references
 6. Data layer reads/writes against Azure SQL `governance` (S0, 250 GB)

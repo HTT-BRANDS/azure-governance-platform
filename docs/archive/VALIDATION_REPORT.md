@@ -200,7 +200,7 @@ All prerequisites have been met. The Riverside Capital PE Governance Platform is
 
 - **Dev Dashboard:** https://app-governance-dev-001.azurewebsites.net
 - **Health:** https://app-governance-dev-001.azurewebsites.net/health
-- **GitHub Actions:** https://github.com/HTT-BRANDS/azure-governance-platform/actions
+- **GitHub Actions:** https://github.com/HTT-BRANDS/control-tower/actions
 - **Documentation:** docs/riverside-capital/
 
 ---

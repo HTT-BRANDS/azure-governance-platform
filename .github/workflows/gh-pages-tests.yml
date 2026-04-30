@@ -72,7 +72,7 @@ jobs:
         run: npx playwright test --project=${{ matrix.browser }}-${{ matrix.viewport }}
         working-directory: tests/e2e/github-pages
         env:
-          GH_PAGES_URL: ${{ github.event.inputs.base_url || 'https://htt-brands.github.io/azure-governance-platform/' }}
+          GH_PAGES_URL: ${{ github.event.inputs.base_url || 'https://htt-brands.github.io/control-tower/' }}
 
       - name: Upload test results
         if: always()

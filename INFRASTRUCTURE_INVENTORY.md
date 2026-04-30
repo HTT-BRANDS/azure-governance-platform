@@ -167,7 +167,7 @@
 
 ## GitHub Repository
 
-https://github.com/HTT-BRANDS/azure-governance-platform
+https://github.com/HTT-BRANDS/control-tower
 
 ---
 

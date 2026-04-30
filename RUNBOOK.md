@@ -75,7 +75,7 @@ Detailed walkthrough: [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
 ### What "deploy" does mechanically
 1. GitHub Actions OIDC-federates into HTT-CORE Azure tenant (no stored secrets).
-2. Builds Docker image, pushes to GHCR. Current deployed path remains `ghcr.io/htt-brands/azure-governance-platform` until the repo/GHCR cutover; target path is `ghcr.io/htt-brands/control-tower`.
+2. Builds Docker image, pushes to GHCR at `ghcr.io/htt-brands/control-tower`. Existing Azure App Service instances may continue running an older `ghcr.io/htt-brands/azure-governance-platform` image until their next successful deploy.
 3. SLSA Build L3 provenance attested + SBOM (Syft/SPDX-JSON) attached as OCI referrer.
 4. Cosign 4-claim verification gates the deploy job (subject digest + predicate
    type + cert identity + OIDC issuer). Fails closed if verification fails.

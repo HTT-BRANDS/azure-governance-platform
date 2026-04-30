@@ -10,7 +10,7 @@
 | Setting | Value |
 |---------|-------|
 | **Status** | ✅ Built — Live |
-| **URL** | https://htt-brands.github.io/azure-governance-platform/ |
+| **URL** | https://htt-brands.github.io/control-tower/ |
 | **Source** | `/docs` folder on `main` branch |
 | **Build Type** | Static HTML (`.nojekyll` disables Jekyll) |
 | **Last Build** | April 10, 2026 |
@@ -18,11 +18,11 @@
 ### Site Sections
 | Section | URL | Status |
 |---------|-----|--------|
-| Homepage | https://htt-brands.github.io/azure-governance-platform/ | ✅ Live |
-| Architecture | https://htt-brands.github.io/azure-governance-platform/architecture/ | ✅ Live |
-| Operations | https://htt-brands.github.io/azure-governance-platform/operations/ | ✅ Live |
-| API Docs | https://htt-brands.github.io/azure-governance-platform/api/ | ✅ Live |
-| Decisions (ADRs) | https://htt-brands.github.io/azure-governance-platform/decisions/ | ✅ Live |
+| Homepage | https://htt-brands.github.io/control-tower/ | ✅ Live |
+| Architecture | https://htt-brands.github.io/control-tower/architecture/ | ✅ Live |
+| Operations | https://htt-brands.github.io/control-tower/operations/ | ✅ Live |
+| API Docs | https://htt-brands.github.io/control-tower/api/ | ✅ Live |
+| Decisions (ADRs) | https://htt-brands.github.io/control-tower/decisions/ | ✅ Live |
 
 ---
 

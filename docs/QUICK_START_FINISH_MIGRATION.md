@@ -4,7 +4,7 @@
 
 ### Option A - Web UI (Easiest - 1 minute):
 
-1. Visit https://github.com/HTT-BRANDS/azure-governance-platform/pkgs/container/azure-governance-platform
+1. Visit https://github.com/HTT-BRANDS/control-tower/pkgs/container/control-tower
 2. Click "Package settings" (gear icon)
 3. Scroll to "Change package visibility"
 4. Click "Change visibility" → Select "Public" → Confirm

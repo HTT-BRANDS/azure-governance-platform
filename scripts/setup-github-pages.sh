@@ -81,7 +81,7 @@ nav:
   - title: API Reference
     url: /api/
   - title: GitHub
-    url: https://github.com/HTT-BRANDS/azure-governance-platform
+    url: https://github.com/HTT-BRANDS/control-tower
 
 CONFIGEOF
 
@@ -206,7 +206,7 @@ The Azure Governance Platform is a **production-ready, enterprise-grade SaaS app
 - **[Architecture Guide](./architecture/overview)** - System design, components, data flow
 - **[Operations Guide](./operations/runbook)** - Daily operations, monitoring, troubleshooting
 - **[API Reference](./api/overview)** - Endpoints, schemas, authentication
-- **[GitHub Repository](https://github.com/HTT-BRANDS/azure-governance-platform)** - Source code
+- **[GitHub Repository](https://github.com/HTT-BRANDS/control-tower)** - Source code
 
 ---
 
@@ -216,7 +216,7 @@ The Azure Governance Platform is a **production-ready, enterprise-grade SaaS app
 
 ```bash
 # Clone repository
-git clone https://github.com/HTT-BRANDS/azure-governance-platform.git
+git clone https://github.com/HTT-BRANDS/control-tower.git
 cd azure-governance-platform
 
 # Setup environment
@@ -1100,7 +1100,7 @@ git commit -m "docs: add comprehensive GitHub Pages technical architecture site
 - Document security architecture, caching strategy, scalability
 - All documentation uses Jekyll frontmatter for proper navigation
 
-Site will be available at: https://htt-brands.github.io/azure-governance-platform/"
+Site will be available at: https://htt-brands.github.io/control-tower/"
 
 # Push to origin
 git push origin main
@@ -1126,7 +1126,7 @@ echo "║  Next Steps:                                                   ║"
 echo "║    1. Go to GitHub repository Settings → Pages                 ║"
 echo "║    2. Set Source to 'GitHub Actions'                           ║"
 echo "║    3. Site will deploy to:                                     ║"
-echo "║       https://htt-brands.github.io/azure-governance-platform/  ║"
+echo "║       https://htt-brands.github.io/control-tower/  ║"
 echo "║                                                                ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 echo ""

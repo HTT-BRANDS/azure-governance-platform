@@ -114,7 +114,7 @@ az webapp config container set \
 If managing PATs is problematic, you can make the GHCR image public:
 
 1. **Navigate to package settings:**
-   - Visit: https://github.com/HTT-BRANDS/azure-governance-platform/pkgs/container/azure-governance-platform
+   - Visit: https://github.com/HTT-BRANDS/control-tower/pkgs/container/control-tower
 
 2. **Change visibility:**
    - Click **"Package settings"** (gear icon)

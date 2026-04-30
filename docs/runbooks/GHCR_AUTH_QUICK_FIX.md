@@ -55,7 +55,7 @@ Use this if you have admin access to the package settings and want to make the i
 
 Go to:
 ```
-https://github.com/HTT-BRANDS/azure-governance-platform/pkgs/container/azure-governance-platform
+https://github.com/HTT-BRANDS/control-tower/pkgs/container/control-tower
 ```
 
 ### Step 2: Open Package Settings

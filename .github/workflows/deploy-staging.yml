@@ -34,7 +34,7 @@ env:
   UV_VERSION:     '0.9.27'
   # GHCR Configuration — free for public repos, uses GITHUB_TOKEN
   GHCR_REGISTRY:    ghcr.io
-  GHCR_REPOSITORY:  htt-brands/azure-governance-platform
+  GHCR_REPOSITORY:  htt-brands/control-tower
   IMAGE_TAG:        staging
   # App Service — actual resource names (verified 2026-03-18)
   AZURE_APP_NAME:       app-governance-staging-xnczpwyv

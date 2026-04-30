@@ -372,7 +372,7 @@ ACR_LOGIN_SERVER     # Safe to remove after GHCR migration
 | **Production** | https://app-governance-prod.azurewebsites.net |
 | **Staging** | https://app-governance-staging-xnczpwyv.azurewebsites.net |
 | **Repository** | https://github.com/tygranlund/azure-governance-platform |
-| **Container Registry** | https://github.com/tygranlund/azure-governance-platform/pkgs/container/azure-governance-platform |
+| **Container Registry** | https://github.com/tygranlund/azure-governance-platform/pkgs/container/control-tower |
 | **Issues** | `bd list` (beads CLI) |
 | **Documentation** | `docs/` directory |
 

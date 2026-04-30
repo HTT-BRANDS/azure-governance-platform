@@ -308,7 +308,7 @@ show_alternative() {
     echo ""
     echo "If managing PATs is problematic, you can make the image public:"
     echo ""
-    echo "  1. Visit: ${CYAN}https://github.com/HTT-BRANDS/azure-governance-platform/pkgs/container/azure-governance-platform${NC}"
+    echo "  1. Visit: ${CYAN}https://github.com/HTT-BRANDS/control-tower/pkgs/container/control-tower${NC}"
     echo "  2. Click: ${CYAN}Package settings${NC}"
     echo "  3. Change visibility to: ${CYAN}Public${NC}"
     echo ""

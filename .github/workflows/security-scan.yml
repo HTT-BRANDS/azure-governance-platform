@@ -30,7 +30,7 @@ permissions:
 env:
   PYTHON_VERSION: '3.12'
   UV_VERSION: '0.9.27'
-  IMAGE_NAME: azure-governance-platform
+  IMAGE_NAME: control-tower
 
 jobs:
   # ===========================================================================
