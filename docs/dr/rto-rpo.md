@@ -130,8 +130,8 @@ Quarterly. Next test: **2026-07-31** (Q3 2026).
 
 ## 6. Known Gaps (do not pretend these are solved)
 
-1. **No long-term backup of `sqldb-governance-prod`.** PITR is a 7-day window. Anything older than 7 days cannot be recovered without a manual export. Consider Azure SQL long-term retention (Basic tier supports up to 10 years of weekly/monthly/yearly retention at extra cost). Action: file follow-up bd issue if Tyler decides retention beyond 7 days is required.
-2. **No automated backup of GitHub Actions secrets.** `AZURE_CLIENT_ID`, `GHCR_PAT`, `PRODUCTION_TEAMS_WEBHOOK`, etc. are stored manually. Their loss requires re-creation. Documented in `SECRETS_OF_RECORD.md` (bd `9lfn`, Tyler-authored, pending).
+1. **No verified long-term backup of `sqldb-governance-prod`.** PITR is a 7-day window. Weekly BACPAC automation exists, but bd `cz89` remains blocked until Tyler selects a validation path in [`bacpac-validation-decision.md`](./bacpac-validation-decision.md) and a successful export is recorded.
+2. **No completed backup of GitHub Actions secrets.** `AZURE_CLIENT_ID`, `GHCR_PAT`, `PRODUCTION_TEAMS_WEBHOOK`, etc. are stored manually. Their loss requires re-creation. `SECRETS_OF_RECORD.md` now exists as a safe skeleton, but Tyler must fill the non-secret inventory rows before bd `9lfn` can close.
 3. **No tested restore.** All numbers in §1 are stated, not validated. Until the 2026-07-31 test cycle completes successfully, treat them as aspirational.
 4. **No region failover capability.** Single-region (West US 2). Mitigation requires SQL Standard tier + geo-redundant config (~$30/mo extra). Not currently justified by criticality.
 5. **`backup.yml` workflow** — fix shipped 2026-04-28 in commit `<this commit>` (replaced broken `mda590/teams-notify@master` action with curl-based MessageCard pattern matching `deploy-production.yml` convention; bd `fifh` closed). Awaiting next scheduled run (nightly 03:00 UTC) for end-to-end verification. Until that run lands green, treat scheduled backup verification as best-effort.
@@ -157,7 +157,7 @@ Revisit the targets in §1 if any of these change:
 - [`../../PORTFOLIO_PLATFORM_PLAN_V2.md`](../../PORTFOLIO_PLATFORM_PLAN_V2.md) §8 — success metrics (RTO documented)
 - [`../../RUNBOOK.md`](../../RUNBOOK.md) §3 — emergency rollback (links here)
 - bd `0dhj` — the issue this document closes
-- bd `213e` — second rollback human (waiver expires 2026-06-22)
+- bd `213e` — second rollback human (waiver expires 2026-06-22); readiness checklist in [`second-rollback-human-checklist.md`](./second-rollback-human-checklist.md)
 - bd `fifh` — backup workflow currently red
 - bd `9lfn` — SECRETS_OF_RECORD.md (Tyler-authored)
 

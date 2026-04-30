@@ -3,6 +3,7 @@
 > **Status:** Accepted · **Version:** 1.0 · **Date:** 2026-04-23
 > **Owner:** Tyler Granlund · **Review cadence:** Semi-annually
 > **Audience:** On-call engineer at 2 AM with coffee, not a CTO with a roadmap
+> **Successor checklist:** [`../dr/second-rollback-human-checklist.md`](../dr/second-rollback-human-checklist.md)
 
 Generic, release-agnostic disaster recovery procedures. Complements (does
 not replace) the release-specific rollback docs in `docs/release-gate/`.

@@ -114,7 +114,14 @@ gh workflow run deploy-production.yml --ref main
 Azure SQL Basic has 7-day point-in-time restore. Detailed procedure:
 [`docs/runbooks/disaster-recovery.md`](./docs/runbooks/disaster-recovery.md).
 
-🔴 **TYLER-ONLY:** RTO/RPO are not yet formally defined. Track in bd `0dhj`.
+Formal targets are documented in [`docs/dr/rto-rpo.md`](./docs/dr/rto-rpo.md):
+4h business-hours RTO / 8h after-hours RTO, 24h stated RPO, quarterly tests.
+
+### Second rollback human
+The successor readiness checklist lives at
+[`docs/dr/second-rollback-human-checklist.md`](./docs/dr/second-rollback-human-checklist.md).
+Do not treat bd `213e` as complete until Tyler names the human and records a
+tabletop exercise there.
 
 ---
 
@@ -285,7 +292,9 @@ the platform running.
 - [ ] You can dispatch `deploy-production.yml` (or a designated alternate
       can).
 - [ ] You have read `INFRASTRUCTURE_END_TO_END.md` (~30 min).
-- [ ] You have read `SECRETS_OF_RECORD.md` once it exists (bd `9lfn`).
+- [ ] You have read `SECRETS_OF_RECORD.md` once Tyler fills it (bd `9lfn`).
+- [ ] If you are the second rollback human, your access/tabletop status is
+      recorded in `docs/dr/second-rollback-human-checklist.md`.
 - [ ] You know who to escalate to (see §5).
 
 If any of these are unchecked, you are NOT ready. Pair with someone who is.
@@ -296,11 +305,14 @@ If any of these are unchecked, you are NOT ready. Pair with someone who is.
 
 These are bd issues that, once closed, complete the runbook:
 
-- [ ] `9lfn` — `SECRETS_OF_RECORD.md` (Tyler-authored)
-- [ ] `2au0` — `AGENT_ONBOARDING.md` (separate but complementary doc)
-- [ ] `0dhj` — Formal RTO/RPO + backup-restore-test cadence
+- [ ] `9lfn` — `SECRETS_OF_RECORD.md` exists as a safe skeleton; Tyler still
+      needs to fill the non-secret inventory rows before closure.
+- [x] `2au0` — `AGENT_ONBOARDING.md` (separate but complementary doc)
+- [x] `0dhj` — Formal RTO/RPO + backup-restore-test cadence
 - [ ] `3cs7` — Wire `/api/v1/health/data` `any_stale=true` to Teams alerts
-- [ ] `213e` — Name a second rollback human (waiver expires 2026-06-22)
+- [ ] `213e` — Name a second rollback human and complete
+      `docs/dr/second-rollback-human-checklist.md` tabletop evidence (waiver
+      expires 2026-06-22)
 - [ ] All 🔴 TYLER-ONLY markers above filled in
 
 When all are checked, this runbook is complete and bus-factor metric
