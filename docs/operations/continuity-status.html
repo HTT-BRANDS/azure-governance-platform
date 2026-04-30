@@ -52,7 +52,7 @@
         </div>
         <div class="card">
           <h2 class="card-title">Backup watch</h2>
-          <p class="card-description">Scheduled Database Backup exposed missing prod/staging backup secret names, then missing runner SQL tooling. Names are configured; workflow installs ODBC Driver 18; validation remains bd <code>jzpa</code>.</p>
+          <p class="card-description">Scheduled Database Backup exposed missing secrets and runner SQL tooling. Staging is now green; production SQL login/server validation remains bd <code>jzpa</code>.</p>
         </div>
       </div>
     </section>
@@ -70,7 +70,7 @@
         </div>
         <div class="doc-list-item">
           <h3>Ready — operational follow-up</h3>
-          <p><code>jzpa</code>: validate production and staging scheduled backups after configuring <code>DATABASE_URL</code> / <code>AZURE_STORAGE_ACCOUNT</code>, adding SQLAlchemy fallback for absent <code>mssqlscripter</code>, and installing ODBC Driver 18 in the workflow.</p>
+          <p><code>jzpa</code>: staging schema backup now passes end-to-end (<code>25169438794</code>); production backup still fails opening the SQL server/login (<code>25169514387</code>).</p>
         </div>
         <div class="doc-list-item">
           <h3>Blocked</h3>

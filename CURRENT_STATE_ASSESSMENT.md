@@ -19,7 +19,7 @@ progress.
 - Mainline CI and Security Scan were green for `00c3745`.
 - GitHub Pages deployed for `246e454`, and cross-browser tests passed after the homepage title compatibility fix.
 - Staging deploy run `25168188519` passed QA, security, build/push, deploy, and staging validation.
-- Scheduled/manual Database Backup is still red under bd `jzpa`; latest validation moved past ODBC. Staging DB backup generation works, but Blob upload still failed data-plane RBAC after grant, so the workflow now derives an ephemeral storage key after OIDC login. Production still has a SQL server/login blocker.
+- Scheduled/manual Database Backup is still partially red under bd `jzpa`: staging schema backup now passes end-to-end (`25169438794`), while production still fails opening the SQL server/login (`25169514387`).
 - Tyler-only continuity gates remain: `9lfn` secret inventory completion and `213e` second rollback human.
 
 ---
@@ -45,7 +45,7 @@ progress.
 | Deploy to Staging | `25168188519` | ✅ success | QA, security, build/push, deploy, and staging validation passed. |
 | Topology Diagram | `25168188576` | ❌ failure | Generated timestamp-only topology diff but bot could not push to protected `main`; local commit includes refreshed diagram. |
 | Database Backup production manual | `25168192604` | ❌ failure | Reached ODBC/SQLAlchemy; production SQL server/login blocker remains. |
-| Database Backup staging manual | `25168804362` | ❌ failure | Created and verified SQL backup; upload still failed `AuthorizationPermissionMismatch` after RBAC grant, so workflow now uses ephemeral `AZURE_STORAGE_KEY`. |
+| Database Backup staging manual | `25169438794` | ✅ success | Schema-only staging backup created, verified, uploaded, integrity-checked, and cleanup completed after ephemeral `AZURE_STORAGE_KEY` workflow change. |
 | Scheduled Database Backup | `25145371945` | ❌ failure | Original prod/staging empty `DATABASE_URL` / `AZURE_STORAGE_ACCOUNT` failure. |
 
 ---
@@ -81,7 +81,9 @@ The backup story is not green yet.
 5. Production backup storage account `stgovprodbkup001` was created in `rg-governance-production`.
 6. Manual validation runs `25167657417` and `25167659155` then exposed missing runner SQL tooling: optional `mssqlscripter` and ODBC Driver 18.
 7. Current code makes `backup_database.py` fall back to SQLAlchemy and updates `backup.yml` to install `msodbcsql18` / `unixodbc-dev` before running `pyodbc`.
-8. Validation runs `25168192604`, `25168194585`, and `25168804362` moved past ODBC. Staging created and verified a SQL backup, then failed Blob upload on `AuthorizationPermissionMismatch` even after Storage Blob Data Contributor was granted. The workflow now derives an ephemeral `AZURE_STORAGE_KEY` after OIDC login and passes it only through runner environment. Production still fails opening the SQL server/login and needs follow-up.
+8. Validation runs `25168192604`, `25168194585`, and `25168804362` moved past ODBC. Staging created and verified a SQL backup, then failed Blob upload on `AuthorizationPermissionMismatch` even after Storage Blob Data Contributor was granted. The workflow now derives an ephemeral `AZURE_STORAGE_KEY` after OIDC login and passes it only through runner environment.
+9. Staging schema backup passed end-to-end in run `25169438794`.
+10. Production schema backup still fails opening the SQL server/login in run `25169514387`; production follow-up remains under bd `jzpa`.
 
 Do **not** declare RPO backup hygiene complete until production and staging backup evidence runs pass and bd `jzpa` is closed with run IDs.
 

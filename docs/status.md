@@ -4,18 +4,18 @@ title: Platform Status
 
 # Platform Status
 
-Updated: `2026-04-30T13:55:08.044325+00:00`
+Updated: `2026-04-30T14:27:09.996380+00:00`
 Source: GitHub Pages build fallback; no committed `scripts/audit_output.json` was available.
 
 ## Current mainline health
 
 | Signal | Status | Evidence |
 |---|---|---|
-| CI | ✅ Green | Run `25167652385` passed for `00c3745`; rerun pending after docs/workflow refresh. |
-| Security Scan | ✅ Green | Run `25167652318` passed for `00c3745`; `UV_VERSION` is now pinned to `0.9.27` across setup-uv workflows. |
-| Deploy to Staging | ✅ Green | Run `25168188519` passed QA, security, build/push, deploy, and staging validation. |
-| Deploy GitHub Pages | ✅ Green | Run `25168188577` published Pages for `246e454`. |
-| GitHub Pages Cross-Browser Tests | ✅ Green | Run `25168188537` passed after homepage title included `Azure Governance Platform` again. |
+| CI | ⏳ In progress | Run `25169432815` is still running for `bf4685f`; previous run `25168188513` was green. |
+| Security Scan | ✅ Green | Run `25169432889` passed for `bf4685f`; `UV_VERSION` is pinned to `0.9.27` across setup-uv workflows. |
+| Deploy to Staging | ⏳ In progress | Run `25169432814` is still running; previous run `25168188519` passed QA/security/build/deploy/validation. |
+| Deploy GitHub Pages | ✅ Green | Run `25169432895` published Pages for `bf4685f`. |
+| GitHub Pages Cross-Browser Tests | ⏳ In progress | Run `25169432848` is still running; previous run `25168188537` was green. |
 | Topology Diagram | ⚠️ Follow-up | Run `25168188576` generated a timestamp-only topology diff but could not push to protected `main`; local commit includes the refreshed diagram. |
 
 ## Ready work
@@ -24,7 +24,7 @@ Source: GitHub Pages build fallback; no committed `scripts/audit_output.json` wa
 |---|---|---|---|
 | `9lfn` | Ready | Tyler | `SECRETS_OF_RECORD.md` skeleton exists; Tyler must fill non-secret inventory rows. |
 | `213e` | Ready | Tyler | Second rollback human must be named and tabletop exercise recorded. |
-| `jzpa` | In progress | code-puppy-661ed0 | Staging DB backup works; upload auth now uses an ephemeral storage key because RBAC data-plane writes still failed. Production still has SQL login/server blocker. |
+| `jzpa` | In progress | code-puppy-661ed0 | Staging schema backup now passes end-to-end (`25169438794`). Production still has SQL login/server blocker (`25169514387`). |
 
 ## Blocked work
 
@@ -36,7 +36,7 @@ Source: GitHub Pages build fallback; no committed `scripts/audit_output.json` wa
 
 ## Backup / RPO watch
 
-Scheduled Database Backup run `25145371945` failed on 2026-04-30 in both production and staging after Azure OIDC login succeeded. Logs showed `DATABASE_URL` and `AZURE_STORAGE_ACCOUNT` empty. Those GitHub environment secret names were configured on 2026-04-30. Manual validation then exposed two runner gaps: optional `mssqlscripter` was absent, and the GitHub runner did not have ODBC Driver 18 for SQL Server. `backup_database.py` now falls back to SQLAlchemy, and `backup.yml` installs `msodbcsql18` / `unixodbc-dev` before running `pyodbc`. Validation runs `25168192604` / `25168194585` moved past ODBC; staging created and verified a backup but still failed Blob upload with `AuthorizationPermissionMismatch` after the RBAC grant. The workflow now derives an ephemeral `AZURE_STORAGE_KEY` after OIDC login and passes it only via runner environment. Production still fails opening the SQL server/login. This remains tracked as bd `jzpa`.
+Scheduled Database Backup run `25145371945` failed on 2026-04-30 in both production and staging after Azure OIDC login succeeded. Logs showed `DATABASE_URL` and `AZURE_STORAGE_ACCOUNT` empty. Those GitHub environment secret names were configured on 2026-04-30. Manual validation then exposed two runner gaps: optional `mssqlscripter` was absent, and the GitHub runner did not have ODBC Driver 18 for SQL Server. `backup_database.py` now falls back to SQLAlchemy, and `backup.yml` installs `msodbcsql18` / `unixodbc-dev` before running `pyodbc`. Validation runs `25168192604` / `25168194585` moved past ODBC; staging created and verified a backup but still failed Blob upload with `AuthorizationPermissionMismatch` after the RBAC grant. The workflow now derives an ephemeral `AZURE_STORAGE_KEY` after OIDC login and passes it only via runner environment. Staging schema backup then passed end-to-end in run `25169438794`. Production still fails opening the SQL server/login in run `25169514387`. This remains tracked as bd `jzpa`.
 
 ## Audit output
 

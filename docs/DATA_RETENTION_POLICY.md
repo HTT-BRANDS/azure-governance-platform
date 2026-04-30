@@ -240,9 +240,12 @@ also under watch: run `25145371945` on 2026-04-30 showed production and staging
 jobs were missing `DATABASE_URL` and `AZURE_STORAGE_ACCOUNT`. Those environment
 secret names were configured on 2026-04-30. Manual validation then exposed
 missing runner SQL tooling: optional `mssqlscripter` was absent and the runner
-lacked ODBC Driver 18. `backup_database.py` now falls back to SQLAlchemy, and
-`backup.yml` installs `msodbcsql18` / `unixodbc-dev`. This remains tracked as bd
-`jzpa` until production and staging evidence runs pass.
+lacked ODBC Driver 18. `backup_database.py` now falls back to SQLAlchemy,
+`backup.yml` installs `msodbcsql18` / `unixodbc-dev`, and Blob upload uses an
+ephemeral runner-only `AZURE_STORAGE_KEY` derived after OIDC login. Staging
+schema backup passed end-to-end in run `25169438794`; production still fails
+opening the SQL server/login in run `25169514387`. This remains tracked as bd
+`jzpa` until production evidence passes.
 
 Retention is operationally defined as 12 months. Once validated, the BACPAC
 workflow deletes expired BACPAC blobs after each successful export using a
