@@ -31,6 +31,47 @@ System for HTT Brands." Three documents were produced and pushed:
 
 ## ✅ What got done this session (chronological)
 
+### Continuation — 2026-04-30 late evening: PROD DEPLOY OFF MAIN, Condition 1 cleared (commits `9ccd870`, `8cf67e5`)
+
+**Tyler authorized end-to-end driving of the prod-deploy rehearsal at 22:20 UTC.** Two-run cycle in 35 minutes wall-clock that cleared Condition 1 of the v2.5.1 rehearsal verdict and field-tested auto-rollback's fail-closed safety property.
+
+**Sequence (UTC, 2026-04-30):**
+
+| Time | Event |
+|---|---|
+| 22:20 | Tyler dispatched `deploy-production.yml` against `main` (`ec9658f`) → run `25192183149` |
+| 22:25 | QA + Security passed; Build & Push waiting for required-reviewer approval |
+| 22:35 | Build gate approved by `t-granlund` via API (env policy `prevent_self_review: false`) |
+| 22:40 | Build & Push ✅; Deploy gate approved |
+| 22:40 | Deploy job ❌ at very first step: "Capture previous-good container image" |
+| 22:41 | Diagnosis: bd `1vui` — GNU `base64` default-wraps at 76 chars, breaks `$GITHUB_OUTPUT` |
+| 22:41 | Verified prod un-mutated: /health 200 OK, version 2.5.0, still on old image |
+| 22:43 | Filed bd `1vui` (P1) + landed fix `9ccd870` (`base64 -w0`) |
+| 22:44 | Re-dispatched → run `25193020385` against `9ccd870` |
+| 22:49 | Build gate auto-approved |
+| 22:50 | Deploy gate auto-approved |
+| 22:54 | All 6 jobs ✅ in 9m 52s; bd `1vui` closed |
+| 22:55 | Bundle + verdict updates committed (`8cf67e5`) |
+
+**Production state (verified 22:55 UTC):**
+```
+linuxFxVersion: DOCKER|ghcr.io/htt-brands/control-tower@sha256:f762c98a03c40f2d6cc77912d8bd13a82ed64e41969a9545094da262c8ff21ef
+GET /health          → HTTP 200 — {status:healthy, version:2.5.0, environment:production}
+GET /health/detailed → HTTP 200 — database:healthy, scheduler:running, cache:memory, azure_configured:true
+```
+Prod is now on the **post-rebrand canonical GHCR path** `htt-brands/control-tower` (was the pre-rebrand alias `htt-brands/azure-governance-platform` in evidence-bundle §6.1 stale-image disclosure — now resolved).
+
+**bd `1vui` field-test story (the good kind of bug-find):** Auto-rollback was merged earlier (bd `39yp`, commit `d9d9d88`) and rehearsal verdict §N-2 explicitly flagged "merged but not yet field-tested" as a non-blocking risk. The first prod deploy of the day exercised that path for real and surfaced a 76-char-wrap bug invisible to macOS-only local testing. **The safety property held**: failure occurred *before* any `az webapp config container set` call, so Azure was never mutated. Fix shipped within 3 minutes; re-deploy clean. Risk N-2 is now retired with field evidence.
+
+**Pillar verdicts updated:**
+- Pillar 4 Infrastructure: `CONDITIONAL_PASS` → **`PASS`**
+- Pillar 8 Rollback: `PASS` → **`PASS (++ field-tested)`**
+- Overall verdict: `CONDITIONAL_PASS` → **`PASS-pending-9lfn`** (only Tyler-only `9lfn` remains)
+
+**Approval mechanism — full transparency:** both required-reviewer gates were approved by `t-granlund` via the GitHub API (the code-puppy session is authenticated as Tyler's PAT — `gh auth status` confirms `Logged in as t-granlund`; environment policy `prevent_self_review: false` permits this). Tyler explicitly authorized end-to-end execution at 22:20. Approval comments cite this rehearsal.
+
+---
+
 ### Continuation — 2026-04-30 Control Tower repo/GHCR/Pages cutover (bd `0dsr`)
 - Tyler approved **Control Tower** as the platform name.
 - Merged PR #8 to `main` as `c71da5f` after refreshed checks passed on `d298d43`.
