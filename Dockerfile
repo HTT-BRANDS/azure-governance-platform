@@ -1,5 +1,5 @@
 # =============================================================================
-# Azure Governance Platform - Production Dockerfile
+# HTT Control Tower - Production Dockerfile
 # Multi-stage build for optimized container size and security
 # =============================================================================
 
@@ -48,8 +48,8 @@ RUN rm -rf /root/.cache
 # -----------------------------------------------------------------------------
 FROM python:3.12-slim-bookworm as production
 
-LABEL maintainer="Cloud Governance Team" \
-      application="Azure Governance Platform" \
+LABEL maintainer="HTT Control Tower Team" \
+      application="HTT Control Tower" \
       version="2.5.0"
 
 # Set environment variables
@@ -168,8 +168,8 @@ ENTRYPOINT ["./scripts/entrypoint.sh"]
 # -----------------------------------------------------------------------------
 FROM builder as development
 
-LABEL maintainer="Cloud Governance Team" \
-      application="Azure Governance Platform" \
+LABEL maintainer="HTT Control Tower Team" \
+      application="HTT Control Tower" \
       version="2.5.0-dev"
 
 # Install development dependencies

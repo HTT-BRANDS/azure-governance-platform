@@ -1,18 +1,18 @@
-# HTT Portfolio Platform — Strategic Plan V2
+# HTT Control Tower — Strategic Plan V2
 
 **Authors:** Richard (code-puppy-ab8d6a) — synthesized from cross-repo audit and adversarial review
 **Audience:** Tyler Granlund, then planning-agent for execution decomposition
 **Date:** 2026-04-28
-**Status:** DRAFT V2 — supersedes V1, incorporates redteam findings, ready for planning-agent
+**Status:** DRAFT V2 — supersedes V1, incorporates redteam findings, updated after Tyler selected Control Tower as the internal product name
 
 **Predecessor documents (preserved as historical record):**
 - [`CONTROL_TOWER_MASTERMIND_PLAN_2026.md`](./CONTROL_TOWER_MASTERMIND_PLAN_2026.md) — V1 draft
 - [`CONTROL_TOWER_MASTERMIND_PLAN_2026_REDTEAM.md`](./CONTROL_TOWER_MASTERMIND_PLAN_2026_REDTEAM.md) — adversarial review by epistemic-architect
 
-> **Working-title-neutral filename**: V1 used "Control Tower" as both
-> framing and identity. V2 separates the *concept* (a portfolio platform)
-> from the *name* (TBD per the naming exercise in §11). Filename will be
-> renamed when the naming decision lands in Phase 3 prep.
+> **Naming update 2026-04-30:** Tyler selected **Control Tower** as the
+> internal product/repo name. The AWS Control Tower collision remains a known
+> external/commercialization caveat, but is accepted for internal HTT use. See
+> `docs/control-tower-internal-rebrand-plan.md` for cutover scope.
 
 ---
 
@@ -20,7 +20,7 @@
 
 | Item | V1 stance | V2 stance |
 |---|---|---|
-| Brand name | "Control Tower" (final) | TBD — 5 candidates evaluated, decision deferred to Phase 3 prep |
+| Brand name | "Control Tower" (final) | **Control Tower** for internal HTT use; external use requires legal/name review |
 | Riverside framing | "Riverside compliance theater" | "HTT-built platform for HTT use; Riverside is one consumer of evidence" |
 | Phase 1 / Phase 2 ordering | File splits → DDD extraction (sequential) | Hybrid: domain boundaries on paper → splits along those lines → relocation |
 | Phase 0.5 | Not present | New: continuity / bus-factor / runbook track |
@@ -220,16 +220,20 @@ domain-specific code from `app/api/services/`, `app/services/`, and
 Add `app/interfaces/{azure,aws,pax8,snowflake,m365}/` adapter layer; all
 external SDK calls funnel through these.
 
-### Phase 3 — Naming & Rebrand Decision (Week 6) ← MOVED LATER IN V2
-- Resolve the naming question (D-Name; see §11 for 5 candidates).
-- Repo rename based on D-Name decision.
-- Archive predecessor `control-tower` repo with forwarding README.
+### Phase 3 — Control Tower Rebrand / Repo Cutover
+- Naming decision is complete for internal use: **Control Tower**.
+- Rename this repo from `azure-governance-platform` to `control-tower` when the
+  GitHub/GHCR/Pages cutover checklist is scheduled.
+- Archive/merge the predecessor `control-tower` repo history carefully; if the
+  slug already exists, preserve its forwarding README or migrate selected IP
+  first.
 - Migrate predecessor IP we want forward (44 collectors triage,
   ResilientAzureClient pattern).
-- Production hostname migration with 301 redirect (90-day window) AND
-  documented rollback condition (if confusion >X helpdesk tickets/week,
-  roll back hostname).
-- Doc rewrite leads with new platform framing.
+- Production hostname migration is optional and should not block the internal
+  repo/product rename. If attempted, use a 90-day redirect window and a documented
+  rollback condition (if confusion >X helpdesk tickets/week, roll back hostname).
+- Doc rewrite leads with Control Tower internal-product framing and explicitly
+  notes it is unrelated to AWS Control Tower.
 
 ### Phase 4 — Cross-Repo Bridges (Weeks 7–14, 5 parallel tracks)
 Each bridge is independent. **Per redteam S5: do `httbi` BEFORE `DART`.**
@@ -450,28 +454,28 @@ Per redteam, these were absent in V1 and are now in V2:
 
 ---
 
-## 11. The Naming Exercise (D-Name) ← NEW IN V2
+## 11. Naming Decision (D-Name) — Control Tower for internal use
 
-V1's "Control Tower" name collides with AWS Control Tower (a real Amazon
-service for multi-account governance). Five candidates evaluated:
+Tyler selected **Control Tower** as the internal product/repo name on
+2026-04-30.
 
-| # | Name | Pros | Cons | Risk |
-|---|---|---|---|---|
-| **1** | **Switchyard** | Railway hub-and-spoke metaphor; nearly zero collisions in cloud space; evocative for "many tracks converge here." | Less familiar metaphor for non-rail-fluent audience. | Low. |
-| **2** | **Hangar** | Aviation continuity from "Control Tower" mental model; single-word; memorable. | `hangar.dev` exists (different product); HangarCI is a thing. | Medium. |
-| **3** | **Aerie** | Eagle's nest — vision + height + brood-of-many (the brands). Very rare in tech. Tasteful. | Slightly precious; spelling not obvious. | Low. |
-| **4** | **Dispatch** | Operations / central command vibe; clear meaning. | Microsoft Dispatch service exists; Slack uses "dispatch" as a verb. Confusable. | Medium-High. |
-| **5** | **Meridian** | Navigation metaphor (line of position); evocative for "where everything is right now." | AT&T Meridian (legacy phone system); some credit-union usage. | Medium. |
+Earlier V2 text rejected Control Tower because it collides with AWS Control
+Tower. That remains true for external/commercial use, but Tyler explicitly
+accepted Control Tower for internal HTT use because it is clear, familiar, and
+accurately describes the platform's hub-and-spoke governance role.
 
-**Provisional ranking:** Switchyard > Aerie > Hangar > Meridian > Dispatch.
+Decision details:
 
-**Tyler's call needed:** Pick one, ask for more candidates, or defer
-binding decision until Phase 3 prep (which is fine; V2 can ship to
-planning-agent without the naming locked).
+| Item | Decision |
+|---|---|
+| Internal product name | **HTT Control Tower** / **Control Tower** |
+| Target GitHub repo slug | `control-tower` |
+| Existing Azure resource names | Keep `governance` names unless a separate infra migration is justified. |
+| Existing bd issue prefix | Keep `azure-governance-platform-*` for history stability. |
+| External/commercial use | Requires separate legal/name clearance due to AWS Control Tower collision. |
 
-**Note:** Final due-diligence search (trademark check, domain
-availability, GitHub/PyPI namespace check) should happen at decision
-time, not now.
+See `docs/control-tower-internal-rebrand-plan.md` for the implementation and
+cutover checklist.
 
 ---
 

@@ -29,24 +29,28 @@ def render(report: dict[str, Any] | None) -> str:
     now = datetime.now(UTC).isoformat()
     if not report:
         return (
-            "---\ntitle: Platform Status\n---\n\n"
-            "# Platform Status\n\n"
+            "---\ntitle: Control Tower Status\n---\n\n"
+            "# Control Tower Status\n\n"
             f"Updated: `{now}`\n"
             "Source: GitHub Pages build fallback; no committed "
             "`scripts/audit_output.json` was available.\n\n"
-            "## Current mainline health\n\n"
+            "## Current mainline / rebrand health\n\n"
             "| Signal | Status | Evidence |\n"
             "|---|---|---|\n"
-            "| CI | ⏳ In progress | Run `25169432815` is still running for `bf4685f`; previous run `25168188513` was green. |\n"
-            "| Security Scan | ✅ Green | Run `25169432889` passed for `bf4685f`; `UV_VERSION` is pinned to `0.9.27` across setup-uv workflows. |\n"
-            "| Deploy to Staging | ⏳ In progress | Run `25169432814` is still running; previous run `25168188519` passed QA/security/build/deploy/validation. |\n"
-            "| Deploy GitHub Pages | ✅ Green | Run `25169432895` published Pages for `bf4685f`. |\n"
-            "| GitHub Pages Cross-Browser Tests | ⏳ In progress | Run `25169432848` is still running; previous run `25168188537` was green. |\n"
+            "| Main CI | ✅ Green | Run `25171482414` passed for `f9f7c60`. |\n"
+            "| Main Security Scan | ✅ Green | Run `25171482365` passed for `f9f7c60`; `UV_VERSION` is pinned to `0.9.27` across setup-uv workflows. |\n"
+            "| Main Deploy to Staging | ✅ Green | Run `25171482459` passed for `f9f7c60`. |\n"
+            "| Main Deploy GitHub Pages | ✅ Green | Run `25171483184` published Pages for `f9f7c60`. |\n"
+            "| Main Pages Cross-Browser Tests | ✅ Green | Run `25171483199` passed for `f9f7c60`. |\n"
+            "| PR #8 CI | ✅ Green | Run `25179222805` passed for `b577fde` on `control-tower-internal-rebrand`. |\n"
+            "| PR #8 Security Scan | ✅ Green | Run `25179222861` passed for `b577fde`. |\n"
+            "| PR #8 Pages Cross-Browser Tests | ✅ Green | Run `25179222831` passed for `b577fde`. |\n"
             "| Topology Diagram | ⚠️ Follow-up | Run `25168188576` generated a timestamp-only topology diff but could not push to protected `main`; local commit includes the refreshed diagram. |\n\n"
             "## Ready work\n\n"
             "| bd | Status | Owner | Notes |\n"
             "|---|---|---|---|\n"
             "| `9lfn` | Ready | Tyler | `SECRETS_OF_RECORD.md` skeleton exists; Tyler must fill non-secret inventory rows. |\n"
+            "| `0dsr` | Ready | Tyler/Richard | Execute GitHub repo/GHCR/Pages Control Tower cutover after PR #8 merge decision. |\n"
             "| `213e` | Ready | Tyler | Second rollback human must be named and tabletop exercise recorded. |\n"
             "| `jzpa` | Closed | code-puppy-661ed0 | Backup workflow validated: staging schema backup `25169438794`, production schema backup `25171354807`; no temporary SQL firewall rules left behind. |\n\n"
             "## Blocked work\n\n"
@@ -86,10 +90,10 @@ def render(report: dict[str, Any] | None) -> str:
 
     lines: list[str] = [
         "---",
-        "title: Platform Status",
+        "title: Control Tower Status",
         "---",
         "",
-        "# Platform Status",
+        "# Control Tower Status",
         "",
         f"Generated: `{report.get('generated_at', now)}`",
         f"Environment: **{report.get('environment', 'unknown')}**",

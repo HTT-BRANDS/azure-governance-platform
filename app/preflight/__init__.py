@@ -1,4 +1,4 @@
-"""Preflight check module for Azure Governance Platform.
+"""Preflight check module for HTT Control Tower.
 
 This module provides comprehensive preflight checks for validating Azure
 tenant connectivity, permissions, and API access before operations.

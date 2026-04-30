@@ -153,7 +153,7 @@ def create_custom_openapi(app, logger):
         ]
         openapi_schema["externalDocs"] = {
             "description": "Full Documentation",
-            "url": "https://github.com/htt-brands/azure-governance-platform/tree/main/docs",
+            "url": "https://github.com/htt-brands/control-tower/tree/main/docs",
         }
         openapi_schema["servers"] = [
             {"url": "/", "description": "Current server"},

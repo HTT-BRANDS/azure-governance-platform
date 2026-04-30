@@ -1,7 +1,7 @@
-# Current State Assessment — HTT Portfolio Platform
+# Current State Assessment — HTT Control Tower
 
 **Assessment Date:** 2026-04-30
-**HEAD assessed:** `00c3745` (`ops(backup): restore backup config evidence trail`)
+**HEAD assessed:** `b577fde` on `control-tower-internal-rebrand` (`rebrand: adopt Control Tower internal name`); main baseline `f9f7c60` remains green.
 **Source of truth for in-flight detail:** [`SESSION_HANDOFF.md`](./SESSION_HANDOFF.md), `bd ready`, and GitHub Actions run history.
 
 > This file is a reality dashboard. If it says "green," it needs a run ID or
@@ -11,14 +11,13 @@
 
 ## TL;DR
 
-The platform runtime is up in both environments, but continuity work is still in
-progress.
+HTT Control Tower runtime is up in both environments. Backup/RPO validation is green; Tyler-only continuity work remains.
 
 - Production health: `https://app-governance-prod.azurewebsites.net/health` returns `healthy` / `2.5.0`.
 - Staging health: `https://app-governance-staging-xnczpwyv.azurewebsites.net/health` returns `healthy` / `2.5.0`.
-- Mainline CI and Security Scan were green for `00c3745`.
-- GitHub Pages deployed for `246e454`, and cross-browser tests passed after the homepage title compatibility fix.
-- Staging deploy run `25168188519` passed QA, security, build/push, deploy, and staging validation.
+- Mainline CI, Security Scan, Pages, browser tests, accessibility, and staging deploy were green for `f9f7c60`.
+- Rebrand PR #8 (`control-tower-internal-rebrand`, head `b577fde`) is open, mergeable, and green: CI `25179222805`, Security Scan `25179222861`, Pages cross-browser `25179222831` all passed.
+- Staging deploy run `25171482459` passed QA, security, build/push, deploy, and staging validation for `f9f7c60`.
 - Scheduled/manual Database Backup is green and bd `jzpa` is closed: staging schema backup passed end-to-end (`25169438794`), production schema backup passed end-to-end (`25171354807`), and no temporary `GitHubActions-*` SQL firewall rules remained afterward.
 - Tyler-only continuity gates remain: `9lfn` secret inventory completion and `213e` second rollback human.
 
@@ -30,7 +29,7 @@ progress.
 |---|---|---|---|
 | Production | <https://app-governance-prod.azurewebsites.net/health> | ✅ `healthy`, version `2.5.0` | Checked 2026-04-30 during this session. |
 | Staging | <https://app-governance-staging-xnczpwyv.azurewebsites.net/health> | ✅ `healthy`, version `2.5.0` | The older `xncz` hostname is stale; use `xnczpwyv`. |
-| GitHub Pages | <https://htt-brands.github.io/azure-governance-platform/> | ✅ Deploy and browser checks passed for `246e454` | Public site is refreshed with continuity status and portfolio-platform framing. |
+| GitHub Pages | <https://htt-brands.github.io/azure-governance-platform/> | ✅ Main deploy/browser checks passed for `f9f7c60`; PR browser checks passed for `b577fde` | URL remains the old repo slug until bd `0dsr` GitHub repo/GHCR/Pages cutover. Content is rebranded to Control Tower on PR #8. |
 
 ---
 
@@ -38,11 +37,14 @@ progress.
 
 | Workflow | Run | Conclusion | Meaning |
 |---|---:|---|---|
-| CI | `25168188513` | ✅ success | Source checks passed for `246e454`. |
-| Security Scan | `25168188503` | ✅ success | Security scan passed for `246e454` after `UV_VERSION=0.9.27` pin. |
-| Deploy GitHub Pages | `25168188577` | ✅ success | Pages content was published for `246e454`. |
-| GitHub Pages Cross-Browser Tests | `25168188537` | ✅ success | Homepage title compatibility fix passed all browser/device projects. |
-| Deploy to Staging | `25168188519` | ✅ success | QA, security, build/push, deploy, and staging validation passed. |
+| CI | `25171482414` | ✅ success | Mainline source checks passed for `f9f7c60`. |
+| Security Scan | `25171482365` | ✅ success | Mainline security scan passed for `f9f7c60` after `UV_VERSION=0.9.27` pin. |
+| Deploy GitHub Pages | `25171483184` | ✅ success | Pages content was published for `f9f7c60`. |
+| GitHub Pages Cross-Browser Tests | `25171483199` | ✅ success | Mainline Pages browser/device matrix passed for `f9f7c60`. |
+| Deploy to Staging | `25171482459` | ✅ success | QA, security, build/push, deploy, and staging validation passed for `f9f7c60`. |
+| PR #8 CI | `25179222805` | ✅ success | Rebrand branch CI passed for `b577fde`. |
+| PR #8 Security Scan | `25179222861` | ✅ success | Rebrand branch security scan passed for `b577fde`. |
+| PR #8 Pages Cross-Browser Tests | `25179222831` | ✅ success | Rebrand branch Pages browser/device matrix passed for `b577fde`. |
 | Topology Diagram | `25168188576` | ❌ failure | Generated timestamp-only topology diff but bot could not push to protected `main`; local commit includes refreshed diagram. |
 | Database Backup production manual | `25171354807` | ✅ success | Schema-only production backup created, uploaded, verified, retention-cleaned, and temporary SQL firewall rule removed. |
 | Database Backup staging manual | `25169438794` | ✅ success | Schema-only staging backup created, verified, uploaded, integrity-checked, and cleanup completed after ephemeral `AZURE_STORAGE_KEY` workflow change. |
@@ -57,7 +59,7 @@ progress.
 | bd | Priority | Owner | Status |
 |---|---|---|---|
 | `9lfn` | P1 | Tyler | Ready — finish non-secret `SECRETS_OF_RECORD.md` inventory. |
-| `jzpa` | P1 | `code-puppy-661ed0` | In progress — backup workflow config/tooling validation. |
+| `0dsr` | P2 | Tyler/Richard | Ready — execute repo/GHCR/Pages Control Tower cutover after PR #8 merge decision. |
 | `213e` | P2 | Tyler | Ready — name second rollback human before waiver expiry. |
 
 Blocked:
@@ -72,7 +74,7 @@ Blocked:
 
 ## Backup / RPO truth
 
-The backup story is not green yet.
+The backup story is green now. The earlier failures remain documented below because receipts matter and amnesia is not observability.
 
 1. `fifh` fixed the broken Teams notify action.
 2. `3flq` fixed OIDC permission for Azure login.
@@ -86,7 +88,7 @@ The backup story is not green yet.
 10. Production schema backup then created, uploaded, verified, and completed retention cleanup in run `25171161761`; only the firewall cleanup step failed because `az sql server firewall-rule delete` does not support `--yes`.
 11. The leftover firewall rule was removed manually, the unsupported flag was removed from `backup.yml`, and production validation passed end-to-end in run `25171354807`. Post-run checks found no temporary `GitHubActions-*` SQL firewall rules in production or staging. bd `jzpa` is closed.
 
-Do **not** declare RPO backup hygiene complete until production and staging backup evidence runs pass and bd `jzpa` is closed with run IDs.
+RPO backup hygiene is complete for the current schema-only validation scope: production and staging evidence runs passed and bd `jzpa` is closed with run IDs.
 
 ---
 
@@ -94,12 +96,12 @@ Do **not** declare RPO backup hygiene complete until production and staging back
 
 The public GitHub Pages site now has:
 
-- Portfolio-platform framing on the home page instead of stale Riverside-first positioning.
+- Control Tower internal-product framing on the home page instead of stale Riverside-first positioning.
 - A linked Operations → Continuity Status page.
 - `docs/status.md` fallback content that shows current CI/backup/continuity state even when `scripts/audit_output.json` is absent.
 - Continuity links to `RUNBOOK.md`, `SECRETS_OF_RECORD.md`, RTO/RPO, and BACPAC validation decision docs.
 
-Still verify the Pages cross-browser failure after this update; the site deploy can succeed while the browser check catches broken links or rendering issues. Tiny rude robot, but useful.
+PR #8 Pages cross-browser checks passed in run `25179222831`. After merging PR #8, verify the normal `Deploy GitHub Pages` run publishes the same Control Tower content from `main`.
 
 ---
 
@@ -109,5 +111,5 @@ Do not decide these on Tyler's behalf:
 
 - `9lfn`: complete `SECRETS_OF_RECORD.md` ownership/access/rotation metadata.
 - `213e`: name second rollback human.
-- Portfolio platform final name (`PORTFOLIO_PLATFORM_PLAN_V2.md` §11).
+- `0dsr`: decide/schedule the GitHub repo slug, GHCR path, and Pages URL cutover sequence for Control Tower.
 - D8 CIEM build-vs-buy, D9 WIGGUM relationship, D10 cross-tenant identity stance.

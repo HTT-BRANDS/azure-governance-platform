@@ -39,7 +39,7 @@ LANDING_PAGE_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Azure Governance Platform - Self-Service Onboarding</title>
+    <title>HTT Control Tower - Self-Service Onboarding</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
         * { box-sizing: border-box; }
@@ -184,8 +184,8 @@ LANDING_PAGE_HTML = """
 </head>
 <body>
     <div class="container" id="onboarding-container">
-        <h1>🏢 Azure Governance Platform - Self-Service Onboarding</h1>
-        <p>Welcome! This guided onboarding will help you connect your Azure subscription to the Azure Governance Platform using Azure Lighthouse delegation.</p>
+        <h1>🏢 HTT Control Tower - Self-Service Onboarding</h1>
+        <p>Welcome! This guided onboarding will help you connect your Azure subscription to HTT Control Tower using Azure Lighthouse delegation.</p>
 
         <div class="step">
             <h2><span class="step-number">1</span> Generate Your ARM Template</h2>
@@ -287,7 +287,7 @@ def get_delegation_template(settings: Any, org_name: str = "") -> dict[str, Any]
         "$schema": "https://schema.management.azure.com/schemas/2019-08-01/subscriptionDeploymentTemplate.json#",
         "contentVersion": "1.0.0.0",
         "metadata": {
-            "description": f"Azure Lighthouse delegation for {org_name or 'Azure Governance Platform'}",
+            "description": f"Azure Lighthouse delegation for {org_name or 'HTT Control Tower'}",
             "generatedFor": org_name or "Unknown Organization",
             "generatedAt": str(uuid.uuid4())[:8],
         },
@@ -301,12 +301,12 @@ def get_delegation_template(settings: Any, org_name: str = "") -> dict[str, Any]
                 "type": "string",
                 "defaultValue": managed_by_principal_id or "",
                 "metadata": {
-                    "description": "The Object ID of the Managed Identity from the Azure Governance Platform"
+                    "description": "The Object ID of the Managed Identity from HTT Control Tower"
                 },
             },
             "mspOfferName": {
                 "type": "string",
-                "defaultValue": "Azure Governance Platform",
+                "defaultValue": "HTT Control Tower",
                 "metadata": {"description": "Name of the Lighthouse offer"},
             },
             "mspOfferDescription": {
@@ -316,7 +316,7 @@ def get_delegation_template(settings: Any, org_name: str = "") -> dict[str, Any]
             },
             "principalDisplayName": {
                 "type": "string",
-                "defaultValue": "Azure Governance Platform Managed Identity",
+                "defaultValue": "HTT Control Tower Managed Identity",
                 "metadata": {"description": "Display name for the managed identity principal"},
             },
         },
@@ -647,7 +647,7 @@ async def verify_delegation(
             content=f"""
             <div class="alert alert-success">
                 <strong>✅ Tenant Created Successfully!</strong>
-                <p>Your Azure subscription has been onboarded to the Azure Governance Platform.</p>
+                <p>Your Azure subscription has been onboarded to HTT Control Tower.</p>
                 <hr>
                 <p><strong>Details:</strong></p>
                 <ul>

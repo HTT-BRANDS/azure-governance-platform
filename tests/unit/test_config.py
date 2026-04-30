@@ -41,7 +41,7 @@ def test_settings_loads_with_default_values(monkeypatch):
 
     assert settings.environment == "development"
     assert settings.debug is False
-    assert settings.app_name == "Azure Governance Platform"
+    assert settings.app_name == "HTT Control Tower"
     assert settings.host == "0.0.0.0"
     assert settings.port == 8000
     assert settings.database_url == "sqlite:///./data/governance.db"

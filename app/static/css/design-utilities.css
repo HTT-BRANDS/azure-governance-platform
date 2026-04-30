@@ -1,6 +1,6 @@
 /* ==========================================================================
    HTT Brands Design Utilities
-   Azure Governance Platform — Brand helper classes + global UI patterns.
+   HTT Control Tower — Brand helper classes + global UI patterns.
 
    Loads AFTER design-tokens.css and AFTER tailwind-output.css, so these
    utilities can reference tokens and override/extend Tailwind where needed.

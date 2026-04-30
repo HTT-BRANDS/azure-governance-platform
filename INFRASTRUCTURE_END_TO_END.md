@@ -1,4 +1,4 @@
-# Azure Governance Platform — End-to-End Infrastructure Overview
+# HTT Control Tower — End-to-End Infrastructure Overview
 
 **Document Date:** April 28, 2026 (post-staging-recovery diligence pass)
 **System Version:** 2.5.0 (HEAD `43eaff9` — production still serving stale image `:6a7306a`)
@@ -15,7 +15,7 @@
 
 ## 1. Platform Purpose
 
-A multi-tenant Azure governance application serving 5 brands/tenants across the HTT Brands franchise portfolio. Provides governance reporting, Riverside compliance visibility (MFA status, gaps, summary), and cross-tenant policy oversight.
+HTT Control Tower is an internal multi-tenant governance application serving 5 brands/tenants across the HTT Brands franchise portfolio. It provides governance reporting, Riverside compliance visibility (MFA status, gaps, summary), cross-tenant policy oversight, and the operational substrate for cost, identity, compliance, resources, lifecycle, and BI/evidence workflows. Existing Azure resource names still use `governance`; do not rename them without a dedicated infrastructure migration.
 
 ### Tenants
 
@@ -137,7 +137,9 @@ All IaC lives in `infrastructure/`:
 
 ## 5. CI/CD — GitHub Actions
 
-Repo: https://github.com/HTT-BRANDS/azure-governance-platform
+Repo target after rename: https://github.com/HTT-BRANDS/control-tower
+
+Current deployed image/resource references may still use `azure-governance-platform` until the GHCR/repo cutover completes.
 Workflows (`.github/workflows/`):
 
 | Workflow                             | Trigger                  | Purpose                                          |

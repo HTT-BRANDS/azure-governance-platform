@@ -1,4 +1,4 @@
-"""Alert system for Azure Governance Platform.
+"""Alert system for HTT Control Tower.
 
 Provides MFA gap detection and deadline tracking for compliance alerting
 across Riverside tenants.

@@ -1,11 +1,13 @@
-# Azure Multi-Tenant Governance Platform
+# HTT Control Tower
 
 [![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
-A lightweight, cost-effective platform for managing Azure/M365 governance across multiple tenants. Built with Python, FastAPI, HTMX, and Tailwind CSS.
+HTT Control Tower is an internal multi-brand governance hub for cost, identity, compliance, resources, lifecycle, and evidence workflows across HTT's brand portfolio. It is Azure/M365-first today, but the domain model is intentionally compatible with future Google Cloud, AWS, Pax8, SaaS, and BI-provider adapters. Built with Python, FastAPI, HTMX, and Tailwind CSS.
+
+> **Naming note:** Control Tower is HTT's internal name for this platform. It is unrelated to AWS Control Tower. Do not use this name for external commercialization without a separate naming/legal review.
 
 > **Current release truth:** the package version in `pyproject.toml` is **2.5.0**. Production-readiness work toward the next strict release-gate pass is tracked in `docs/plans/production-readiness-and-release-gate-roadmap-2026-04-24.md` and the linked bd issues.
 
@@ -95,6 +97,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for version history.
 
 ```bash
 # Clone the repository
+# Current repo URL until bd 0dsr completes the GitHub repo rename cutover
 git clone https://github.com/htt-brands/azure-governance-platform.git
 cd azure-governance-platform
 
@@ -189,7 +192,7 @@ Once running, access the interactive API docs:
 ## Project Structure
 
 ```
-azure-governance-platform/
+control-tower/
 ├── app/
 │   ├── api/
 │   │   ├── routes/          # API endpoints
@@ -276,8 +279,8 @@ cd infrastructure
 ./deploy.sh production eastus
 
 # Build and push container image to GHCR
-docker build -t ghcr.io/htt-brands/azure-governance-platform:v1.9.0 .
-docker push ghcr.io/htt-brands/azure-governance-platform:v1.9.0
+docker build -t ghcr.io/htt-brands/control-tower:v1.9.0 .
+docker push ghcr.io/htt-brands/control-tower:v1.9.0
 
 # Configure App Service to use GHCR
 az webapp config container set \
@@ -308,8 +311,8 @@ make lint        # Run linting
 make run         # Start development server
 
 # Or manual approach
-docker build -t governance-platform .
-docker run -p 8000:8000 --env-file .env governance-platform
+docker build -t control-tower .
+docker run -p 8000:8000 --env-file .env control-tower
 ```
 
 ## 💰 Cost Optimization Achieved (v1.9.0)
@@ -352,7 +355,7 @@ See [infrastructure/COST_OPTIMIZATION.md](./infrastructure/COST_OPTIMIZATION.md)
 
 ### Executive Overview
 
-The Azure Governance Platform includes specialized compliance tracking for Riverside Company requirements.
+HTT Control Tower includes specialized compliance tracking for Riverside Company requirements.
 
 #### Current State (tracked by platform — see /riverside dashboard for current metrics)
 
@@ -442,7 +445,7 @@ For comprehensive Riverside compliance documentation, see:
 - [x] **JWT Algorithm Confusion Fix** — Issuer-based routing prevents forgery
 - [x] **Refresh Token Blacklisting** — Secure token rotation with Redis
 - [x] **Operations Playbook** — 24.5 KB complete operations guide
-- [~] **Automated Database Backups** — Workflow exists; 2026-04-30 scheduled run exposed missing production/staging backup secret names, which are now configured. Validation remains open as bd `jzpa`.
+- [x] **Automated Database Backups** — Schema-only staging (`25169438794`) and production (`25171354807`) backup validation passed end-to-end; bd `jzpa` is closed. Weekly BACPAC long-term export remains separate and blocked as bd `cz89` because staging Azure SQL Free does not support ImportExport.
 - [x] **Makefile** — 15+ common development commands
 - [x] **Enhanced Application Insights** — Custom telemetry, distributed tracing
 - [x] **43 Security Audit Findings Resolved** — Complete security hardening

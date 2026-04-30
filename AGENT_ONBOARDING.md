@@ -18,6 +18,7 @@ platform does.
 
 ```bash
 # Clone
+# Current repo URL until bd 0dsr completes the GitHub repo rename cutover
 git clone https://github.com/HTT-BRANDS/azure-governance-platform.git
 cd azure-governance-platform
 
@@ -42,15 +43,18 @@ with §1–§9 below at your pace.
 
 ## 1. What This Platform Is (in 100 words)
 
-A multi-tenant Azure governance hub run by HTT Brands. One FastAPI
-instance, App Service B1, ~$53/mo total. Reads from 5 Azure tenants
-(HTT, BCC, FN, TLL, DCE) via OIDC federation — zero stored client
-secrets. Surfaces cost, identity, compliance, resources, and per-tenant
-sync freshness. Currently 4,192 tests, WCAG 2.2 AA-targeted, supply-chain-
-hardened with SLSA L3 + cosign + SBOM. Strategic direction is in
-[`PORTFOLIO_PLATFORM_PLAN_V2.md`](./PORTFOLIO_PLATFORM_PLAN_V2.md) — it's
-becoming a Portfolio Operating System for the entire HTT brand portfolio.
+HTT Control Tower is an internal multi-tenant governance hub run by HTT
+Brands. One FastAPI instance, App Service B1, ~$53/mo total. Reads from 5
+Azure tenants (HTT, BCC, FN, TLL, DCE) via OIDC federation — zero stored
+client secrets. Surfaces cost, identity, compliance, resources, lifecycle,
+BI/evidence workflows, and per-tenant sync freshness. Currently 4,192 tests,
+WCAG 2.2 AA-targeted, supply-chain-hardened with SLSA L3 + cosign + SBOM.
+Strategic direction is in [`PORTFOLIO_PLATFORM_PLAN_V2.md`](./PORTFOLIO_PLATFORM_PLAN_V2.md).
 Tyler Granlund is lead engineer; HTT Brands owns the platform.
+
+Naming note: Control Tower is HTT's internal name for this platform. It is
+unrelated to AWS Control Tower and needs separate legal/naming review before
+any external commercialization.
 
 ---
 
@@ -186,7 +190,7 @@ git commit -m "bd: close <id>"
 ```
 
 Issue IDs are 4-character random suffixes (e.g., `fkul`, `9lfn`, `bu72`).
-Full IDs include the project prefix (`azure-governance-platform-fkul`).
+Full IDs still include the historical project prefix (`azure-governance-platform-fkul`). Do not rename bd issue IDs during the Control Tower rebrand; issue history beats cosmetic purity.
 
 ---
 
