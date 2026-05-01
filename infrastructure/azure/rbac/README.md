@@ -3,7 +3,10 @@
 bd `azure-governance-platform-rxki` tracks the live assignment. This directory
 contains the least-privilege custom role definition to unblock
 `.github/workflows/bicep-drift-detection.yml` without granting broad write
-access.
+access. It is intentionally not a pure Reader role because subscription-scoped
+what-if validates the resource-group declaration in `main.bicep`; if live RG
+tags drift, Azure requires resource-group write permission to evaluate that
+potential change.
 
 ## Why this role exists
 
@@ -14,6 +17,9 @@ be authorized at subscription scope for:
 - `Microsoft.Resources/deployments/whatIf/action`
 - subscription/resource reads needed to evaluate the template
 - deployment metadata reads
+- `Microsoft.Resources/subscriptions/resourceGroups/write` so what-if can
+  validate potential resource-group tag changes without granting broad
+  Contributor permissions
 
 Resource-group-scoped assignments are not enough for subscription-scoped
 what-if.
