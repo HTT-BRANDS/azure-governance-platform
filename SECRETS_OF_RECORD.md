@@ -37,7 +37,7 @@ A credential class is complete when every row has:
 | Azure HTT-CORE subscription access | 🔴 TODO Tyler | Required for deploy/rollback/DR |
 | Azure target tenant access x5 | 🔴 TODO Tyler | HTT, BCC, FN, TLL, DCE / Lighthouse / app registrations |
 | Azure Key Vault secrets | 🔴 TODO Tyler | `kv-gov-prod`, staging/dev vaults |
-| GitHub repository + environment secrets | 🔴 TODO Tyler | Actions OIDC, GHCR, Teams webhooks, SQL export |
+| GitHub repository + environment secrets | 🟡 Scaffolded pointers | Actions OIDC, GHCR, Teams webhooks, SQL export; Tyler still must confirm storage/rotation/secondary reader |
 | GitHub PAT / GHCR credentials | 🔴 TODO Tyler | GHCR pull/deploy fallback |
 | Microsoft 365 / Entra admin access | 🔴 TODO Tyler | Graph, tenant admin, emergency access |
 | AWS access | 🔴 TODO Tyler | Only if still required by portfolio ops |
@@ -74,9 +74,9 @@ A credential class is complete when every row has:
 
 | Scope | Secret / variable | Purpose | Primary owner | Secondary reader/operator | Last rotated | Next due | Recovery notes |
 |---|---|---|---|---|---|---|---|
-| Repository / environments | `AZURE_CLIENT_ID` | GitHub Actions OIDC login | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Recreate federated identity if lost |
-| Repository / environments | `AZURE_TENANT_ID` | GitHub Actions OIDC login | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Non-secret-ish but keep with environment config |
-| Repository / environments | `AZURE_SUBSCRIPTION_ID` | GitHub Actions OIDC login | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Non-secret-ish but operationally important |
+| Repository / environments | `AZURE_CLIENT_ID` | GitHub Actions OIDC login | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Used by `backup.yml`, `bacpac-export.yml`, deploy/drift workflows; recreate federated credential if lost |
+| Repository / environments | `AZURE_TENANT_ID` | GitHub Actions OIDC login | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Used by `azure/login@v2`; non-secret-ish but keep with environment config |
+| Repository / environments | `AZURE_SUBSCRIPTION_ID` | GitHub Actions OIDC login | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Required by `azure/login@v2`; non-secret-ish but operationally important |
 | Repository / environments | `GHCR_PAT` | App Service GHCR pull fallback | Tyler | 🔴 TODO / none risk accepted | 2026-04-10 per RUNBOOK | 🔴 TODO | Confirm actual expiration in GitHub |
 | Repository / environments | `PRODUCTION_TEAMS_WEBHOOK` | Production/deploy/BACPAC alerting | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Rotate in Teams connector if exposed |
 | Staging environment | `SQL_ADMIN_PASSWORD` | Staging BACPAC export | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Current stopgap was set from staging app `DATABASE_URL`; document final source |
@@ -85,6 +85,9 @@ A credential class is complete when every row has:
 | Production environment | `SQL_ADMIN_PASSWORD` | Production BACPAC export | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Prefer Key Vault fallback if possible |
 | Production environment | `DATABASE_URL` | Scheduled production database backup (`backup.yml`) | Tyler | GitHub environment secret | 🔴 TODO | 2026-04-30 | Set from production App Service setting without printing value; validation pending bd `jzpa`. |
 | Production environment | `AZURE_STORAGE_ACCOUNT` | Scheduled production database backup upload target | Tyler | GitHub environment secret | 🔴 TODO | 2026-04-30 | Set to `stgovprodbkup001`; validation pending bd `jzpa`. |
+| Production-backup environment | `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` | Approval-free scheduled production backup OIDC login | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Future environment for bd `wnyx`; Azure OIDC subject must be `repo:HTT-BRANDS/control-tower:environment:production-backup`. |
+| Production-backup environment | `DATABASE_URL` | Scheduled production database backup target | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Must point to production database while environment is `production-backup`; copy pointer only, never value. |
+| Production-backup environment | `AZURE_STORAGE_ACCOUNT` / `AZURE_BACKUP_CONTAINER` | Scheduled production backup upload target | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Should mirror production backup storage configuration; do not promote to repo-level secrets. |
 
 ---
 
@@ -105,6 +108,19 @@ A credential class is complete when every row has:
 | AWS | 🔴 TODO | 🔴 TODO | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Remove row if not used |
 | Pax8 | Billing/vendor escalation | 🔴 TODO | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Include account owner and support path |
 | Riverside evidence access | Compliance/evidence consumer | 🔴 TODO | Tyler | 🔴 TODO / none risk accepted | 🔴 TODO | 🔴 TODO | Riverside consumes evidence; platform identity remains HTT-owned |
+
+---
+
+## Repo-evidenced non-secret pointers
+
+These entries are derived from committed workflow/docs references only; they do
+not prove the secret exists in GitHub/Azure and do not include secret values.
+
+| Pointer | Evidence | Owner action still needed |
+|---|---|---|
+| `production-backup` GitHub environment | `.github/workflows/backup.yml`, `RUNBOOK.md` | Tyler/admin creates environment, secrets, and OIDC federation; bd `wnyx` remains open until live proof |
+| `Bicep Drift Reader` custom role definition | `infrastructure/azure/rbac/bicep-drift-reader.role.json` | Tyler/admin creates/assigns role; bd `rxki` remains open until workflow proof |
+| Backup OIDC subject | `RUNBOOK.md` | Configure `repo:HTT-BRANDS/control-tower:environment:production-backup` in Entra federated credential |
 
 ---
 
