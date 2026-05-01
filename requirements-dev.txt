@@ -14,7 +14,6 @@
 # See DEPENDENCY_MANAGEMENT.md for full documentation.
 # =============================================================================
 # =============================================================================
-#    uv export --no-hashes --only-dev
 aiosmtplib==5.1.0
 bidict==0.23.1
     # via python-socketio
