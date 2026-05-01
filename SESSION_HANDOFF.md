@@ -1,19 +1,44 @@
 # Session Handoff — 2026-04-30 (with 2026-05-01 continuation)
 
 **Branch:** `main`.
-**Latest pushed HEAD at end of 2026-05-01 continuation:** `46138ed`.
-**Working tree:** clean.
-**Production state:** ✅ live on `ghcr.io/htt-brands/control-tower@sha256:f762c98a…` (run `25193020385`, deployed 2026-04-30 22:54 UTC). `/health` 200 — `healthy / 2.5.0 / production`.
+**Latest pushed HEAD at end of 2026-05-01 continuation:** `f07d31f`.
+**Working tree:** clean after final bd-sync commit (see git log; current code HEAD before handoff commit was `f07d31f`).
+**Production state:** ✅ `/health` 200 — `healthy / 2.5.0 / production`.
+**Staging state:** ✅ `f07d31f` deployed successfully via Deploy to Staging run `25199262721`; `/health` 200 — `healthy / 2.5.0 / staging`.
 
 ## 🐺🐶 2026-05-01 continuation (code-puppy-7a3f9c)
 
-Short autonomous session covering two passive-observation findings the previous session's standing prompt called out (PR #9 review, bicep-drift-detection workflow). Both turned out to need Tyler-only follow-up rather than autonomous fixes; both are now bd-tracked instead of slow-leaking.
+Short autonomous session covering two passive-observation findings the previous session's standing prompt called out (PR #9 review, bicep-drift-detection workflow). The bicep finding remains Tyler-only RBAC (`rxki`). The dependency finding (`1cmw`) was later approved by Tyler's "yea keep moving" and fully resolved in this same continuation.
+
+### Follow-on execution after Tyler said "yea keep moving" — bd `1cmw` closed
+
+`1cmw` went from filed diagnosis to completed fix:
+
+| Commit | What |
+|---|---|
+| `873b5b5` | Ran the real `uv lock --upgrade`, regenerated `requirements*.txt`, 23 packages bumped, full unit suite `3645 passed`. |
+| `cf1bfce` | Fixed my export mistake: removed leaked `uv export` stderr line (`Resolved 144 packages in 4ms`) from `requirements*.txt`, which had broken Dependabot parsing. |
+| `2755a84` | Replaced the misleading Dependabot auto-merge job with real weekly `uv lock --upgrade` automation. |
+| `5ba5fb0` | Fixed the dependency workflow smoke test to run with `ENVIRONMENT=development` instead of accidentally hitting production CORS guardrails. |
+| `4ced1c6` | Adjusted the workflow for current repo permissions: GitHub Actions cannot create PRs, so it publishes `automation/uv-lock-upgrade` and creates/updates an issue with validation evidence. |
+| `f07d31f` | Fast-forwarded the generated weekly upgrade branch: `azure-core 1.39.0 → 1.40.0`; workflow run `25199169978` validated it before branch publication. |
+
+End-to-end evidence:
+- PR #9 closed as superseded/no-op; real runtime dependency bumps landed via `uv.lock`.
+- `dependency-update.yml` manual proof run `25199169978` succeeded and created issue #10 + branch handoff.
+- Generated issue #10 was closed after fast-forwarding branch `automation/uv-lock-upgrade` into `main`.
+- Push gates for `f07d31f`: CI ✅, Security Scan ✅, Accessibility ✅, Deploy to Staging ✅ (`25199262721`).
+- Staging and prod `/health` both healthy at handoff.
+
+Important nuance: GitHub repo/org setting currently blocks Actions from creating PRs (`GitHub Actions is not permitted to create or approve pull requests`). The workflow is intentionally **branch+issue** until Tyler enables that admin setting. If enabled later, switch back to direct PR creation.
+
+
 
 ### Findings filed as bd
 
 | bd | P | Tyler-only | Headline |
 |---|---|---|---|
-| `1cmw` | P2 | yes (RBAC + workflow design) | Dependabot pip group bumps `requirements*.txt` and `pyproject.toml[dev]` floor pins. Every actual install path (CI `uv sync --frozen`, Docker `uv pip install -e .`, pip-audit `uv export`) sources from `uv.lock` — which dependabot does not touch (no native uv ecosystem support yet). PR #9 is therefore a no-op for runtime. Three-step proposed fix in the bd. |
+| `1cmw` | P2 | resolved after Tyler approval | Dependabot pip group bumps `requirements*.txt` and `pyproject.toml[dev]` floor pins while runtime uses `uv.lock`. Closed in this continuation: real lock bump landed, weekly `uv lock --upgrade` automation added, PR #9 closed as no-op. |
 | `rxki` | P2 | yes (Azure RBAC) | Bicep drift-detection workflow's q8lt scope-fix in `40bea97` is correct, but the OIDC SPN `azure-governance-platform-oidc-dev` (`objectId 7307bf65-…`) has zero subscription-scope role assignments. `az deployment sub what-if` fails with `AuthorizationFailed` on `Microsoft.Resources/deployments/whatIf/action`. Four fix options + custom-role recommendation in the bd. |
 
 ### What I deliberately did NOT do
@@ -46,7 +71,6 @@ Second minor incident: a heredoc with unescaped backticks in a `bd create` call 
 |---|---|---|---|
 | `9lfn` | P1 | **Tyler-only** | Author `SECRETS_OF_RECORD.md` non-secret inventory (38 🔴 TODO markers). Last v2.5.1 gate condition. |
 | `rxki` | P2 | **Tyler-only** (RBAC) | Bicep-drift OIDC SPN needs sub-scope `whatIf/action`. New, filed today. |
-| `1cmw` | P2 | **Tyler** (architectural decision) | Dependabot vs uv.lock split. New, filed today. |
 | `uchp` | P2 | Tyler / Dustin | Q3 2026 DR test cycle. Scheduled 2026-07-31. |
 | `l96f` | P3 | next-puppy (with Tyler scheduling a window) | JWT `iss` rotation. Multi-deploy coordinated rotation. |
 | `rtwi` | P3 | next-puppy | Domain-intel zero-traffic decision at ~2026-05-17 mark. |
