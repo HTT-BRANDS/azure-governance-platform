@@ -39,7 +39,11 @@ jobs:
   backup:
     name: Database Backup (${{ github.event.inputs.environment || 'production' }})
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    # Production backups use a dedicated approval-free GitHub environment
+    # while keeping BACKUP_ENVIRONMENT/target database set to production.
+    # Required OIDC subject:
+    # repo:HTT-BRANDS/control-tower:environment:production-backup
+    environment: ${{ (github.event.inputs.environment || 'production') == 'production' && 'production-backup' || 'staging' }}
 
     steps:
       - name: Checkout code

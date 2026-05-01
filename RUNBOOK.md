@@ -328,3 +328,30 @@ advances from 1 → 2.
 
 *Authored by Richard (code-puppy-ab8d6a) for Tyler Granlund, 2026-04-28.*
 *v1 — draft. Re-review and expand on every Tyler-PTO event.*
+
+### Production backup GitHub environment
+
+Scheduled and on-demand production database backups use the GitHub environment
+`production-backup`, not `production`. This keeps `deploy-production.yml`
+approvals intact while allowing the RPO backup control to run unattended. The
+backup target remains the production database whenever the workflow input is
+`production` or the scheduled default is used.
+
+Admin setup required before bd `azure-governance-platform-wnyx` can close:
+
+1. Create GitHub environment `production-backup` with **no required reviewers**.
+2. Copy only the backup-required environment secrets/variables from
+   `production`: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
+   `AZURE_SUBSCRIPTION_ID`, `DATABASE_URL`, `AZURE_STORAGE_ACCOUNT`,
+   `AZURE_BACKUP_CONTAINER` if customized, and notification webhook settings if
+   backup alerts should post to Teams. Do not move these secrets to repo-level.
+3. Add or update the Azure federated credential for this exact subject:
+   `repo:HTT-BRANDS/control-tower:environment:production-backup`.
+4. Prove the control with a manual `Database Backup` dispatch for production or
+   the next scheduled run. The run must start without waiting for approval and
+   finish successfully before the issue is closed.
+
+Guardrail: do not relax or rename the `production` environment used by
+`deploy-production.yml`. Deployment approvals are separate from backup
+automation.
+
