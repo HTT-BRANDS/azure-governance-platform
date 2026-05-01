@@ -44,6 +44,15 @@ param appServiceSku string = 'B1'
 ])
 param sqlDatabaseSku string = 'Standard_S0'
 
+@description('Storage Account SKU. Defaults remain geo-redundant for new environments; existing env parameter files may pin live SKU to avoid source-of-truth drift.')
+@allowed([
+  'Standard_LRS'
+  'Standard_GRS'
+  'Standard_ZRS'
+  'Premium_LRS'
+])
+param storageSku string = 'Standard_GRS'
+
 @description('Enable Azure SQL (otherwise uses SQLite)')
 param enableAzureSql bool = false
 
@@ -65,6 +74,9 @@ param sqlAdminUsername string = 'sqladmin'
 @description('Admin password for SQL Server')
 @secure()
 param sqlAdminPassword string = newGuid()
+
+@description('Set SQL administrator password during deployment. Keep false when reconciling an existing SQL server unless a stable secure password is explicitly supplied and rotation is approved.')
+param sqlSetAdminPassword bool = true
 
 @description('Docker image tag to deploy')
 param containerImage string = 'latest'
@@ -128,6 +140,30 @@ param sqlServerNameOverride string = ''
 
 @description('Optional explicit SQL Database name. Leave empty to use the generated default.')
 param sqlDatabaseNameOverride string = ''
+
+@description('Optional SQL public network access override. Leave empty to preserve tier-based default; use Enabled only to model live environments that already require public SQL firewall rules.')
+@allowed([
+  ''
+  'Enabled'
+  'Disabled'
+])
+param sqlPublicNetworkAccessOverride string = ''
+
+@description('Optional SQL database max size bytes override. Use 0 to keep SKU-based module default.')
+param sqlDatabaseMaxSizeBytesOverride int = 0
+
+@description('Optional SQL requested backup storage redundancy override. Leave empty to keep SKU-based module default.')
+@allowed([
+  ''
+  'Local'
+  'Geo'
+  'Zone'
+  'GeoZone'
+])
+param sqlBackupRedundancyOverride string = ''
+
+@description('Optional name for the Free-tier Azure-services firewall rule. Defaults to AllowAzureServices for new environments; existing environments may pin their live rule name.')
+param sqlAllowAzureServicesFirewallRuleName string = 'AllowAzureServices'
 
 // -----------------------------------------------------------------------------
 // Variables
@@ -205,6 +241,7 @@ module storage 'modules/storage.bicep' = {
     name: storageAccountName
     location: location
     tags: tags
+    sku: storageSku
   }
 }
 
@@ -220,7 +257,12 @@ module sqlServer 'modules/sql-server.bicep' = if (enableAzureSql) {
     location: location
     adminUsername: sqlAdminUsername
     adminPassword: sqlAdminPassword
+    setAdminPassword: sqlSetAdminPassword
     skuName: sqlDatabaseSku
+    publicNetworkAccessOverride: sqlPublicNetworkAccessOverride
+    maxSizeBytesOverride: sqlDatabaseMaxSizeBytesOverride
+    backupRedundancyOverride: sqlBackupRedundancyOverride
+    allowAzureServicesFirewallRuleName: sqlAllowAzureServicesFirewallRuleName
     tags: tags
   }
 }

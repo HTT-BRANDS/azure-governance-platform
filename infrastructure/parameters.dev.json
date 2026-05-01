@@ -49,6 +49,9 @@
     },
     "enableRedis": {
       "value": false
+    },
+    "storageSku": {
+      "value": "Standard_LRS"
     }
   }
 }

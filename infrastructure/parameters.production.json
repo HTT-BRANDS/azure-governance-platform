@@ -12,7 +12,7 @@
       "value": "B1"
     },
     "sqlDatabaseSku": {
-      "value": "Standard_S0"
+      "value": "Basic"
     },
     "enableAzureSql": {
       "value": true
@@ -85,6 +85,15 @@
       "value": "governance"
     },
     "enableRedis": {
+      "value": false
+    },
+    "storageSku": {
+      "value": "Standard_LRS"
+    },
+    "sqlPublicNetworkAccessOverride": {
+      "value": "Enabled"
+    },
+    "sqlSetAdminPassword": {
       "value": false
     }
   }

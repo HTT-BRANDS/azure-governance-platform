@@ -12,13 +12,18 @@
       "value": "B1"
     },
     "sqlDatabaseSku": {
-      "value": "Standard_S0",
-      "allowedValues": ["Free", "Basic", "Standard_S0", "Standard_S1"]
+      "value": "Free",
+      "allowedValues": [
+        "Free",
+        "Basic",
+        "Standard_S0",
+        "Standard_S1"
+      ]
     },
     "enableAzureSql": {
-      "value": false,
+      "value": true,
       "metadata": {
-        "description": "Set to true when using Azure SQL. Options: Free (staging only), Basic, Standard_S0, Standard_S1"
+        "description": "Tyler approved Bicep ownership where ideal; staging live SQL is modeled by source, but no deployment is performed from reconciliation."
       }
     },
     "enableAppInsights": {
@@ -82,6 +87,30 @@
       "value": "stgovstagingxnczpwyv"
     },
     "enableRedis": {
+      "value": false
+    },
+    "storageSku": {
+      "value": "Standard_LRS"
+    },
+    "sqlServerNameOverride": {
+      "value": "sql-governance-staging-77zfjyem"
+    },
+    "sqlDatabaseNameOverride": {
+      "value": "governance"
+    },
+    "sqlPublicNetworkAccessOverride": {
+      "value": "Enabled"
+    },
+    "sqlDatabaseMaxSizeBytesOverride": {
+      "value": 33554432
+    },
+    "sqlBackupRedundancyOverride": {
+      "value": "Geo"
+    },
+    "sqlAllowAzureServicesFirewallRuleName": {
+      "value": "AllowAllAzureIps"
+    },
+    "sqlSetAdminPassword": {
       "value": false
     }
   }

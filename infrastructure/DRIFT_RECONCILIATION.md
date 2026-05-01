@@ -108,3 +108,76 @@ Classification guidance:
 - Confirm the document stays under 600 lines.
 - Run a basic Markdown sanity check.
 - Commit the doc change only; do not push from this task.
+
+## 2026-05-01 source-of-truth reconciliation phase (Tyler: Bicep owns ideal drift)
+
+Tyler decision for this phase: **"if bicep is ideal, then yes for all of it."**
+Interpretation used here: keep/model remaining infrastructure drift in Bicep where it is practical and safer than treating live manual state as permanent. This phase remains **source-only**: no Azure deployment/resource mutation was run; validation used read-only `az ... list/show` and subscription-scope what-if only.
+
+### Source changes made
+
+- Added `storageSku` to `infrastructure/main.bicep` and passed it into `modules/storage.bicep`; dev/staging/production now pin live `Standard_LRS` while the module default remains `Standard_GRS` for new environments.
+- Added SQL live-state parameters:
+  - `sqlPublicNetworkAccessOverride`
+  - `sqlDatabaseMaxSizeBytesOverride`
+  - `sqlBackupRedundancyOverride`
+  - `sqlAllowAzureServicesFirewallRuleName`
+  - `sqlSetAdminPassword`
+- Staging now models the existing SQL server/database under Bicep source:
+  - `enableAzureSql=true`
+  - `sqlServerNameOverride=sql-governance-staging-77zfjyem`
+  - `sqlDatabaseNameOverride=governance`
+  - `sqlDatabaseSku=Free`
+  - live public SQL access, max size, backup redundancy, and firewall-rule name are pinned.
+  - `sqlSetAdminPassword=false` prevents a generated `newGuid()` password from rotating the existing server admin during any future reviewed deployment.
+- Production SQL source now matches live low-cost posture where this reduces dangerous drift:
+  - `sqlDatabaseSku=Basic` instead of `Standard_S0`
+  - `sqlPublicNetworkAccessOverride=Enabled` to match live firewall-dependent production access.
+  - `sqlSetAdminPassword=false` preserves the existing production SQL admin password unless an explicit future rotation is approved.
+
+### Read-only live inspection findings
+
+No secret values were queried or printed. `storage-access-key` was checked only as secret metadata and returned no visible secret metadata in the inspected output.
+
+| Area | Dev | Staging | Production | Classification |
+|---|---|---|---|---|
+| Storage root SKU | live `Standard_LRS` | live `Standard_LRS` | live `Standard_LRS` | Source now matches live via `storageSku`; default remains `Standard_GRS` for new envs. |
+| Storage child resources | what-if still shows blob service/container and prod file-share creates | same | prod `backups`, `appdata`, `applogs` are creates | Bicep-owned pending deploy where child resources are absent or under-modeled live; no over-edit beyond SKU. |
+| Key Vault `storage-access-key` | what-if Create | what-if Create | what-if Create | Bicep-owned pending deploy; secret values remain non-output/non-logged. |
+| App Service diagnostics | no live diagnostic setting listed | no live diagnostic setting listed | no live diagnostic setting listed | Bicep-owned pending deploy. Watch ingestion cost; no extra categories beyond existing module. |
+| Role assignments | existing RG-scope CI roles are manual | existing RG-scope Contributor roles are manual | existing RG-scope Contributor roles are manual | Bicep owns only deterministic storage-scoped app MI roles; no scope broadening. |
+| Staging SQL | n/a for dev source in this phase | live server `sql-governance-staging-77zfjyem`, DB `governance`, SKU `Free`, public access `Enabled`, firewall `AllowAllAzureIps` plus temporary local-debug rules | n/a | Source now models live SQL; admin password rotation is disabled in params. Temporary/local firewall rules remain manual/waived, not broadened in Bicep. |
+| Production SQL | n/a | n/a | live server `sql-gov-prod-mylxq53d`, DB `governance`, SKU `Basic`, public access `Enabled`, many AppService IP firewall rules plus temporary rules | Source now matches live SKU/public access; admin password rotation is disabled in params. Per-IP firewall rules remain manual/future issue, not broadened. |
+
+### What-if counts
+
+All what-if runs used:
+
+```bash
+az deployment sub what-if --validation-level Template --result-format FullResourcePayloads --no-pretty-print
+```
+
+No `az deployment sub create` was run.
+
+| Environment | Before this phase | After this phase | Notes |
+|---|---:|---:|---|
+| dev | 15/22 drift (create 3, modify 10, unsupported 2) | 15/22 drift (create 3, modify 10, unsupported 2) | Root storage SKU now matches live, but total drift count unchanged because remaining storage/security/tag/diagnostic/app noise is on same resources. |
+| staging | 15/21 drift (create 3, modify 10, unsupported 2) | 17/23 drift (create 3, modify 12, unsupported 2) | Count increased because staging SQL is intentionally brought under Bicep source-of-truth; dangerous SKU/public-access/firewall-name mismatches were reduced to tag/highAvailabilityReplicaCount noise. |
+| production | 19/34 drift (create 7, modify 10, unsupported 2) | 19/34 drift (create 7, modify 10, unsupported 2) | Dangerous SQL SKU upgrade and public-network-disable deltas are removed; remaining SQL deltas are tags only. |
+
+### Remaining drift classification
+
+| Environment | Resource class | Remaining classification | Decision |
+|---|---|---|---|
+| dev/staging/production | Resource-group/resource tags, App Insights, Log Analytics, Key Vault tags/settings | Bicep-owned pending deploy or future tag-normalization issue | Keep under xzt4 unless a later phase chooses live-tag matching. |
+| dev/staging/production | Key Vault access policy `Unsupported` | What-if/ARM limitation/noise | Waive/classify; do not mutate from this phase. |
+| dev/staging/production | App Service `azurestorageaccounts` config `Unsupported` | What-if/ARM limitation/noise; contains storage key path, not printed | Waive/classify; no appsetting/secret value inspection performed. |
+| dev/staging/production | App Service diagnostics | Bicep-owned pending deploy | Accept as source-of-truth; review ingestion cost before actual deploy. |
+| dev/staging/production | Storage child resources | Bicep-owned pending deploy | Accept as source-of-truth where missing; no deploy. |
+| dev/staging/production | Storage-scoped MI role assignments | Bicep-owned pending deploy | Deterministic storage-scope role assignment creates only; no broader-scope role changes. |
+| staging | SQL tags / Free-tier HA replica count | Bicep-owned pending deploy / ARM normalization noise | Keep modeled; do not deploy until reviewed. Existing-server admin password rotation is disabled with `sqlSetAdminPassword=false`; any future rotation needs explicit Tyler approval and a stable secure value. |
+| staging | Local-debug SQL firewall rules | Manual/waived | Do not model broad or temporary rules in Bicep. |
+| production | SQL tags | Bicep-owned pending deploy | SKU/public access now matched to live; no cost increase. Existing-server admin password rotation is disabled with `sqlSetAdminPassword=false`. |
+| production | AppService IP and temporary SQL firewall rules | Manual/future issue | Do not broaden scopes/rules in Bicep; split later if desired. |
+
+Acceptance status: duplicate root generated staging/production resources remain eliminated by name pins. Remaining drift is now classified as Bicep-owned pending deploy, match-live source change, waived/manual, or future issue.
