@@ -57,6 +57,33 @@
     "adminEmails": {
       "value": ""
     },
+    "resourceGroupNameOverride": {
+      "value": "rg-governance-production"
+    },
+    "appServicePlanNameOverride": {
+      "value": "asp-governance-production"
+    },
+    "appServiceNameOverride": {
+      "value": "app-governance-prod"
+    },
+    "appInsightsNameOverride": {
+      "value": "governance-appinsights"
+    },
+    "logAnalyticsNameOverride": {
+      "value": "governance-logs"
+    },
+    "keyVaultNameOverride": {
+      "value": "kv-gov-prod"
+    },
+    "storageAccountNameOverride": {
+      "value": "stgovprodbkup001"
+    },
+    "sqlServerNameOverride": {
+      "value": "sql-gov-prod-mylxq53d"
+    },
+    "sqlDatabaseNameOverride": {
+      "value": "governance"
+    },
     "enableRedis": {
       "value": false
     }
