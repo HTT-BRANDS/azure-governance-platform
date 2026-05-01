@@ -93,9 +93,11 @@ jobs:
             --start-ip-address "$runner_ip" \
             --end-ip-address "$runner_ip" \
             -o none
-          echo "SQL_SERVER_NAME=$sql_server" >> "$GITHUB_ENV"
-          echo "SQL_RESOURCE_GROUP=$sql_rg" >> "$GITHUB_ENV"
-          echo "SQL_FIREWALL_RULE_NAME=$rule_name" >> "$GITHUB_ENV"
+          {
+            echo "SQL_SERVER_NAME=$sql_server"
+            echo "SQL_RESOURCE_GROUP=$sql_rg"
+            echo "SQL_FIREWALL_RULE_NAME=$rule_name"
+          } >> "$GITHUB_ENV"
 
       - name: Prepare storage authentication
         env:
@@ -258,9 +260,11 @@ jobs:
             --start-ip-address "$runner_ip" \
             --end-ip-address "$runner_ip" \
             -o none
-          echo "SQL_SERVER_NAME=$sql_server" >> "$GITHUB_ENV"
-          echo "SQL_RESOURCE_GROUP=$sql_rg" >> "$GITHUB_ENV"
-          echo "SQL_FIREWALL_RULE_NAME=$rule_name" >> "$GITHUB_ENV"
+          {
+            echo "SQL_SERVER_NAME=$sql_server"
+            echo "SQL_RESOURCE_GROUP=$sql_rg"
+            echo "SQL_FIREWALL_RULE_NAME=$rule_name"
+          } >> "$GITHUB_ENV"
 
       - name: Prepare storage authentication
         env:
