@@ -1,9 +1,65 @@
-# Session Handoff — 2026-04-30
+# Session Handoff — 2026-04-30 (with 2026-05-01 continuation)
 
-**Branch:** `control-tower-internal-rebrand` for the current rebrand work; previous pushed baseline was `main`.
+**Branch:** `main`.
+**Latest pushed HEAD at end of 2026-05-01 continuation:** `46138ed`.
+**Working tree:** clean.
+**Production state:** ✅ live on `ghcr.io/htt-brands/control-tower@sha256:f762c98a…` (run `25193020385`, deployed 2026-04-30 22:54 UTC). `/health` 200 — `healthy / 2.5.0 / production`.
+
+## 🐺🐶 2026-05-01 continuation (code-puppy-7a3f9c)
+
+Short autonomous session covering two passive-observation findings the previous session's standing prompt called out (PR #9 review, bicep-drift-detection workflow). Both turned out to need Tyler-only follow-up rather than autonomous fixes; both are now bd-tracked instead of slow-leaking.
+
+### Findings filed as bd
+
+| bd | P | Tyler-only | Headline |
+|---|---|---|---|
+| `1cmw` | P2 | yes (RBAC + workflow design) | Dependabot pip group bumps `requirements*.txt` and `pyproject.toml[dev]` floor pins. Every actual install path (CI `uv sync --frozen`, Docker `uv pip install -e .`, pip-audit `uv export`) sources from `uv.lock` — which dependabot does not touch (no native uv ecosystem support yet). PR #9 is therefore a no-op for runtime. Three-step proposed fix in the bd. |
+| `rxki` | P2 | yes (Azure RBAC) | Bicep drift-detection workflow's q8lt scope-fix in `40bea97` is correct, but the OIDC SPN `azure-governance-platform-oidc-dev` (`objectId 7307bf65-…`) has zero subscription-scope role assignments. `az deployment sub what-if` fails with `AuthorizationFailed` on `Microsoft.Resources/deployments/whatIf/action`. Four fix options + custom-role recommendation in the bd. |
+
+### What I deliberately did NOT do
+
+Per standing-prompt principles (DRY, YAGNI, no PRs, honesty over completeness):
+
+- **Did not merge PR #9.** Cosmetic change to vestigial files; merging would have committed inert noise. Added an information-only comment to PR #9 explaining the no-op so future readers have context, then left the merge decision with Tyler.
+- **Did not run `uv lock --upgrade` unilaterally.** That would have actually bumped 50+ packages in production via the next deploy. Production-affecting; needs explicit go-ahead.
+- **Did not grant subscription-scope RBAC** to the platform OIDC SPN. Tyler-only security decision.
+- **Did not disable** the bicep-drift cron schedule. Leaving it visibly red is the right signal until `rxki` is resolved.
+
+### Side-quest: incident-of-record (caught + recovered cleanly)
+
+While reviewing PR #9 locally, I did `git checkout pr-9` then `git checkout main`. Dependabot's PR branch base predates the Control Tower rebrand, so checking it out left **pre-rebrand stale content** silently in the index when I returned to `main`: `docs/index.md` ("Azure Governance Platform / Version 1.8.1 / March 31, 2026"), `docs/_config.yml` (Jekyll config that contradicts our `.nojekyll`), `docs/api/overview.md`, `docs/architecture/overview.md`, `docs/operations/runbook.md`, `.github/workflows/pages.yml`. Working-tree + index pinned to the old state; HEAD `4386330` was current. **A naive commit-and-push would have shipped a partial-rebrand revert.**
+
+Detected via routine `git status -sb` audit. Recovered with `git reset --hard HEAD` + `rm docs/_config.yml`. No commit was made until clean. The bd `1cmw` body documents this hazard so the next dependabot-PR reviewer knows to look for it.
+
+Second minor incident: a heredoc with unescaped backticks in a `bd create` call accidentally executed `uv lock --upgrade` as a backtick subcommand (resolving 50 package updates into the on-disk `uv.lock`). Spotted via `git status` showing `M uv.lock`. Reverted with `git checkout -- uv.lock` before any commit. Future heredocs to bd/gh use `--body-file /tmp/...` instead.
+
+### Commits pushed this continuation
+
+| Commit | What |
+|---|---|
+| `adf4199` | `ops(deps): file bd 1cmw — dependabot targets vestigial requirements.txt` |
+| `46138ed` | `ops(ci): file bd for bicep-drift-detection RBAC blocker` (bd `rxki`) |
+
+### Open backlog at end of this continuation
+
+| bd | P | Owner | Status |
+|---|---|---|---|
+| `9lfn` | P1 | **Tyler-only** | Author `SECRETS_OF_RECORD.md` non-secret inventory (38 🔴 TODO markers). Last v2.5.1 gate condition. |
+| `rxki` | P2 | **Tyler-only** (RBAC) | Bicep-drift OIDC SPN needs sub-scope `whatIf/action`. New, filed today. |
+| `1cmw` | P2 | **Tyler** (architectural decision) | Dependabot vs uv.lock split. New, filed today. |
+| `uchp` | P2 | Tyler / Dustin | Q3 2026 DR test cycle. Scheduled 2026-07-31. |
+| `l96f` | P3 | next-puppy (with Tyler scheduling a window) | JWT `iss` rotation. Multi-deploy coordinated rotation. |
+| `rtwi` | P3 | next-puppy | Domain-intel zero-traffic decision at ~2026-05-17 mark. |
+| `m4xw` | P4 | next-puppy | Quarterly audit-log archive automation. Deferred 2026-07-01. |
+
+**No active P1 chain remains.** `9lfn` is the single Tyler-only completion to land v2.5.1's `PASS-pending-9lfn` verdict to a clean `PASS`.
+
+---
+
+**Branch:** `control-tower-internal-rebrand` for the rebrand-history work; previous pushed baseline was `main`.
 **Latest pushed HEAD at start of 2026-04-29 session:** `1a7e929`
 **Latest pushed baseline before Control Tower rebrand branch:** `f9f7c60` (`docs(status): close backup validation`)
-**Former P1 chain:** `g1cc` → `918b` → `0gz3` is now closed; `0nup` remains the next release-evidence gate.
+**Former P1 chain:** `g1cc` → `918b` → `0gz3` is now closed; `0nup` is now closed; `9lfn` remains as the last v2.5.1 gate condition.
 
 > **Read this first if you are inheriting the platform mid-flight.**
 > This handoff doc replaces the 2026-04-26 single-session handoff. Today's
