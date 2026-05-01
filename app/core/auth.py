@@ -24,6 +24,16 @@ from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+INTERNAL_JWT_ISSUER = "azure-governance-platform"
+CONTROL_TOWER_JWT_ISSUER = "control-tower"
+ACCEPTED_INTERNAL_JWT_ISSUERS = frozenset(
+    {
+        INTERNAL_JWT_ISSUER,
+        CONTROL_TOWER_JWT_ISSUER,
+    }
+)
+
+
 # OAuth2 scheme for token endpoint
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login",
@@ -283,7 +293,7 @@ class JWTTokenManager:
             "personas": personas or [],
             "exp": expire,
             "iat": datetime.now(UTC),
-            "iss": "azure-governance-platform",
+            "iss": INTERNAL_JWT_ISSUER,
             "aud": "azure-governance-api",
             "type": "access",
         }
@@ -318,7 +328,7 @@ class JWTTokenManager:
             "exp": expire,
             "iat": datetime.now(UTC),
             "jti": str(uuid.uuid4()),
-            "iss": "azure-governance-platform",
+            "iss": INTERNAL_JWT_ISSUER,
             "aud": "azure-governance-api",
             "type": "refresh",
         }
@@ -347,8 +357,11 @@ class JWTTokenManager:
                 self.settings.jwt_secret_key,
                 algorithms=[self.settings.jwt_algorithm],
                 audience="azure-governance-api",
-                issuer="azure-governance-platform",
+                options={"verify_iss": False},
             )
+            issuer = payload.get("iss")
+            if issuer not in ACCEPTED_INTERNAL_JWT_ISSUERS:
+                raise JWTError(f"Invalid issuer: {issuer}")
             return payload
         except JWTError as e:
             logger.warning(f"Token decode failed: {e}")

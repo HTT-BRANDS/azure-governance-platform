@@ -306,6 +306,68 @@ class TestJWTTokenManager:
         assert payload["type"] == "access"
 
     @patch("app.core.auth.get_settings")
+    def test_decode_token_accepts_legacy_internal_issuer(self, mock_get_settings, mock_settings):
+        """Phase 1 rotation keeps old azure-governance-platform tokens valid."""
+        mock_get_settings.return_value = mock_settings
+        manager = JWTTokenManager()
+
+        token = manager.create_access_token(user_id="legacy-user")
+        payload = manager.decode_token(token)
+
+        assert payload["sub"] == "legacy-user"
+        assert payload["iss"] == "azure-governance-platform"
+
+    @patch("app.core.auth.get_settings")
+    def test_decode_token_accepts_control_tower_internal_issuer(
+        self, mock_get_settings, mock_settings
+    ):
+        """Phase 1 rotation accepts future control-tower issuer before emission flips."""
+        mock_get_settings.return_value = mock_settings
+        manager = JWTTokenManager()
+        payload = {
+            "sub": "new-user",
+            "exp": datetime.now(UTC) + timedelta(hours=1),
+            "iat": datetime.now(UTC),
+            "iss": "control-tower",
+            "aud": "azure-governance-api",
+            "type": "access",
+        }
+        token = jwt.encode(
+            payload,
+            mock_settings.jwt_secret_key,
+            algorithm=mock_settings.jwt_algorithm,
+        )
+
+        decoded = manager.decode_token(token)
+
+        assert decoded["sub"] == "new-user"
+        assert decoded["iss"] == "control-tower"
+
+    @patch("app.core.auth.get_settings")
+    def test_decode_token_rejects_unknown_internal_issuer(self, mock_get_settings, mock_settings):
+        """Dual acceptance still fails closed for unrecognized internal issuers."""
+        mock_get_settings.return_value = mock_settings
+        manager = JWTTokenManager()
+        payload = {
+            "sub": "bad-user",
+            "exp": datetime.now(UTC) + timedelta(hours=1),
+            "iat": datetime.now(UTC),
+            "iss": "not-control-tower",
+            "aud": "azure-governance-api",
+            "type": "access",
+        }
+        token = jwt.encode(
+            payload,
+            mock_settings.jwt_secret_key,
+            algorithm=mock_settings.jwt_algorithm,
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            manager.decode_token(token)
+
+        assert exc_info.value.status_code == 401
+
+    @patch("app.core.auth.get_settings")
     def test_decode_token_expired_token_raises_401(self, mock_get_settings, mock_settings):
         """JWTTokenManager.decode_token raises HTTPException 401 for expired token."""
         mock_get_settings.return_value = mock_settings
