@@ -1,10 +1,46 @@
-# Session Handoff — 2026-04-30 (with 2026-05-01 continuation)
+# Session Handoff — 2026-04-30 (with 2026-05-03 continuation)
 
 **Branch:** `main`.
-**Latest pushed HEAD at end of 2026-05-01 continuation:** `f07d31f`.
-**Working tree:** clean after final bd-sync commit (see git log; current code HEAD before handoff commit was `f07d31f`).
+**Latest pushed HEAD at end of 2026-05-03 continuation:** `6b2a8c7` before this handoff update.
+**Working tree:** clean after final handoff/bd-sync commit.
 **Production state:** ✅ `/health` 200 — `healthy / 2.5.0 / production`.
-**Staging state:** ✅ `f07d31f` deployed successfully via Deploy to Staging run `25199262721`; `/health` 200 — `healthy / 2.5.0 / staging`.
+**Staging state:** ✅ `6b2a8c7` deployed successfully via Deploy to Staging run `25284528447`; five post-deploy `/health` probes returned 200 — `healthy / 2.5.0 / staging`.
+
+## 🐶 2026-05-03 continuation — staging apply recovery + SQLite migration hardening
+
+Session started after `d20e392` had recorded Bicep staging-apply evidence. The useful follow-up was not another backlog card: staging was intermittently timing out after a green deploy, so this session stabilized the platform instead.
+
+### What landed
+
+| Commit | What |
+|---|---|
+| `228923d` | Hardened App Service Bicep after staging apply: Azure Files BYOS mounts are opt-in, `CORS_ORIGINS` is emitted as JSON, and App Service storage stays enabled for SQLite `/home` use. |
+| `d20e392` | Recorded xzt4 staging recovery evidence in bd. |
+| `6b2a8c7` | Fixed SQLite startup failure by making SQL Server-only Alembic migrations 009/010 no-op on SQLite while preserving Azure SQL behavior. |
+
+### Incident summary
+
+- Staging-only Bicep apply succeeded, but live staging later failed startup because required Azure Files BYOS mounts were invalid (`BYOSFailure` / `InvalidCredentials`).
+- Removed live staging BYOS mounts and rotated exposed staging storage `key1` after `az webapp config storage-account list` printed the mount access key during recovery.
+- Source now defaults `enableAzureFilesMounts=false`; invalid mounts will not brick container startup on future Bicep applies unless explicitly enabled.
+- After staging was green, later probes found another restart/cold-start death spiral. Logs showed SQLite running Alembic migrations 009 and 010 and failing on SQL Server-only `ALTER COLUMN` syntax.
+- Fixed migrations 009/010 to no-op on SQLite. SQLite does not enforce the VARCHAR/NVARCHAR length/type semantics these migrations exist to correct on Azure SQL, so no-op + stamp revision is the right YAGNI behavior.
+
+### Validation evidence
+
+- Local infra validation for `228923d`: `az bicep build`, parameter JSON parsing, and scoped infra tests passed (`21 passed, 1 skipped`).
+- Local migration validation for `6b2a8c7`: temp SQLite `alembic upgrade head` reaches `010 (head)`; `tests/architecture/test_sync_data_integrity.py` passed (`6 passed`).
+- Deploy to Staging run `25284528447` for `6b2a8c7` passed all jobs: QA Gate, Security Scan, Build & Push, Deploy to Staging, Staging Validation Tests.
+- Latest gates for `6b2a8c7` at handoff: CI ✅, Security Scan ✅, Deploy to Staging ✅; Accessibility run `25284748436` was in progress at handoff time.
+- Post-deploy external probes: staging `/health` returned HTTP 200 five times; production `/health` returned HTTP 200.
+
+### Still open / do not overstep
+
+- `xzt4` remains open because production Bicep apply is still explicitly deferred/excluded. Do not run prod Bicep apply without Tyler direction.
+- `9lfn` remains Tyler-only: author `SECRETS_OF_RECORD.md`.
+- `uchp` remains the Q3 2026 DR test cycle.
+- `l96f` remains the coordinated JWT issuer rotation window.
+
 
 ## 🐺🐶 2026-05-01 continuation (code-puppy-7a3f9c)
 
