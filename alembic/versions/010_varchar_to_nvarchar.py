@@ -51,7 +51,14 @@ def upgrade() -> None:
     require dropping all FKs + the PK, altering, and re-adding — too risky
     for a single migration.  Since tenant_id values are always 36-char ASCII
     UUIDs, the implicit NVARCHAR→VARCHAR conversion works safely.
+
+    SQLite has no NVARCHAR/VARCHAR storage distinction relevant to this fix
+    and does not support the emitted ALTER COLUMN syntax. Staging/dev SQLite
+    should no-op and stamp this revision instead of failing startup.
     """
+    if op.get_bind().dialect.name == "sqlite":
+        return
+
     # --- policy_states ---
     # These columns were VARCHAR but SQLAlchemy sends NVARCHAR parameters,
     # causing error 2628 during batch INSERT.
@@ -160,6 +167,9 @@ def downgrade() -> None:
     characters that cannot be represented in VARCHAR with the current
     collation.  Review data before running this downgrade.
     """
+    if op.get_bind().dialect.name == "sqlite":
+        return
+
     # --- cost_snapshots ---
     op.alter_column(
         "cost_snapshots",

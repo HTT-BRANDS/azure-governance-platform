@@ -29,7 +29,17 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    """Widen policy_name to 1000 and policy_category to 500 (idempotent)."""
+    """Widen policy_name to 1000 and policy_category to 500 (idempotent).
+
+    SQLite does not enforce VARCHAR lengths and does not support the
+    ALTER COLUMN syntax Alembic emits for this metadata-only SQL Server change.
+    Staging/dev currently use SQLite, so the correct SQLite behavior is to
+    no-op and allow Alembic to stamp this revision as applied. Otherwise every
+    staging restart trips over migration 009 before the app can serve traffic.
+    """
+    if op.get_bind().dialect.name == "sqlite":
+        return
+
     op.alter_column(
         "policy_states",
         "policy_name",
@@ -52,6 +62,9 @@ def downgrade() -> None:
     WARNING: This may cause data loss if any values exceed 255 characters.
     Review data before running this downgrade.
     """
+    if op.get_bind().dialect.name == "sqlite":
+        return
+
     op.alter_column(
         "policy_states",
         "policy_category",
