@@ -84,6 +84,9 @@ param containerImage string = 'latest'
 @description('Use container deployment instead of code deployment')
 param useContainerDeployment bool = true
 
+@description('Enable required Azure Files BYOS mounts for /home/data and /home/logs. Default false because invalid mounts block Linux container startup; enable only after share/key path validation.')
+param enableAzureFilesMounts bool = false
+
 @description('Log retention in days')
 param logRetentionDays int = 30
 
@@ -363,6 +366,7 @@ module appService 'modules/app-service.bicep' = {
     tags: tags
     logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
     useContainerDeployment: useContainerDeployment
+    enableAzureFilesMounts: enableAzureFilesMounts
     azureAdTenantId: azureAdTenantId
     azureAdClientId: azureAdClientId
     azureAdClientSecret: azureAdClientSecret

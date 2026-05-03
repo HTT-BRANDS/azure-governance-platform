@@ -73,6 +73,9 @@ param redisUrl string = ''
 @secure()
 param storageAccessKey string = ''
 
+@description('Enable required Azure Files BYOS mounts for /home/data and /home/logs. Keep false unless the file shares and access key path are validated; invalid mounts block container startup.')
+param enableAzureFilesMounts bool = false
+
 // Reference to storage account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
   name: storageAccountName
@@ -91,6 +94,12 @@ var appKind = useContainerDeployment ? 'app,linux,container' : 'app,linux'
 
 // Determine linuxFxVersion based on deployment type
 var linuxFxVersion = useContainerDeployment ? 'DOCKER|${containerImage}' : 'PYTHON|${pythonVersion}'
+
+// Pydantic Settings treats list fields from environment variables as complex
+// values and JSON-decodes them before field validators run. A plain comma-
+// separated string fails before app startup. Accept JSON arrays when callers
+// provide them; otherwise wrap a single origin as a JSON array string.
+var corsOriginsJson = empty(corsOrigins) ? '["https://${name}.azurewebsites.net"]' : (startsWith(corsOrigins, '[') ? corsOrigins : '["${replace(corsOrigins, ',', '","')}"]')
 
 // App Service
 resource appService 'Microsoft.Web/sites@2023-12-01' = {
@@ -192,7 +201,9 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-          value: useContainerDeployment ? 'false' : 'true'
+          // SQLite staging/dev uses /home/data; disabling App Service storage
+          // can turn a healthy container into a sad expensive paperweight.
+          value: 'true'
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -258,7 +269,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'CORS_ORIGINS'
-          value: empty(corsOrigins) ? 'https://${name}.azurewebsites.net' : corsOrigins
+          value: corsOriginsJson
         }
         {
           name: 'ADMIN_EMAILS'
@@ -283,7 +294,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
 }
 
 // Configure AzureFiles mount for persistent storage
-resource azureStorageConfig 'Microsoft.Web/sites/config@2023-12-01' = {
+resource azureStorageConfig 'Microsoft.Web/sites/config@2023-12-01' = if (enableAzureFilesMounts) {
   parent: appService
   name: 'azurestorageaccounts'
   properties: {
