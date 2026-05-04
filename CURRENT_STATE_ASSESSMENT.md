@@ -1,10 +1,12 @@
 # Current State Assessment — HTT Control Tower
 
-**Assessment Date:** 2026-04-30 22:55 UTC
-**HEAD assessed:** [`6c75220`](https://github.com/HTT-BRANDS/control-tower/commit/6c75220) on `main` (`docs(session): record prod-deploy success + bd 1vui field-test cycle`)
-**Source-of-truth siblings:** [`STATUS.md`](./STATUS.md) (single-glance), [`SESSION_HANDOFF.md`](./SESSION_HANDOFF.md) (in-flight detail), `bd ready` (live work backlog).
+> **⚠️ Snapshot doc.** Top sections ("Live environment checks", "Deployed image", "Latest GitHub Actions") are a point-in-time snapshot from 2026-04-30 22:55 UTC. For **current** live status see [`STATUS.md`](./STATUS.md) (refreshed 2026-05-04). The **"Current work queue"** table below was refreshed in lockstep on 2026-05-04 by `code-puppy-10c964`.
 
-> Reality dashboard. If a row says "green" it has a run ID. If a row says
+**Assessment Date:** 2026-04-30 22:55 UTC *(snapshot — see banner above)*
+**HEAD assessed:** [`6c75220`](https://github.com/HTT-BRANDS/control-tower/commit/6c75220) on `main` (`docs(session): record prod-deploy success + bd 1vui field-test cycle`)
+**Source-of-truth siblings:** [`STATUS.md`](./STATUS.md) (single-glance, freshest), [`SESSION_HANDOFF.md`](./SESSION_HANDOFF.md) (in-flight detail), `bd ready` (live work backlog).
+
+> Reality dashboard. If a row says "green" it has a row ID. If a row says
 > "blocked" it has a named blocker. We are not doing decorative confetti.
 
 ---
@@ -84,15 +86,21 @@ Internal rehearsal verdict ([`docs/release-gate/verdicts/rehearsal-2026-04-30-in
 
 ## Current work queue
 
-`bd ready` (2026-04-30 22:55 UTC):
+`bd ready` (refreshed 2026-05-04 — 4 issues; `rtwi` and `m4xw` are now deferred to their trigger dates and no longer appear in `bd ready`):
 
 | bd | Priority | Owner | Status |
 |---|---|---|---|
-| `9lfn` | **P1** | **Tyler-only** | Author `SECRETS_OF_RECORD.md` non-secret inventory. ~30 min. The last v2.5.1 gate condition. |
-| `uchp` | P2 | Tyler / Dustin | Q3 2026 quarterly DR test cycle. Due 2026-07-31. |
-| `l96f` | P3 | next-puppy | Rotate JWT `iss` claim from `azure-governance-platform` → `control-tower`. Cleanup, not blocking. |
-| `rtwi` | P3 | next-puppy | Stop domain-intelligence App Service / pause PG if zero-traffic at 60-day mark (~2026-05-17). |
-| `m4xw` | P4 | next-puppy | Automate quarterly audit-log archive to Azure Blob Archive tier. |
+| `9lfn` | **P1** | **Tyler-only** | Author `SECRETS_OF_RECORD.md`. Skeleton + evidenced pointers landed `00d076e` (2026-05-01). Tyler still must fill storage paths, rotation dates, secondary readers. **Last v2.5.1 gate condition.** |
+| `uchp` | P2 | Tyler / Dustin | Q3 2026 quarterly DR test cycle (PITR + redeploy + KV recover). Evidence checklist landed `3ad45ca`. Due 2026-07-31. |
+| `l96f` | P3 | next-puppy | JWT issuer rotation. **Phase 1 shipped `88d7cf1`** (auth now accepts both `azure-governance-platform` and `control-tower` issuers). Phase 2 (drop the old issuer) needs a coordinated cutover window. |
+| `xzt4` | P2 | Tyler | **In progress, intentionally open.** All 12 child tasks closed; staging Bicep apply recovered + hardened (`228923d`, `6b2a8c7`). **Production Bicep apply explicitly deferred** — do not run prod `az deployment sub create` without Tyler direction. |
+
+Deferred (re-enter `bd ready` on trigger date):
+
+| bd | Priority | Trigger | Status |
+|---|---|---|---|
+| `rtwi` | P3 | ~2026-05-17 | Stop domain-intelligence App Service / pause PG if zero-traffic at 60-day mark. |
+| `m4xw` | P4 | 2026-07-01 | Automate quarterly audit-log archive to Azure Blob Archive tier. |
 
 Operationally blocked:
 

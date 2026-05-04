@@ -1,10 +1,49 @@
-# Session Handoff — 2026-04-30 (with 2026-05-03 continuation)
+# Session Handoff — 2026-04-30 (with 2026-05-03 + 2026-05-04 continuations)
 
 **Branch:** `main`.
-**Latest pushed HEAD at end of 2026-05-03 continuation:** `6b2a8c7` before this handoff update.
+**Latest pushed HEAD at end of 2026-05-04 continuation:** to be filled by final commit of this session.
 **Working tree:** clean after final handoff/bd-sync commit.
-**Production state:** ✅ `/health` 200 — `healthy / 2.5.0 / production`.
-**Staging state:** ✅ `6b2a8c7` deployed successfully via Deploy to Staging run `25284528447`; five post-deploy `/health` probes returned 200 — `healthy / 2.5.0 / staging`.
+**Production state:** ✅ `/health` 200 — `healthy / 2.5.0 / production` (re-verified 2026-05-04 20:33 UTC).
+**Staging state:** ✅ `/health` 200 — `healthy / 2.5.0 / staging` (re-verified 2026-05-04 20:33 UTC; running on `6b2a8c7` post-recovery).
+
+## 🐶 2026-05-04 continuation — doc-freshness sweep (`code-puppy-10c964`)
+
+Strictly a documentation-truth session. No code, no infra, no deploys. Triggered by Tyler asking "where are we at?" — STATUS.md, CURRENT_STATE_ASSESSMENT.md, and this handoff doc were all stamped 2026-04-30 and didn't reflect the May 1 + May 3 work that had landed on `main`.
+
+### What landed
+
+| Commit | What |
+|---|---|
+| `56420b2` | `docs(status)`: refreshed STATUS.md — timestamps re-stamped, 13 new "what just shipped" rows (May 1 t88h/wnyx/rxki/mp9y/6vrk/l96f-phase-1/xzt4-epic, May 3 Bicep hardening + SQLite fix), new staging-recovery incident section, open-work table re-aligned to current `bd ready` (4 issues, including `xzt4` flagged as intentionally open). |
+| (this commit) | `docs(handoff)`: refreshed CURRENT_STATE_ASSESSMENT.md (snapshot banner + bd-ready table re-aligned with deferred-vs-ready split) and added this session entry to SESSION_HANDOFF.md. Local cleanup: pruned stale `staging` branch (upstream `[gone]`). |
+
+### Investigative findings (no action taken, recorded for next puppy)
+
+- **`xzt4` is open by design**, not by oversight. May 3 handoff explicitly says "production Bicep apply is still explicitly deferred/excluded — do not run prod Bicep apply without Tyler direction." All 12 child tasks closed. Treat the parent issue as a Tyler-gated production-cutover ticket, not a stale card.
+- **`l96f` is partially complete**, not just "deferred cleanup." `88d7cf1` shipped phase 1 (auth accepts both issuers in transition mode). Old STATUS.md framing ("Cleanup, not blocking") understated the work. Phase 2 = coordinated cutover window to drop `azure-governance-platform` issuer; not a solo-puppy task.
+- **`SECRETS_OF_RECORD.md` scaffold is genuinely Tyler-only at this point.** Skeleton + every evidenced non-secret pointer that could be derived from the repo are already in place. Remaining `🔴 TODO Tyler` markers all require knowledge only Tyler holds (1Password vault paths, M365 break-glass account location, secondary readers, rotation dates). No future puppy should attempt to fill these without explicit Tyler direction — inventing pointers here is a security risk.
+- **`origin/control-tower-internal-rebrand` is merged into `main`** but still present remotely. Pruning is a Tyler/admin call (might still be referenced by external links/docs); flagged here, not auto-deleted.
+- **New dependabot pip branch appeared during push** (`dependabot/pip/minor-patch-d7af48c401`). Per `1cmw`'s closed-issue playbook, do NOT merge dependabot PRs that touch `requirements*.txt` directly — the canonical path is the weekly `uv lock --upgrade` automation.
+
+### Live re-verification at handoff
+
+```
+2026-05-04 20:33 UTC
+Prod /health           → 200 {status:healthy, version:2.5.0, environment:production}
+Prod /health/detailed  → 200 database/scheduler/cache/azure_configured all healthy
+Staging /health        → 200 {status:healthy, version:2.5.0, environment:staging}
+Public docs            → 200 (htt-brands.github.io/control-tower/)
+```
+
+### What I deliberately did NOT do
+
+- **Did not edit `SECRETS_OF_RECORD.md`.** Tyler-only per the bd issue; existing scaffold is already excellent. Adding fluff to look busy would worsen the doc.
+- **Did not close `xzt4`.** Intentionally open per the May 3 handoff guardrail.
+- **Did not progress `l96f` phase 2.** Coordinated cutover, not autonomous-puppy-safe.
+- **Did not delete merged remote branches.** Tyler/admin call.
+- **Did not bump prod image / redeploy / run any `az` commands.** Doc-only session.
+
+---
 
 ## 🐶 2026-05-03 continuation — staging apply recovery + SQLite migration hardening
 
