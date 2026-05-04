@@ -65,27 +65,29 @@ in the repo. For the v2.5.1 release-gate evidence, see
 | 7. Maintenance & Operability | ✅ PASS *(bus-factor 1→2 via bd `213e`)* |
 | 8. Rollback | ✅ PASS *(++ field-tested via bd `1vui` cycle)* |
 
-## What just shipped (last 24h)
+## What just shipped (most recent on `main`)
 
 | Commit | What |
 |---|---|
-| `6c75220` | Session handoff: prod-deploy success + bd `1vui` field-test cycle |
-| `8cf67e5` | **Condition 1 of v2.5.1 rehearsal verdict CLEARED** — prod live on `main` |
-| `9ccd870` | `fix(release): use base64 -w0 in auto-rollback prev-image capture (bd 1vui)` |
-| `ec9658f` | Session handoff: 0nup closed, autonomous backlog drained |
-| `910cec0` | Production-readiness evidence bundle + internal release-gate rehearsal verdict (bd `0nup` closed) |
-| `8ad0ed4` | RTM-v2.5.1-DRAFT expanded to 50+ closed bd issues |
-| `f91f4d7` / `64515a5` / `2e51d5a` | bd `213e` CLOSED — Dustin Boyd onboarded as second rollback human |
+| `349f00e` | `docs(handoff)`: 2026-05-04 doc-freshness sweep — STATUS / CURRENT_STATE / SESSION_HANDOFF aligned with reality |
+| `56420b2` | `docs(status)`: STATUS.md refreshed for 2026-05-04 (re-verified `/health` 200 across prod, staging, public docs) |
+| `7e28417` | Session handoff: staging apply recovery recorded |
+| `6b2a8c7` | `fix(migrations)`: Alembic 009/010 made no-op on SQLite (Azure SQL behavior preserved) |
+| `228923d` | `infra`: hardened App Service Bicep — Azure Files BYOS opt-in, `CORS_ORIGINS` JSON, SQLite `/home` preserved |
+| `c05b298` | `infra`: reconciled Bicep drift source-of-truth (xzt4 epic) |
+| `88d7cf1` | `feat(auth)`: accept control-tower JWT issuer (l96f phase 1, transition mode) |
+| `47ac265` | bd `wnyx` closed — production-backup environment routing for scheduled prod backups |
 
-## Ready work (`bd ready`)
+## Ready work (`bd ready` — 4 issues)
 
 | bd | Priority | Owner | Note |
 |---|---|---|---|
-| `9lfn` | **P1** | **Tyler-only** | Author `SECRETS_OF_RECORD.md` non-secret inventory. The last v2.5.1 gate condition. |
-| `uchp` | P2 | Tyler / Dustin | Q3 2026 quarterly DR test cycle. Due 2026-07-31. |
-| `l96f` | P3 | next-puppy | Rotate JWT `iss` claim from `azure-governance-platform` → `control-tower`. |
-| `rtwi` | P3 | next-puppy | Stop domain-intelligence App Service / pause PG if zero-traffic at 60-day mark (~2026-05-17). |
-| `m4xw` | P4 | next-puppy | Automate quarterly audit-log archive to Azure Blob Archive tier. |
+| `9lfn` | **P1** | **Tyler-only** | Author `SECRETS_OF_RECORD.md` non-secret inventory. Skeleton + evidenced pointers landed; storage paths/rotation/secondary readers remain Tyler-only. **The last v2.5.1 gate condition.** |
+| `uchp` | P2 | Tyler / Dustin | Q3 2026 quarterly DR test cycle (PITR + redeploy + KV recover). Evidence checklist landed. Due 2026-07-31. |
+| `l96f` | P3 | next-puppy | JWT issuer rotation. Phase 1 shipped (auth accepts both issuers); phase 2 (drop old issuer) needs coordinated cutover. |
+| `xzt4` | P2 | Tyler | Bicep drift reconciliation. All 12 child tasks closed; staging recovered. **Production Bicep apply intentionally deferred** — do not run prod `az deployment sub create` without Tyler direction. |
+
+_Deferred (re-enter `bd ready` on trigger date): `rtwi` (~2026-05-17), `m4xw` (2026-07-01)._
 
 ## CI/CD signals
 
